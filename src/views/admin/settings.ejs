@@ -1,0 +1,333 @@
+<%
+  const formState = {
+    primary: settings.colors.primary,
+    adminAccent: settings.colors.adminAccent || '',
+    adminText: settings.colors.adminText || '',
+    adminSidebar: settings.colors.adminSidebar,
+    adminBg: settings.colors.adminBg,
+    bgType: settings.background.type,
+    bgPreset: settings.background.preset,
+    bgColor: settings.background.color,
+    gradC1: settings.background.custom.c1,
+    gradC2: settings.background.custom.c2,
+    gradC3: settings.background.custom.c3,
+    gradAngle: settings.background.custom.angle,
+    bgOverlay: settings.background.overlay,
+    bgGrain: settings.background.grain,
+    bgGrainStrength: settings.background.grainStrength,
+    imagePath: settings.background.imagePath,
+    logoSize: settings.logo.size,
+    logoAlign: settings.logo.align,
+    presetCss: Object.fromEntries(Object.entries(presets).map(([k, v]) => [k, v.css])),
+  };
+%>
+<div class="max-w-2xl" x-data="settingsForm(<%= JSON.stringify(formState) %>)">
+
+  <% if (saved) { %>
+    <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">
+      <%- icon('check', { size: 16, cls: 'text-green-600' }) %> Zapisano ustawienia.
+    </div>
+  <% } %>
+
+  <form method="POST" action="/admin/settings" enctype="multipart/form-data" class="space-y-6">
+
+    <!-- Branding -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
+      <h2 class="text-sm font-semibold text-slate-700">Branding</h2>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Nazwa aplikacji</label>
+        <input name="appName" type="text" value="<%= settings.appName %>"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Logo <span class="text-slate-400 font-normal">(PNG, SVG…)</span></label>
+          <% if (settings.logoPath) { %>
+            <div class="flex items-center gap-3 mb-2">
+              <img src="<%= settings.logoPath %>" alt="logo" class="h-10 rounded bg-slate-50 border border-slate-200 p-1" />
+              <label class="inline-flex items-center gap-1.5 text-xs text-slate-500"><input type="checkbox" name="removeLogo" class="rounded border-slate-300" /> usuń</label>
+            </div>
+          <% } %>
+          <input name="logo" type="file" accept="image/*,.svg" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm" />
+          <p class="text-xs text-slate-400 mt-1">SVG jest oczyszczany z kodu (bezpieczny upload).</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Favicon</label>
+          <% if (settings.faviconPath) { %>
+            <div class="flex items-center gap-3 mb-2">
+              <img src="<%= settings.faviconPath %>" alt="favicon" class="h-6 w-6 rounded bg-slate-50 border border-slate-200" />
+              <label class="inline-flex items-center gap-1.5 text-xs text-slate-500"><input type="checkbox" name="removeFavicon" class="rounded border-slate-300" /> usuń</label>
+            </div>
+          <% } %>
+          <input name="favicon" type="file" accept="image/*,.svg" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm" />
+        </div>
+      </div>
+
+      <!-- Prezentacja logo: rozmiar + pozycja -->
+      <div class="border-t border-slate-100 pt-5">
+        <h3 class="text-xs font-semibold text-slate-600 mb-3">Wyświetlanie logo (strona klienta / logowanie)</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 items-start">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Wysokość: <span x-text="logoSize + ' px'"></span></label>
+            <input type="range" name="logoSize" min="16" max="120" step="2" x-model="logoSize" class="w-full accent-brand-600" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Pozycja</label>
+            <div class="flex gap-2 text-sm">
+              <template x-for="opt in [['left','Lewo'],['center','Środek'],['right','Prawo']]" :key="opt[0]">
+                <label class="flex-1 cursor-pointer">
+                  <input type="radio" name="logoAlign" :value="opt[0]" x-model="logoAlign" class="peer sr-only" />
+                  <span class="block text-center rounded-lg border border-slate-300 px-2 py-1.5 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition" x-text="opt[1]"></span>
+                </label>
+              </template>
+            </div>
+          </div>
+        </div>
+        <!-- Podgląd logo -->
+        <div class="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 flex items-center"
+             :class="{ 'justify-start': logoAlign==='left', 'justify-center': logoAlign==='center', 'justify-end': logoAlign==='right' }">
+          <% if (settings.logoPath) { %>
+            <img src="<%= settings.logoPath %>" alt="logo" :style="'height:' + logoSize + 'px'" class="max-w-[70%] object-contain" />
+          <% } else { %>
+            <span class="text-xs text-slate-400">Wgraj logo, aby zobaczyć podgląd. (Bez logo pokazujemy nazwę aplikacji.)</span>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kolor przewodni (strona klienta) -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6">
+      <h2 class="text-sm font-semibold text-slate-700 mb-3">Kolor przewodni</h2>
+      <div class="flex items-center gap-3 flex-wrap">
+        <input type="color" name="primary" x-model="primary" class="h-10 w-14 rounded border border-slate-300 cursor-pointer" />
+        <input type="text" x-model="primary" maxlength="7" class="w-28 rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono" />
+        <span class="inline-flex items-center gap-2 text-sm text-slate-500">
+          podgląd:
+          <span class="rounded-lg px-3 py-1.5 text-white text-sm font-medium" :style="'background:' + primary">Przycisk</span>
+        </span>
+      </div>
+      <p class="text-xs text-slate-400 mt-2">Steruje akcentem strony klienta i (domyślnie) panelu. Domyślny: #6e00a5.</p>
+    </div>
+
+    <!-- Kolory panelu admina -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6">
+      <h2 class="text-sm font-semibold text-slate-700 mb-1">Kolory panelu admina</h2>
+      <p class="text-xs text-slate-400 mb-4">Akcent i czcionka puste = używają wartości domyślnych (akcent → kolor przewodni, czcionka → auto-kontrast z tła).</p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Akcent (przyciski, aktywne)</label>
+            <div class="flex items-center gap-2">
+              <input type="color" :value="adminAccent || primary" @input="adminAccent = $event.target.value" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
+              <input type="text" name="adminAccent" x-model="adminAccent" maxlength="7" placeholder="(jak przewodni)" class="w-32 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-mono" />
+              <button type="button" x-show="adminAccent" @click="adminAccent=''" class="text-xs text-slate-400 hover:text-slate-600 underline">wyczyść</button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Kolor czcionki</label>
+            <div class="flex items-center gap-2">
+              <input type="color" :value="adminText || textAuto()" @input="adminText = $event.target.value" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
+              <input type="text" name="adminText" x-model="adminText" maxlength="7" placeholder="(auto-kontrast)" class="w-32 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-mono" />
+              <button type="button" x-show="adminText" @click="adminText=''" class="text-xs text-slate-400 hover:text-slate-600 underline">wyczyść</button>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Tło sidebara</label>
+            <div class="flex items-center gap-2">
+              <input type="color" name="adminSidebar" x-model="adminSidebar" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
+              <input type="text" x-model="adminSidebar" maxlength="7" class="w-32 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-mono" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Tło panelu</label>
+            <div class="flex items-center gap-2">
+              <input type="color" name="adminBg" x-model="adminBg" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
+              <input type="text" x-model="adminBg" maxlength="7" class="w-32 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-mono" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Mini-podgląd panelu -->
+        <div>
+          <span class="block text-xs font-medium text-slate-600 mb-1">Podgląd</span>
+          <div class="rounded-xl border border-slate-200 overflow-hidden h-36 flex" :style="'background:' + adminBg + ';color:' + textEff()">
+            <div class="w-20 shrink-0 p-2 space-y-1.5 text-[10px]" :style="'background:' + adminSidebar + ';color:' + sidebarText()">
+              <div class="font-bold" :style="'color:' + accentEff()">Logo</div>
+              <div class="rounded px-1.5 py-1 font-medium" :style="'background:' + accentBg() + ';color:' + accentEff()">Pulpit</div>
+              <div class="opacity-70 px-1.5 py-1">Projekty</div>
+              <div class="opacity-70 px-1.5 py-1">Transfery</div>
+            </div>
+            <div class="flex-1 p-2 text-[10px]">
+              <div class="font-semibold mb-1.5">Nagłówek treści</div>
+              <div class="bg-white/80 rounded h-5 mb-2 border border-slate-200/60"></div>
+              <span class="inline-block rounded px-2 py-1 text-white" :style="'background:' + accentEff()">Przycisk</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tło strony klienta -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+      <h2 class="text-sm font-semibold text-slate-700">Tło strony klienta</h2>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+        <template x-for="opt in [['gradient','Preset'],['custom','Własny'],['image','Obraz'],['solid','Kolor']]" :key="opt[0]">
+          <label class="cursor-pointer">
+            <input type="radio" name="bgType" :value="opt[0]" x-model="bgType" class="peer sr-only" />
+            <span class="block text-center rounded-lg border border-slate-300 px-3 py-2 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition" x-text="opt[1]"></span>
+          </label>
+        </template>
+      </div>
+
+      <!-- Gradient: wybór presetu -->
+      <div x-show="bgType==='gradient'">
+        <label class="block text-xs font-medium text-slate-600 mb-1">Preset gradientu</label>
+        <select name="bgPreset" x-model="bgPreset" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+          <% Object.entries(presets).forEach(function([key, p]){ %>
+            <option value="<%= key %>"><%= p.label %></option>
+          <% }); %>
+        </select>
+      </div>
+
+      <!-- Własny gradient: kolory + kąt -->
+      <div x-show="bgType==='custom'" class="space-y-3">
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Kolor 1</label>
+            <input type="color" name="gradC1" x-model="gradC1" class="h-9 w-full rounded border border-slate-300 cursor-pointer" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Kolor 2</label>
+            <input type="color" name="gradC2" x-model="gradC2" class="h-9 w-full rounded border border-slate-300 cursor-pointer" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1 flex items-center justify-between">Kolor 3 <button type="button" x-show="gradC3" @click="gradC3=''" class="text-[10px] text-slate-400 hover:text-slate-600 underline">usuń</button></label>
+            <input type="color" name="gradC3" :value="gradC3 || '#ffffff'" @input="gradC3 = $event.target.value" class="h-9 w-full rounded border border-slate-300 cursor-pointer" :class="gradC3 ? '' : 'opacity-40'" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Kąt: <span x-text="gradAngle + '°'"></span></label>
+          <input type="range" name="gradAngle" min="0" max="360" step="5" x-model="gradAngle" class="w-full accent-brand-600" />
+        </div>
+        <p class="text-xs text-slate-400">Kolor 3 jest opcjonalny (pusty = gradient dwukolorowy).</p>
+      </div>
+
+      <!-- Kolor jednolity -->
+      <div x-show="bgType==='solid'">
+        <label class="block text-xs font-medium text-slate-600 mb-1">Kolor tła</label>
+        <div class="flex items-center gap-2">
+          <input type="color" name="bgColor" x-model="bgColor" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
+          <input type="text" x-model="bgColor" maxlength="7" class="w-32 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-mono" />
+        </div>
+      </div>
+
+      <!-- Obraz tła -->
+      <div x-show="bgType==='image'" class="space-y-3">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Obraz tła <span class="text-slate-400 font-normal">(do 5 MB)</span></label>
+          <input name="bg" type="file" accept="image/*" @change="onBgFile($event)" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm" />
+          <label class="inline-flex items-center gap-1.5 text-xs text-slate-500 mt-2" x-show="imagePath"><input type="checkbox" name="removeBg" @change="if($event.target.checked){imagePath=null; previewImg=null}" class="rounded border-slate-300" /> usuń obecny obraz</label>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Przyciemnienie obrazu: <span x-text="bgOverlay + '%'"></span></label>
+          <input type="range" name="bgOverlay" min="0" max="80" step="5" x-model="bgOverlay" class="w-full accent-brand-600" />
+        </div>
+      </div>
+
+      <div class="space-y-2">
+        <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+          <input type="checkbox" name="bgGrain" x-model="bgGrain" class="rounded border-slate-300" /> Nakładka ziarna (szum)
+        </label>
+        <div x-show="bgGrain" class="pl-6">
+          <label class="block text-xs font-medium text-slate-600 mb-1">Moc szumu: <span x-text="bgGrainStrength + '%'"></span></label>
+          <input type="range" name="bgGrainStrength" min="0" max="100" step="5" x-model="bgGrainStrength" class="w-full max-w-xs accent-brand-600" />
+        </div>
+      </div>
+
+      <!-- Podgląd tła -->
+      <div>
+        <span class="block text-xs font-medium text-slate-600 mb-1">Podgląd</span>
+        <div class="relative rounded-xl border border-slate-200 overflow-hidden h-32 flex items-center justify-center" :style="clientBgStyle()">
+          <div x-show="bgType==='image' && (previewImg || imagePath)" class="absolute inset-0" :style="'background:#0f172a center/cover no-repeat; background-image:url(' + (previewImg || imagePath) + ')'"></div>
+          <div x-show="bgType==='image' && bgOverlay>0" class="absolute inset-0" :style="'background:rgba(15,23,42,' + (bgOverlay/100) + ')'"></div>
+          <div x-show="bgGrain" class="absolute inset-0 pointer-events-none" :style="'mix-blend-mode:soft-light;background-size:160px 160px;opacity:' + (bgGrainStrength/100) + ';background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'160\' height=\'160\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'2\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'0.35\'/%3E%3C/svg%3E&quot;)'"></div>
+          <div class="relative bg-white/85 rounded-lg px-4 py-2 text-xs text-slate-600 shadow">Karta klienta</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Treści -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
+      <h2 class="text-sm font-semibold text-slate-700">Treści strony klienta</h2>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Nagłówek (hero)</label>
+        <input name="heroTitle" type="text" value="<%= settings.texts.heroTitle %>" placeholder="np. Bezpieczna wymiana plików"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Podtytuł</label>
+        <input name="heroSubtitle" type="text" value="<%= settings.texts.heroSubtitle %>"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Stopka</label>
+        <input name="footer" type="text" value="<%= settings.texts.footer %>"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </div>
+    </div>
+
+    <!-- Własny CSS (zaawansowane) -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-3">
+      <h2 class="text-sm font-semibold text-slate-700">Własny CSS <span class="text-slate-400 font-normal">(zaawansowane)</span></h2>
+      <p class="text-xs text-slate-400">Wstrzykiwany na wszystkich stronach (panel i strony klienta), na końcu — nadpisuje style. Użyj, gdy chcesz zmienić coś ponad dostępne opcje. Znaki <code>&lt;</code> są usuwane ze względów bezpieczeństwa.</p>
+      <textarea name="customCss" rows="6" spellcheck="false" placeholder="np. .max-w-2xl { max-width: 60rem; }"
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= settings.customCss %></textarea>
+    </div>
+
+    <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Zapisz ustawienia</button>
+  </form>
+</div>
+
+<script>
+function settingsForm(init) {
+  return {
+    ...init,
+    previewImg: null,
+
+    // --- paleta z hex (port utils/color.js) ---
+    _steps: { 50:0.93,100:0.85,200:0.7,300:0.5,400:0.3,500:0.12,600:0,700:-0.15,800:-0.3,900:-0.45 },
+    _hex(h){ const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec((h||'').trim()); return m?[parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)]:null; },
+    _mix(rgb,t){ const tg=t>=0?255:0,a=Math.abs(t); return rgb.map(c=>Math.round(c+(tg-c)*a)); },
+    brandVars(hex){ const b=this._hex(hex); if(!b) return ''; return Object.entries(this._steps).map(([s,t])=>`--brand-${s}:${this._mix(b,t).join(' ')}`).join(';'); },
+
+    accentEff(){ return /^#[0-9a-fA-F]{6}$/.test(this.adminAccent) ? this.adminAccent : this.primary; },
+    accentBg(){ const b=this._hex(this.accentEff()); return b ? `rgb(${this._mix(b,0.85).join(' ')})` : '#f1f5f9'; },
+    _readable(hex){ const b=this._hex(hex); if(!b) return '#0f172a';
+      const L=b.map(c=>{const s=c/255;return s<=0.03928?s/12.92:Math.pow((s+0.055)/1.055,2.4);});
+      return (0.2126*L[0]+0.7152*L[1]+0.0722*L[2])>0.5 ? '#0f172a' : '#ffffff'; },
+    sidebarText(){ return this._readable(this.adminSidebar); },
+    textAuto(){ return this._readable(this.adminBg); },
+    textEff(){ return /^#[0-9a-fA-F]{6}$/.test(this.adminText) ? this.adminText : this.textAuto(); },
+
+    customCss(){
+      const stops = [this.gradC1, this.gradC2, this.gradC3].filter((c) => /^#[0-9a-fA-F]{6}$/.test(c));
+      if(stops.length < 2) stops.push(stops[0] || '#ffffff');
+      return `linear-gradient(${this.gradAngle}deg, ${stops.join(', ')})`;
+    },
+    clientBgStyle(){
+      let css = this.brandVars(this.primary);
+      let bg;
+      if(this.bgType==='solid') bg = this.bgColor;
+      else if(this.bgType==='custom') bg = this.customCss();
+      else if(this.bgType==='image') bg = '#0f172a';
+      else bg = this.presetCss[this.bgPreset] || this.presetCss['brand-soft'];
+      return css + ';background:' + bg;
+    },
+    onBgFile(e){ const f=e.target.files&&e.target.files[0]; this.previewImg = f ? URL.createObjectURL(f) : null; },
+  };
+}
+</script>

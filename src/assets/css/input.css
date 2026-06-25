@@ -2,4 +2,24 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Tu w kolejnych etapach dojdą własne komponenty/utility, np. styl karty drag&drop. */
+/* Domyślna paleta koloru przewodniego (#6e00a5) jako kanały RGB dla klas brand-*.
+   Strona klienta może nadpisać te zmienne kolorem z ustawień (bez rebuildu CSS). */
+:root {
+  --brand-50: 251 243 255;
+  --brand-100: 244 226 255;
+  --brand-200: 235 198 255;
+  --brand-300: 221 155 255;
+  --brand-400: 200 96 255;
+  --brand-500: 163 31 222;
+  --brand-600: 110 0 165;
+  --brand-700: 91 0 136;
+  --brand-800: 74 0 110;
+  --brand-900: 61 0 90;
+
+  /* Kolory elementów panelu admina — nadpisywane z ustawień (bez rebuildu CSS).
+     Używane przez klasy bg-[var(--admin-bg)] / bg-[var(--admin-sidebar)]. */
+  --admin-bg: #f8fafc;            /* slate-50 */
+  --admin-text: #1e293b;          /* slate-800 */
+  --admin-sidebar: #ffffff;       /* white   */
+  --admin-sidebar-text: #0f172a;  /* slate-900 */
+}

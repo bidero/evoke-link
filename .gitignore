@@ -20,6 +20,10 @@ sessions/
 # Zbudowany CSS (generowany przez Tailwind)
 public/css/app.css
 
+# Wgrane logo/favicon (branding) — pliki użytkownika
+public/branding/*
+!public/branding/.gitkeep
+
 # Logi i systemowe
 *.log
 .DS_Store

@@ -3,10 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title><%= typeof title !== 'undefined' ? title + ' — Evoke LINK' : 'Evoke LINK' %></title>
+  <% const appName = (typeof settings !== 'undefined' && settings) ? settings.appName : 'Evoke LINK'; %>
+  <title><%= typeof title !== 'undefined' ? title + ' — ' + appName : appName %></title>
   <link rel="stylesheet" href="/css/app.css" />
+  <% if (typeof settings !== 'undefined' && settings && settings.faviconPath) { %><link rel="icon" href="<%= settings.faviconPath %>" /><% } %>
+  <%- typeof brandStyleTag !== 'undefined' ? brandStyleTag : '' %>
+  <%- typeof customStyleTag !== 'undefined' ? customStyleTag : '' %>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-brand-50 via-slate-50 to-brand-100 text-slate-800 antialiased flex items-center justify-center p-6">
-  <%- body %>
+<body class="min-h-screen text-slate-800 antialiased" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
+  <%- typeof bgOverlay !== 'undefined' ? bgOverlay : '' %>
+  <div class="relative z-10 min-h-screen flex items-center justify-center p-6">
+    <%- body %>
+  </div>
 </body>
 </html>

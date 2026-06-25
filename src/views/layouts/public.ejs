@@ -3,16 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title><%= typeof title !== 'undefined' ? title + ' — Evoke LINK' : 'Evoke LINK' %></title>
+  <% const appName = (typeof settings !== 'undefined' && settings) ? settings.appName : 'Evoke LINK'; %>
+  <title><%= typeof title !== 'undefined' ? title + ' — ' + appName : appName %></title>
   <link rel="stylesheet" href="/css/app.css" />
+  <% if (typeof settings !== 'undefined' && settings && settings.faviconPath) { %><link rel="icon" href="<%= settings.faviconPath %>" /><% } %>
+  <%- typeof brandStyleTag !== 'undefined' ? brandStyleTag : '' %>
+  <%- typeof customStyleTag !== 'undefined' ? customStyleTag : '' %>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-brand-50 via-white to-brand-100 text-slate-800 antialiased">
-  <div class="min-h-screen flex flex-col">
+<%
+  const dark = (typeof bgDark !== 'undefined' && bgDark);
+  const logoCfg = (typeof settings !== 'undefined' && settings && settings.logo) ? settings.logo : { size: 36, align: 'left' };
+  const justify = { left: 'justify-start', center: 'justify-center', right: 'justify-end' }[logoCfg.align] || 'justify-start';
+%>
+<body class="min-h-screen text-slate-800 antialiased" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
+  <%- typeof bgOverlay !== 'undefined' ? bgOverlay : '' %>
+  <div class="relative z-10 min-h-screen flex flex-col">
     <header class="px-6 py-5">
-      <div class="flex items-center gap-2">
-        <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
-        <span class="font-semibold tracking-tight">Evoke LINK</span>
+      <div class="flex items-center gap-2 w-full <%= justify %> <%= dark ? 'text-white' : '' %>">
+        <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
+          <img src="<%= settings.logoPath %>" alt="<%= appName %>" style="height: <%= logoCfg.size %>px" class="max-w-[70%] object-contain" />
+        <% } else { %>
+          <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
+          <span class="font-semibold tracking-tight"><%= appName %></span>
+        <% } %>
       </div>
     </header>
 
@@ -20,8 +34,8 @@
       <%- body %>
     </main>
 
-    <footer class="px-6 py-5 text-center text-xs text-slate-400">
-      Evoke LINK · bezpieczna wymiana plików
+    <footer class="px-6 py-5 text-center text-xs <%= dark ? 'text-slate-300/70' : 'text-slate-400' %>">
+      <%= (typeof settings !== 'undefined' && settings && settings.texts.footer) ? settings.texts.footer : (appName + ' · bezpieczna wymiana plików') %>
     </footer>
   </div>
 </body>

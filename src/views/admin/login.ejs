@@ -1,8 +1,18 @@
+<%
+  const appName = (typeof settings !== 'undefined' && settings) ? settings.appName : 'Evoke LINK';
+  const dark = (typeof bgDark !== 'undefined' && bgDark);
+  const logoCfg = (typeof settings !== 'undefined' && settings && settings.logo) ? settings.logo : { size: 36, align: 'left' };
+  const justify = { left: 'justify-start', center: 'justify-center', right: 'justify-end' }[logoCfg.align] || 'justify-start';
+%>
 <div class="w-full max-w-sm">
-  <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/60 p-8">
-    <div class="flex items-center gap-2 mb-6">
-      <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
-      <span class="font-semibold text-lg tracking-tight">Evoke LINK</span>
+  <div class="bg-white rounded-2xl shadow-xl shadow-slate-900/10 p-8">
+    <div class="flex items-center gap-2 mb-6 <%= justify %>">
+      <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
+        <img src="<%= settings.logoPath %>" alt="<%= appName %>" style="height: <%= logoCfg.size %>px" class="max-w-[70%] object-contain" />
+      <% } else { %>
+        <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
+        <span class="font-semibold text-lg tracking-tight"><%= appName %></span>
+      <% } %>
     </div>
 
     <h1 class="text-xl font-semibold mb-1">Zaloguj się</h1>
@@ -31,5 +41,5 @@
       </button>
     </form>
   </div>
-  <p class="text-center text-xs text-slate-400 mt-6">Evoke LINK · prywatny system wymiany plików</p>
+  <p class="text-center text-xs mt-6 <%= dark ? 'text-white/80' : 'text-slate-500' %>"><%= (typeof settings !== 'undefined' && settings && settings.texts.footer) ? settings.texts.footer : (appName + ' · prywatny system wymiany plików') %></p>
 </div>

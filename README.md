@@ -12,7 +12,8 @@ Stos: **Node.js + Express**, **SQLite** (przez Prisma), szablony **EJS + Tailwin
 - 📁 **Projekty** — grupują transfery (wysłane i odebrane) oraz pełną historię zdarzeń.
 - 👤 **Panel klienta** — link `/p/:token` z plikami widocznymi dla klienta (pobieranie + upload), opcjonalne hasło.
 - 🔔 **Dashboard i powiadomienia** — aktywne transfery, miejsce na dysku, dzwonek z licznikiem nieprzeczytanych.
-- 🎨 **Customizacja** (w toku) — logo, kolory i treści zmieniane z panelu, bez kodu.
+- 🎨 **Customizacja** — z panelu, bez kodu: logo (rozmiar + pozycja, bezpieczny upload SVG), favicon, nazwa, kolor przewodni, osobne kolory panelu (akcent / sidebar / tło / czcionka), tło stron klienta (presety, **własny gradient**, obraz, **ziarno z regulacją mocy**), treści i stopka. Strona logowania brandowana jak strony klienta. Pole na **własny CSS** dla zmian ponad dostępne opcje.
+- 🔑 **Konto** — zmiana hasła administratora z panelu (zapis do bazy, fallback do `.env`).
 
 > Aplikacja dla jednej agencji: logowanie administratora, klienci korzystają wyłącznie z linków (bez kont).
 
@@ -125,5 +126,5 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Etap 3** — projekty (grupowanie transferów) + historia zdarzeń
 - [x] **Etap 4** — dashboard (realne dane + ostatnia aktywność) + powiadomienia (dzwonek, licznik)
 - [x] **Panel klienta** — portal projektu `/p/:token` (hasło, widoczność per transfer, pobieranie + upload)
-- [ ] **Etap 5** — customizacja (branding, kolory, treści)
-- [ ] **Etap 6** — premium UI strony klienta
+- [x] **Etap 5** — customizacja (logo, favicon, nazwa, kolor, treści z panelu; kolor przez zmienne CSS bez rebuildu)
+- [x] **Etap 6** — rozszerzona customizacja: tła stron klienta (presety / własny gradient / obraz / ziarno), osobne kolory panelu, logo (rozmiar + pozycja), brandowane logowanie, zmiana hasła admina, pole na własny CSS

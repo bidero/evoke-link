@@ -1,0 +1,43 @@
+<div class="max-w-md">
+  <% if (saved) { %>
+    <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">
+      <%- icon('check', { size: 16, cls: 'text-green-600' }) %> Hasło zostało zmienione.
+    </div>
+  <% } %>
+  <% if (error) { %>
+    <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
+  <% } %>
+
+  <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
+    <div>
+      <h2 class="text-sm font-semibold text-slate-700">Konto administratora</h2>
+      <p class="text-sm text-slate-500 mt-1"><%= email %></p>
+      <p class="text-xs mt-2 <%= usingDbPassword ? 'text-slate-400' : 'text-amber-600' %>">
+        <% if (usingDbPassword) { %>
+          Hasło ustawione w panelu (zapisane w bazie).
+        <% } else { %>
+          Logowanie korzysta z hasła z pliku .env. Ustaw nowe hasło poniżej, aby zarządzać nim z panelu.
+        <% } %>
+      </p>
+    </div>
+
+    <form method="POST" action="/admin/account/password" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1" for="currentPassword">Obecne hasło</label>
+        <input id="currentPassword" name="currentPassword" type="password" required autocomplete="current-password"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1" for="newPassword">Nowe hasło <span class="text-slate-400 font-normal">(min. 8 znaków)</span></label>
+        <input id="newPassword" name="newPassword" type="password" required minlength="8" autocomplete="new-password"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1" for="confirmPassword">Powtórz nowe hasło</label>
+        <input id="confirmPassword" name="confirmPassword" type="password" required minlength="8" autocomplete="new-password"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </div>
+      <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Zmień hasło</button>
+    </form>
+  </div>
+</div>

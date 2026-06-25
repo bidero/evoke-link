@@ -96,7 +96,10 @@ model Settings {
   appName      String   @default("Evoke LINK")
   logoPath     String?
   faviconPath  String?
-  colors       String?  // JSON: { primary, button, text, background }
+  colors       String?  // JSON: { primary, adminAccent, adminText, adminSidebar, adminBg }
   texts        String?  // JSON: { heroTitle, heroSubtitle, footer, messages }
+  background   String?  // JSON: { type, preset, color, custom, imagePath, overlay, grain, grainStrength } — tło stron klienta
+  logo         String?  // JSON: { size, align } — prezentacja logo (wysokość px, wyrównanie)
+  customCss    String?  // dowolny CSS wstrzykiwany do stron (escape hatch dla admina)
   updatedAt    DateTime @updatedAt
 }

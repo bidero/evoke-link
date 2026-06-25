@@ -51,7 +51,8 @@ storage/                  pliki użytkowników + evoke.db (poza repo, .gitignore
 - **Transfer** — JEDEN model dla obu kierunków: `direction` = `outgoing` (agencja→klient, `/t/:token`) lub `incoming` (klient→agencja, `/upload/:token`). Pola: `token`, `passwordHash?`, `expiresAt?`, `maxDownloads?`, `downloadCount`, `clientVisible` (czy w panelu klienta), `projectId?`, `status` active|expired|deleted.
 - **File** — `originalName`, `storedName`, `storedPath` (względna do storage), `size` (BigInt!), `mimeType`. onDelete Cascade.
 - **Event** — historia + powiadomienia + dane widżetów. `type` (created|downloaded|uploaded|updated|expired|error), `projectId?`, `transferId?`, `isRead`, `meta` (JSON string).
-- **Settings** — branding (1 rekord) — używane dopiero w Etapie 5.
+- **Settings** — branding/customizacja (1 rekord, `id=1`). Pola: `appName`, `logoPath`, `faviconPath`, `colors` (JSON: `primary`, `adminAccent`, `adminText`, `adminSidebar`, `adminBg`), `texts` (JSON: `heroTitle`, `heroSubtitle`, `footer`), `background` (JSON: `type` gradient|custom|image|solid, `preset`, `color`, `custom` {c1,c2,c3,angle}, `imagePath`, `overlay`, `grain`, `grainStrength`), `logo` (JSON: `size`, `align`), `customCss`.
+- **User** — w MVP login z `.env`, ale `auth.service.setAdminPassword` zapisuje hash admina do tej tabeli (po zmianie hasła w panelu baza ma pierwszeństwo nad `.env`).
 
 ## Konwencje i pułapki (WAŻNE)
 - **Warstwa storage** (`storage.service.js`) — wszystkie operacje na plikach przez nią (łatwa zmiana na S3). Pliki w `storage/transfers/<token>/`.
@@ -64,6 +65,13 @@ storage/                  pliki użytkowników + evoke.db (poza repo, .gitignore
 - **Migracje**: `prisma migrate dev` bywa nieinteraktywne i odmawia przy ostrzeżeniach (np. nowy UNIQUE index). Wtedy: napisz `prisma/migrations/<ts>_nazwa/migration.sql` ręcznie i `prisma migrate deploy`.
 - **BigInt**: `File.size` to BigInt — formatować przez `fmt.bytes()`, nie serializować wprost do JSON.
 - **Po zmianie klas Tailwind**: `npm run build:css`. **Po zmianie tylko widoków EJS**: wystarczy refresh (dev nie cache'uje).
+- **Customizacja (Etap 5–6)** — kluczowe miejsca:
+  - Kolory bez rebuildu: paleta `brand-*` to zmienne CSS (`--brand-*`); middleware w `app.js` wstrzykuje `brandStyleTag` (z `primary`, dla stron klienta/logowania) i `adminStyleTag` (z `adminAccent` + `--admin-bg/-text/-sidebar/-sidebar-text`, dla panelu). `utils/color.js` generuje paletę + `readableText` (auto-kontrast).
+  - Tło stron klienta: `utils/background.js` (`bodyStyle`/`overlayHtml`/`isDark`, presety + własny gradient `custom`, ziarno z `grainStrength`). W layoutach: `bgStyle` na `<body>`, `bgOverlay` jako nakładki (`z-0`), treść w `z-10`.
+  - **Tekst na tle**: `<body>` stron klienta/logowania jest ZAWSZE ciemny (`text-slate-800`) — bo treść siedzi w białych kartach. Jasny kolor (gdy `bgDark`) dostaje tylko „chrome" na gradiencie: nagłówek (logo/nazwa) i stopka. NIE ustawiać jasnego tekstu na całym `body` (regresja: niewidoczne `h1` na kartach).
+  - **x-data w `settings.ejs`**: stan wstrzykiwany przez `x-data="settingsForm(<%= JSON.stringify(formState) %>)"` — MUSI być `<%=` (HTML-escape), NIE `<%-`. Przy `<%-` cudzysłowy JSON-a urywają atrybut → Alpine pada → color-inputy czernieją (był bug „drugi zapis = czarne").
+  - Upload brandingu: `middleware/brandingUpload.js` (pola `logo`/`favicon`/`bg`, do 5 MB, też SVG). SVG czyszczone przez `utils/svgSanitize.js`. Własny CSS czyszczony przez `utils/css.js` (usuwa `<`), wstrzykiwany jako `customStyleTag` we WSZYSTKICH layoutach.
+  - Zmiana hasła: strona `/admin/account` (`account.controller`), `auth.service.verifyCredentials` jest **async** (sprawdza DB, potem `.env`).
 
 ## Testy
 Brak frameworka — używamy doraźnych skryptów E2E: krótki `scripts/*-test.js` startuje `app.listen(0)`, woła endpointy przez globalny `fetch`/`FormData` (Node 18+), sprząta dane i kasuje się po przebiegu. Uwaga: cookie-session ustawia 2 ciasteczka (`evoke` + `evoke.sig`) — w teście brać oba przez `res.headers.getSetCookie()`.
@@ -75,8 +83,9 @@ Brak frameworka — używamy doraźnych skryptów E2E: krótki `scripts/*-test.j
 - [x] Etap 3 — projekty + historia
 - [x] Etap 4 — dashboard (realne dane) + powiadomienia (dzwonek, licznik)
 - [x] Panel klienta — portal projektu `/p/:token` (hasło, widoczność per transfer `clientVisible`, pobieranie + upload)
-- [ ] Etap 5 — customizacja (logo/kolory/treści z panelu; model Settings)
-- [ ] Etap 6 — premium UI strony klienta (tło/gradient/ziarno) + Alpine lokalnie + CSP
+- [x] Etap 5 — customizacja (logo/kolory/treści z panelu; model Settings; kolor bez rebuildu)
+- [x] Etap 6 — rozszerzona customizacja: tła stron klienta (presety/własny gradient/obraz/ziarno z mocą), osobne kolory panelu (akcent/sidebar/tło/czcionka, auto-kontrast), logo (rozmiar+pozycja, SVG sanityzowane), brandowane logowanie, zmiana hasła admina (DB), pole na własny CSS
+- [ ] Do zrobienia: Alpine lokalnie zamiast CDN + włączenie CSP; chunked upload przed produkcją
 
 ## Workflow Git
 Nie pushować automatycznie. Bump wersji + wpis w changelogu dopiero po potwierdzeniu. W komunikatach/URL-ach redagować token dostępowy.

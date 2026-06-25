@@ -7,6 +7,9 @@ const { showDashboard } = require('../controllers/dashboard.controller');
 const transfers = require('../controllers/transfer.controller');
 const projects = require('../controllers/project.controller');
 const notifications = require('../controllers/notification.controller');
+const settings = require('../controllers/settings.controller');
+const account = require('../controllers/account.controller');
+const brandingUpload = require('../middleware/brandingUpload');
 const events = require('../services/event.service');
 
 const router = express.Router();
@@ -53,9 +56,20 @@ router.get('/notifications', notifications.index);
 router.post('/notifications/read-all', notifications.readAll);
 router.get('/notifications/:id/open', notifications.open);
 
-// Zaślepka pozostałych sekcji — wypełnimy w kolejnych etapach.
-router.get('/settings', (req, res) =>
-  res.render('admin/placeholder', { title: 'Ustawienia', active: 'settings', heading: 'Ustawienia', etap: 'Etap 5' })
+// Customizacja (Etap 5 + 6: kolory panelu, tło stron klienta).
+router.get('/settings', settings.showSettings);
+router.post(
+  '/settings',
+  brandingUpload.fields([
+    { name: 'logo', maxCount: 1 },
+    { name: 'favicon', maxCount: 1 },
+    { name: 'bg', maxCount: 1 },
+  ]),
+  settings.updateSettings
 );
+
+// Konto admina — zmiana hasła.
+router.get('/account', account.showAccount);
+router.post('/account/password', account.changePassword);
 
 module.exports = router;

@@ -3,17 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title><%= typeof title !== 'undefined' ? title + ' — Evoke LINK' : 'Evoke LINK' %></title>
+  <% const appName = (typeof settings !== 'undefined' && settings) ? settings.appName : 'Evoke LINK'; %>
+  <title><%= typeof title !== 'undefined' ? title + ' — ' + appName : appName %></title>
   <link rel="stylesheet" href="/css/app.css" />
+  <% if (typeof settings !== 'undefined' && settings && settings.faviconPath) { %><link rel="icon" href="<%= settings.faviconPath %>" /><% } %>
+  <%- typeof adminStyleTag !== 'undefined' ? adminStyleTag : '' %>
+  <%- typeof customStyleTag !== 'undefined' ? customStyleTag : '' %>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-slate-50 text-slate-800 antialiased">
+<body class="bg-[var(--admin-bg)] antialiased" style="color: var(--admin-text)">
   <div class="min-h-screen flex">
     <!-- Pasek boczny -->
-    <aside class="w-60 shrink-0 bg-white border-r border-slate-200 flex flex-col">
-      <div class="h-16 flex items-center gap-2 px-6 border-b border-slate-100">
-        <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
-        <span class="font-semibold tracking-tight">Evoke LINK</span>
+    <aside class="w-60 shrink-0 bg-[var(--admin-sidebar)] border-r border-slate-200/60 flex flex-col" style="color: var(--admin-sidebar-text)">
+      <div class="h-16 flex items-center gap-2 px-6 border-b border-black/5">
+        <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
+          <img src="<%= settings.logoPath %>" alt="<%= appName %>" class="h-8 max-w-[140px] object-contain" />
+        <% } else { %>
+          <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
+          <span class="font-semibold tracking-tight"><%= appName %></span>
+        <% } %>
       </div>
       <nav class="flex-1 px-3 py-4 space-y-1 text-sm">
         <% const items = [
@@ -26,7 +34,7 @@
         <% const unread = (typeof unreadCount !== 'undefined') ? unreadCount : 0; %>
         <% items.forEach(function(it){ %>
           <a href="<%= it.href %>"
-             class="flex items-center justify-between px-3 py-2 rounded-lg transition <%= (typeof active !== 'undefined' && active === it.key) ? 'bg-brand-50 text-brand-700 font-medium' : 'text-slate-600 hover:bg-slate-100' %>">
+             class="flex items-center justify-between px-3 py-2 rounded-lg transition <%= (typeof active !== 'undefined' && active === it.key) ? 'bg-brand-50 text-brand-700 font-medium' : 'opacity-70 hover:opacity-100 hover:bg-black/5' %>">
             <span><%= it.label %></span>
             <% if (it.key === 'notifications' && unread > 0) { %>
               <span class="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-brand-600 text-white text-xs font-semibold"><%= unread %></span>
@@ -34,9 +42,13 @@
           </a>
         <% }); %>
       </nav>
-      <div class="p-3 border-t border-slate-100">
+      <div class="p-3 border-t border-black/5 space-y-1">
+        <a href="/admin/account"
+           class="block px-3 py-2 rounded-lg text-sm transition <%= (typeof active !== 'undefined' && active === 'account') ? 'bg-brand-50 text-brand-700 font-medium' : 'opacity-70 hover:opacity-100 hover:bg-black/5' %>">
+          Konto i hasło
+        </a>
         <form method="POST" action="/admin/logout">
-          <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">
+          <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-sm opacity-70 hover:opacity-100 hover:bg-black/5">
             Wyloguj
           </button>
         </form>
@@ -45,17 +57,17 @@
 
     <!-- Główna kolumna -->
     <div class="flex-1 flex flex-col min-w-0">
-      <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8">
+      <header class="h-16 bg-[var(--admin-sidebar)] border-b border-black/5 flex items-center justify-between px-8" style="color: var(--admin-sidebar-text)">
         <h1 class="text-lg font-semibold"><%= typeof title !== 'undefined' ? title : '' %></h1>
         <div class="flex items-center gap-4">
-          <a href="/admin/notifications" class="relative text-slate-500 hover:text-slate-700" title="Powiadomienia">
+          <a href="/admin/notifications" class="relative opacity-70 hover:opacity-100" title="Powiadomienia">
             <%- icon('bell', { size: 20, cls: '' }) %>
             <% const unreadH = (typeof unreadCount !== 'undefined') ? unreadCount : 0; %>
             <% if (unreadH > 0) { %>
               <span class="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold"><%= unreadH %></span>
             <% } %>
           </a>
-          <span class="text-sm text-slate-500"><%= typeof currentUser !== 'undefined' && currentUser ? currentUser.email : '' %></span>
+          <span class="text-sm opacity-60"><%= typeof currentUser !== 'undefined' && currentUser ? currentUser.email : '' %></span>
         </div>
       </header>
       <main class="flex-1 p-8">

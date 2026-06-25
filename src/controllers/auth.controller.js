@@ -14,20 +14,24 @@ function showLogin(req, res) {
   });
 }
 
-function doLogin(req, res) {
-  const { email, password } = req.body;
+async function doLogin(req, res, next) {
+  try {
+    const { email, password } = req.body;
 
-  if (verifyCredentials(email, password)) {
-    req.session.user = { email: config.admin.email, name: 'Administrator' };
-    return res.redirect('/admin');
+    if (await verifyCredentials(email, password)) {
+      req.session.user = { email: config.admin.email, name: 'Administrator' };
+      return res.redirect('/admin');
+    }
+
+    res.status(401).render('admin/login', {
+      title: 'Logowanie',
+      layout: 'layouts/auth',
+      error: 'Nieprawidłowy e-mail lub hasło.',
+      email: email || '',
+    });
+  } catch (err) {
+    next(err);
   }
-
-  res.status(401).render('admin/login', {
-    title: 'Logowanie',
-    layout: 'layouts/auth',
-    error: 'Nieprawidłowy e-mail lub hasło.',
-    email: email || '',
-  });
 }
 
 function doLogout(req, res) {
