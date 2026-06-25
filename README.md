@@ -8,6 +8,7 @@ Stos: **Node.js + Express**, **SQLite** (przez Prisma), szablony **EJS + Tailwin
 
 ## Funkcje
 - 📤 **Transfery wychodzące** — wyślij pliki/folder, link `/t/:token`, hasło, data wygaśnięcia, limit pobrań, pobieranie pojedyncze lub ZIP.
+- 🧩 **Upload dużych plików (chunked)** — pliki dzielone na kawałki po stronie przeglądarki (omija limity rozmiaru requestu hostingu współdzielonego); działa we wszystkich uploadach (panel, `/upload`, panel klienta).
 - 📥 **Uploady przychodzące** — link `/upload/:token`, klient wgrywa pliki, agencja dostaje e-mail i powiadomienie.
 - 📁 **Projekty** — grupują transfery (wysłane i odebrane) oraz pełną historię zdarzeń.
 - 👤 **Panel klienta** — link `/p/:token` z plikami widocznymi dla klienta (pobieranie + upload), opcjonalne hasło.

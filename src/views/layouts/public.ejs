@@ -9,6 +9,7 @@
   <% if (typeof settings !== 'undefined' && settings && settings.faviconPath) { %><link rel="icon" href="<%= settings.faviconPath %>" /><% } %>
   <%- typeof brandStyleTag !== 'undefined' ? brandStyleTag : '' %>
   <%- typeof customStyleTag !== 'undefined' ? customStyleTag : '' %>
+  <script src="/js/chunked-upload.js"></script>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <%
@@ -29,6 +30,15 @@
         <% } %>
       </div>
     </header>
+
+    <% if (typeof settings !== 'undefined' && settings && settings.texts && settings.texts.heroTitle) { %>
+      <section class="px-6 pt-2 pb-4 text-center <%= dark ? 'text-white' : 'text-slate-800' %>">
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight"><%= settings.texts.heroTitle %></h1>
+        <% if (settings.texts.heroSubtitle) { %>
+          <p class="mt-2 text-sm sm:text-base <%= dark ? 'text-slate-200/80' : 'text-slate-500' %>"><%= settings.texts.heroSubtitle %></p>
+        <% } %>
+      </section>
+    <% } %>
 
     <main class="flex-1 flex items-center justify-center px-6 py-8">
       <%- body %>

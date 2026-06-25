@@ -79,22 +79,25 @@ function uploader() {
     onDrop(e) { this.dragging = false; this.addFiles(e.dataTransfer.files); },
     remove(i) { this.files.splice(i, 1); },
     human(b) { if (!b) return '0 B'; const u=['B','KB','MB','GB','TB']; const i=Math.floor(Math.log(b)/Math.log(1024)); return (b/Math.pow(1024,i)).toFixed(i===0?0:1)+' '+u[i]; },
-    submit(e) {
+    async submit(e) {
       if (!this.files.length || this.uploading) return;
       const form = e.target;
-      const data = new FormData();
-      this.files.forEach((f) => data.append('files', f));
-      ['name','email'].forEach((n) => { if (form[n] && form[n].value) data.append(n, form[n].value); });
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', window.location.pathname);
-      xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) this.progress = Math.round((ev.loaded/ev.total)*100); };
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 400) { document.open(); document.write(xhr.responseText); document.close(); }
-        else { this.uploading = false; alert('Błąd wysyłania (' + xhr.status + ').'); }
-      };
-      xhr.onerror = () => { this.uploading = false; alert('Błąd sieci.'); };
       this.uploading = true; this.progress = 0;
-      xhr.send(data);
+      try {
+        const uploadId = await window.chunkedUpload(this.files, window.location.pathname.replace(/\/$/, '') + '/chunk', (p) => { this.progress = p; });
+        const body = new URLSearchParams();
+        ['name','email'].forEach((n) => { if (form[n] && form[n].value) body.append(n, form[n].value); });
+        const res = await fetch(window.location.pathname, {
+          method: 'POST',
+          headers: { 'X-Upload-Id': uploadId, 'Content-Type': 'application/x-www-form-urlencoded' },
+          body,
+        });
+        if (res.ok) { const html = await res.text(); document.open(); document.write(html); document.close(); }
+        else { this.uploading = false; alert('Błąd wysyłania (' + res.status + ').'); }
+      } catch (err) {
+        this.uploading = false;
+        alert(err && err.message ? err.message : 'Błąd wysyłania.');
+      }
     },
   };
 }

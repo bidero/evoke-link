@@ -112,20 +112,23 @@ function uploader() {
     onDrop(e) { this.dragging = false; this.addFiles(e.dataTransfer.files); },
     remove(i) { this.files.splice(i, 1); },
     human(b) { if (!b) return '0 B'; const u=['B','KB','MB','GB','TB']; const i=Math.floor(Math.log(b)/Math.log(1024)); return (b/Math.pow(1024,i)).toFixed(i===0?0:1)+' '+u[i]; },
-    submit() {
+    async submit() {
       if (!this.files.length || this.uploading) return;
-      const data = new FormData();
-      this.files.forEach((f) => data.append('files', f));
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', window.location.pathname.replace(/\/$/, '') + '/upload');
-      xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) this.progress = Math.round((ev.loaded/ev.total)*100); };
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 400) { window.location = xhr.responseURL || (window.location.pathname + '?sent=1'); }
-        else { this.uploading = false; alert('Błąd wysyłania (' + xhr.status + ').'); }
-      };
-      xhr.onerror = () => { this.uploading = false; alert('Błąd sieci.'); };
+      const path = window.location.pathname.replace(/\/$/, '');
       this.uploading = true; this.progress = 0;
-      xhr.send(data);
+      try {
+        const uploadId = await window.chunkedUpload(this.files, path + '/chunk', (p) => { this.progress = p; });
+        const res = await fetch(path + '/upload', {
+          method: 'POST',
+          headers: { 'X-Upload-Id': uploadId, 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams(),
+        });
+        if (res.ok) { window.location = res.url || (window.location.pathname + '?sent=1'); }
+        else { this.uploading = false; alert('Błąd wysyłania (' + res.status + ').'); }
+      } catch (err) {
+        this.uploading = false;
+        alert(err && err.message ? err.message : 'Błąd wysyłania.');
+      }
     },
   };
 }

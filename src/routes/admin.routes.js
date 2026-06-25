@@ -2,7 +2,7 @@
 // Kolejne sekcje (projekty, transfery, ustawienia) dojdą w następnych etapach.
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
-const upload = require('../middleware/upload');
+const { rawChunk, receiveChunk, receiveUpload } = require('../middleware/chunkUpload');
 const { showDashboard } = require('../controllers/dashboard.controller');
 const transfers = require('../controllers/transfer.controller');
 const projects = require('../controllers/project.controller');
@@ -33,7 +33,8 @@ router.get('/', showDashboard);
 router.get('/transfers', transfers.listTransfers);
 router.get('/transfers/new', transfers.showCreateForm);
 router.get('/transfers/new-upload', transfers.showCreateUploadForm);
-router.post('/transfers', upload.array('files'), transfers.createTransfer); // wychodzący
+router.post('/transfers/chunk', rawChunk, receiveChunk); // kawałki uploadu (przed :id!)
+router.post('/transfers', receiveUpload('files'), transfers.createTransfer); // wychodzący
 router.post('/transfers/upload', transfers.createUpload); // link uploadu (przychodzący)
 router.get('/transfers/:id', transfers.showTransfer);
 router.get('/transfers/:id/edit', transfers.showEditForm);

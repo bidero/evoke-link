@@ -71,7 +71,12 @@ storage/                  pliki użytkowników + evoke.db (poza repo, .gitignore
   - **Tekst na tle**: `<body>` stron klienta/logowania jest ZAWSZE ciemny (`text-slate-800`) — bo treść siedzi w białych kartach. Jasny kolor (gdy `bgDark`) dostaje tylko „chrome" na gradiencie: nagłówek (logo/nazwa) i stopka. NIE ustawiać jasnego tekstu na całym `body` (regresja: niewidoczne `h1` na kartach).
   - **x-data w `settings.ejs`**: stan wstrzykiwany przez `x-data="settingsForm(<%= JSON.stringify(formState) %>)"` — MUSI być `<%=` (HTML-escape), NIE `<%-`. Przy `<%-` cudzysłowy JSON-a urywają atrybut → Alpine pada → color-inputy czernieją (był bug „drugi zapis = czarne").
   - Upload brandingu: `middleware/brandingUpload.js` (pola `logo`/`favicon`/`bg`, do 5 MB, też SVG). SVG czyszczone przez `utils/svgSanitize.js`. Własny CSS czyszczony przez `utils/css.js` (usuwa `<`), wstrzykiwany jako `customStyleTag` we WSZYSTKICH layoutach.
-  - Zmiana hasła: strona `/admin/account` (`account.controller`), `auth.service.verifyCredentials` jest **async** (sprawdza DB, potem `.env`).
+  - Zmiana hasła: strona `/admin/account` (`account.controller`), `auth.service.verifyCredentials` jest **async** (sprawdza DB, potem `.env`). Reset z CLI: `npm run set-password -- "haslo"` / `-- --clear`.
+  - Hero/podpis: renderowane w `layouts/public.ejs` (blok nad kartą, gdy `texts.heroTitle` ustawiony), kolor adaptacyjny do jasnego/ciemnego tła.
+- **Chunked upload (dzielenie dużych plików)** — omija limit rozmiaru requestu hostingu. Architektura drop-in:
+  - Klient: `public/js/chunked-upload.js` → `window.chunkedUpload(files, '<endpoint>/chunk', onProgress)` dzieli pliki na 5 MB i wysyła sekwencyjnie, zwraca `uploadId`. Potem widok wysyła żądanie tworzące (urlencoded) z nagłówkiem `X-Upload-Id`.
+  - Serwer: `chunk.service.js` skleja kawałki w `storage/tmp/chunks/<uploadId>/`; `middleware/chunkUpload.js` → `receiveChunk` (endpoint `/chunk`, surowe bajty) + `receiveUpload(field)` zastępuje `multer.array` (gdy jest `X-Upload-Id` → składa pliki w `req.files` w kształcie multera, inaczej multipart fallback). **Kontrolery i serwisy bez zmian** — `req.files` ma ten sam kształt `{ originalname, path, size, mimetype }`.
+  - Endpointy `/chunk` MUSZĄ być przed trasami `:id` (np. `/transfers/chunk` przed `/transfers/:id`). Porzucone sesje sprząta `chunk.sweepOld()` (start aplikacji, >24h).
 
 ## Testy
 Brak frameworka — używamy doraźnych skryptów E2E: krótki `scripts/*-test.js` startuje `app.listen(0)`, woła endpointy przez globalny `fetch`/`FormData` (Node 18+), sprząta dane i kasuje się po przebiegu. Uwaga: cookie-session ustawia 2 ciasteczka (`evoke` + `evoke.sig`) — w teście brać oba przez `res.headers.getSetCookie()`.
@@ -85,7 +90,9 @@ Brak frameworka — używamy doraźnych skryptów E2E: krótki `scripts/*-test.j
 - [x] Panel klienta — portal projektu `/p/:token` (hasło, widoczność per transfer `clientVisible`, pobieranie + upload)
 - [x] Etap 5 — customizacja (logo/kolory/treści z panelu; model Settings; kolor bez rebuildu)
 - [x] Etap 6 — rozszerzona customizacja: tła stron klienta (presety/własny gradient/obraz/ziarno z mocą), osobne kolory panelu (akcent/sidebar/tło/czcionka, auto-kontrast), logo (rozmiar+pozycja, SVG sanityzowane), brandowane logowanie, zmiana hasła admina (DB), pole na własny CSS
-- [ ] Do zrobienia: Alpine lokalnie zamiast CDN + włączenie CSP; chunked upload przed produkcją
+- [x] Chunked upload — dzielenie dużych plików na 5 MB (panel + /upload + portal), drop-in z fallbackiem multipart, sprawdzone E2E (integralność md5)
+- [x] Hero/podpis renderowane na stronach klienta; reset hasła z CLI (`npm run set-password`)
+- [ ] Do zrobienia: Alpine lokalnie zamiast CDN + włączenie CSP; podbicie multera do 2.x (1 high vuln); redesign WeTransfer + więcej opcji wyglądu
 
 ## Workflow Git
 Nie pushować automatycznie. Bump wersji + wpis w changelogu dopiero po potwierdzeniu. W komunikatach/URL-ach redagować token dostępowy.

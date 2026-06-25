@@ -9,6 +9,7 @@
   <% if (typeof settings !== 'undefined' && settings && settings.faviconPath) { %><link rel="icon" href="<%= settings.faviconPath %>" /><% } %>
   <%- typeof adminStyleTag !== 'undefined' ? adminStyleTag : '' %>
   <%- typeof customStyleTag !== 'undefined' ? customStyleTag : '' %>
+  <script src="/js/chunked-upload.js"></script>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-[var(--admin-bg)] antialiased" style="color: var(--admin-text)">
