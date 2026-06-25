@@ -1,0 +1,74 @@
+<div class="max-w-2xl">
+  <a href="/admin/transfers/<%= transfer.id %>" class="text-sm text-slate-500 hover:text-slate-700">← Wróć do transferu</a>
+
+  <% if (error) { %>
+    <div class="mt-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
+  <% } %>
+
+  <form method="POST" action="/admin/transfers/<%= transfer.id %>" class="mt-4 space-y-5 bg-white rounded-2xl border border-slate-200 p-6">
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1">Projekt</label>
+      <select name="projectId" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+        <option value="">— bez projektu —</option>
+        <% projects.forEach(function(p){ %>
+          <option value="<%= p.id %>" <%= transfer.projectId === p.id ? 'selected' : '' %>><%= p.name %><%= p.clientName ? ' (' + p.clientName + ')' : '' %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1">Tytuł</label>
+      <input name="title" type="text" value="<%= transfer.title || '' %>"
+             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1">Wiadomość</label>
+      <textarea name="message" rows="2"
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= transfer.message || '' %></textarea>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Data wygaśnięcia</label>
+        <input name="expiresAt" type="datetime-local" value="<%= expiresLocal %>"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <p class="text-xs text-slate-400 mt-1">Puste = nigdy. Wydłużenie reaktywuje wygasły transfer.</p>
+      </div>
+
+      <% if (transfer.direction === 'outgoing') { %>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Limit pobrań</label>
+          <input name="maxDownloads" type="number" min="1" value="<%= transfer.maxDownloads || '' %>" placeholder="bez limitu"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <p class="text-xs text-slate-400 mt-1">Dotąd pobrano: <%= transfer.downloadCount %>.</p>
+        </div>
+      <% } %>
+    </div>
+
+    <div class="border-t border-slate-100 pt-4">
+      <label class="block text-sm font-medium text-slate-700 mb-1">Hasło</label>
+      <input name="password" type="text" autocomplete="off"
+             placeholder="<%= transfer.passwordHash ? 'wpisz, aby zmienić (puste = bez zmian)' : 'ustaw hasło (puste = brak)' %>"
+             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      <% if (transfer.passwordHash) { %>
+        <label class="inline-flex items-center gap-2 mt-2 text-sm text-slate-600">
+          <input type="checkbox" name="removePassword" class="rounded border-slate-300" />
+          Usuń hasło (transfer będzie publiczny)
+        </label>
+      <% } %>
+    </div>
+
+    <div class="border-t border-slate-100 pt-4">
+      <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+        <input type="checkbox" name="clientVisible" class="rounded border-slate-300" <%= transfer.clientVisible ? 'checked' : '' %> />
+        Widoczny w panelu klienta projektu
+      </label>
+      <p class="text-xs text-slate-400 mt-1">Jeśli zaznaczone, pliki tego transferu pojawią się w panelu klienta (/p/...) przypisanego projektu.</p>
+    </div>
+
+    <div class="flex items-center gap-3">
+      <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Zapisz zmiany</button>
+      <a href="/admin/transfers/<%= transfer.id %>" class="text-sm text-slate-500 hover:text-slate-700">Anuluj</a>
+    </div>
+  </form>
+</div>

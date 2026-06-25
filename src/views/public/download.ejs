@@ -1,0 +1,40 @@
+<div class="w-full max-w-lg">
+  <div class="bg-white rounded-3xl shadow-xl shadow-brand-200/40 p-8">
+    <h1 class="text-2xl font-semibold tracking-tight mb-1">
+      <%= transfer.title || 'Pliki dla Ciebie' %>
+    </h1>
+    <p class="text-sm text-slate-500 mb-6">
+      <%= transfer.files.length %> plik(ów) · razem
+      <% let tot = 0n; transfer.files.forEach(f => tot += BigInt(f.size)); %>
+      <%= fmt.bytes(tot) %>
+    </p>
+
+    <% if (transfer.message) { %>
+      <div class="rounded-xl bg-brand-50 border border-brand-100 text-slate-700 text-sm px-4 py-3 mb-6 whitespace-pre-line"><%= transfer.message %></div>
+    <% } %>
+
+    <!-- Pobierz wszystko -->
+    <a href="/t/<%= transfer.token %>/zip"
+       class="flex items-center justify-center gap-2 w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium py-3 transition mb-5">
+      <%- icon('download', { size: 18, cls: '' }) %> Pobierz wszystko (ZIP)
+    </a>
+
+    <!-- Lista plików -->
+    <div class="rounded-xl border border-slate-200 divide-y divide-slate-100">
+      <% transfer.files.forEach(function(f){ %>
+        <a href="/t/<%= transfer.token %>/file/<%= f.id %>"
+           class="flex items-center justify-between px-4 py-3 text-sm hover:bg-slate-50 transition group">
+          <span class="truncate mr-3 text-slate-700"><%= f.originalName %></span>
+          <span class="flex items-center gap-3 shrink-0">
+            <span class="text-slate-400"><%= fmt.bytes(f.size) %></span>
+            <span class="opacity-0 group-hover:opacity-100 transition"><%- icon('download', { size: 16 }) %></span>
+          </span>
+        </a>
+      <% }); %>
+    </div>
+
+    <% if (transfer.expiresAt) { %>
+      <p class="text-xs text-slate-400 text-center mt-5">Link wygasa: <%= fmt.date(transfer.expiresAt) %></p>
+    <% } %>
+  </div>
+</div>

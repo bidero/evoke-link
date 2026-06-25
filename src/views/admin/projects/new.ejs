@@ -1,0 +1,26 @@
+<div class="max-w-xl">
+  <% if (error) { %>
+    <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
+  <% } %>
+  <form method="POST" action="/admin/projects" class="space-y-5 bg-white rounded-2xl border border-slate-200 p-6">
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1">Nazwa projektu *</label>
+      <input name="name" type="text" required placeholder="np. Billboard dla marki odzieżowej"
+             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1">Klient (opcjonalnie)</label>
+      <input name="clientName" type="text" placeholder="np. Marka XYZ"
+             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1">Opis (opcjonalnie)</label>
+      <textarea name="description" rows="3"
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+    </div>
+    <div class="flex items-center gap-3">
+      <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Utwórz projekt</button>
+      <a href="/admin/projects" class="text-sm text-slate-500 hover:text-slate-700">Anuluj</a>
+    </div>
+  </form>
+</div>

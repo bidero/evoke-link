@@ -1,0 +1,140 @@
+<div class="max-w-2xl" x-data="uploader()">
+  <% if (error) { %>
+    <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
+  <% } %>
+
+  <form @submit.prevent="submit" class="space-y-6">
+    <!-- Strefa drag & drop -->
+    <div
+      @dragover.prevent="dragging = true"
+      @dragleave.prevent="dragging = false"
+      @drop.prevent="onDrop($event)"
+      :class="dragging ? 'border-brand-500 bg-brand-50' : 'border-slate-300 bg-white'"
+      class="rounded-2xl border-2 border-dashed p-10 text-center transition cursor-pointer"
+      @click="$refs.input.click()"
+    >
+      <input x-ref="input" type="file" multiple class="hidden" @change="addFiles($event.target.files)" />
+      <div class="text-slate-600">
+        <div class="flex justify-center mb-2"><%- icon('cloudUpload', { size: 36 }) %></div>
+        <p class="font-medium">Przeciągnij pliki tutaj</p>
+        <p class="text-sm text-slate-400">lub kliknij, aby wybrać</p>
+      </div>
+    </div>
+
+    <!-- Lista wybranych plików -->
+    <template x-if="files.length">
+      <div class="bg-white rounded-xl border border-slate-200 divide-y divide-slate-100">
+        <template x-for="(f, i) in files" :key="i">
+          <div class="flex items-center justify-between px-4 py-2.5 text-sm">
+            <span class="truncate mr-3" x-text="f.name"></span>
+            <div class="flex items-center gap-3 shrink-0">
+              <span class="text-slate-400" x-text="human(f.size)"></span>
+              <button type="button" @click="remove(i)" class="text-slate-400 hover:text-red-600"><%- icon('x', { size: 16, cls: '' }) %></button>
+            </div>
+          </div>
+        </template>
+        <div class="px-4 py-2 text-xs text-slate-500 bg-slate-50" x-text="files.length + ' plik(ów), razem ' + human(totalSize())"></div>
+      </div>
+    </template>
+
+    <!-- Opcje transferu -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-slate-700 mb-1">Projekt (opcjonalnie)</label>
+        <select name="projectId" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+          <option value="">— bez projektu —</option>
+          <% projects.forEach(function(p){ %>
+            <option value="<%= p.id %>" <%= selectedProjectId === p.id ? 'selected' : '' %>><%= p.name %><%= p.clientName ? ' (' + p.clientName + ')' : '' %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-slate-700 mb-1">Tytuł (opcjonalnie)</label>
+        <input name="title" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-slate-700 mb-1">Wiadomość (opcjonalnie)</label>
+        <textarea name="message" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Hasło (opcjonalnie)</label>
+        <input name="password" type="text" autocomplete="off" placeholder="bez hasła" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Limit pobrań (opcjonalnie)</label>
+        <input name="maxDownloads" type="number" min="1" placeholder="bez limitu" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-slate-700 mb-1">Data wygaśnięcia (opcjonalnie)</label>
+        <input name="expiresAt" type="datetime-local" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </div>
+    </div>
+
+    <!-- Pasek postępu -->
+    <template x-if="uploading">
+      <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+        <div class="bg-brand-600 h-2 transition-all" :style="'width:' + progress + '%'"></div>
+      </div>
+    </template>
+
+    <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+      <input type="checkbox" name="clientVisible" class="rounded border-slate-300" checked />
+      Widoczny w panelu klienta projektu (jeśli przypisany)
+    </label>
+
+    <div class="flex items-center gap-3">
+      <button type="submit" :disabled="uploading || !files.length"
+              class="rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium px-5 py-2.5 text-sm transition">
+        <span x-show="!uploading">Utwórz transfer</span>
+        <span x-show="uploading" x-text="'Wysyłanie… ' + progress + '%'"></span>
+      </button>
+      <a href="/admin/transfers" class="text-sm text-slate-500 hover:text-slate-700">Anuluj</a>
+    </div>
+  </form>
+</div>
+
+<script>
+function uploader() {
+  return {
+    files: [],
+    dragging: false,
+    uploading: false,
+    progress: 0,
+    addFiles(list) { this.files.push(...Array.from(list)); },
+    onDrop(e) { this.dragging = false; this.addFiles(e.dataTransfer.files); },
+    remove(i) { this.files.splice(i, 1); },
+    totalSize() { return this.files.reduce((s, f) => s + f.size, 0); },
+    human(b) {
+      if (!b) return '0 B';
+      const u = ['B','KB','MB','GB','TB']; const i = Math.floor(Math.log(b)/Math.log(1024));
+      return (b/Math.pow(1024,i)).toFixed(i===0?0:1) + ' ' + u[i];
+    },
+    submit(e) {
+      if (!this.files.length || this.uploading) return;
+      const form = e.target;
+      const data = new FormData();
+      this.files.forEach((f) => data.append('files', f));
+      ['title','message','password','maxDownloads','expiresAt','projectId'].forEach((n) => {
+        if (form[n] && form[n].value) data.append(n, form[n].value);
+      });
+      if (form['clientVisible'] && form['clientVisible'].checked) data.append('clientVisible', 'on');
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/admin/transfers');
+      xhr.upload.onprogress = (ev) => {
+        if (ev.lengthComputable) this.progress = Math.round((ev.loaded / ev.total) * 100);
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 400) {
+          window.location = xhr.responseURL || '/admin/transfers';
+        } else {
+          this.uploading = false;
+          alert('Błąd wysyłania (' + xhr.status + ').');
+        }
+      };
+      xhr.onerror = () => { this.uploading = false; alert('Błąd sieci podczas wysyłania.'); };
+      this.uploading = true; this.progress = 0;
+      xhr.send(data);
+    },
+  };
+}
+</script>

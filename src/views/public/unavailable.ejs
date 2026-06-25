@@ -1,0 +1,12 @@
+<div class="w-full max-w-sm">
+  <div class="bg-white rounded-3xl shadow-xl shadow-brand-200/40 p-8 text-center">
+    <% const map = {
+      not_found: { ic: 'search', title: 'Nie znaleziono', text: 'Ten link nie istnieje lub został usunięty.' },
+      expired:   { ic: 'clock', title: 'Link wygasł', text: 'Termin pobrania tych plików minął.' },
+      limit:     { ic: 'ban', title: 'Limit pobrań osiągnięty', text: 'Te pliki zostały już pobrane maksymalną liczbę razy.' }
+    }; const m = map[reason] || map.not_found; %>
+    <div class="flex justify-center mb-3"><%- icon(m.ic, { size: 40, cls: 'text-slate-400' }) %></div>
+    <h1 class="text-xl font-semibold mb-1"><%= m.title %></h1>
+    <p class="text-sm text-slate-500"><%= m.text %></p>
+  </div>
+</div>

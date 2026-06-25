@@ -1,0 +1,102 @@
+// Model danych Evoke Transfer.
+// SQLite na start (jeden plik). Aby przejść na PostgreSQL w przyszłości,
+// zmień provider na "postgresql" i DATABASE_URL — reszta zostaje.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Użytkownik agencji. W MVP logujemy się przez .env (jedno konto),
+// tabela istnieje pod przyszłą obsługę wielu użytkowników.
+model User {
+  id           Int        @id @default(autoincrement())
+  email        String     @unique
+  passwordHash String
+  name         String?
+  role         String     @default("admin")
+  createdAt    DateTime   @default(now())
+  transfers    Transfer[]
+}
+
+// Projekt — pojemnik grupujący transfery, pliki i historię.
+model Project {
+  id                 Int        @id @default(autoincrement())
+  name               String
+  clientName         String?
+  description        String?
+  status             String     @default("active") // active | archived
+  clientToken        String?    @unique             // publiczny link do panelu klienta /p/:token
+  clientPasswordHash String?                         // opcjonalne hasło do panelu klienta
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+  transfers          Transfer[]
+  events             Event[]
+}
+
+// Transfer — jeden obiekt obsługuje OBA kierunki (pole direction):
+//   outgoing = agencja → klient (link /t/:token, pobieranie)
+//   incoming = klient → agencja (formularz uploadu /upload/:token)
+model Transfer {
+  id            Int       @id @default(autoincrement())
+  project       Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId     Int?
+  direction     String    @default("outgoing") // outgoing | incoming
+  token         String    @unique               // publiczny identyfikator w URL
+  title         String?
+  message       String?
+  passwordHash  String?                          // opcjonalna ochrona hasłem
+  expiresAt     DateTime?                         // opcjonalna data wygaśnięcia
+  maxDownloads  Int?                             // opcjonalny limit pobrań
+  downloadCount Int       @default(0)
+  clientVisible Boolean   @default(false)         // czy pokazać w panelu klienta /p/:token
+  status        String    @default("active")     // active | expired | deleted
+  createdBy     User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdById   Int?
+  createdAt     DateTime  @default(now())
+  files         File[]
+  events        Event[]
+}
+
+// Pojedynczy plik należący do transferu.
+model File {
+  id           Int      @id @default(autoincrement())
+  transfer     Transfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  transferId   Int
+  originalName String   // nazwa widoczna dla użytkownika
+  storedName   String   // bezpieczna nazwa na dysku
+  storedPath   String   // ścieżka względna w STORAGE_DIR
+  size         BigInt   @default(0)
+  mimeType     String?
+  createdAt    DateTime @default(now())
+}
+
+// Zdarzenie — napędza jednocześnie HISTORIĘ projektu, POWIADOMIENIA i widżety dashboardu.
+model Event {
+  id         Int       @id @default(autoincrement())
+  project    Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId  Int?
+  transfer   Transfer? @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  transferId Int?
+  type       String    // created | downloaded | uploaded | email_sent | expired | error
+  message    String?
+  meta       String?   // dodatkowe dane jako JSON (string)
+  isRead     Boolean   @default(false) // dla powiadomień w panelu
+  ip         String?
+  createdAt  DateTime  @default(now())
+}
+
+// Ustawienia / branding — jeden wiersz (id = 1). Cała customizacja w jednym miejscu.
+model Settings {
+  id           Int      @id @default(1)
+  appName      String   @default("Evoke LINK")
+  logoPath     String?
+  faviconPath  String?
+  colors       String?  // JSON: { primary, button, text, background }
+  texts        String?  // JSON: { heroTitle, heroSubtitle, footer, messages }
+  updatedAt    DateTime @updatedAt
+}

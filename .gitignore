@@ -1,0 +1,29 @@
+# Zależności
+node_modules/
+
+# Konfiguracja lokalna i sekrety
+.env
+
+# Pliki użytkowników i baza danych
+storage/transfers/*
+!storage/transfers/.gitkeep
+storage/tmp/*
+!storage/tmp/.gitkeep
+storage/*.db
+storage/*.db-journal
+storage/*.db-wal
+storage/*.db-shm
+
+# Sesje (session-file-store)
+sessions/
+
+# Zbudowany CSS (generowany przez Tailwind)
+public/css/app.css
+
+# Logi i systemowe
+*.log
+.DS_Store
+Thumbs.db
+
+# Sygnał restartu Passengera (tworzony przy wdrożeniu)
+tmp/restart.txt

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= typeof title !== 'undefined' ? title + ' — Evoke LINK' : 'Evoke LINK' %></title>
+  <link rel="stylesheet" href="/css/app.css" />
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+  <div class="min-h-screen flex">
+    <!-- Pasek boczny -->
+    <aside class="w-60 shrink-0 bg-white border-r border-slate-200 flex flex-col">
+      <div class="h-16 flex items-center gap-2 px-6 border-b border-slate-100">
+        <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
+        <span class="font-semibold tracking-tight">Evoke LINK</span>
+      </div>
+      <nav class="flex-1 px-3 py-4 space-y-1 text-sm">
+        <% const items = [
+          { key: 'dashboard', label: 'Pulpit', href: '/admin' },
+          { key: 'projects', label: 'Projekty', href: '/admin/projects' },
+          { key: 'transfers', label: 'Transfery', href: '/admin/transfers' },
+          { key: 'notifications', label: 'Powiadomienia', href: '/admin/notifications' },
+          { key: 'settings', label: 'Ustawienia', href: '/admin/settings' }
+        ]; %>
+        <% const unread = (typeof unreadCount !== 'undefined') ? unreadCount : 0; %>
+        <% items.forEach(function(it){ %>
+          <a href="<%= it.href %>"
+             class="flex items-center justify-between px-3 py-2 rounded-lg transition <%= (typeof active !== 'undefined' && active === it.key) ? 'bg-brand-50 text-brand-700 font-medium' : 'text-slate-600 hover:bg-slate-100' %>">
+            <span><%= it.label %></span>
+            <% if (it.key === 'notifications' && unread > 0) { %>
+              <span class="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-brand-600 text-white text-xs font-semibold"><%= unread %></span>
+            <% } %>
+          </a>
+        <% }); %>
+      </nav>
+      <div class="p-3 border-t border-slate-100">
+        <form method="POST" action="/admin/logout">
+          <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100">
+            Wyloguj
+          </button>
+        </form>
+      </div>
+    </aside>
+
+    <!-- Główna kolumna -->
+    <div class="flex-1 flex flex-col min-w-0">
+      <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8">
+        <h1 class="text-lg font-semibold"><%= typeof title !== 'undefined' ? title : '' %></h1>
+        <div class="flex items-center gap-4">
+          <a href="/admin/notifications" class="relative text-slate-500 hover:text-slate-700" title="Powiadomienia">
+            <%- icon('bell', { size: 20, cls: '' }) %>
+            <% const unreadH = (typeof unreadCount !== 'undefined') ? unreadCount : 0; %>
+            <% if (unreadH > 0) { %>
+              <span class="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold"><%= unreadH %></span>
+            <% } %>
+          </a>
+          <span class="text-sm text-slate-500"><%= typeof currentUser !== 'undefined' && currentUser ? currentUser.email : '' %></span>
+        </div>
+      </header>
+      <main class="flex-1 p-8">
+        <%- body %>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

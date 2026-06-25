@@ -1,0 +1,98 @@
+<a href="/admin/projects" class="text-sm text-slate-500 hover:text-slate-700">← Wszystkie projekty</a>
+
+<!-- Nagłówek projektu -->
+<div class="mt-4 flex items-start justify-between gap-4">
+  <div>
+    <div class="flex items-center gap-2">
+      <h1 class="text-2xl font-semibold tracking-tight"><%= project.name %></h1>
+      <% if (project.status === 'archived') { %><span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">archiwum</span><% } %>
+    </div>
+    <% if (project.clientName) { %><p class="text-slate-500 mt-0.5"><%= project.clientName %></p><% } %>
+    <% if (project.description) { %><p class="text-sm text-slate-500 mt-2 max-w-2xl whitespace-pre-line"><%= project.description %></p><% } %>
+  </div>
+  <a href="/admin/projects/<%= project.id %>/edit" class="shrink-0 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">Edytuj</a>
+</div>
+
+<!-- Akcje -->
+<div class="mt-4 flex flex-wrap items-center gap-2">
+  <a href="/admin/transfers/new?project=<%= project.id %>" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">+ Wyślij pliki klientowi</a>
+  <a href="/admin/transfers/new-upload?project=<%= project.id %>" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">+ Link uploadu</a>
+</div>
+
+<!-- Panel klienta -->
+<div class="mt-6 bg-white rounded-2xl border border-slate-200 p-5" x-data="{ copied: false }">
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="text-sm font-medium text-slate-700">Panel klienta</h2>
+    <span class="text-xs <%= project.clientPasswordHash ? 'text-slate-500' : 'text-amber-600' %>">
+      <%= project.clientPasswordHash ? 'chroniony hasłem' : 'bez hasła' %>
+    </span>
+  </div>
+  <p class="text-xs text-slate-400 mb-3">Klient widzi tu tylko transfery oznaczone „widoczny dla klienta" i może wgrywać pliki. Hasło ustawisz w „Edytuj".</p>
+  <div class="flex items-center gap-2">
+    <input readonly value="<%= portalUrl %>" x-ref="purl" class="flex-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700" />
+    <button @click="navigator.clipboard.writeText($refs.purl.value); copied = true; setTimeout(()=>copied=false,1500)"
+            class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">
+      <span x-show="!copied">Kopiuj</span><span x-show="copied">Skopiowano ✓</span>
+    </button>
+    <a href="<%= portalUrl %>" target="_blank" class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition whitespace-nowrap">Otwórz</a>
+  </div>
+</div>
+
+<div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Kolumny transferów -->
+  <div class="lg:col-span-2 space-y-6">
+    <%
+      const renderList = (items, emptyText) => {
+        if (!items.length) return `<div class="px-5 py-6 text-center text-sm text-slate-400">${emptyText}</div>`;
+        return items.map((t) => {
+          const statusCls = t.status === 'active' ? 'bg-green-50 text-green-700' : (t.status === 'expired' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500');
+          return `<a href="/admin/transfers/${t.id}" class="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition">
+            <span class="min-w-0 mr-3">
+              <span class="block text-sm font-medium text-slate-800 truncate">${t.title || ('Transfer ' + t.token)}</span>
+              <span class="block text-xs text-slate-400">${t.files.length} plik(ów) · ${fmt.date(t.createdAt)}</span>
+            </span>
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusCls} shrink-0">${t.status}</span>
+          </a>`;
+        }).join('');
+      };
+    %>
+
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-100 text-sm font-medium text-slate-700 flex items-center gap-2"><%- icon('download', { size: 16 }) %> Wysłane do klienta (<%= outgoing.length %>)</div>
+      <div class="divide-y divide-slate-100"><%- renderList(outgoing, 'Brak wysłanych transferów.') %></div>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-100 text-sm font-medium text-slate-700 flex items-center gap-2"><%- icon('upload', { size: 16 }) %> Odebrane od klienta (<%= incoming.length %>)</div>
+      <div class="divide-y divide-slate-100"><%- renderList(incoming, 'Brak linków uploadu.') %></div>
+    </div>
+  </div>
+
+  <!-- Historia -->
+  <div>
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div class="px-5 py-3 border-b border-slate-100 text-sm font-medium text-slate-700">Historia</div>
+      <% if (!history.length) { %>
+        <div class="px-5 py-6 text-center text-sm text-slate-400">Brak zdarzeń.</div>
+      <% } else { %>
+        <ul class="divide-y divide-slate-100">
+          <% history.forEach(function(e){ %>
+            <li class="px-5 py-3 flex gap-3">
+              <span class="mt-0.5"><%- eventIcon(e.type) %></span>
+              <span class="min-w-0">
+                <span class="block text-sm text-slate-700"><%= e.message || e.type %></span>
+                <span class="block text-xs text-slate-400 mt-0.5"><%= fmt.date(e.createdAt) %></span>
+              </span>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Usuwanie -->
+<form method="POST" action="/admin/projects/<%= project.id %>/delete" class="mt-6"
+      onsubmit="return confirm('Usunąć projekt? Transfery pozostaną, ale stracą przypisanie do projektu, a historia projektu zostanie usunięta.');">
+  <button type="submit" class="text-sm text-red-600 hover:text-red-700">Usuń projekt</button>
+</form>

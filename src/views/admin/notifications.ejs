@@ -1,0 +1,34 @@
+<div class="flex items-center justify-between mb-6">
+  <p class="text-sm text-slate-500">Nowe pliki od klientów, pobrania i błędy.</p>
+  <% const anyUnread = notifications.some(function(n){ return !n.isRead; }); %>
+  <% if (anyUnread) { %>
+    <form method="POST" action="/admin/notifications/read-all">
+      <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">Oznacz wszystkie jako przeczytane</button>
+    </form>
+  <% } %>
+</div>
+
+<% if (!notifications.length) { %>
+  <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-500">
+    Brak powiadomień.
+  </div>
+<% } else { %>
+  <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <ul class="divide-y divide-slate-100">
+      <% notifications.forEach(function(n){ %>
+        <li class="<%= n.isRead ? '' : 'bg-brand-50' %>">
+          <a href="/admin/notifications/<%= n.id %>/open" class="flex gap-3 items-start px-5 py-3 hover:bg-slate-50 transition">
+            <span class="mt-0.5"><%- eventIcon(n.type) %></span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-sm <%= n.isRead ? 'text-slate-600' : 'text-slate-800 font-medium' %>"><%= n.message || n.type %></span>
+              <span class="block text-xs text-slate-400 mt-0.5">
+                <%= fmt.date(n.createdAt) %><%= n.project ? ' · ' + n.project.name : '' %><%= n.transfer && n.transfer.title ? ' · ' + n.transfer.title : '' %>
+              </span>
+            </span>
+            <% if (!n.isRead) { %><span class="mt-1 w-2 h-2 rounded-full bg-brand-600 shrink-0"></span><% } %>
+          </a>
+        </li>
+      <% }); %>
+    </ul>
+  </div>
+<% } %>

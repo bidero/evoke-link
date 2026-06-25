@@ -1,0 +1,102 @@
+<div class="w-full max-w-lg">
+  <% if (sent) { %>
+    <div class="bg-white rounded-3xl shadow-xl shadow-brand-200/40 p-8 text-center">
+      <div class="flex justify-center mb-3"><%- icon('check', { size: 44, cls: 'text-green-600' }) %></div>
+      <h1 class="text-2xl font-semibold tracking-tight mb-1">Dziękujemy!</h1>
+      <p class="text-sm text-slate-500 mb-6">Przesłano <%= count %> plik(ów). Otrzymaliśmy Twoje materiały.</p>
+      <a href="/upload/<%= transfer.token %>" class="inline-block rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 transition">
+        Prześlij kolejne pliki
+      </a>
+    </div>
+  <% } else { %>
+    <div class="bg-white rounded-3xl shadow-xl shadow-brand-200/40 p-8" x-data="uploader()">
+      <h1 class="text-2xl font-semibold tracking-tight mb-1"><%= transfer.title || 'Prześlij pliki' %></h1>
+      <% if (transfer.message) { %>
+        <p class="text-sm text-slate-500 mb-6 whitespace-pre-line"><%= transfer.message %></p>
+      <% } else { %>
+        <p class="text-sm text-slate-500 mb-6">Przeciągnij pliki lub kliknij, aby wybrać.</p>
+      <% } %>
+
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
+      <% } %>
+
+      <form @submit.prevent="submit" class="space-y-4">
+        <div
+          @dragover.prevent="dragging = true" @dragleave.prevent="dragging = false" @drop.prevent="onDrop($event)"
+          :class="dragging ? 'border-brand-500 bg-brand-50' : 'border-slate-300'"
+          class="rounded-2xl border-2 border-dashed p-8 text-center transition cursor-pointer"
+          @click="$refs.input.click()">
+          <input x-ref="input" type="file" multiple class="hidden" @change="addFiles($event.target.files)" />
+          <div class="flex justify-center mb-1"><%- icon('cloudUpload', { size: 32 }) %></div>
+          <p class="text-sm font-medium text-slate-600">Przeciągnij pliki tutaj</p>
+          <p class="text-xs text-slate-400">lub kliknij, aby wybrać</p>
+        </div>
+
+        <template x-if="files.length">
+          <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 text-sm">
+            <template x-for="(f, i) in files" :key="i">
+              <div class="flex items-center justify-between px-3 py-2">
+                <span class="truncate mr-3" x-text="f.name"></span>
+                <div class="flex items-center gap-3 shrink-0">
+                  <span class="text-slate-400" x-text="human(f.size)"></span>
+                  <button type="button" @click="remove(i)" class="text-slate-400 hover:text-red-600"><%- icon('x', { size: 16, cls: '' }) %></button>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input name="name" type="text" placeholder="Twoje imię / firma (opcjonalnie)"
+                 class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <input name="email" type="email" placeholder="Twój e-mail (opcjonalnie)"
+                 class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </div>
+
+        <template x-if="uploading">
+          <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+            <div class="bg-brand-600 h-2 transition-all" :style="'width:' + progress + '%'"></div>
+          </div>
+        </template>
+
+        <button type="submit" :disabled="uploading || !files.length"
+                class="w-full rounded-xl bg-brand-600 hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 transition">
+          <span x-show="!uploading">Prześlij pliki</span>
+          <span x-show="uploading" x-text="'Wysyłanie… ' + progress + '%'"></span>
+        </button>
+      </form>
+    </div>
+  <% } %>
+</div>
+
+<% if (!sent) { %>
+<script>
+function uploader() {
+  return {
+    files: [], dragging: false, uploading: false, progress: 0,
+    addFiles(list) { this.files.push(...Array.from(list)); },
+    onDrop(e) { this.dragging = false; this.addFiles(e.dataTransfer.files); },
+    remove(i) { this.files.splice(i, 1); },
+    human(b) { if (!b) return '0 B'; const u=['B','KB','MB','GB','TB']; const i=Math.floor(Math.log(b)/Math.log(1024)); return (b/Math.pow(1024,i)).toFixed(i===0?0:1)+' '+u[i]; },
+    submit(e) {
+      if (!this.files.length || this.uploading) return;
+      const form = e.target;
+      const data = new FormData();
+      this.files.forEach((f) => data.append('files', f));
+      ['name','email'].forEach((n) => { if (form[n] && form[n].value) data.append(n, form[n].value); });
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', window.location.pathname);
+      xhr.upload.onprogress = (ev) => { if (ev.lengthComputable) this.progress = Math.round((ev.loaded/ev.total)*100); };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 400) { document.open(); document.write(xhr.responseText); document.close(); }
+        else { this.uploading = false; alert('Błąd wysyłania (' + xhr.status + ').'); }
+      };
+      xhr.onerror = () => { this.uploading = false; alert('Błąd sieci.'); };
+      this.uploading = true; this.progress = 0;
+      xhr.send(data);
+    },
+  };
+}
+</script>
+<% } %>

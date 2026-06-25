@@ -1,0 +1,35 @@
+<div class="w-full max-w-sm">
+  <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/60 p-8">
+    <div class="flex items-center gap-2 mb-6">
+      <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
+      <span class="font-semibold text-lg tracking-tight">Evoke LINK</span>
+    </div>
+
+    <h1 class="text-xl font-semibold mb-1">Zaloguj się</h1>
+    <p class="text-sm text-slate-500 mb-6">Panel administracyjny agencji.</p>
+
+    <% if (error) { %>
+      <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">
+        <%= error %>
+      </div>
+    <% } %>
+
+    <form method="POST" action="/admin/login" class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1" for="email">E-mail</label>
+        <input id="email" name="email" type="email" required value="<%= email %>"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1" for="password">Hasło</label>
+        <input id="password" name="password" type="password" required
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </div>
+      <button type="submit"
+              class="w-full rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 text-sm transition">
+        Zaloguj się
+      </button>
+    </form>
+  </div>
+  <p class="text-center text-xs text-slate-400 mt-6">Evoke LINK · prywatny system wymiany plików</p>
+</div>
