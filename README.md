@@ -1,20 +1,26 @@
-# Evoke Transfer
+# Evoke LINK
 
-Prywatny system wymiany plików między agencją a klientami. Działa w dwóch kierunkach:
-**agencja → klient** (link do pobrania) oraz **klient → agencja** (formularz uploadu).
-Wszystko grupowane w **Projektach**.
+Prywatny system wymiany plików między agencją a klientami — prostszy, „agencyjny" WeTransfer.
+Działa w dwóch kierunkach: **agencja → klient** (link do pobrania) oraz **klient → agencja**
+(formularz uploadu). Wszystko grupowane w **Projektach**.
 
 Stos: **Node.js + Express**, **SQLite** (przez Prisma), szablony **EJS + Tailwind + Alpine.js**.
+
+## Funkcje
+- 📤 **Transfery wychodzące** — wyślij pliki/folder, link `/t/:token`, hasło, data wygaśnięcia, limit pobrań, pobieranie pojedyncze lub ZIP.
+- 📥 **Uploady przychodzące** — link `/upload/:token`, klient wgrywa pliki, agencja dostaje e-mail i powiadomienie.
+- 📁 **Projekty** — grupują transfery (wysłane i odebrane) oraz pełną historię zdarzeń.
+- 👤 **Panel klienta** — link `/p/:token` z plikami widocznymi dla klienta (pobieranie + upload), opcjonalne hasło.
+- 🔔 **Dashboard i powiadomienia** — aktywne transfery, miejsce na dysku, dzwonek z licznikiem nieprzeczytanych.
+- 🎨 **Customizacja** (w toku) — logo, kolory i treści zmieniane z panelu, bez kodu.
+
+> Aplikacja dla jednej agencji: logowanie administratora, klienci korzystają wyłącznie z linków (bez kont).
 
 ---
 
 ## Wymagania
 
 - **Node.js 18+** (na SeoHost wybierasz wersję w panelu DirectAdmin → Setup Node.js App).
-
-> Na Twoim komputerze Node nie jest jeszcze zainstalowany. Pobierz **Node.js LTS** ze
-> strony nodejs.org (instalator dla Windows). Po instalacji zamknij i otwórz terminal,
-> a `node --version` powinno zwrócić numer wersji.
 
 ---
 
