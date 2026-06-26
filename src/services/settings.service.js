@@ -21,6 +21,7 @@ const DEFAULTS = {
   emails: {
     logoPath: null,
     linkSubject: '', linkIntro: '',
+    panelSubject: '', panelIntro: '',
     uploadSubject: '', downloadSubject: '',
     clientConfirm: false, clientConfirmSubject: '', clientConfirmBody: '',
   },

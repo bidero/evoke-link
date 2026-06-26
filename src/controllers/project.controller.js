@@ -94,7 +94,7 @@ async function sendPanel(req, res, next) {
     }
     const url = `${config.appUrl}/p/${project.clientToken}`;
     try {
-      await mail.sendPanelLink({ to, url, title: project.name, intro: `Panel projektu „${project.name}" — Twoje pliki i upload w jednym miejscu.` });
+      await mail.sendPanelLink({ to, url, projectName: project.name, clientName: project.client ? project.client.name : null });
       await events.log({ type: 'email_sent', message: `Wysłano panel projektu do ${to}`, projectId: project.id, ip: req.ip });
       res.redirect(`/admin/projects/${project.id}?panel=sent`);
     } catch (e) {

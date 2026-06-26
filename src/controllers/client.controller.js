@@ -52,7 +52,7 @@ async function sendPanel(req, res, next) {
     if (!EMAIL_RE.test(to)) return res.redirect(`/admin/clients/${client.id}/edit?panel=invalid`);
     const url = `${config.appUrl}/c/${client.token}`;
     try {
-      await mail.sendPanelLink({ to, url, title: client.name, intro: 'Twój panel — wszystkie projekty w jednym miejscu.' });
+      await mail.sendPanelLink({ to, url, clientName: client.name });
       res.redirect(`/admin/clients/${client.id}/edit?panel=sent`);
     } catch (e) {
       console.error('[mail] panel klienta:', e.message);

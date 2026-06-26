@@ -20,6 +20,7 @@ async function showSettings(req, res, next) {
       saved: req.query.saved === '1',
       mailReady: mail.isConfigured(),
       adminEmail: config.admin.email,
+      placeholders: mail.PLACEHOLDERS,
       test: req.query.test || null, // sent | dev | error
     });
   } catch (err) {
@@ -117,6 +118,8 @@ async function updateSettings(req, res, next) {
         logoPath: current.emails.logoPath || null,
         linkSubject: (b.linkSubject || '').trim(),
         linkIntro: (b.linkIntro || '').trim(),
+        panelSubject: (b.panelSubject || '').trim(),
+        panelIntro: (b.panelIntro || '').trim(),
         uploadSubject: (b.uploadSubject || '').trim(),
         downloadSubject: (b.downloadSubject || '').trim(),
         clientConfirm: b.clientConfirm === 'on',

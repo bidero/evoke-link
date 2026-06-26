@@ -27,6 +27,25 @@ function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
+// Lista wspieranych placeholderów (do podpowiedzi w panelu).
+const PLACEHOLDERS = ['{nazwa-aplikacji}', '{nazwa-projektu}', '{klient}', '{tytul}', '{link}', '{liczba-plikow}', '{pliki}', '{nadawca}', '{email-nadawcy}', '{wygasa}'];
+
+// Komplet zmiennych (puste = brak danych w danym mailu); nadpisywane per e-mail.
+function baseVars(appName) {
+  return { 'nazwa-aplikacji': appName || 'Evoke LINK', 'nazwa-projektu': '', klient: '', tytul: '', link: '', 'liczba-plikow': '', pliki: '', nadawca: '', 'email-nadawcy': '', wygasa: '' };
+}
+
+// Podstawia {token} znanymi wartościami (nieznane tokeny zostawia — sygnalizuje literówkę).
+function fillTpl(tpl, vars) {
+  if (!tpl) return '';
+  return String(tpl).replace(/\{([a-z0-9-]+)\}/gi, (m, k) => (k in vars ? String(vars[k] == null ? '' : vars[k]) : m));
+}
+
+// Sprząta temat po podstawieniu pustych placeholderów (zwisające myślniki/spacje).
+function cleanSubject(s) {
+  return (s || '').replace(/\s+/g, ' ').replace(/^\s*[–—-]\s*/, '').replace(/\s*[–—-]\s*$/, '').trim();
+}
+
 async function send({ to, subject, html, text, replyTo }) {
   const t = getTransporter();
   if (!t) {
@@ -93,7 +112,8 @@ async function sendUploadNotification({ transfer, fileNames, uploaderName, uploa
     ${btn(adminUrl, 'Zobacz w panelu', primary)}`;
 
   const html = await wrap(inner, { heading: `Nowe pliki: ${title}` });
-  const subject = (s.emails && s.emails.uploadSubject) || `${s.appName || 'Evoke LINK'} — nowe pliki: ${title}`;
+  const vars = { ...baseVars(s.appName), 'nazwa-projektu': projectName || '', tytul: title, 'liczba-plikow': fileNames.length, pliki: fileNames.join(', '), nadawca: uploaderName || '', 'email-nadawcy': uploaderEmail || '', link: adminUrl };
+  const subject = cleanSubject(fillTpl(s.emails && s.emails.uploadSubject, vars)) || `${s.appName || 'Evoke LINK'} — nowe pliki: ${title}`;
   return send({ to: config.admin.email, subject, html, text });
 }
 
@@ -107,18 +127,25 @@ async function sendTransferLink({ to, transfer, message }) {
   const link = `${config.appUrl}/${incoming ? 'upload' : 't'}/${transfer.token}`;
   const title = transfer.title || (incoming ? 'Prześlij pliki' : 'Pliki dla Ciebie');
   const cta = incoming ? 'Prześlij pliki' : 'Pobierz pliki';
-  // Treść wstępu: wiadomość z formularza > domyślny wstęp z ustawień > wbudowany.
-  const intro = message || em.linkIntro || (incoming ? 'Pod tym linkiem prześlesz nam pliki:' : 'Pod tym linkiem pobierzesz przygotowane dla Ciebie pliki:');
+  const expiresStr = transfer.expiresAt ? new Date(transfer.expiresAt).toLocaleString('pl-PL') : '';
+  const vars = {
+    ...baseVars(appName),
+    'nazwa-projektu': (transfer.project && transfer.project.name) || '',
+    klient: (transfer.project && transfer.project.client && transfer.project.client.name) || '',
+    tytul: title, link, wygasa: expiresStr,
+  };
+  // Treść wstępu: wiadomość z formularza > szablon z ustawień (placeholdery) > wbudowany.
+  const intro = message || fillTpl(em.linkIntro, vars) || (incoming ? 'Pod tym linkiem prześlesz nam pliki:' : 'Pod tym linkiem pobierzesz przygotowane dla Ciebie pliki:');
 
   const inner = `
     <p style="margin:0 0 16px;white-space:pre-line">${esc(intro)}</p>
     <p style="margin:0 0 20px">${btn(link, cta, primary)}</p>
     <p style="margin:0;color:#64748b;font-size:13px">Lub skopiuj adres:<br><a href="${esc(link)}" style="color:${esc(primary)}">${esc(link)}</a></p>
-    ${transfer.expiresAt ? `<p style="margin:16px 0 0;color:#94a3b8;font-size:12px">Link wygasa: ${new Date(transfer.expiresAt).toLocaleString('pl-PL')}</p>` : ''}`;
+    ${expiresStr ? `<p style="margin:16px 0 0;color:#94a3b8;font-size:12px">Link wygasa: ${expiresStr}</p>` : ''}`;
 
   const html = await wrap(inner, { heading: title });
   const text = `${intro}\n\n${cta}: ${link}`;
-  return send({ to, subject: em.linkSubject || `${appName} — ${title}`, html, text, replyTo: config.admin.email });
+  return send({ to, subject: cleanSubject(fillTpl(em.linkSubject, vars)) || `${appName} — ${title}`, html, text, replyTo: config.admin.email });
 }
 
 // Powiadomienie do agencji o pierwszym pobraniu transferu przez klienta.
@@ -134,23 +161,33 @@ async function sendDownloadNotification({ transfer, ip }) {
     ${btn(adminUrl, 'Zobacz w panelu', primary)}`;
   const html = await wrap(inner, { heading: 'Pobrano pliki' });
   const text = `Klient pobrał: ${title}\n${adminUrl}`;
-  const subject = (s.emails && s.emails.downloadSubject) || `${appName} — pobrano: ${title}`;
+  const vars = { ...baseVars(appName), 'nazwa-projektu': (transfer.project && transfer.project.name) || '', tytul: title, link: adminUrl };
+  const subject = cleanSubject(fillTpl(s.emails && s.emails.downloadSubject, vars)) || `${appName} — pobrano: ${title}`;
   return send({ to: config.admin.email, subject, html, text });
 }
 
 // Wysyłka linku do panelu (projektu /p/:token lub klienta /c/:token) na adres e-mail.
-async function sendPanelLink({ to, url, title, intro }) {
+async function sendPanelLink({ to, url, projectName, clientName }) {
   let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
   const primary = (s.colors && s.colors.primary) || '#6e00a5';
   const appName = s.appName || 'Evoke LINK';
-  const heading = title || 'Twój panel';
-  const text = `${intro || 'Pod tym linkiem masz dostęp do swoich plików:'}\n\nOtwórz panel: ${url}`;
+  const em = s.emails || {};
+  const vars = { ...baseVars(appName), 'nazwa-projektu': projectName || '', klient: clientName || '', link: url };
+
+  const defSubject = projectName ? `${appName} — projekt ${projectName}` : `${appName} — Twoje projekty`;
+  const defIntro = projectName
+    ? `Panel projektu „${projectName}" — Twoje pliki i upload w jednym miejscu.`
+    : 'Twój panel — wszystkie projekty w jednym miejscu.';
+  const subject = cleanSubject(fillTpl(em.panelSubject, vars)) || defSubject;
+  const intro = fillTpl(em.panelIntro, vars) || defIntro;
+  const heading = projectName || clientName || 'Twój panel';
+
   const inner = `
-    <p style="margin:0 0 16px;white-space:pre-line">${esc(intro || 'Pod tym linkiem masz dostęp do swoich plików:')}</p>
+    <p style="margin:0 0 16px;white-space:pre-line">${esc(intro)}</p>
     <p style="margin:0 0 20px">${btn(url, 'Otwórz panel', primary)}</p>
     <p style="margin:0;color:#64748b;font-size:13px">Lub skopiuj adres:<br><a href="${esc(url)}" style="color:${esc(primary)}">${esc(url)}</a></p>`;
   const html = await wrap(inner, { heading });
-  return send({ to, subject: `${appName} — ${heading}`, html, text, replyTo: config.admin.email });
+  return send({ to, subject, html, text: `${intro}\n\nOtwórz panel: ${url}`, replyTo: config.admin.email });
 }
 
 // Potwierdzenie do KLIENTA po przesłaniu plików (jeśli włączone i klient podał e-mail).
@@ -159,12 +196,13 @@ async function sendUploadConfirmation({ to, transfer, projectName }) {
   const em = s.emails || {};
   if (!em.clientConfirm) return { skipped: true };
   const appName = s.appName || 'Evoke LINK';
-  const body = em.clientConfirmBody || 'Dziękujemy! Otrzymaliśmy Twoje pliki.';
+  const vars = { ...baseVars(appName), 'nazwa-projektu': projectName || '', tytul: (transfer && transfer.title) || '' };
+  const body = fillTpl(em.clientConfirmBody, vars) || 'Dziękujemy! Otrzymaliśmy Twoje pliki.';
   const inner = `
     <p style="margin:0 0 12px;white-space:pre-line">${esc(body)}</p>
     ${projectName ? `<p style="margin:0;color:#64748b;font-size:13px">Projekt: ${esc(projectName)}</p>` : ''}`;
   const html = await wrap(inner, { heading: 'Potwierdzenie' });
-  return send({ to, subject: em.clientConfirmSubject || `${appName} — potwierdzenie odbioru plików`, html, text: body, replyTo: config.admin.email });
+  return send({ to, subject: cleanSubject(fillTpl(em.clientConfirmSubject, vars)) || `${appName} — potwierdzenie odbioru plików`, html, text: body, replyTo: config.admin.email });
 }
 
 // Testowy e-mail do weryfikacji konfiguracji SMTP.
@@ -175,4 +213,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendTest };
+module.exports = { send, isConfigured, PLACEHOLDERS, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendTest };
