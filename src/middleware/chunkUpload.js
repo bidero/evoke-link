@@ -31,11 +31,11 @@ function receiveChunk(req, res) {
 
 function receiveUpload(field) {
   const multipart = baseUpload.array(field);
-  return (req, res, next) => {
+  return async (req, res, next) => {
     const uploadId = req.get('X-Upload-Id');
     if (uploadId) {
       try {
-        req.files = chunk.assembleFiles(uploadId);
+        req.files = await chunk.assembleFiles(uploadId);
         // Posprzątaj katalog sesji po wysłaniu odpowiedzi (pliki części zostały
         // już przeniesione do katalogu transferu przez warstwę storage).
         res.on('finish', () => chunk.cleanup(uploadId));

@@ -63,34 +63,48 @@ function writeChunk(uploadId, fileIndex, buffer, meta) {
   writeManifest(uploadId, m);
 }
 
-// Składa sesję: dla każdego pliku łączy kawałki 0..total-1 w jeden plik <fi>.bin.
+// Łączy kawałki 0..total-1 jednego pliku w <fi>.bin — STRUMIENIOWO (nie blokuje
+// pętli zdarzeń, niska pamięć). Zwraca true gdy plik kompletny i sklejony.
+function concatFile(uploadId, fi, total) {
+  return new Promise((resolve, reject) => {
+    for (let ci = 0; ci < total; ci++) {
+      if (!fs.existsSync(chunkPath(uploadId, fi, ci))) return resolve(false); // niekompletny
+    }
+    const finalPath = path.join(sessionDir(uploadId), fi + '.bin');
+    const ws = fs.createWriteStream(finalPath);
+    ws.on('error', reject);
+    ws.on('finish', () => resolve(true));
+    let ci = 0;
+    (function nextChunk() {
+      if (ci >= total) { ws.end(); return; }
+      const rs = fs.createReadStream(chunkPath(uploadId, fi, ci));
+      rs.on('error', reject);
+      rs.on('end', () => { ci += 1; nextChunk(); });
+      rs.pipe(ws, { end: false });
+    })();
+  });
+}
+
+// Składa sesję: dla każdego pliku skleja kawałki strumieniowo. Asynchroniczne.
 // Zwraca tablicę plików w kształcie multera. Pliki niekompletne są pomijane.
-function assembleFiles(uploadId) {
+async function assembleFiles(uploadId) {
   const m = readManifest(uploadId);
   const dir = sessionDir(uploadId);
   const out = [];
-  Object.keys(m.files)
-    .map((k) => parseInt(k, 10))
-    .sort((a, b) => a - b)
-    .forEach((fi) => {
-      const meta = m.files[fi];
-      const total = Math.max(1, parseInt(meta.total, 10) || 1);
-      const finalPath = path.join(dir, fi + '.bin');
-      fs.writeFileSync(finalPath, Buffer.alloc(0));
-      let complete = true;
-      for (let ci = 0; ci < total; ci++) {
-        const cp = chunkPath(uploadId, fi, ci);
-        if (!fs.existsSync(cp)) { complete = false; break; }
-        fs.appendFileSync(finalPath, fs.readFileSync(cp)); // jeden kawałek naraz — niska pamięć
-      }
-      if (!complete) { try { fs.rmSync(finalPath, { force: true }); } catch (_) {} return; }
-      out.push({
-        originalname: meta.name || ('plik-' + fi),
-        path: finalPath,
-        size: fs.statSync(finalPath).size,
-        mimetype: meta.type || null,
-      });
+  const indices = Object.keys(m.files).map((k) => parseInt(k, 10)).sort((a, b) => a - b);
+  for (const fi of indices) {
+    const meta = m.files[fi];
+    const total = Math.max(1, parseInt(meta.total, 10) || 1);
+    const okFile = await concatFile(uploadId, fi, total);
+    if (!okFile) continue;
+    const finalPath = path.join(dir, fi + '.bin');
+    out.push({
+      originalname: meta.name || ('plik-' + fi),
+      path: finalPath,
+      size: fs.statSync(finalPath).size,
+      mimetype: meta.type || null,
     });
+  }
   return out;
 }
 

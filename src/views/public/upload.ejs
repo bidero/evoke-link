@@ -56,14 +56,15 @@
 
         <template x-if="uploading">
           <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-            <div class="bg-brand-600 h-2 transition-all" :style="'width:' + progress + '%'"></div>
+            <div class="bg-brand-600 h-2 transition-all duration-200" :class="finalizing ? 'animate-pulse' : ''"
+                 :style="'width:' + (finalizing ? 100 : Math.max(progress, 4)) + '%'"></div>
           </div>
         </template>
 
         <button type="submit" :disabled="uploading || !files.length"
                 class="evoke-btn w-full rounded-xl bg-brand-600 hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 transition">
           <span x-show="!uploading">Prześlij pliki</span>
-          <span x-show="uploading" x-text="'Wysyłanie… ' + progress + '%'"></span>
+          <span x-show="uploading" x-text="finalizing ? 'Finalizowanie…' : ('Wysyłanie… ' + progress + '%')"></span>
         </button>
       </form>
     </div>
@@ -74,7 +75,7 @@
 <script>
 function uploader() {
   return {
-    files: [], dragging: false, uploading: false, progress: 0,
+    files: [], dragging: false, uploading: false, finalizing: false, progress: 0,
     addFiles(list) { this.files.push(...Array.from(list)); },
     onDrop(e) { this.dragging = false; this.addFiles(e.dataTransfer.files); },
     remove(i) { this.files.splice(i, 1); },
@@ -85,6 +86,7 @@ function uploader() {
       this.uploading = true; this.progress = 0;
       try {
         const uploadId = await window.chunkedUpload(this.files, window.location.pathname.replace(/\/$/, '') + '/chunk', (p) => { this.progress = p; });
+        this.finalizing = true;
         const body = new URLSearchParams();
         ['name','email'].forEach((n) => { if (form[n] && form[n].value) body.append(n, form[n].value); });
         const res = await fetch(window.location.pathname, {
@@ -93,9 +95,9 @@ function uploader() {
           body,
         });
         if (res.ok) { const html = await res.text(); document.open(); document.write(html); document.close(); }
-        else { this.uploading = false; alert('Błąd wysyłania (' + res.status + ').'); }
+        else { this.uploading = false; this.finalizing = false; alert('Błąd wysyłania (' + res.status + ').'); }
       } catch (err) {
-        this.uploading = false;
+        this.uploading = false; this.finalizing = false;
         alert(err && err.message ? err.message : 'Błąd wysyłania.');
       }
     },
