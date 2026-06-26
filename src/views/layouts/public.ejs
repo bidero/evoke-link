@@ -37,6 +37,7 @@
       <span class="hidden dark:inline"><%- icon('sun', { size: 18, cls: '' }) %></span>
     </button>
 
+    <% if (L.style !== 'banner') { %>
     <header class="px-6 py-5">
       <div class="flex items-center gap-2 w-full <%= justify %> <%= dark ? 'text-white' : '' %>">
         <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
@@ -47,8 +48,38 @@
         <% } %>
       </div>
     </header>
+    <% } %>
 
-    <% if (L.style === 'split') { %>
+    <% if (L.style === 'banner') { %>
+      <%# Banner: pasek brandowy z logo + hero, karta na tle pod spodem %>
+      <header class="bg-brand-600 text-white px-6 py-6">
+        <div class="max-w-5xl mx-auto w-full flex items-center gap-2 <%= justify %>">
+          <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
+            <img src="<%= settings.logoPath %>" alt="<%= appName %>" style="height: <%= logoCfg.size %>px" class="max-w-[60%] object-contain" />
+          <% } else if (!L.hideName) { %>
+            <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold">E</div>
+            <span class="font-semibold tracking-tight"><%= appName %></span>
+          <% } %>
+        </div>
+        <% if (showHero) { %>
+          <div class="max-w-5xl mx-auto w-full mt-4">
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight"><%= heroTitle %></h1>
+            <% if (heroSubtitle) { %><p class="mt-1 text-white/80"><%= heroSubtitle %></p><% } %>
+          </div>
+        <% } %>
+      </header>
+      <main class="flex-1 flex items-center justify-center px-6 py-10">
+        <%- body %>
+      </main>
+
+    <% } else if (L.style === 'hero-card' || L.style === 'minimal') { %>
+      <%# Hero w karcie / Minimal: brak nagłówka w layoucie — sama karta wyśrodkowana
+          (dla „hero-card" nagłówek renderuje się WEWNĄTRZ karty w widoku). %>
+      <main class="flex-1 flex items-center justify-center px-6 py-8">
+        <%- body %>
+      </main>
+
+    <% } else if (L.style === 'split') { %>
       <%# Hero z jednej strony, karta z drugiej (strona karty z ustawień) %>
       <% const cardLeft = L.cardSide === 'left'; %>
       <main class="flex-1 px-6 py-8">

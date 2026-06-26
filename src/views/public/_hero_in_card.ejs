@@ -1,0 +1,6 @@
+<% if (typeof uiLayout !== 'undefined' && uiLayout && uiLayout.style === 'hero-card' && typeof settings !== 'undefined' && settings && settings.texts && settings.texts.heroTitle) { %>
+  <div class="mb-5 text-center">
+    <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-slate-800"><%= settings.texts.heroTitle %></h1>
+    <% if (settings.texts.heroSubtitle) { %><p class="mt-1 text-sm text-slate-500"><%= settings.texts.heroSubtitle %></p><% } %>
+  </div>
+<% } %>

@@ -81,7 +81,9 @@ async function updateSettings(req, res, next) {
       imagePath: current.background.imagePath || null,
       overlay: Math.min(80, Math.max(0, parseInt(b.bgOverlay, 10) || 0)),
       imageGradient: b.bgImageGradient === 'on',
+      imageGrad: { c1: safeHex(b.imgGradC1, '#6e00a5'), c2: safeHex(b.imgGradC2, '') || '', angle: parseInt(b.imgGradAngle, 10) || 135 },
       grain: b.bgGrain === 'on',
+      grainType: b.bgGrainType,
       grainStrength: Math.min(100, Math.max(0, parseInt(b.bgGrainStrength, 10) || 0)),
     };
 
@@ -93,7 +95,7 @@ async function updateSettings(req, res, next) {
 
     // --- Układ stron klienta ---
     const layout = {
-      style: ['classic', 'centered', 'split'].includes(b.layoutStyle) ? b.layoutStyle : 'classic',
+      style: ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner'].includes(b.layoutStyle) ? b.layoutStyle : 'classic',
       card: ['solid', 'glass', 'elevated'].includes(b.layoutCard) ? b.layoutCard : 'solid',
       cardSide: ['left', 'right'].includes(b.cardSide) ? b.cardSide : 'right',
       hideName: b.hideName === 'on',

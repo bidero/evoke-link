@@ -14,7 +14,12 @@
     gradAngle: settings.background.custom.angle,
     bgOverlay: settings.background.overlay,
     bgImageGradient: settings.background.imageGradient,
+    imgGradC1: settings.background.imageGrad.c1,
+    imgGradC2: settings.background.imageGrad.c2 || '#000000',
+    imgGradC2on: !!settings.background.imageGrad.c2,
+    imgGradAngle: settings.background.imageGrad.angle,
     bgGrain: settings.background.grain,
+    bgGrainType: settings.background.grainType,
     bgGrainStrength: settings.background.grainStrength,
     imagePath: settings.background.imagePath,
     logoSize: settings.logo.size,
@@ -244,15 +249,33 @@
           <input type="range" name="bgOverlay" min="0" max="80" step="5" x-model="bgOverlay" class="w-full accent-brand-600" />
         </div>
         <label class="inline-flex items-center gap-2 text-sm text-slate-600">
-          <input type="checkbox" name="bgImageGradient" x-model="bgImageGradient" class="rounded border-slate-300" /> Nałóż gradient brandowy na obraz
+          <input type="checkbox" name="bgImageGradient" x-model="bgImageGradient" class="rounded border-slate-300" /> Nałóż gradient na obraz
         </label>
+        <div x-show="bgImageGradient" class="pl-6 mt-2" x-cloak>
+          <input type="hidden" name="imgGradC2" :value="imgGradC2on ? imgGradC2 : ''" />
+          <div class="flex items-center gap-3 flex-wrap text-xs text-slate-600">
+            <span class="inline-flex items-center gap-1.5">Kolor 1 <input type="color" name="imgGradC1" x-model="imgGradC1" class="h-7 w-9 rounded border border-slate-300 cursor-pointer" /></span>
+            <label class="inline-flex items-center gap-1.5"><input type="checkbox" x-model="imgGradC2on" class="rounded border-slate-300" /> Kolor 2</label>
+            <span class="inline-flex items-center gap-1.5" x-show="imgGradC2on"><input type="color" x-model="imgGradC2" class="h-7 w-9 rounded border border-slate-300 cursor-pointer" /></span>
+            <span class="inline-flex items-center gap-1.5">Kąt <input type="number" name="imgGradAngle" x-model="imgGradAngle" min="0" max="360" class="w-16 rounded border border-slate-300 px-2 py-1 text-xs" />°</span>
+          </div>
+        </div>
       </div>
 
       <div class="space-y-2">
         <label class="inline-flex items-center gap-2 text-sm text-slate-600">
           <input type="checkbox" name="bgGrain" x-model="bgGrain" class="rounded border-slate-300" /> Nakładka ziarna (szum)
         </label>
-        <div x-show="bgGrain" class="pl-6">
+        <div x-show="bgGrain" class="pl-6 space-y-2" x-cloak>
+          <div class="flex items-center gap-2 text-xs">
+            <span class="text-slate-600">Rodzaj:</span>
+            <template x-for="t in [['fine','Drobny film'],['soft','Miękki'],['coarse','Gruby']]" :key="t[0]">
+              <label class="cursor-pointer">
+                <input type="radio" name="bgGrainType" :value="t[0]" x-model="bgGrainType" class="peer sr-only" />
+                <span class="block rounded-lg border border-slate-300 px-2 py-1 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition" x-text="t[1]"></span>
+              </label>
+            </template>
+          </div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Moc szumu: <span x-text="bgGrainStrength + '%'"></span></label>
           <input type="range" name="bgGrainStrength" min="0" max="100" step="5" x-model="bgGrainStrength" class="w-full max-w-xs accent-brand-600" />
         </div>
@@ -265,7 +288,7 @@
           <div x-show="bgType==='image' && (previewImg || imagePath)" class="absolute inset-0" :style="'background:#0f172a center/cover no-repeat; background-image:url(' + (previewImg || imagePath) + ')'"></div>
           <div x-show="bgType==='image' && bgImageGradient" class="absolute inset-0" :style="'background:' + imageGradientCss()"></div>
           <div x-show="bgType==='image' && bgOverlay>0" class="absolute inset-0" :style="'background:rgba(15,23,42,' + (bgOverlay/100) + ')'"></div>
-          <div x-show="bgGrain" class="absolute inset-0 pointer-events-none" :style="'mix-blend-mode:soft-light;background-size:160px 160px;opacity:' + (bgGrainStrength/100) + ';background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'160\' height=\'160\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.8\' numOctaves=\'2\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'0.35\'/%3E%3C/svg%3E&quot;)'"></div>
+          <div x-show="bgGrain" class="absolute inset-0 pointer-events-none" :style="grainPreviewStyle()"></div>
           <div class="relative bg-white/85 rounded-lg px-4 py-2 text-xs text-slate-600 shadow">Karta klienta</div>
         </div>
       </div>
@@ -279,7 +302,7 @@
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Wariant</label>
         <div class="grid grid-cols-3 gap-2 text-sm">
-          <% [['classic','Klasyczny'],['centered','Karta na tle'],['split','Hero + karta']].forEach(function(o){ %>
+          <% [['classic','Klasyczny'],['centered','Landing'],['split','Split'],['hero-card','Hero w karcie'],['minimal','Minimal'],['banner','Banner']].forEach(function(o){ %>
             <label class="cursor-pointer">
               <input type="radio" name="layoutStyle" value="<%= o[0] %>" <%= settings.layout.style === o[0] ? 'checked' : '' %> class="peer sr-only" />
               <span class="block text-center rounded-lg border border-slate-300 px-2 py-2 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
@@ -429,6 +452,7 @@ function settingsForm(init) {
     // --- paleta z hex (port utils/color.js) ---
     _steps: { 50:0.93,100:0.85,200:0.7,300:0.5,400:0.3,500:0.12,600:0,700:-0.15,800:-0.3,900:-0.45 },
     _hex(h){ const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec((h||'').trim()); return m?[parseInt(m[1],16),parseInt(m[2],16),parseInt(m[3],16)]:null; },
+    _rgba(hex,a){ var c=this._hex(hex); return c?'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')':'rgba(0,0,0,'+a+')'; },
     _mix(rgb,t){ const tg=t>=0?255:0,a=Math.abs(t); return rgb.map(c=>Math.round(c+(tg-c)*a)); },
     brandVars(hex){ const b=this._hex(hex); if(!b) return ''; return Object.entries(this._steps).map(([s,t])=>`--brand-${s}:${this._mix(b,t).join(' ')}`).join(';'); },
 
@@ -455,7 +479,8 @@ function settingsForm(init) {
       else bg = this.presetCss[this.bgPreset] || this.presetCss['brand-soft'];
       return css + ';background:' + bg;
     },
-    imageGradientCss(){ return 'linear-gradient(135deg, rgb(var(--brand-700) / 0.62) 0%, rgb(var(--brand-500) / 0.38) 45%, rgba(0,0,0,0) 100%)'; },
+    imageGradientCss(){ var c1=this._rgba(this.imgGradC1,0.6); var c2=this.imgGradC2on?this._rgba(this.imgGradC2,0.38):'rgba(0,0,0,0)'; return 'linear-gradient('+this.imgGradAngle+'deg, '+c1+' 0%, '+c2+' 55%, rgba(0,0,0,0) 100%)'; },
+    grainPreviewStyle(){ var P={fine:{f:0.85,o:2,size:160,max:0.5},soft:{f:0.55,o:3,size:220,max:0.42},coarse:{f:0.34,o:4,size:300,max:0.34}}; var g=P[this.bgGrainType]||P.fine; var op=((this.bgGrainStrength/100)*g.max).toFixed(3); var uri="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='"+g.size+"' height='"+g.size+"'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='"+g.f+"' numOctaves='"+g.o+"' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"; return 'mix-blend-mode:soft-light;background-size:'+g.size+'px '+g.size+'px;opacity:'+op+';background-image:url("'+uri+'")'; },
     onBgFile(e){ const f=e.target.files&&e.target.files[0]; this.previewImg = f ? URL.createObjectURL(f) : null; },
   };
 }

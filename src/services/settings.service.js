@@ -20,7 +20,7 @@ const DEFAULTS = {
 };
 
 const ALIGNS = ['left', 'center', 'right'];
-const LAYOUT_STYLES = ['classic', 'centered', 'split'];
+const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner'];
 const CARD_STYLES = ['solid', 'glass', 'elevated'];
 const BUTTON_STYLES = ['rounded', 'pill'];
 
