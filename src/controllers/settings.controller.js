@@ -72,6 +72,7 @@ async function updateSettings(req, res, next) {
       },
       imagePath: current.background.imagePath || null,
       overlay: Math.min(80, Math.max(0, parseInt(b.bgOverlay, 10) || 0)),
+      imageGradient: b.bgImageGradient === 'on',
       grain: b.bgGrain === 'on',
       grainStrength: Math.min(100, Math.max(0, parseInt(b.bgGrainStrength, 10) || 0)),
     };
@@ -86,6 +87,8 @@ async function updateSettings(req, res, next) {
     const layout = {
       style: ['classic', 'centered', 'split'].includes(b.layoutStyle) ? b.layoutStyle : 'classic',
       card: ['solid', 'glass', 'elevated'].includes(b.layoutCard) ? b.layoutCard : 'solid',
+      cardSide: ['left', 'right'].includes(b.cardSide) ? b.cardSide : 'right',
+      hideName: b.hideName === 'on',
       heroOnBg: b.heroOnBg === 'on',
       applyToLogin: b.applyToLogin === 'on',
       radius: Math.min(40, Math.max(0, parseInt(b.layoutRadius, 10) >= 0 ? parseInt(b.layoutRadius, 10) : 24)),

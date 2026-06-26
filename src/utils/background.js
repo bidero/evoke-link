@@ -43,6 +43,7 @@ const DEFAULTS = {
   custom: { c1: '#6e00a5', c2: '#a31fde', c3: '', angle: 135 },
   imagePath: null,
   overlay: 0, // przyciemnienie obrazu 0..80 (%)
+  imageGradient: false, // nakładka gradientu brandowego na obraz
   grain: false,
   grainStrength: 50, // moc szumu 0..100 (%)
 };
@@ -77,6 +78,7 @@ function normalize(bg) {
     custom: normCustom(b.custom),
     imagePath: b.imagePath || null,
     overlay,
+    imageGradient: !!b.imageGradient,
     grain: !!b.grain,
     grainStrength,
   };
@@ -97,27 +99,35 @@ function bodyStyle(bg) {
 function isDark(bg) {
   const b = normalize(bg);
   if (b.type === 'gradient') return DARK_PRESETS.has(b.preset);
-  if (b.type === 'image') return b.overlay >= 35;
+  if (b.type === 'image') return b.overlay >= 35 || b.imageGradient;
   if (b.type === 'solid') return readableText(b.color) === '#ffffff';
   if (b.type === 'custom') return readableText(b.custom.c1) === '#ffffff' && readableText(b.custom.c2) === '#ffffff';
   return false;
 }
 
-// Ziarno (szum) jako lekka nakładka SVG w data-URI — bez zewnętrznych zasobów (CSP-friendly).
+// Ziarno (szum) jako nakładka SVG w data-URI — gęsta tekstura, bez zewnętrznych zasobów (CSP-friendly).
 const GRAIN_URI =
-  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E";
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E";
+
+// Gradient brandowy nakładany na obraz tła (tint w stylu WeTransfer).
+const IMAGE_GRADIENT =
+  'linear-gradient(135deg, rgb(var(--brand-700) / 0.62) 0%, rgb(var(--brand-500) / 0.38) 45%, rgba(0,0,0,0) 100%)';
 
 // HTML nakładek wstawianych na początku <body> (pod treścią). Stałe pozycjonowanie,
 // pointer-events:none, niski z-index — nie przeszkadzają w interakcji.
+// Kolejność warstw: gradient na obrazie → przyciemnienie → ziarno.
 function overlayHtml(bg) {
   const b = normalize(bg);
   let html = '';
+  if (b.type === 'image' && b.imagePath && b.imageGradient) {
+    html += `<div aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;background:${IMAGE_GRADIENT};"></div>`;
+  }
   if (b.type === 'image' && b.imagePath && b.overlay > 0) {
     html += `<div aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;background:rgba(15,23,42,${(b.overlay / 100).toFixed(2)});"></div>`;
   }
   if (b.grain && b.grainStrength > 0) {
     const op = (b.grainStrength / 100).toFixed(2);
-    html += `<div aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;mix-blend-mode:soft-light;opacity:${op};background-image:url(\"${GRAIN_URI}\");background-size:160px 160px;"></div>`;
+    html += `<div aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;mix-blend-mode:overlay;opacity:${op};background-image:url(\"${GRAIN_URI}\");background-size:200px 200px;"></div>`;
   }
   return html;
 }

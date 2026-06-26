@@ -15,7 +15,7 @@ const DEFAULTS = {
   logo: { size: 36, align: 'left' }, // wysokość px, wyrównanie left|center|right
   // Układ stron klienta. style: classic (obecny) | centered | split.
   // card: solid | glass | elevated. radius w px. button: rounded | pill.
-  layout: { style: 'classic', card: 'solid', heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded' },
+  layout: { style: 'classic', card: 'solid', cardSide: 'right', hideName: false, heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded' },
   customCss: '',
 };
 
@@ -37,6 +37,8 @@ function normLayout(l) {
   return {
     style: LAYOUT_STYLES.includes(x.style) ? x.style : DEFAULTS.layout.style,
     card: CARD_STYLES.includes(x.card) ? x.card : DEFAULTS.layout.card,
+    cardSide: ['left', 'right'].includes(x.cardSide) ? x.cardSide : DEFAULTS.layout.cardSide,
+    hideName: !!x.hideName,
     heroOnBg: x.heroOnBg === undefined ? DEFAULTS.layout.heroOnBg : !!x.heroOnBg,
     applyToLogin: !!x.applyToLogin,
     radius: Math.min(40, Math.max(0, Number.isInteger(r) ? r : DEFAULTS.layout.radius)),
