@@ -4,7 +4,7 @@ const express = require('express');
 const download = require('../controllers/download.controller');
 const receive = require('../controllers/receive.controller');
 const portal = require('../controllers/portal.controller');
-const { rawChunk, receiveChunk, receiveUpload } = require('../middleware/chunkUpload');
+const { chunkParser, receiveChunk, receiveUpload } = require('../middleware/chunkUpload');
 
 const router = express.Router();
 
@@ -21,7 +21,7 @@ router.get('/t/:token/file/:fileId', download.downloadFile);
 // Publiczny upload od klienta (Etap 2).
 router.get('/upload/:token', receive.showUploadPage);
 router.post('/upload/:token/password', receive.submitPassword);
-router.post('/upload/:token/chunk', rawChunk, receiveChunk);
+router.post('/upload/:token/chunk', chunkParser, receiveChunk);
 router.post('/upload/:token', receiveUpload('files'), receive.submitUpload);
 
 // Panel klienta na poziomie projektu (/p/:token).
@@ -29,7 +29,7 @@ router.get('/p/:token', portal.showPortal);
 router.post('/p/:token/password', portal.submitPassword);
 router.get('/p/:token/zip', portal.downloadAllZip);
 router.get('/p/:token/file/:fileId', portal.downloadFile);
-router.post('/p/:token/chunk', rawChunk, receiveChunk);
+router.post('/p/:token/chunk', chunkParser, receiveChunk);
 router.post('/p/:token/upload', receiveUpload('files'), portal.submitUpload);
 
 module.exports = router;

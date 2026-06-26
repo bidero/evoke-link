@@ -88,12 +88,9 @@ function uploader() {
         const uploadId = await window.chunkedUpload(this.files, window.location.pathname.replace(/\/$/, '') + '/chunk', (p) => { this.progress = p; });
         this.finalizing = true;
         const body = new URLSearchParams();
+        body.append('uploadId', uploadId);
         ['name','email'].forEach((n) => { if (form[n] && form[n].value) body.append(n, form[n].value); });
-        const res = await fetch(window.location.pathname, {
-          method: 'POST',
-          headers: { 'X-Upload-Id': uploadId, 'Content-Type': 'application/x-www-form-urlencoded' },
-          body,
-        });
+        const res = await fetch(window.location.pathname, { method: 'POST', body });
         if (res.ok) { const html = await res.text(); document.open(); document.write(html); document.close(); }
         else { this.uploading = false; this.finalizing = false; alert('Błąd wysyłania (' + res.status + ').'); }
       } catch (err) {

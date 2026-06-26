@@ -119,15 +119,12 @@ function uploader() {
         const uploadId = await window.chunkedUpload(this.files, '/admin/transfers/chunk', (p) => { this.progress = p; });
         this.finalizing = true; // serwer skleja kawałki — pokaż aktywność
         const body = new URLSearchParams();
+        body.append('uploadId', uploadId);
         ['title','message','password','maxDownloads','expiresAt','projectId'].forEach((n) => {
           if (form[n] && form[n].value) body.append(n, form[n].value);
         });
         if (form['clientVisible'] && form['clientVisible'].checked) body.append('clientVisible', 'on');
-        const res = await fetch('/admin/transfers', {
-          method: 'POST',
-          headers: { 'X-Upload-Id': uploadId, 'Content-Type': 'application/x-www-form-urlencoded' },
-          body,
-        });
+        const res = await fetch('/admin/transfers', { method: 'POST', body });
         if (res.ok) { window.location = res.url || '/admin/transfers'; }
         else { this.uploading = false; this.finalizing = false; alert('Błąd tworzenia transferu (' + res.status + ').'); }
       } catch (err) {

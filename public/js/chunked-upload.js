@@ -23,22 +23,26 @@
     return new Promise(function (resolve, reject) {
       var start = job.ci * CHUNK_SIZE;
       var blob = job.file.slice(start, start + CHUNK_SIZE);
+      // Wysyłamy jako multipart/form-data (a NIE octet-stream + nagłówki X-*),
+      // bo standardowy formularz przechodzi przez WAF/proxy hostingu współdzielonego.
+      var fd = new FormData();
+      fd.append('uploadId', uploadId);
+      fd.append('fileIndex', String(job.fi));
+      fd.append('fileName', job.file.name);
+      fd.append('fileType', job.file.type || '');
+      fd.append('chunkIndex', String(job.ci));
+      fd.append('totalChunks', String(job.total));
+      fd.append('chunk', blob, 'chunk');
       var xhr = new XMLHttpRequest();
       xhr.open('POST', chunkUrl);
-      xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-      xhr.setRequestHeader('X-Upload-Id', uploadId);
-      xhr.setRequestHeader('X-File-Index', String(job.fi));
-      xhr.setRequestHeader('X-File-Name', encodeURIComponent(job.file.name));
-      xhr.setRequestHeader('X-File-Type', job.file.type || '');
-      xhr.setRequestHeader('X-Chunk-Index', String(job.ci));
-      xhr.setRequestHeader('X-Total-Chunks', String(job.total));
+      // Bez setRequestHeader — przeglądarka sama ustawi multipart z boundary.
       xhr.upload.onprogress = function (e) { if (onChunkProgress) onChunkProgress(job, e.loaded); };
       xhr.onload = function () {
         if (xhr.status >= 200 && xhr.status < 300) resolve();
         else reject(new Error('Błąd przesyłania kawałka (' + xhr.status + ')'));
       };
       xhr.onerror = function () { reject(new Error('Błąd sieci podczas przesyłania')); };
-      xhr.send(blob);
+      xhr.send(fd);
     });
   }
 

@@ -1,27 +1,31 @@
 // Middleware uploadu dzielonego na kawałki (chunked) z fallbackiem do multipart.
 //
-// receiveChunk  — handler endpointu /chunk: przyjmuje surowe bajty kawałka i dopisuje je.
+// chunkParser   — parsuje multipart kawałka (pole `chunk` + metadane jako pola formularza).
+// receiveChunk  — handler endpointu /chunk: zapisuje bajty kawałka.
 // receiveUpload — zamiennik `upload.array(field)` na endpointach tworzących:
-//   * jeśli żądanie ma nagłówek X-Upload-Id → składa pliki z kawałków w req.files,
+//   * jeśli żądanie ma pole `uploadId` (lub nagłówek X-Upload-Id) → składa pliki z kawałków,
 //   * w przeciwnym razie działa zwykły multipart (multer) — wstecznie kompatybilne.
-const express = require('express');
+//
+// Transport kawałków to multipart/form-data (NIE octet-stream + nagłówki X-*),
+// bo to standardowy upload, którego WAF/proxy hostingu współdzielonego nie blokują.
+const multer = require('multer');
 const chunk = require('../services/chunk.service');
 const baseUpload = require('./upload');
 
-// Surowe ciało kawałka (do ~8 MB, kawałek klienta ma 5 MB + zapas).
-const rawChunk = express.raw({ type: 'application/octet-stream', limit: '8mb' });
+// Kawałek trzymamy chwilowo w pamięci (≤ ~8 MB: kawałek 5 MB + zapas), potem
+// chunk.service zapisuje go na dysk.
+const chunkParser = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } }).single('chunk');
 
 function receiveChunk(req, res) {
   try {
-    const uploadId = req.get('X-Upload-Id');
-    const fileIndex = req.get('X-File-Index');
+    const b = req.body || {};
     // Pusty kawałek (np. plik 0-bajtowy) jest dozwolony → pusty bufor.
-    const buf = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
-    chunk.writeChunk(uploadId, fileIndex, buf, {
-      name: decodeURIComponent(req.get('X-File-Name') || ''),
-      type: req.get('X-File-Type') || '',
-      chunkIndex: req.get('X-Chunk-Index'),
-      totalChunks: req.get('X-Total-Chunks'),
+    const buf = req.file && Buffer.isBuffer(req.file.buffer) ? req.file.buffer : Buffer.alloc(0);
+    chunk.writeChunk(b.uploadId, b.fileIndex, buf, {
+      name: b.fileName || '',
+      type: b.fileType || '',
+      chunkIndex: b.chunkIndex,
+      totalChunks: b.totalChunks,
     });
     res.json({ ok: true });
   } catch (err) {
@@ -32,11 +36,11 @@ function receiveChunk(req, res) {
 function receiveUpload(field) {
   const multipart = baseUpload.array(field);
   return async (req, res, next) => {
-    const uploadId = req.get('X-Upload-Id');
+    const uploadId = (req.body && req.body.uploadId) || req.get('X-Upload-Id');
     if (uploadId) {
       try {
         req.files = await chunk.assembleFiles(uploadId);
-        // Posprzątaj katalog sesji po wysłaniu odpowiedzi (pliki części zostały
+        // Sprzątamy katalog sesji po wysłaniu odpowiedzi (pliki części zostały
         // już przeniesione do katalogu transferu przez warstwę storage).
         res.on('finish', () => chunk.cleanup(uploadId));
         return next();
@@ -48,4 +52,4 @@ function receiveUpload(field) {
   };
 }
 
-module.exports = { rawChunk, receiveChunk, receiveUpload };
+module.exports = { chunkParser, receiveChunk, receiveUpload };

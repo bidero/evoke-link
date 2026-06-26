@@ -122,8 +122,7 @@ function uploader() {
         this.finalizing = true;
         const res = await fetch(path + '/upload', {
           method: 'POST',
-          headers: { 'X-Upload-Id': uploadId, 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams(),
+          body: new URLSearchParams({ uploadId: uploadId }),
         });
         if (res.ok) { window.location = res.url || (window.location.pathname + '?sent=1'); }
         else { this.uploading = false; this.finalizing = false; alert('Błąd wysyłania (' + res.status + ').'); }
