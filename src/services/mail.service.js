@@ -68,7 +68,7 @@ function btn(href, label, primary) {
 }
 
 // Powiadomienie do agencji o nowych plikach od klienta.
-async function sendUploadNotification({ transfer, fileNames, uploaderName, uploaderEmail }) {
+async function sendUploadNotification({ transfer, fileNames, uploaderName, uploaderEmail, projectName }) {
   const adminUrl = `${config.appUrl}/admin/transfers/${transfer.id}`;
   const title = transfer.title || `Upload ${transfer.token}`;
   let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
@@ -76,6 +76,7 @@ async function sendUploadNotification({ transfer, fileNames, uploaderName, uploa
 
   const text = [
     `Nowe pliki w: ${title}`,
+    projectName ? `Projekt: ${projectName}` : null,
     uploaderName ? `Od: ${uploaderName}` : null,
     uploaderEmail ? `E-mail: ${uploaderEmail}` : null,
     '', `Pliki (${fileNames.length}):`, ...fileNames.map((n) => ` • ${n}`),
@@ -83,6 +84,7 @@ async function sendUploadNotification({ transfer, fileNames, uploaderName, uploa
   ].filter((l) => l !== null).join('\n');
 
   const inner = `
+    ${projectName ? `<p style="margin:2px 0">Projekt: <b>${esc(projectName)}</b></p>` : ''}
     ${uploaderName ? `<p style="margin:2px 0">Od: <b>${esc(uploaderName)}</b></p>` : ''}
     ${uploaderEmail ? `<p style="margin:2px 0">E-mail: ${esc(uploaderEmail)}</p>` : ''}
     <p style="margin:12px 0 6px">Pliki (${fileNames.length}):</p>

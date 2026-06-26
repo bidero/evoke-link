@@ -100,6 +100,7 @@ async function submitUpload(req, res, next) {
         fileNames: files.map((f) => f.originalname),
         uploaderName: name,
         uploaderEmail: email,
+        projectName: transfer.project ? transfer.project.name : null,
       })
       .catch((e) => console.error('[mail] błąd wysyłki powiadomienia:', e.message));
 

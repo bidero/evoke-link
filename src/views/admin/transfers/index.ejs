@@ -28,11 +28,20 @@
     <a href="/admin/transfers/new" class="text-brand-700 font-medium hover:underline">Utwórz pierwszy transfer →</a>
   </div>
 <% } else { %>
+  <form method="POST" action="/admin/transfers/bulk-delete"
+        x-data="{ n: 0, count(){ return this.$root.querySelectorAll('input[name=ids]:checked').length } }"
+        @change="n = count()"
+        onsubmit="return confirm('Usunąć zaznaczone transfery i ich pliki? Tej operacji nie można cofnąć.')">
+    <div x-show="n > 0" x-cloak class="mb-3 flex items-center gap-3">
+      <span class="text-sm text-slate-600"><span x-text="n"></span> zaznaczonych</span>
+      <button type="submit" class="rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 transition">Usuń zaznaczone</button>
+    </div>
   <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
     <div class="overflow-x-auto">
-    <table class="w-full text-sm min-w-[720px]">
+    <table class="w-full text-sm min-w-[760px]">
       <thead class="bg-slate-50 text-slate-500 text-left">
         <tr>
+          <th class="px-4 py-3 w-10"><input type="checkbox" @change="$root.querySelectorAll('input[name=ids]').forEach(c => c.checked = $el.checked); n = count()" class="rounded border-slate-300" title="Zaznacz wszystkie" /></th>
           <th class="px-4 py-3 font-medium">Tytuł</th>
           <th class="px-4 py-3 font-medium">Pliki</th>
           <th class="px-4 py-3 font-medium">Rozmiar</th>
@@ -45,6 +54,7 @@
       <tbody class="divide-y divide-slate-100">
         <% transfers.forEach(function(t){ %>
           <tr class="hover:bg-slate-50 cursor-pointer" onclick="window.location='/admin/transfers/<%= t.id %>'">
+            <td class="px-4 py-3" @click.stop><input type="checkbox" name="ids" value="<%= t.id %>" class="rounded border-slate-300" /></td>
             <td class="px-4 py-3 font-medium text-slate-800">
               <span class="inline-flex items-center gap-1.5">
                 <% if (t.direction === 'incoming') { %><span title="Upload od klienta"><%- icon('upload', { size: 15, cls: 'text-sky-600' }) %></span><% } else { %><span title="Wysyłka do klienta"><%- icon('download', { size: 15 }) %></span><% } %>
@@ -67,4 +77,5 @@
     </table>
     </div>
   </div>
+  </form>
 <% } %>

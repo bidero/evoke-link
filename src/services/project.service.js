@@ -2,20 +2,33 @@
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const prisma = require('../db/client');
+const events = require('./event.service');
 
 function makeToken() {
   return crypto.randomBytes(9).toString('base64url');
 }
 
 // Lista projektów z licznikami transferów (do widoku listy i dropdownów).
-function list({ status } = {}) {
+async function list({ status } = {}) {
   const where = {};
   if (status) where.status = status;
-  return prisma.project.findMany({
+  const projects = await prisma.project.findMany({
     where,
     include: { _count: { select: { transfers: true } } },
     orderBy: { updatedAt: 'desc' },
   });
+  // Liczba nieprzeczytanych powiadomień per projekt (badge „zaktualizowano").
+  if (projects.length) {
+    const grouped = await prisma.event.groupBy({
+      by: ['projectId'],
+      where: { isRead: false, type: { in: events.NOTIFY_TYPES }, projectId: { in: projects.map((p) => p.id) } },
+      _count: { _all: true },
+    });
+    const map = {};
+    grouped.forEach((g) => { map[g.projectId] = g._count._all; });
+    projects.forEach((p) => { p.unread = map[p.id] || 0; });
+  }
+  return projects;
 }
 
 // Projekt ze wszystkimi transferami (i ich plikami).

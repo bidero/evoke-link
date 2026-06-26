@@ -28,10 +28,13 @@ async function loadProject(req, res) {
 
 // Dzieli widoczne transfery na „od nas" (do pobrania) i „od klienta" (wgrane).
 function visibleSets(project) {
-  const visible = project.transfers.filter((t) => t.clientVisible && t.status !== 'deleted');
+  const live = project.transfers.filter((t) => t.status !== 'deleted');
   return {
-    fromUs: visible.filter((t) => t.direction === 'outgoing'),
-    fromClient: visible.filter((t) => t.direction === 'incoming'),
+    // „Od nas" — tylko transfery wychodzące oznaczone jako widoczne dla klienta.
+    fromUs: live.filter((t) => t.direction === 'outgoing' && t.clientVisible),
+    // „Twoje pliki" — WSZYSTKIE pliki przesłane przez klienta (jego własne), niezależnie
+    // od flagi clientVisible (dotyczy też uploadów z osobnych linków /upload/:token).
+    fromClient: live.filter((t) => t.direction === 'incoming'),
   };
 }
 
@@ -101,7 +104,7 @@ async function submitUpload(req, res, next) {
       ip: req.ip,
     });
     mail
-      .sendUploadNotification({ transfer: updated, fileNames: files.map((f) => f.originalname), uploaderName: name, uploaderEmail: email })
+      .sendUploadNotification({ transfer: updated, fileNames: files.map((f) => f.originalname), uploaderName: name, uploaderEmail: email, projectName: project.name })
       .catch((e) => console.error('[mail] błąd:', e.message));
 
     res.redirect(`/p/${project.clientToken}?sent=1`);
@@ -121,7 +124,10 @@ async function downloadFile(req, res, next) {
     let file = null;
     let owner = null;
     for (const t of project.transfers) {
-      if (!t.clientVisible) continue;
+      // Klient może pobrać: pliki „od nas" widoczne (outgoing+clientVisible)
+      // oraz wszystkie SWOJE wysłane pliki (incoming).
+      const allowed = (t.direction === 'outgoing' && t.clientVisible) || t.direction === 'incoming';
+      if (!allowed) continue;
       const f = t.files.find((x) => String(x.id) === String(req.params.fileId));
       if (f) { file = f; owner = t; break; }
     }

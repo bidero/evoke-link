@@ -51,11 +51,11 @@ async function createOutgoingTransfer({ title, message, password, expiresAt, max
   return transfer;
 }
 
-// Pobiera transfer po publicznym tokenie wraz z plikami.
+// Pobiera transfer po publicznym tokenie wraz z plikami i projektem.
 function getByToken(token) {
   return prisma.transfer.findUnique({
     where: { token },
-    include: { files: true },
+    include: { files: true, project: true },
   });
 }
 

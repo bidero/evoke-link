@@ -249,6 +249,22 @@ async function adminDownloadZip(req, res, next) {
   }
 }
 
+// Masowe usuwanie zaznaczonych transferów.
+async function bulkDelete(req, res, next) {
+  try {
+    let ids = req.body.ids;
+    if (!ids) return res.redirect('/admin/transfers');
+    if (!Array.isArray(ids)) ids = [ids];
+    for (const id of ids) {
+      const t = await transferService.getById(id);
+      if (t) await transferService.remove(t);
+    }
+    res.redirect('/admin/transfers');
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Usunięcie transferu (plus pliki z dysku).
 async function deleteTransfer(req, res, next) {
   try {
@@ -272,5 +288,6 @@ module.exports = {
   updateTransfer,
   adminDownloadFile,
   adminDownloadZip,
+  bulkDelete,
   deleteTransfer,
 };

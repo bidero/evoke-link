@@ -34,6 +34,7 @@ router.get('/transfers', transfers.listTransfers);
 router.get('/transfers/new', transfers.showCreateForm);
 router.get('/transfers/new-upload', transfers.showCreateUploadForm);
 router.post('/transfers/chunk', chunkParser, receiveChunk); // kawałki uploadu (przed :id!)
+router.post('/transfers/bulk-delete', transfers.bulkDelete); // przed :id!
 router.post('/transfers', receiveUpload('files'), transfers.createTransfer); // wychodzący
 router.post('/transfers/upload', transfers.createUpload); // link uploadu (przychodzący)
 router.get('/transfers/:id', transfers.showTransfer);
