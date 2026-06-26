@@ -6,7 +6,7 @@
     <% if (!client.projects.length) { %>
       <p class="text-sm text-slate-400">Brak projektów.</p>
     <% } else { %>
-      <div class="rounded-xl border border-slate-200 divide-y divide-slate-100">
+      <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
         <% client.projects.forEach(function(p){ %>
           <a href="/p/<%= p.clientToken %>" class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition group">
             <span class="min-w-0">

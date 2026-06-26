@@ -21,7 +21,7 @@
     </a>
 
     <!-- Lista plików -->
-    <div class="rounded-xl border border-slate-200 divide-y divide-slate-100">
+    <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
       <% transfer.files.forEach(function(f){ %>
         <a href="/t/<%= transfer.token %>/file/<%= f.id %>"
            class="flex items-center justify-between px-4 py-3 text-sm hover:bg-slate-50 transition group">
