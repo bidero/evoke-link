@@ -17,6 +17,13 @@ const DEFAULTS = {
   // card: solid | glass | elevated. radius w px. button: rounded | pill.
   layout: { style: 'classic', card: 'solid', cardSide: 'right', hideName: false, heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded' },
   customCss: '',
+  // E-mail: osobne logo + treści + powiadomienie do klienta. Puste pola = domyślne.
+  emails: {
+    logoPath: null,
+    linkSubject: '', linkIntro: '',
+    uploadSubject: '', downloadSubject: '',
+    clientConfirm: false, clientConfirmSubject: '', clientConfirmBody: '',
+  },
 };
 
 const ALIGNS = ['left', 'center', 'right'];
@@ -59,6 +66,8 @@ function normalize(row) {
   try { logo = row.logo ? JSON.parse(row.logo) : {}; } catch (_) {}
   let layout = {};
   try { layout = row.layout ? JSON.parse(row.layout) : {}; } catch (_) {}
+  let emails = {};
+  try { emails = row.emails ? JSON.parse(row.emails) : {}; } catch (_) {}
   return {
     appName: row.appName || DEFAULTS.appName,
     logoPath: row.logoPath || null,
@@ -69,6 +78,7 @@ function normalize(row) {
     logo: normLogo(logo),
     layout: normLayout(layout),
     customCss: row.customCss || '',
+    emails: { ...DEFAULTS.emails, ...emails },
   };
 }
 
@@ -97,6 +107,7 @@ async function update(data) {
   if (data.logo !== undefined) patch.logo = JSON.stringify(data.logo);
   if (data.layout !== undefined) patch.layout = JSON.stringify(data.layout);
   if (data.customCss !== undefined) patch.customCss = data.customCss;
+  if (data.emails !== undefined) patch.emails = JSON.stringify(data.emails);
 
   const row = await prisma.settings.upsert({
     where: { id: 1 },

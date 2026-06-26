@@ -103,5 +103,6 @@ model Settings {
   logo         String?  // JSON: { size, align } — prezentacja logo (wysokość px, wyrównanie)
   layout       String?  // JSON: { style, card, heroOnBg, applyToLogin, radius, button } — układ stron klienta
   customCss    String?  // dowolny CSS wstrzykiwany do stron (escape hatch dla admina)
+  emails       String?  // JSON: { logoPath, linkSubject, linkIntro, uploadSubject, downloadSubject, clientConfirm, clientConfirmSubject, clientConfirmBody }
   updatedAt    DateTime @updatedAt
 }

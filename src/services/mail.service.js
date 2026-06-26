@@ -43,7 +43,8 @@ async function wrap(content, { heading } = {}) {
   try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
   const appName = esc(s.appName || 'Evoke LINK');
   const primary = (s.colors && s.colors.primary) || '#6e00a5';
-  const logo = s.logoPath ? `${config.appUrl}${s.logoPath}` : null;
+  const mailLogo = (s.emails && s.emails.logoPath) || s.logoPath; // osobne logo maili (gdy ustawione)
+  const logo = mailLogo ? `${config.appUrl}${mailLogo}` : null;
   const footer = esc((s.texts && s.texts.footer) || `${appName} · bezpieczna wymiana plików`);
   const head = logo
     ? `<img src="${esc(logo)}" alt="${appName}" style="height:34px;max-width:200px;object-fit:contain" />`
@@ -92,7 +93,8 @@ async function sendUploadNotification({ transfer, fileNames, uploaderName, uploa
     ${btn(adminUrl, 'Zobacz w panelu', primary)}`;
 
   const html = await wrap(inner, { heading: `Nowe pliki: ${title}` });
-  return send({ to: config.admin.email, subject: `${s.appName || 'Evoke LINK'} — nowe pliki: ${title}`, html, text });
+  const subject = (s.emails && s.emails.uploadSubject) || `${s.appName || 'Evoke LINK'} — nowe pliki: ${title}`;
+  return send({ to: config.admin.email, subject, html, text });
 }
 
 // Wysyłka linku do transferu/uploadu na adres klienta (z panelu).
@@ -100,20 +102,23 @@ async function sendTransferLink({ to, transfer, message }) {
   let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
   const primary = (s.colors && s.colors.primary) || '#6e00a5';
   const appName = s.appName || 'Evoke LINK';
+  const em = s.emails || {};
   const incoming = transfer.direction === 'incoming';
   const link = `${config.appUrl}/${incoming ? 'upload' : 't'}/${transfer.token}`;
   const title = transfer.title || (incoming ? 'Prześlij pliki' : 'Pliki dla Ciebie');
   const cta = incoming ? 'Prześlij pliki' : 'Pobierz pliki';
+  // Treść wstępu: wiadomość z formularza > domyślny wstęp z ustawień > wbudowany.
+  const intro = message || em.linkIntro || (incoming ? 'Pod tym linkiem prześlesz nam pliki:' : 'Pod tym linkiem pobierzesz przygotowane dla Ciebie pliki:');
 
   const inner = `
-    ${message ? `<p style="margin:0 0 16px;white-space:pre-line">${esc(message)}</p>` : `<p style="margin:0 0 16px">${incoming ? 'Pod tym linkiem prześlesz nam pliki:' : 'Pod tym linkiem pobierzesz przygotowane dla Ciebie pliki:'}</p>`}
+    <p style="margin:0 0 16px;white-space:pre-line">${esc(intro)}</p>
     <p style="margin:0 0 20px">${btn(link, cta, primary)}</p>
     <p style="margin:0;color:#64748b;font-size:13px">Lub skopiuj adres:<br><a href="${esc(link)}" style="color:${esc(primary)}">${esc(link)}</a></p>
     ${transfer.expiresAt ? `<p style="margin:16px 0 0;color:#94a3b8;font-size:12px">Link wygasa: ${new Date(transfer.expiresAt).toLocaleString('pl-PL')}</p>` : ''}`;
 
   const html = await wrap(inner, { heading: title });
-  const text = `${message ? message + '\n\n' : ''}${cta}: ${link}`;
-  return send({ to, subject: `${appName} — ${title}`, html, text, replyTo: config.admin.email });
+  const text = `${intro}\n\n${cta}: ${link}`;
+  return send({ to, subject: em.linkSubject || `${appName} — ${title}`, html, text, replyTo: config.admin.email });
 }
 
 // Powiadomienie do agencji o pierwszym pobraniu transferu przez klienta.
@@ -129,7 +134,22 @@ async function sendDownloadNotification({ transfer, ip }) {
     ${btn(adminUrl, 'Zobacz w panelu', primary)}`;
   const html = await wrap(inner, { heading: 'Pobrano pliki' });
   const text = `Klient pobrał: ${title}\n${adminUrl}`;
-  return send({ to: config.admin.email, subject: `${appName} — pobrano: ${title}`, html, text });
+  const subject = (s.emails && s.emails.downloadSubject) || `${appName} — pobrano: ${title}`;
+  return send({ to: config.admin.email, subject, html, text });
+}
+
+// Potwierdzenie do KLIENTA po przesłaniu plików (jeśli włączone i klient podał e-mail).
+async function sendUploadConfirmation({ to, transfer, projectName }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const em = s.emails || {};
+  if (!em.clientConfirm) return { skipped: true };
+  const appName = s.appName || 'Evoke LINK';
+  const body = em.clientConfirmBody || 'Dziękujemy! Otrzymaliśmy Twoje pliki.';
+  const inner = `
+    <p style="margin:0 0 12px;white-space:pre-line">${esc(body)}</p>
+    ${projectName ? `<p style="margin:0;color:#64748b;font-size:13px">Projekt: ${esc(projectName)}</p>` : ''}`;
+  const html = await wrap(inner, { heading: 'Potwierdzenie' });
+  return send({ to, subject: em.clientConfirmSubject || `${appName} — potwierdzenie odbioru plików`, html, text: body, replyTo: config.admin.email });
 }
 
 // Testowy e-mail do weryfikacji konfiguracji SMTP.
@@ -140,4 +160,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, sendUploadNotification, sendTransferLink, sendDownloadNotification, sendTest };
+module.exports = { send, isConfigured, sendUploadNotification, sendTransferLink, sendDownloadNotification, sendUploadConfirmation, sendTest };

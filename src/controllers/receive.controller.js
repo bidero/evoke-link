@@ -104,7 +104,14 @@ async function submitUpload(req, res, next) {
       })
       .catch((e) => console.error('[mail] błąd wysyłki powiadomienia:', e.message));
 
-    res.render('public/upload', { title: transfer.title || 'Dziękujemy', layout: PUBLIC_LAYOUT, transfer: updated, sent: true, count: files.length });
+    // Potwierdzenie do klienta (jeśli włączone w ustawieniach i podał e-mail).
+    if (email) {
+      mail
+        .sendUploadConfirmation({ to: email, transfer: updated, projectName: transfer.project ? transfer.project.name : null })
+        .catch((e) => console.error('[mail] potwierdzenie klienta:', e.message));
+    }
+
+    res.render('public/upload', { title: transfer.title || 'Dziękujemy', layout: PUBLIC_LAYOUT, transfer: { ...updated, project: transfer.project }, sent: true, count: files.length });
   } catch (err) {
     (req.files || []).forEach((f) => storage.removeTmp(f.path));
     next(err);

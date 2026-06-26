@@ -113,6 +113,16 @@ async function updateSettings(req, res, next) {
       logo: logoCfg,
       layout,
       customCss: sanitizeCss(b.customCss || ''),
+      emails: {
+        logoPath: current.emails.logoPath || null,
+        linkSubject: (b.linkSubject || '').trim(),
+        linkIntro: (b.linkIntro || '').trim(),
+        uploadSubject: (b.uploadSubject || '').trim(),
+        downloadSubject: (b.downloadSubject || '').trim(),
+        clientConfirm: b.clientConfirm === 'on',
+        clientConfirmSubject: (b.clientConfirmSubject || '').trim(),
+        clientConfirmBody: (b.clientConfirmBody || '').trim(),
+      },
     };
 
     // --- Pliki: logo / favicon (sanityzacja SVG) ---
@@ -128,6 +138,11 @@ async function updateSettings(req, res, next) {
     const bgImg = uploadedFile(req, 'bg');
     if (bgImg) background.imagePath = `/branding/${bgImg.filename}`;
     else if (b.removeBg === 'on') background.imagePath = null;
+
+    // --- Plik: osobne logo w mailach ---
+    const mailLogo = uploadedFile(req, 'mailLogo');
+    if (mailLogo) { sanitizeIfSvg(mailLogo); data.emails.logoPath = `/branding/${mailLogo.filename}`; }
+    else if (b.removeMailLogo === 'on') data.emails.logoPath = null;
 
     await settingsService.update(data);
     await events.log({ type: 'updated', message: 'Zmieniono ustawienia / branding', ip: req.ip });

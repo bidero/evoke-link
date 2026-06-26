@@ -410,6 +410,56 @@
       </div>
     </div>
 
+    <!-- E-mail: wygląd i treści -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
+      <h2 class="text-sm font-semibold text-slate-700">E-mail — wygląd i treści</h2>
+
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Logo w mailach <span class="text-slate-400 font-normal">(puste = logo aplikacji)</span></label>
+        <% if (settings.emails.logoPath) { %>
+          <div class="flex items-center gap-3 mb-2">
+            <img src="<%= settings.emails.logoPath %>" alt="logo maili" class="h-10 rounded bg-slate-50 border border-slate-200 p-1" />
+            <label class="inline-flex items-center gap-1.5 text-xs text-slate-500"><input type="checkbox" name="removeMailLogo" class="rounded border-slate-300" /> usuń</label>
+          </div>
+        <% } %>
+        <input name="mailLogo" type="file" accept="image/*,.svg" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm" />
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Temat: link do plików</label>
+          <input name="linkSubject" type="text" value="<%= settings.emails.linkSubject %>" placeholder="domyślny"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Temat: powiadomienie o uploadzie</label>
+          <input name="uploadSubject" type="text" value="<%= settings.emails.uploadSubject %>" placeholder="domyślny"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Temat: powiadomienie o pobraniu</label>
+          <input name="downloadSubject" type="text" value="<%= settings.emails.downloadSubject %>" placeholder="domyślny"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Wstęp w mailu z linkiem <span class="text-slate-400 font-normal">(gdy nie wpiszesz wiadomości przy wysyłce)</span></label>
+        <textarea name="linkIntro" rows="2" placeholder="np. W załączeniu link do plików dla Ciebie."
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= settings.emails.linkIntro %></textarea>
+      </div>
+
+      <div class="border-t border-slate-100 pt-4 space-y-3">
+        <label class="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" name="clientConfirm" class="rounded border-slate-300" <%= settings.emails.clientConfirm ? 'checked' : '' %> />
+          Wyślij klientowi potwierdzenie po przesłaniu plików (gdy podał e-mail)
+        </label>
+        <input name="clientConfirmSubject" type="text" value="<%= settings.emails.clientConfirmSubject %>" placeholder="Temat potwierdzenia (domyślny)"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <textarea name="clientConfirmBody" rows="2" placeholder="Treść potwierdzenia (domyślna: Dziękujemy! Otrzymaliśmy Twoje pliki.)"
+                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= settings.emails.clientConfirmBody %></textarea>
+      </div>
+    </div>
+
     <!-- Własny CSS (zaawansowane) -->
     <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-3">
       <h2 class="text-sm font-semibold text-slate-700">Własny CSS <span class="text-slate-400 font-normal">(zaawansowane)</span></h2>
