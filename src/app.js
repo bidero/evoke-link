@@ -119,6 +119,15 @@ app.use(async (req, res, next) => {
     ].filter(Boolean).join(';');
     res.locals.adminStyleTag = `<style>:root{${adminVars}}</style>`;
 
+    // Dark mode: kolory ciemne z ustawień (puste → wartości domyślne z input.css).
+    const darkBg = color.safeHex(c.darkBg, '#0f172a');
+    const darkSurface = color.safeHex(c.darkSurface, '#1e293b');
+    const darkText = color.safeHex(c.darkText, '#e5e7eb');
+    res.locals.darkStyleTag =
+      `<style>html.dark{--dk-bg:${darkBg};--dk-surface:${darkSurface};--dk-text:${darkText};` +
+      `--dk-surface-2:color-mix(in srgb, ${darkSurface} 82%, #fff);` +
+      `--dk-border:color-mix(in srgb, ${darkSurface} 66%, #fff)}</style>`;
+
     // Tło stron klienta (gradient/obraz/kolor + ziarno).
     res.locals.bgStyle = bg.bodyStyle(s.background);
     res.locals.bgOverlay = bg.overlayHtml(s.background);
@@ -136,6 +145,7 @@ app.use(async (req, res, next) => {
     res.locals.settings = settingsService.DEFAULTS;
     res.locals.brandStyleTag = '';
     res.locals.adminStyleTag = '';
+    res.locals.darkStyleTag = '';
     res.locals.bgStyle = bg.bodyStyle(bg.DEFAULTS);
     res.locals.bgOverlay = '';
     res.locals.bgDark = false;

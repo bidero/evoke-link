@@ -2,6 +2,8 @@
 const fs = require('fs');
 const settingsService = require('../services/settings.service');
 const events = require('../services/event.service');
+const mail = require('../services/mail.service');
+const config = require('../config');
 const { safeHex } = require('../utils/color');
 const { sanitizeSvg, looksLikeSvg } = require('../utils/svgSanitize');
 const { sanitizeCss } = require('../utils/css');
@@ -16,6 +18,9 @@ async function showSettings(req, res, next) {
       settings,
       presets: background.PRESETS,
       saved: req.query.saved === '1',
+      mailReady: mail.isConfigured(),
+      adminEmail: config.admin.email,
+      test: req.query.test || null, // sent | dev | error
     });
   } catch (err) {
     next(err);
@@ -49,6 +54,9 @@ async function updateSettings(req, res, next) {
       adminText: safeHex(b.adminText, '') || '',      // puste = auto-kontrast z tła
       adminSidebar: safeHex(b.adminSidebar, '#ffffff'),
       adminBg: safeHex(b.adminBg, '#f8fafc'),
+      darkBg: safeHex(b.darkBg, '#0f172a'),
+      darkSurface: safeHex(b.darkSurface, '#1e293b'),
+      darkText: safeHex(b.darkText, '#e5e7eb'),
     };
 
     // --- Treści ---
@@ -128,4 +136,17 @@ async function updateSettings(req, res, next) {
   }
 }
 
-module.exports = { showSettings, updateSettings };
+// Wysyłka testowego e-maila (weryfikacja SMTP z .env).
+async function sendTestEmail(req, res, next) {
+  try {
+    const to = (req.body.testTo || '').trim() || config.admin.email;
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return res.redirect('/admin/settings?test=error');
+    await mail.sendTest({ to });
+    res.redirect('/admin/settings?test=' + (mail.isConfigured() ? 'sent' : 'dev'));
+  } catch (e) {
+    console.error('[mail] test:', e.message);
+    res.redirect('/admin/settings?test=error');
+  }
+}
+
+module.exports = { showSettings, updateSettings, sendTestEmail };

@@ -3,17 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>try{if(localStorage.getItem('evoke-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}window.toggleTheme=function(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('evoke-theme',d?'dark':'light')}catch(e){}};</script>
   <% const appName = (typeof settings !== 'undefined' && settings) ? settings.appName : 'Evoke LINK'; %>
   <title><%= typeof title !== 'undefined' ? title + ' — ' + appName : appName %></title>
   <link rel="stylesheet" href="/css/app.css" />
   <% if (typeof settings !== 'undefined' && settings && settings.faviconPath) { %><link rel="icon" href="<%= settings.faviconPath %>" /><% } %>
   <%- typeof brandStyleTag !== 'undefined' ? brandStyleTag : '' %>
   <%- typeof surfaceStyleTag !== 'undefined' ? surfaceStyleTag : '' %>
+  <%- typeof darkStyleTag !== 'undefined' ? darkStyleTag : '' %>
   <%- typeof customStyleTag !== 'undefined' ? customStyleTag : '' %>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="min-h-screen text-slate-800 antialiased" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
   <%- typeof bgOverlay !== 'undefined' ? bgOverlay : '' %>
+  <button type="button" onclick="window.toggleTheme&&window.toggleTheme()" title="Tryb jasny/ciemny" aria-label="Przełącz tryb"
+    class="fixed top-4 right-4 z-30 rounded-full p-2 bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 backdrop-blur transition text-slate-700 dark:text-slate-100">
+    <span class="dark:hidden"><%- icon('moon', { size: 18, cls: '' }) %></span>
+    <span class="hidden dark:inline"><%- icon('sun', { size: 18, cls: '' }) %></span>
+  </button>
   <div class="relative z-10 min-h-screen flex items-center justify-center p-6">
     <%- body %>
   </div>

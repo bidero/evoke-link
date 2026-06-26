@@ -27,6 +27,30 @@
     </div>
   </div>
 
+  <!-- Wyślij link e-mailem -->
+  <div class="mt-4 bg-white rounded-2xl border border-slate-200 p-5">
+    <div class="text-sm font-medium text-slate-700 mb-2">Wyślij link e-mailem</div>
+    <% if (mail === 'sent') { %>
+      <div class="mb-3 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Wysłano link na podany adres.</div>
+    <% } else if (mail === 'invalid') { %>
+      <div class="mb-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Podaj poprawny adres e-mail.</div>
+    <% } else if (mail === 'error') { %>
+      <div class="mb-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie udało się wysłać. Sprawdź konfigurację SMTP w .env.</div>
+    <% } %>
+    <form method="POST" action="/admin/transfers/<%= transfer.id %>/send" class="space-y-2">
+      <div class="flex flex-col sm:flex-row gap-2">
+        <input name="email" type="email" required placeholder="adres@klienta.pl"
+               class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">Wyślij link</button>
+      </div>
+      <textarea name="message" rows="2" placeholder="Wiadomość do klienta (opcjonalnie)"
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+      <% if (!mailReady) { %>
+        <p class="text-xs text-amber-600">SMTP nie jest skonfigurowany w .env — wiadomość trafi do logów serwera zamiast do klienta.</p>
+      <% } %>
+    </form>
+  </div>
+
   <!-- Parametry -->
   <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
     <% const box = (label, val) => `<div class="bg-white rounded-xl border border-slate-200 p-3"><div class="text-xs text-slate-400">${label}</div><div class="text-sm font-medium text-slate-700 mt-0.5">${val}</div></div>`; %>

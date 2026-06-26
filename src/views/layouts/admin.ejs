@@ -3,19 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>try{if(localStorage.getItem('evoke-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}window.toggleTheme=function(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('evoke-theme',d?'dark':'light')}catch(e){}};</script>
   <% const appName = (typeof settings !== 'undefined' && settings) ? settings.appName : 'Evoke LINK'; %>
   <title><%= typeof title !== 'undefined' ? title + ' — ' + appName : appName %></title>
   <link rel="stylesheet" href="/css/app.css" />
   <% if (typeof settings !== 'undefined' && settings && settings.faviconPath) { %><link rel="icon" href="<%= settings.faviconPath %>" /><% } %>
   <%- typeof adminStyleTag !== 'undefined' ? adminStyleTag : '' %>
+  <%- typeof darkStyleTag !== 'undefined' ? darkStyleTag : '' %>
   <%- typeof customStyleTag !== 'undefined' ? customStyleTag : '' %>
   <script src="/js/chunked-upload.js"></script>
   <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-[var(--admin-bg)] antialiased" style="color: var(--admin-text)">
+<body class="bg-[var(--admin-bg)] antialiased" style="color: var(--admin-text)" x-data="{ nav: false }">
   <div class="min-h-screen flex">
-    <!-- Pasek boczny -->
-    <aside class="w-60 shrink-0 bg-[var(--admin-sidebar)] border-r border-slate-200/60 flex flex-col" style="color: var(--admin-sidebar-text)">
+    <!-- Przyciemnienie tła pod offcanvas (mobile) -->
+    <div x-show="nav" x-cloak @click="nav = false" class="fixed inset-0 bg-black/40 z-30 md:hidden"></div>
+
+    <!-- Pasek boczny (offcanvas na mobile, statyczny od md) -->
+    <aside class="fixed inset-y-0 left-0 z-40 w-60 shrink-0 bg-[var(--admin-sidebar)] border-r border-slate-200/60 flex flex-col transition-transform -translate-x-full md:static md:translate-x-0"
+           :class="nav && '!translate-x-0'" style="color: var(--admin-sidebar-text)">
       <div class="h-16 flex items-center gap-2 px-6 border-b border-black/5">
         <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
           <img src="<%= settings.logoPath %>" alt="<%= appName %>" class="h-8 max-w-[140px] object-contain" />
@@ -58,9 +64,16 @@
 
     <!-- Główna kolumna -->
     <div class="flex-1 flex flex-col min-w-0">
-      <header class="h-16 bg-[var(--admin-sidebar)] border-b border-black/5 flex items-center justify-between px-8" style="color: var(--admin-sidebar-text)">
-        <h1 class="text-lg font-semibold"><%= typeof title !== 'undefined' ? title : '' %></h1>
+      <header class="h-16 bg-[var(--admin-sidebar)] border-b border-black/5 flex items-center justify-between px-4 sm:px-6 lg:px-8" style="color: var(--admin-sidebar-text)">
+        <div class="flex items-center gap-3 min-w-0">
+          <button type="button" class="md:hidden opacity-70 hover:opacity-100" @click="nav = true" aria-label="Otwórz menu"><%- icon('menu', { size: 22, cls: '' }) %></button>
+          <h1 class="text-lg font-semibold truncate"><%= typeof title !== 'undefined' ? title : '' %></h1>
+        </div>
         <div class="flex items-center gap-4">
+          <button type="button" onclick="window.toggleTheme&&window.toggleTheme()" class="opacity-70 hover:opacity-100" title="Tryb jasny/ciemny" aria-label="Przełącz tryb">
+            <span class="dark:hidden"><%- icon('moon', { size: 19, cls: '' }) %></span>
+            <span class="hidden dark:inline"><%- icon('sun', { size: 19, cls: '' }) %></span>
+          </button>
           <a href="/admin/notifications" class="relative opacity-70 hover:opacity-100" title="Powiadomienia">
             <%- icon('bell', { size: 20, cls: '' }) %>
             <% const unreadH = (typeof unreadCount !== 'undefined') ? unreadCount : 0; %>
@@ -68,10 +81,10 @@
               <span class="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold"><%= unreadH %></span>
             <% } %>
           </a>
-          <span class="text-sm opacity-60"><%= typeof currentUser !== 'undefined' && currentUser ? currentUser.email : '' %></span>
+          <span class="hidden sm:inline text-sm opacity-60"><%= typeof currentUser !== 'undefined' && currentUser ? currentUser.email : '' %></span>
         </div>
       </header>
-      <main class="flex-1 p-8">
+      <main class="flex-1 p-4 sm:p-6 lg:p-8">
         <%- body %>
       </main>
     </div>

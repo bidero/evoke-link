@@ -46,3 +46,62 @@
 
 /* Przyciski objęte kształtem z ustawień (zaokrąglony/pigułka). */
 .evoke-btn { border-radius: var(--btn-radius) !important; }
+
+/* Alpine: ukryj elementy z x-cloak do czasu inicjalizacji (bez migotania). */
+[x-cloak] { display: none !important; }
+
+/* ── Dark mode ──────────────────────────────────────────────────────────────
+   Klasa .dark na <html> (przełączana ikoną, zapis w localStorage). Domyślne
+   kolory ciemne poniżej; admin może je nadpisać (app.js → darkStyleTag). */
+:root {
+  --dk-bg: #0f172a;
+  --dk-surface: #1e293b;
+  --dk-surface-2: #334155;
+  --dk-text: #e5e7eb;
+  --dk-muted: #94a3b8;
+  --dk-muted-2: #6b7a90;
+  --dk-border: #334155;
+}
+
+html.dark {
+  color-scheme: dark;
+  /* Panel: przejmij zmienne chrome */
+  --admin-bg: var(--dk-bg);
+  --admin-text: var(--dk-text);
+  --admin-sidebar: var(--dk-surface);
+  --admin-sidebar-text: var(--dk-text);
+  /* Karta stron klienta na ciemno */
+  --card-bg: var(--dk-surface);
+  --card-border-color: var(--dk-border);
+  --card-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.6);
+}
+
+/* Tło stron klienta — w dark zastępujemy konfigurowane tło ciemnym kolorem. */
+html.dark body { background: var(--dk-bg) !important; }
+
+/* Nadpisanie najczęstszych klas powierzchni/tekstu pod .dark. */
+html.dark .bg-white { background-color: var(--dk-surface) !important; }
+html.dark .bg-slate-50 { background-color: var(--dk-bg) !important; }
+html.dark .bg-slate-100 { background-color: var(--dk-surface-2) !important; }
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-300 { border-color: var(--dk-border) !important; }
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-slate-700 { color: var(--dk-text) !important; }
+html.dark .text-slate-600,
+html.dark .text-slate-500 { color: var(--dk-muted) !important; }
+html.dark .text-slate-400 { color: var(--dk-muted-2) !important; }
+html.dark .divide-slate-100 > * + *,
+html.dark .divide-slate-200 > * + * { border-color: var(--dk-border) !important; }
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: var(--dk-surface-2) !important;
+  border-color: var(--dk-border) !important;
+  color: var(--dk-text) !important;
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder { color: var(--dk-muted-2); }
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-100:hover { background-color: var(--dk-surface-2) !important; }

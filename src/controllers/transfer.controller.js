@@ -4,7 +4,10 @@ const projectService = require('../services/project.service');
 const storage = require('../services/storage.service');
 const zipService = require('../services/zip.service');
 const events = require('../services/event.service');
+const mail = require('../services/mail.service');
 const config = require('../config');
+
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 // Parsuje projectId z formularza ('' → null, inaczej liczba).
 function parseProjectId(value) {
@@ -104,7 +107,31 @@ async function showTransfer(req, res, next) {
       active: 'transfers',
       transfer,
       publicUrl: publicUrlFor(transfer),
+      mail: req.query.mail || null, // sent | invalid | error (flash po wysyłce linku)
+      mailReady: mail.isConfigured(),
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Wysyłka linku do transferu na adres e-mail klienta (z panelu).
+async function sendLinkEmail(req, res, next) {
+  try {
+    const transfer = await transferService.getById(req.params.id);
+    if (!transfer) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
+
+    const to = (req.body.email || '').trim();
+    if (!EMAIL_RE.test(to)) return res.redirect(`/admin/transfers/${transfer.id}?mail=invalid`);
+
+    try {
+      await mail.sendTransferLink({ to, transfer, message: (req.body.message || '').trim() });
+      await events.log({ type: 'email_sent', message: `Wysłano link e-mailem do ${to}`, transferId: transfer.id, projectId: transfer.projectId, ip: req.ip });
+      res.redirect(`/admin/transfers/${transfer.id}?mail=sent`);
+    } catch (e) {
+      console.error('[mail] błąd wysyłki linku:', e.message);
+      res.redirect(`/admin/transfers/${transfer.id}?mail=error`);
+    }
   } catch (err) {
     next(err);
   }
@@ -238,6 +265,7 @@ module.exports = {
   showCreateUploadForm,
   createUpload,
   showTransfer,
+  sendLinkEmail,
   showEditForm,
   updateTransfer,
   adminDownloadFile,

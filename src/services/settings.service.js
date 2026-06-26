@@ -9,7 +9,7 @@ const DEFAULTS = {
   faviconPath: null,
   // primary = kolor przewodni (strona klienta). adminAccent/Sidebar/Bg = elementy panelu;
   // adminAccent puste = dziedziczy primary.
-  colors: { primary: '#6e00a5', adminAccent: '', adminText: '', adminSidebar: '#ffffff', adminBg: '#f8fafc' },
+  colors: { primary: '#6e00a5', adminAccent: '', adminText: '', adminSidebar: '#ffffff', adminBg: '#f8fafc', darkBg: '#0f172a', darkSurface: '#1e293b', darkText: '#e5e7eb' },
   texts: { heroTitle: '', heroSubtitle: '', footer: 'Evoke LINK · bezpieczna wymiana plików' },
   background: { ...background.DEFAULTS },
   logo: { size: 36, align: 'left' }, // wysokość px, wyrównanie left|center|right

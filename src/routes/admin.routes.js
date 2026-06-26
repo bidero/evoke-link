@@ -38,6 +38,7 @@ router.post('/transfers', receiveUpload('files'), transfers.createTransfer); // 
 router.post('/transfers/upload', transfers.createUpload); // link uploadu (przychodzący)
 router.get('/transfers/:id', transfers.showTransfer);
 router.get('/transfers/:id/edit', transfers.showEditForm);
+router.post('/transfers/:id/send', transfers.sendLinkEmail);
 router.get('/transfers/:id/zip', transfers.adminDownloadZip);
 router.get('/transfers/:id/file/:fileId', transfers.adminDownloadFile);
 router.post('/transfers/:id', transfers.updateTransfer);
@@ -59,6 +60,7 @@ router.get('/notifications/:id/open', notifications.open);
 
 // Customizacja (Etap 5 + 6: kolory panelu, tło stron klienta).
 router.get('/settings', settings.showSettings);
+router.post('/settings/test-email', settings.sendTestEmail);
 router.post(
   '/settings',
   brandingUpload.fields([

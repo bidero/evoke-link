@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class', // dark mode przełączany klasą .dark na <html> (ręcznie, ikoną)
   // Tailwind skanuje te pliki w poszukiwaniu użytych klas i generuje tylko potrzebny CSS.
   content: [
     './src/views/**/*.ejs',

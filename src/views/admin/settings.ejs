@@ -347,6 +347,26 @@
       </div>
     </div>
 
+    <!-- Tryb ciemny -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6">
+      <h2 class="text-sm font-semibold text-slate-700 mb-1">Tryb ciemny (dark mode)</h2>
+      <p class="text-xs text-slate-400 mb-4">Kolory używane po włączeniu trybu ciemnego (ikona księżyca/słońca w nagłówku). Dotyczy panelu i stron klienta.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Tło</label>
+          <input type="color" name="darkBg" value="<%= settings.colors.darkBg %>" class="h-9 w-full rounded border border-slate-300 cursor-pointer" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Karty / panele</label>
+          <input type="color" name="darkSurface" value="<%= settings.colors.darkSurface %>" class="h-9 w-full rounded border border-slate-300 cursor-pointer" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Tekst</label>
+          <input type="color" name="darkText" value="<%= settings.colors.darkText %>" class="h-9 w-full rounded border border-slate-300 cursor-pointer" />
+        </div>
+      </div>
+    </div>
+
     <!-- Treści -->
     <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
       <h2 class="text-sm font-semibold text-slate-700">Treści strony klienta</h2>
@@ -377,6 +397,27 @@
 
     <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Zapisz ustawienia</button>
   </form>
+
+  <!-- E-mail (SMTP z .env) — osobny formularz poza głównym -->
+  <div class="mt-6 bg-white rounded-2xl border border-slate-200 p-6">
+    <h2 class="text-sm font-semibold text-slate-700 mb-1">E-mail (powiadomienia i wysyłka linków)</h2>
+    <p class="text-xs text-slate-400 mb-3">
+      Dane SMTP ustawiasz w pliku <code>.env</code> (host, port, login, hasło, nadawca). Status:
+      <% if (mailReady) { %><span class="text-green-600 font-medium">skonfigurowany</span><% } else { %><span class="text-amber-600 font-medium">niewłączony — maile trafiają do logów serwera</span><% } %>
+    </p>
+    <% if (test === 'sent') { %>
+      <div class="mb-3 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Wysłano testowy e-mail.</div>
+    <% } else if (test === 'dev') { %>
+      <div class="mb-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm px-3 py-2">SMTP niewłączony — treść testu trafiła do logów serwera (konsola).</div>
+    <% } else if (test === 'error') { %>
+      <div class="mb-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie udało się wysłać testu — sprawdź dane SMTP w .env.</div>
+    <% } %>
+    <form method="POST" action="/admin/settings/test-email" class="flex flex-col sm:flex-row gap-2">
+      <input name="testTo" type="email" value="<%= adminEmail %>" placeholder="adres@twojadomena.pl"
+             class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition whitespace-nowrap">Wyślij test</button>
+    </form>
+  </div>
 </div>
 
 <script>
