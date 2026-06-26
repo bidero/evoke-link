@@ -24,7 +24,8 @@
 </div>
 
 <!-- Panel klienta -->
-<div class="mt-6 bg-white rounded-2xl border border-slate-200 p-5" x-data="{ copied: false }">
+<div class="mt-6 bg-white rounded-2xl border border-slate-200 p-5"
+     x-data="{ copied: false, send() { var to = '<%= clientEmail %>'; if (!to) { to = (prompt('Wyślij link panelu na adres e-mail:') || '').trim(); if (!to) return; } this.$refs.sendEmail.value = to; this.$refs.sendForm.submit(); } }">
   <div class="flex items-center justify-between mb-2">
     <h2 class="text-sm font-medium text-slate-700">Panel klienta</h2>
     <span class="text-xs <%= project.clientPasswordHash ? 'text-slate-500' : 'text-amber-600' %>">
@@ -32,14 +33,26 @@
     </span>
   </div>
   <p class="text-xs text-slate-400 mb-3">Klient widzi tu tylko transfery oznaczone „widoczny dla klienta" i może wgrywać pliki. Hasło ustawisz w „Edytuj".</p>
-  <div class="flex items-center gap-2">
-    <input readonly value="<%= portalUrl %>" x-ref="purl" class="flex-1 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700" />
-    <button @click="navigator.clipboard.writeText($refs.purl.value); copied = true; setTimeout(()=>copied=false,1500)"
-            class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">
-      <span x-show="!copied">Kopiuj</span><span x-show="copied">Skopiowano ✓</span>
-    </button>
-    <a href="<%= portalUrl %>" target="_blank" class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition whitespace-nowrap">Otwórz</a>
+  <% if (panel === 'sent') { %>
+    <div class="mb-3 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Wysłano link panelu.</div>
+  <% } else if (panel === 'invalid') { %>
+    <div class="mb-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Podaj poprawny adres e-mail.</div>
+  <% } else if (panel === 'error') { %>
+    <div class="mb-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie udało się wysłać. Sprawdź SMTP.</div>
+  <% } %>
+  <div class="flex flex-col sm:flex-row gap-2">
+    <input readonly value="<%= portalUrl %>" x-ref="purl" class="flex-1 min-w-0 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700" />
+    <div class="flex gap-2">
+      <button type="button" @click="navigator.clipboard.writeText($refs.purl.value); copied = true; setTimeout(()=>copied=false,1500)"
+              class="flex-1 sm:flex-none rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">
+        <span x-show="!copied">Kopiuj</span><span x-show="copied">Skopiowano ✓</span>
+      </button>
+      <button type="button" @click="send()" class="flex-1 sm:flex-none rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition whitespace-nowrap">Wyślij</button>
+      <a href="<%= portalUrl %>" target="_blank" class="flex-1 sm:flex-none text-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition whitespace-nowrap">Otwórz</a>
+    </div>
   </div>
+  <% if (!mailReady) { %><p class="text-xs text-amber-600 mt-2">SMTP niewłączony — mail trafi do logów serwera zamiast do klienta.</p><% } %>
+  <form method="POST" action="/admin/projects/<%= project.id %>/send-panel" x-ref="sendForm" class="hidden"><input type="hidden" name="email" x-ref="sendEmail" /></form>
 </div>
 
 <div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">

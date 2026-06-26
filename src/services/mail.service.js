@@ -138,6 +138,21 @@ async function sendDownloadNotification({ transfer, ip }) {
   return send({ to: config.admin.email, subject, html, text });
 }
 
+// Wysyłka linku do panelu (projektu /p/:token lub klienta /c/:token) na adres e-mail.
+async function sendPanelLink({ to, url, title, intro }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const appName = s.appName || 'Evoke LINK';
+  const heading = title || 'Twój panel';
+  const text = `${intro || 'Pod tym linkiem masz dostęp do swoich plików:'}\n\nOtwórz panel: ${url}`;
+  const inner = `
+    <p style="margin:0 0 16px;white-space:pre-line">${esc(intro || 'Pod tym linkiem masz dostęp do swoich plików:')}</p>
+    <p style="margin:0 0 20px">${btn(url, 'Otwórz panel', primary)}</p>
+    <p style="margin:0;color:#64748b;font-size:13px">Lub skopiuj adres:<br><a href="${esc(url)}" style="color:${esc(primary)}">${esc(url)}</a></p>`;
+  const html = await wrap(inner, { heading });
+  return send({ to, subject: `${appName} — ${heading}`, html, text, replyTo: config.admin.email });
+}
+
 // Potwierdzenie do KLIENTA po przesłaniu plików (jeśli włączone i klient podał e-mail).
 async function sendUploadConfirmation({ to, transfer, projectName }) {
   let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
@@ -160,4 +175,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, sendUploadNotification, sendTransferLink, sendDownloadNotification, sendUploadConfirmation, sendTest };
+module.exports = { send, isConfigured, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendTest };

@@ -2,9 +2,11 @@
 const projectService = require('../services/project.service');
 const clientService = require('../services/client.service');
 const events = require('../services/event.service');
+const mail = require('../services/mail.service');
 const config = require('../config');
 
 const parseClientId = (v) => (v ? parseInt(v, 10) : null);
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 async function listProjects(req, res, next) {
   try {
@@ -70,7 +72,35 @@ async function showProject(req, res, next) {
       incoming,
       history,
       portalUrl: `${config.appUrl}/p/${project.clientToken}`,
+      panel: req.query.panel || null, // sent | invalid | error (flash po wysyłce panelu)
+      clientEmail: project.client ? project.client.email || '' : '',
+      mailReady: mail.isConfigured(),
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Wysyłka linku do panelu klienta (projektu) na e-mail.
+async function sendPanel(req, res, next) {
+  try {
+    const project = await projectService.getById(req.params.id);
+    if (!project) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
+    const to = (req.body.email || '').trim();
+    if (!EMAIL_RE.test(to)) return res.redirect(`/admin/projects/${project.id}?panel=invalid`);
+    if (!project.clientToken) {
+      const u = await projectService.ensureClientToken(project);
+      project.clientToken = u.clientToken;
+    }
+    const url = `${config.appUrl}/p/${project.clientToken}`;
+    try {
+      await mail.sendPanelLink({ to, url, title: project.name, intro: `Panel projektu „${project.name}" — Twoje pliki i upload w jednym miejscu.` });
+      await events.log({ type: 'email_sent', message: `Wysłano panel projektu do ${to}`, projectId: project.id, ip: req.ip });
+      res.redirect(`/admin/projects/${project.id}?panel=sent`);
+    } catch (e) {
+      console.error('[mail] panel projektu:', e.message);
+      res.redirect(`/admin/projects/${project.id}?panel=error`);
+    }
   } catch (err) {
     next(err);
   }
@@ -116,4 +146,4 @@ async function deleteProject(req, res, next) {
   }
 }
 
-module.exports = { listProjects, showCreateForm, createProject, showProject, showEditForm, updateProject, deleteProject };
+module.exports = { listProjects, showCreateForm, createProject, showProject, sendPanel, showEditForm, updateProject, deleteProject };

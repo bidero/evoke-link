@@ -1,9 +1,11 @@
 // Panel: baza klientów + publiczny portal klienta (/c/:token) z jego projektami.
 const clientService = require('../services/client.service');
 const projectService = require('../services/project.service');
+const mail = require('../services/mail.service');
 const config = require('../config');
 
 const PUBLIC_LAYOUT = 'layouts/public';
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 async function listClients(req, res, next) {
   try {
@@ -35,7 +37,27 @@ async function showEditForm(req, res, next) {
   try {
     const client = await clientService.getById(req.params.id);
     if (!client) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
-    res.render('admin/clients/edit', { title: client.name, active: 'clients', client, error: null, portalUrl: `${config.appUrl}/c/${client.token}` });
+    res.render('admin/clients/edit', { title: client.name, active: 'clients', client, error: null, portalUrl: `${config.appUrl}/c/${client.token}`, panel: req.query.panel || null, mailReady: mail.isConfigured() });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Wysyłka linku do portalu klienta (/c/:token) na e-mail.
+async function sendPanel(req, res, next) {
+  try {
+    const client = await clientService.getById(req.params.id);
+    if (!client) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
+    const to = ((req.body.email || '').trim()) || (client.email || '');
+    if (!EMAIL_RE.test(to)) return res.redirect(`/admin/clients/${client.id}/edit?panel=invalid`);
+    const url = `${config.appUrl}/c/${client.token}`;
+    try {
+      await mail.sendPanelLink({ to, url, title: client.name, intro: 'Twój panel — wszystkie projekty w jednym miejscu.' });
+      res.redirect(`/admin/clients/${client.id}/edit?panel=sent`);
+    } catch (e) {
+      console.error('[mail] panel klienta:', e.message);
+      res.redirect(`/admin/clients/${client.id}/edit?panel=error`);
+    }
   } catch (err) {
     next(err);
   }
@@ -84,4 +106,4 @@ async function showClientPortal(req, res, next) {
   }
 }
 
-module.exports = { listClients, showCreateForm, createClient, showEditForm, updateClient, deleteClient, showClientPortal };
+module.exports = { listClients, showCreateForm, createClient, showEditForm, updateClient, deleteClient, sendPanel, showClientPortal };
