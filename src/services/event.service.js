@@ -63,5 +63,13 @@ function markAllRead() {
   return prisma.event.updateMany({ where: { type: { in: NOTIFY_TYPES }, isRead: false }, data: { isRead: true } });
 }
 
-module.exports = { log, recent, listNotifications, unreadCount, findById, markRead, markAllRead, NOTIFY_TYPES };
+// Oznacza powiadomienia jednego projektu jako przeczytane (po wejściu w projekt).
+function markProjectRead(projectId) {
+  return prisma.event.updateMany({
+    where: { projectId: Number(projectId), type: { in: NOTIFY_TYPES }, isRead: false },
+    data: { isRead: true },
+  });
+}
+
+module.exports = { log, recent, listNotifications, unreadCount, findById, markRead, markAllRead, markProjectRead, NOTIFY_TYPES };
 

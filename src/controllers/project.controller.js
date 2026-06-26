@@ -57,6 +57,8 @@ async function showProject(req, res, next) {
     }
 
     const history = await projectService.getHistory(project.id);
+    // Wejście w projekt = „zobaczone" → czyścimy jego badge nieprzeczytanych.
+    try { await events.markProjectRead(project.id); } catch (_) {}
     const outgoing = project.transfers.filter((t) => t.direction === 'outgoing');
     const incoming = project.transfers.filter((t) => t.direction === 'incoming');
 
