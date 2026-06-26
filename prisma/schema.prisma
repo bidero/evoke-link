@@ -54,6 +54,7 @@ model Transfer {
   maxDownloads  Int?                             // opcjonalny limit pobrań
   downloadCount Int       @default(0)
   clientVisible Boolean   @default(false)         // czy pokazać w panelu klienta /p/:token
+  notifyOnDownload Boolean @default(false)         // e-mail do agencji przy pierwszym pobraniu
   status        String    @default("active")     // active | expired | deleted
   createdBy     User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdById   Int?
