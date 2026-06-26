@@ -3,8 +3,17 @@ const transferService = require('../services/transfer.service');
 const zipService = require('../services/zip.service');
 const storage = require('../services/storage.service');
 const events = require('../services/event.service');
+const mail = require('../services/mail.service');
 
 const PUBLIC_LAYOUT = 'layouts/public';
+
+// Powiadomienie e-mail do agencji przy PIERWSZYM pobraniu (gdy włączone na transferze).
+// transfer.downloadCount to wartość sprzed inkrementacji, więc 0 = pierwsze pobranie.
+function maybeNotifyDownload(transfer, req) {
+  if (transfer.notifyOnDownload && transfer.downloadCount === 0) {
+    mail.sendDownloadNotification({ transfer, ip: req.ip }).catch((e) => console.error('[mail] powiadomienie o pobraniu:', e.message));
+  }
+}
 
 // Czy w tej sesji klient odblokował już hasłem dany transfer?
 function isUnlocked(req, token) {
@@ -98,6 +107,7 @@ async function downloadFile(req, res, next) {
     const file = transfer.files.find((f) => String(f.id) === String(req.params.fileId));
     if (!file) return res.status(404).render('public/unavailable', { title: 'Nie znaleziono', layout: PUBLIC_LAYOUT, reason: 'not_found' });
 
+    maybeNotifyDownload(transfer, req);
     await transferService.incrementDownload(transfer.id);
     await events.log({ type: 'downloaded', message: `Pobrano plik: ${file.originalName}`, transferId: transfer.id, projectId: transfer.projectId, ip: req.ip });
 
@@ -116,6 +126,7 @@ async function downloadZip(req, res, next) {
     const transfer = await guard(req, res);
     if (!transfer) return;
 
+    maybeNotifyDownload(transfer, req);
     await transferService.incrementDownload(transfer.id);
     await events.log({ type: 'downloaded', message: 'Pobrano ZIP (wszystkie pliki)', transferId: transfer.id, projectId: transfer.projectId, ip: req.ip });
 

@@ -26,7 +26,7 @@ function buildFilesData(token, uploadedFiles) {
 
 // Tworzy transfer wraz z plikami. `uploadedFiles` to tablica z multera
 // (każdy ma: originalname, path (w tmp), size, mimetype).
-async function createOutgoingTransfer({ title, message, password, expiresAt, maxDownloads, projectId, uploadedFiles, createdById, clientVisible = true }) {
+async function createOutgoingTransfer({ title, message, password, expiresAt, maxDownloads, projectId, uploadedFiles, createdById, clientVisible = true, notifyOnDownload = false }) {
   const token = makeToken();
   const filesData = buildFilesData(token, uploadedFiles);
 
@@ -42,6 +42,7 @@ async function createOutgoingTransfer({ title, message, password, expiresAt, max
       projectId: projectId || null,
       createdById: createdById || null,
       clientVisible: !!clientVisible,
+      notifyOnDownload: !!notifyOnDownload,
       files: { create: filesData },
     },
     include: { files: true },
@@ -118,7 +119,7 @@ function recomputeStatus(transfer) {
 // Edycja transferu w panelu. Hasło: newPassword ustawia nowe, removePassword czyści,
 // brak obu = bez zmian. Po edycji status jest przeliczany (np. wydłużenie ważności
 // reaktywuje wygasły transfer).
-async function update(id, { title, message, expiresAt, maxDownloads, newPassword, removePassword, projectId, clientVisible }) {
+async function update(id, { title, message, expiresAt, maxDownloads, newPassword, removePassword, projectId, clientVisible, notifyOnDownload }) {
   const current = await prisma.transfer.findUnique({ where: { id: Number(id) } });
   if (!current) return null;
 
@@ -129,6 +130,7 @@ async function update(id, { title, message, expiresAt, maxDownloads, newPassword
     maxDownloads: maxDownloads != null ? maxDownloads : null,
     projectId: projectId != null ? projectId : null,
     clientVisible: clientVisible != null ? !!clientVisible : current.clientVisible,
+    notifyOnDownload: notifyOnDownload != null ? !!notifyOnDownload : current.notifyOnDownload,
   };
   if (removePassword) data.passwordHash = null;
   else if (newPassword) data.passwordHash = bcrypt.hashSync(newPassword, 10);

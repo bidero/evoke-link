@@ -1,4 +1,4 @@
-<div class="max-w-2xl">
+<div class="max-w-2xl" x-data="{ genPwd(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*'; const a=new Uint32Array(16); (window.crypto&&window.crypto.getRandomValues)?window.crypto.getRandomValues(a):a.forEach((_,i)=>a[i]=Math.floor(Math.random()*1e9)); let s=''; for(let i=0;i<16;i++) s+=c[a[i]%c.length]; return s; }, expIn(d){ const x=new Date(Date.now()+d*86400000); const p=n=>String(n).padStart(2,'0'); return x.getFullYear()+'-'+p(x.getMonth()+1)+'-'+p(x.getDate())+'T'+p(x.getHours())+':'+p(x.getMinutes()); } }">
   <a href="/admin/transfers/<%= transfer.id %>" class="text-sm text-slate-500 hover:text-slate-700">← Wróć do transferu</a>
 
   <% if (error) { %>
@@ -30,8 +30,14 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Data wygaśnięcia</label>
-        <input name="expiresAt" type="datetime-local" value="<%= expiresLocal %>"
+        <input x-ref="exp" name="expiresAt" type="datetime-local" value="<%= expiresLocal %>"
                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <div class="flex flex-wrap gap-2 mt-2">
+          <% [['1','1 dzień'],['7','7 dni'],['30','30 dni']].forEach(function(o){ %>
+            <button type="button" @click="$refs.exp.value = expIn(<%= o[0] %>)" class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-xs px-2.5 py-1 transition"><%= o[1] %></button>
+          <% }); %>
+          <button type="button" @click="$refs.exp.value = ''" class="rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50 text-xs px-2.5 py-1 transition">wyczyść</button>
+        </div>
         <p class="text-xs text-slate-400 mt-1">Puste = nigdy. Wydłużenie reaktywuje wygasły transfer.</p>
       </div>
 
@@ -47,9 +53,12 @@
 
     <div class="border-t border-slate-100 pt-4">
       <label class="block text-sm font-medium text-slate-700 mb-1">Hasło</label>
-      <input name="password" type="text" autocomplete="off"
-             placeholder="<%= transfer.passwordHash ? 'wpisz, aby zmienić (puste = bez zmian)' : 'ustaw hasło (puste = brak)' %>"
-             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      <div class="flex gap-2">
+        <input x-ref="pwd" name="password" type="text" autocomplete="off"
+               placeholder="<%= transfer.passwordHash ? 'wpisz, aby zmienić (puste = bez zmian)' : 'ustaw hasło (puste = brak)' %>"
+               class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <button type="button" @click="$refs.pwd.value = genPwd()" title="Wygeneruj mocne hasło" class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm px-3 transition whitespace-nowrap">Generuj</button>
+      </div>
       <% if (transfer.passwordHash) { %>
         <label class="inline-flex items-center gap-2 mt-2 text-sm text-slate-600">
           <input type="checkbox" name="removePassword" class="rounded border-slate-300" />
@@ -64,6 +73,12 @@
         Widoczny w panelu klienta projektu
       </label>
       <p class="text-xs text-slate-400 mt-1">Jeśli zaznaczone, pliki tego transferu pojawią się w panelu klienta (/p/...) przypisanego projektu.</p>
+      <% if (transfer.direction === 'outgoing') { %>
+        <label class="flex items-center gap-2 mt-3 text-sm text-slate-700">
+          <input type="checkbox" name="notifyOnDownload" class="rounded border-slate-300" <%= transfer.notifyOnDownload ? 'checked' : '' %> />
+          Powiadom mnie e-mailem przy pierwszym pobraniu
+        </label>
+      <% } %>
     </div>
 
     <div class="flex items-center gap-3">

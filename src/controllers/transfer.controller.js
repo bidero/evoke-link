@@ -71,6 +71,7 @@ async function createTransfer(req, res, next) {
       maxDownloads: maxDownloads ? parseInt(maxDownloads, 10) : null,
       projectId: parseProjectId(projectId),
       clientVisible: req.body.clientVisible === 'on',
+      notifyOnDownload: req.body.notifyOnDownload === 'on',
       uploadedFiles: files,
     });
 
@@ -211,6 +212,7 @@ async function updateTransfer(req, res, next) {
       removePassword: removePassword === 'on',
       projectId: parseProjectId(projectId),
       clientVisible: req.body.clientVisible === 'on',
+      notifyOnDownload: req.body.notifyOnDownload === 'on',
     });
     if (!updated) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
     await events.log({ type: 'updated', message: `Zmieniono ustawienia transferu`, transferId: updated.id, projectId: updated.projectId, ip: req.ip });

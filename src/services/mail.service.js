@@ -114,6 +114,22 @@ async function sendTransferLink({ to, transfer, message }) {
   return send({ to, subject: `${appName} — ${title}`, html, text, replyTo: config.admin.email });
 }
 
+// Powiadomienie do agencji o pierwszym pobraniu transferu przez klienta.
+async function sendDownloadNotification({ transfer, ip }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const appName = s.appName || 'Evoke LINK';
+  const title = transfer.title || `Transfer ${transfer.token}`;
+  const adminUrl = `${config.appUrl}/admin/transfers/${transfer.id}`;
+  const inner = `
+    <p style="margin:0 0 14px">Klient właśnie pobrał pliki z transferu: <b>${esc(title)}</b>.</p>
+    ${ip ? `<p style="margin:0 0 14px;color:#64748b;font-size:13px">IP: ${esc(ip)}</p>` : ''}
+    ${btn(adminUrl, 'Zobacz w panelu', primary)}`;
+  const html = await wrap(inner, { heading: 'Pobrano pliki' });
+  const text = `Klient pobrał: ${title}\n${adminUrl}`;
+  return send({ to: config.admin.email, subject: `${appName} — pobrano: ${title}`, html, text });
+}
+
 // Testowy e-mail do weryfikacji konfiguracji SMTP.
 async function sendTest({ to }) {
   const inner = `<p style="margin:0 0 8px">To jest testowa wiadomość z Twojej instancji.</p>
@@ -122,4 +138,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, sendUploadNotification, sendTransferLink, sendTest };
+module.exports = { send, isConfigured, sendUploadNotification, sendTransferLink, sendDownloadNotification, sendTest };
