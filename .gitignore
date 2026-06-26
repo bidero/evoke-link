@@ -17,8 +17,8 @@ storage/*.db-shm
 # Sesje (session-file-store)
 sessions/
 
-# Zbudowany CSS (generowany przez Tailwind)
-public/css/app.css
+# Zbudowany CSS jest COMMITOWANY (na hostingu produkcyjnym nie ma Tailwinda —
+# build:css uruchamiamy lokalnie i wrzucamy wynik do repo).
 
 # Wgrane logo/favicon (branding) — pliki użytkownika
 public/branding/*

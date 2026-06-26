@@ -68,10 +68,11 @@ npm run hash -- "twoje-haslo"
    - wersja Node → 18+.
 3. Przez SSH w katalogu aplikacji:
    ```bash
-   npm install
+   npm install                # instaluje też prisma (CLI) — migracje na produkcji
    npm run prisma:deploy      # zakłada/aktualizuje bazę bez pytań interaktywnych
-   npm run build:css
    ```
+   > CSS (`public/css/app.css`) jest **w repo** — na produkcji NIE budujemy Tailwinda.
+   > `npm run build:css` uruchamiamy lokalnie po zmianie stylów i commitujemy wynik.
 4. Ustaw zmienne środowiskowe (w panelu Node.js App lub w `.env`):
    - `NODE_ENV=production`, `APP_URL=https://transfer.twojadomena.pl`,
    - `SESSION_SECRET` (długi losowy ciąg), dane `ADMIN_*` i `SMTP_*`.

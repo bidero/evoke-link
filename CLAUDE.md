@@ -24,7 +24,7 @@ Login admina: `.env` → `ADMIN_EMAIL` / `ADMIN_PASSWORD` (lub `ADMIN_PASSWORD_H
 
 ## Hosting / deploy (SeoHost.pl, DirectAdmin + Passenger)
 - Plik startowy: `app.js` (root). Restart: `touch tmp/restart.txt`.
-- Deploy: `git pull && npm install && npm run prisma:deploy && npm run build:css && touch tmp/restart.txt`.
+- Deploy: `git pull && npm install && npm run prisma:deploy && touch tmp/restart.txt`. (CSS jest w repo — NIE budujemy Tailwinda na produkcji; `prisma` jest w dependencies, więc migrate deploy działa po produkcyjnym npm install.)
 - Sprzątanie wygasłych: cron w DirectAdmin → `node src/jobs/cleanup.job.js` (NIE node-cron — Passenger usypia proces).
 - Duże pliki: upload na razie zwykły multipart; przed produkcją dołożyć **chunked upload** (limit rozmiaru requestu na shared hostingu).
 
