@@ -1,5 +1,5 @@
 <div class="w-full max-w-lg">
-  <div class="bg-white rounded-3xl shadow-xl shadow-brand-200/40 p-8">
+  <div class="evoke-card p-8">
     <h1 class="text-2xl font-semibold tracking-tight mb-1">
       <%= transfer.title || 'Pliki dla Ciebie' %>
     </h1>
@@ -15,7 +15,7 @@
 
     <!-- Pobierz wszystko -->
     <a href="/t/<%= transfer.token %>/zip"
-       class="flex items-center justify-center gap-2 w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium py-3 transition mb-5">
+       class="evoke-btn flex items-center justify-center gap-2 w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium py-3 transition mb-5">
       <%- icon('download', { size: 18, cls: '' }) %> Pobierz wszystko (ZIP)
     </a>
 

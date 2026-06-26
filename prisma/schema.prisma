@@ -100,6 +100,7 @@ model Settings {
   texts        String?  // JSON: { heroTitle, heroSubtitle, footer, messages }
   background   String?  // JSON: { type, preset, color, custom, imagePath, overlay, grain, grainStrength } — tło stron klienta
   logo         String?  // JSON: { size, align } — prezentacja logo (wysokość px, wyrównanie)
+  layout       String?  // JSON: { style, card, heroOnBg, applyToLogin, radius, button } — układ stron klienta
   customCss    String?  // dowolny CSS wstrzykiwany do stron (escape hatch dla admina)
   updatedAt    DateTime @updatedAt
 }

@@ -3,9 +3,10 @@
   const dark = (typeof bgDark !== 'undefined' && bgDark);
   const logoCfg = (typeof settings !== 'undefined' && settings && settings.logo) ? settings.logo : { size: 36, align: 'left' };
   const justify = { left: 'justify-start', center: 'justify-center', right: 'justify-end' }[logoCfg.align] || 'justify-start';
+  const useLayout = (typeof uiLayout !== 'undefined' && uiLayout && uiLayout.applyToLogin);
 %>
 <div class="w-full max-w-sm">
-  <div class="bg-white rounded-2xl shadow-xl shadow-slate-900/10 p-8">
+  <div class="<%= useLayout ? 'evoke-card' : 'bg-white rounded-2xl shadow-xl shadow-slate-900/10' %> p-8">
     <div class="flex items-center gap-2 mb-6 <%= justify %>">
       <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
         <img src="<%= settings.logoPath %>" alt="<%= appName %>" style="height: <%= logoCfg.size %>px" class="max-w-[70%] object-contain" />
@@ -36,7 +37,7 @@
                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
       </div>
       <button type="submit"
-              class="w-full rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 text-sm transition">
+              class="<%= useLayout ? 'evoke-btn' : '' %> w-full rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 text-sm transition">
         Zaloguj się
       </button>
     </form>

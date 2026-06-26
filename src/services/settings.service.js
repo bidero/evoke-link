@@ -13,16 +13,35 @@ const DEFAULTS = {
   texts: { heroTitle: '', heroSubtitle: '', footer: 'Evoke LINK · bezpieczna wymiana plików' },
   background: { ...background.DEFAULTS },
   logo: { size: 36, align: 'left' }, // wysokość px, wyrównanie left|center|right
+  // Układ stron klienta. style: classic (obecny) | centered | split.
+  // card: solid | glass | elevated. radius w px. button: rounded | pill.
+  layout: { style: 'classic', card: 'solid', heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded' },
   customCss: '',
 };
 
 const ALIGNS = ['left', 'center', 'right'];
+const LAYOUT_STYLES = ['classic', 'centered', 'split'];
+const CARD_STYLES = ['solid', 'glass', 'elevated'];
+const BUTTON_STYLES = ['rounded', 'pill'];
 
 function normLogo(l) {
   const x = l && typeof l === 'object' ? l : {};
   const size = Math.min(120, Math.max(16, parseInt(x.size, 10) || DEFAULTS.logo.size));
   const align = ALIGNS.includes(x.align) ? x.align : DEFAULTS.logo.align;
   return { size, align };
+}
+
+function normLayout(l) {
+  const x = l && typeof l === 'object' ? l : {};
+  const r = parseInt(x.radius, 10);
+  return {
+    style: LAYOUT_STYLES.includes(x.style) ? x.style : DEFAULTS.layout.style,
+    card: CARD_STYLES.includes(x.card) ? x.card : DEFAULTS.layout.card,
+    heroOnBg: x.heroOnBg === undefined ? DEFAULTS.layout.heroOnBg : !!x.heroOnBg,
+    applyToLogin: !!x.applyToLogin,
+    radius: Math.min(40, Math.max(0, Number.isInteger(r) ? r : DEFAULTS.layout.radius)),
+    button: BUTTON_STYLES.includes(x.button) ? x.button : DEFAULTS.layout.button,
+  };
 }
 
 let cache = null;
@@ -36,6 +55,8 @@ function normalize(row) {
   try { texts = row.texts ? JSON.parse(row.texts) : {}; } catch (_) {}
   try { bg = row.background ? JSON.parse(row.background) : {}; } catch (_) {}
   try { logo = row.logo ? JSON.parse(row.logo) : {}; } catch (_) {}
+  let layout = {};
+  try { layout = row.layout ? JSON.parse(row.layout) : {}; } catch (_) {}
   return {
     appName: row.appName || DEFAULTS.appName,
     logoPath: row.logoPath || null,
@@ -44,6 +65,7 @@ function normalize(row) {
     texts: { ...DEFAULTS.texts, ...texts },
     background: background.normalize(bg),
     logo: normLogo(logo),
+    layout: normLayout(layout),
     customCss: row.customCss || '',
   };
 }
@@ -71,6 +93,7 @@ async function update(data) {
   if (data.texts !== undefined) patch.texts = JSON.stringify(data.texts);
   if (data.background !== undefined) patch.background = JSON.stringify(data.background);
   if (data.logo !== undefined) patch.logo = JSON.stringify(data.logo);
+  if (data.layout !== undefined) patch.layout = JSON.stringify(data.layout);
   if (data.customCss !== undefined) patch.customCss = data.customCss;
 
   const row = await prisma.settings.upsert({

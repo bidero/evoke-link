@@ -1,8 +1,8 @@
-// Składanie uploadów dzielonych na kawałki (chunked upload).
-// Klient wysyła plik kawałkami (~5 MB) na endpoint /chunk; tutaj dopisujemy je
-// do pliku części w storage/tmp/chunks/<uploadId>/<fileIndex>.part. Po zebraniu
-// wszystkich plików endpoint tworzący (transfer/upload) woła assembleFiles(),
-// który zwraca listę w kształcie multera: { originalname, path, size, mimetype }.
+// Składanie uploadów dzielonych na kawałki (chunked upload) — odporne na kolejność.
+// Klient może wysyłać kawałki RÓWNOLEGLE, więc każdy kawałek zapisujemy do osobnego
+// pliku storage/tmp/chunks/<uploadId>/<fileIndex>_<chunkIndex>.part, a przy składaniu
+// łączymy je po indeksach (0..total-1). Wynik to lista w kształcie multera:
+// { originalname, path, size, mimetype }.
 const fs = require('fs');
 const path = require('path');
 const storage = require('./storage.service');
@@ -11,22 +11,23 @@ const CHUNK_ROOT = path.join(storage.TMP_DIR, 'chunks');
 storage.ensureDir(CHUNK_ROOT);
 
 const ID_RE = /^[a-f0-9]{16,64}$/i;
-const MAX_FILES = 500;          // bezpiecznik na liczbę plików w sesji
-const STALE_MS = 24 * 60 * 60 * 1000; // sesje starsze niż 24h uznajemy za porzucone
+const MAX_FILES = 500;            // bezpiecznik na liczbę plików w sesji
+const MAX_CHUNKS = 200000;        // bezpiecznik na liczbę kawałków w pliku
+const STALE_MS = 24 * 60 * 60 * 1000; // sesje starsze niż 24h = porzucone
 
 function sessionDir(uploadId) {
   if (!ID_RE.test(uploadId || '')) throw new Error('Nieprawidłowy identyfikator uploadu');
   return path.join(CHUNK_ROOT, uploadId);
 }
 
-function fileIndexInt(fileIndex) {
-  const i = parseInt(fileIndex, 10);
-  if (!Number.isInteger(i) || i < 0 || i >= MAX_FILES) throw new Error('Nieprawidłowy indeks pliku');
+function intInRange(v, max, label) {
+  const i = parseInt(v, 10);
+  if (!Number.isInteger(i) || i < 0 || i >= max) throw new Error('Nieprawidłowy ' + label);
   return i;
 }
 
-function partPath(uploadId, fileIndex) {
-  return path.join(sessionDir(uploadId), fileIndexInt(fileIndex) + '.part');
+function chunkPath(uploadId, fileIndex, chunkIndex) {
+  return path.join(sessionDir(uploadId), fileIndex + '_' + chunkIndex + '.part');
 }
 
 function manifestPath(uploadId) {
@@ -42,41 +43,52 @@ function writeManifest(uploadId, m) {
   fs.writeFileSync(manifestPath(uploadId), JSON.stringify(m));
 }
 
-// Dopisuje pojedynczy kawałek. meta: { name, type, chunkIndex }.
-// chunkIndex === 0 zaczyna plik od nowa (nadpisanie), kolejne dopisują.
-function appendChunk(uploadId, fileIndex, buffer, meta) {
+// Zapisuje pojedynczy kawałek do własnego pliku (kolejność dowolna).
+// meta: { name, type, chunkIndex, totalChunks }.
+function writeChunk(uploadId, fileIndex, buffer, meta) {
   const dir = sessionDir(uploadId);
   storage.ensureDir(dir);
-  const i = fileIndexInt(fileIndex);
-  const pp = partPath(uploadId, i);
-  const ci = parseInt(meta.chunkIndex, 10) || 0;
+  const fi = intInRange(fileIndex, MAX_FILES, 'indeks pliku');
+  const ci = intInRange(meta.chunkIndex, MAX_CHUNKS, 'indeks kawałka');
+  const total = Math.max(1, parseInt(meta.totalChunks, 10) || 1);
 
-  if (ci === 0) fs.writeFileSync(pp, buffer);
-  else fs.appendFileSync(pp, buffer);
+  fs.writeFileSync(chunkPath(uploadId, fi, ci), buffer);
 
   const m = readManifest(uploadId);
-  if (!m.files[i]) m.files[i] = {};
-  if (meta.name) m.files[i].name = meta.name;
-  if (!m.files[i].name) m.files[i].name = 'plik-' + i;
-  if (meta.type) m.files[i].type = meta.type;
+  if (!m.files[fi]) m.files[fi] = {};
+  if (meta.name) m.files[fi].name = meta.name;
+  if (!m.files[fi].name) m.files[fi].name = 'plik-' + fi;
+  if (meta.type) m.files[fi].type = meta.type;
+  m.files[fi].total = Math.max(total, m.files[fi].total || 0);
   writeManifest(uploadId, m);
 }
 
-// Składa sesję w listę plików w kształcie multera (do podania jako req.files).
+// Składa sesję: dla każdego pliku łączy kawałki 0..total-1 w jeden plik <fi>.bin.
+// Zwraca tablicę plików w kształcie multera. Pliki niekompletne są pomijane.
 function assembleFiles(uploadId) {
   const m = readManifest(uploadId);
+  const dir = sessionDir(uploadId);
   const out = [];
   Object.keys(m.files)
     .map((k) => parseInt(k, 10))
     .sort((a, b) => a - b)
-    .forEach((i) => {
-      const pp = partPath(uploadId, i);
-      if (!fs.existsSync(pp)) return;
+    .forEach((fi) => {
+      const meta = m.files[fi];
+      const total = Math.max(1, parseInt(meta.total, 10) || 1);
+      const finalPath = path.join(dir, fi + '.bin');
+      fs.writeFileSync(finalPath, Buffer.alloc(0));
+      let complete = true;
+      for (let ci = 0; ci < total; ci++) {
+        const cp = chunkPath(uploadId, fi, ci);
+        if (!fs.existsSync(cp)) { complete = false; break; }
+        fs.appendFileSync(finalPath, fs.readFileSync(cp)); // jeden kawałek naraz — niska pamięć
+      }
+      if (!complete) { try { fs.rmSync(finalPath, { force: true }); } catch (_) {} return; }
       out.push({
-        originalname: m.files[i].name || ('plik-' + i),
-        path: pp,
-        size: fs.statSync(pp).size,
-        mimetype: m.files[i].type || null,
+        originalname: meta.name || ('plik-' + fi),
+        path: finalPath,
+        size: fs.statSync(finalPath).size,
+        mimetype: meta.type || null,
       });
     });
   return out;
@@ -103,7 +115,6 @@ function sweepOld() {
   return removed;
 }
 
-// Posprzątaj porzucone sesje przy starcie aplikacji.
 try { sweepOld(); } catch (_) {}
 
-module.exports = { appendChunk, assembleFiles, cleanup, sweepOld, CHUNK_ROOT, ID_RE };
+module.exports = { writeChunk, assembleFiles, cleanup, sweepOld, CHUNK_ROOT, ID_RE };

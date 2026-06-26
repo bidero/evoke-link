@@ -82,12 +82,23 @@ async function updateSettings(req, res, next) {
       align: ['left', 'center', 'right'].includes(b.logoAlign) ? b.logoAlign : 'left',
     };
 
+    // --- Układ stron klienta ---
+    const layout = {
+      style: ['classic', 'centered', 'split'].includes(b.layoutStyle) ? b.layoutStyle : 'classic',
+      card: ['solid', 'glass', 'elevated'].includes(b.layoutCard) ? b.layoutCard : 'solid',
+      heroOnBg: b.heroOnBg === 'on',
+      applyToLogin: b.applyToLogin === 'on',
+      radius: Math.min(40, Math.max(0, parseInt(b.layoutRadius, 10) >= 0 ? parseInt(b.layoutRadius, 10) : 24)),
+      button: ['rounded', 'pill'].includes(b.layoutButton) ? b.layoutButton : 'rounded',
+    };
+
     const data = {
       appName: b.appName && b.appName.trim() ? b.appName.trim() : null,
       colors,
       texts,
       background,
       logo: logoCfg,
+      layout,
       customCss: sanitizeCss(b.customCss || ''),
     };
 

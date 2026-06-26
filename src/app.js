@@ -73,6 +73,25 @@ function paletteVars(hex) {
   return pal ? Object.entries(pal).map(([k, v]) => `--brand-${k}:${v}`).join(';') : '';
 }
 
+// Zmienne CSS dla .evoke-card / .evoke-btn z konfiguracji układu (styl karty, rogi, przycisk).
+function surfaceVars(layout) {
+  const L = layout || {};
+  const vars = [];
+  if (Number.isInteger(L.radius) && L.radius !== 24) vars.push(`--card-radius:${L.radius}px`);
+  if (L.button === 'pill') vars.push('--btn-radius:9999px');
+  if (L.card === 'glass') {
+    vars.push(
+      '--card-bg:rgba(255,255,255,0.62)',
+      '--card-blur:14px',
+      '--card-border-color:rgba(255,255,255,0.55)',
+      '--card-shadow:0 10px 40px rgba(2,6,23,0.18)'
+    );
+  } else if (L.card === 'elevated') {
+    vars.push('--card-shadow:0 30px 60px -15px rgba(2,6,23,0.35)');
+  }
+  return vars.length ? `<style>:root{${vars.join(';')}}</style>` : '';
+}
+
 app.use(async (req, res, next) => {
   try {
     const s = await settingsService.get();
@@ -105,6 +124,12 @@ app.use(async (req, res, next) => {
     res.locals.bgOverlay = bg.overlayHtml(s.background);
     res.locals.bgDark = bg.isDark(s.background);
 
+    // Układ stron klienta + zmienne karty/rogów/przycisku (.evoke-card / .evoke-btn).
+    // UWAGA: nazwa `uiLayout`, NIE `layout` — `layout` koliduje z express-ejs-layouts
+    // (tam `layout` to nazwa pliku układu przekazywana przez kontrolery).
+    res.locals.uiLayout = s.layout;
+    res.locals.surfaceStyleTag = surfaceVars(s.layout);
+
     // Własny CSS admina (escape hatch) — wstrzykiwany do wszystkich layoutów.
     res.locals.customStyleTag = s.customCss ? `<style>${sanitizeCss(s.customCss)}</style>` : '';
   } catch (_) {
@@ -114,6 +139,8 @@ app.use(async (req, res, next) => {
     res.locals.bgStyle = bg.bodyStyle(bg.DEFAULTS);
     res.locals.bgOverlay = '';
     res.locals.bgDark = false;
+    res.locals.uiLayout = settingsService.DEFAULTS.layout;
+    res.locals.surfaceStyleTag = '';
     res.locals.customStyleTag = '';
   }
   next();

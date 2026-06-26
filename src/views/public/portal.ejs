@@ -1,5 +1,5 @@
 <div class="w-full max-w-2xl">
-  <div class="bg-white rounded-3xl shadow-xl shadow-brand-200/40 p-8">
+  <div class="evoke-card p-8">
     <h1 class="text-2xl font-semibold tracking-tight"><%= project.name %></h1>
     <% if (project.description) { %>
       <p class="text-sm text-slate-500 mt-1 whitespace-pre-line"><%= project.description %></p>
@@ -79,7 +79,7 @@
         </template>
 
         <button type="submit" :disabled="uploading || !files.length"
-                class="w-full rounded-xl bg-brand-600 hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 transition">
+                class="evoke-btn w-full rounded-xl bg-brand-600 hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 transition">
           <span x-show="!uploading">Prześlij pliki</span>
           <span x-show="uploading" x-text="'Wysyłanie… ' + progress + '%'"></span>
         </button>

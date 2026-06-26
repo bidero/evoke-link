@@ -17,10 +17,11 @@ function receiveChunk(req, res) {
     const fileIndex = req.get('X-File-Index');
     // Pusty kawałek (np. plik 0-bajtowy) jest dozwolony → pusty bufor.
     const buf = Buffer.isBuffer(req.body) ? req.body : Buffer.alloc(0);
-    chunk.appendChunk(uploadId, fileIndex, buf, {
+    chunk.writeChunk(uploadId, fileIndex, buf, {
       name: decodeURIComponent(req.get('X-File-Name') || ''),
       type: req.get('X-File-Type') || '',
       chunkIndex: req.get('X-Chunk-Index'),
+      totalChunks: req.get('X-Total-Chunks'),
     });
     res.json({ ok: true });
   } catch (err) {

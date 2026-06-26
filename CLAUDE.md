@@ -77,6 +77,10 @@ storage/                  pliki użytkowników + evoke.db (poza repo, .gitignore
   - Klient: `public/js/chunked-upload.js` → `window.chunkedUpload(files, '<endpoint>/chunk', onProgress)` dzieli pliki na 5 MB i wysyła sekwencyjnie, zwraca `uploadId`. Potem widok wysyła żądanie tworzące (urlencoded) z nagłówkiem `X-Upload-Id`.
   - Serwer: `chunk.service.js` skleja kawałki w `storage/tmp/chunks/<uploadId>/`; `middleware/chunkUpload.js` → `receiveChunk` (endpoint `/chunk`, surowe bajty) + `receiveUpload(field)` zastępuje `multer.array` (gdy jest `X-Upload-Id` → składa pliki w `req.files` w kształcie multera, inaczej multipart fallback). **Kontrolery i serwisy bez zmian** — `req.files` ma ten sam kształt `{ originalname, path, size, mimetype }`.
   - Endpointy `/chunk` MUSZĄ być przed trasami `:id` (np. `/transfers/chunk` przed `/transfers/:id`). Porzucone sesje sprząta `chunk.sweepOld()` (start aplikacji, >24h).
+  - **Równoległość**: klient wysyła kawałki współbieżnie (pula 3). Dlatego serwer zapisuje KAŻDY kawałek do osobnego pliku `<fi>_<ci>.part` i skleja je po indeksach przy `assembleFiles` (NIE dopisuje sekwencyjnie — kolejność przyjścia jest dowolna).
+- **Układ stron klienta (warianty wyglądu)** — `Settings.layout` JSON `{ style: classic|centered|split, card: solid|glass|elevated, heroOnBg, applyToLogin, radius, button: rounded|pill }`. Render w `layouts/public.ejs` (3 warianty kompozycji). Styl karty/rogi/przycisk przez zmienne CSS (`--card-*`, `--btn-radius`) wstrzykiwane jako `surfaceStyleTag` (app.js `surfaceVars`) + wspólne klasy `.evoke-card`/`.evoke-btn` (input.css) używane przez 5 widoków publicznych i logowanie. Hero pokazywany gdy `heroTitle && heroOnBg` (na wszystkich układach).
+  - **GOTCHA nazwa `uiLayout`**: ustawienia układu w res.locals są pod `uiLayout`, NIE `layout` — `layout` koliduje z express-ejs-layouts (nazwa pliku układu z kontrolera; w widoku to string).
+  - **GOTCHA kontrolki**: radia/checkboxy układu w `settings.ejs` są NATYWNE (EJS `checked`, bez Alpine `x-model`/`x-for`) — wzorzec `<template x-for>`+`x-model` na radiach był zawodny w przeglądarce (nie dało się wybrać). Podświetlenie działa przez `peer-checked` natywnie. Reaktywne kontrolki (kolory/tło) dalej na Alpine, bo mają podgląd na żywo.
 
 ## Testy
 Brak frameworka — używamy doraźnych skryptów E2E: krótki `scripts/*-test.js` startuje `app.listen(0)`, woła endpointy przez globalny `fetch`/`FormData` (Node 18+), sprząta dane i kasuje się po przebiegu. Uwaga: cookie-session ustawia 2 ciasteczka (`evoke` + `evoke.sig`) — w teście brać oba przez `res.headers.getSetCookie()`.
@@ -92,6 +96,7 @@ Brak frameworka — używamy doraźnych skryptów E2E: krótki `scripts/*-test.j
 - [x] Etap 6 — rozszerzona customizacja: tła stron klienta (presety/własny gradient/obraz/ziarno z mocą), osobne kolory panelu (akcent/sidebar/tło/czcionka, auto-kontrast), logo (rozmiar+pozycja, SVG sanityzowane), brandowane logowanie, zmiana hasła admina (DB), pole na własny CSS
 - [x] Chunked upload — dzielenie dużych plików na 5 MB (panel + /upload + portal), drop-in z fallbackiem multipart, sprawdzone E2E (integralność md5)
 - [x] Hero/podpis renderowane na stronach klienta; reset hasła z CLI (`npm run set-password`)
+- [x] Warianty układu stron klienta (klasyczny/karta-na-tle/hero+karta) + styl karty (biel/szkło/uniesiona) + rogi/przycisk + branding logowania; równoległy chunked upload (pula 3)
 - [ ] Do zrobienia: Alpine lokalnie zamiast CDN + włączenie CSP; podbicie multera do 2.x (1 high vuln); redesign WeTransfer + więcej opcji wyglądu
 
 ## Workflow Git
