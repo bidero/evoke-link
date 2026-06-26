@@ -166,7 +166,7 @@ function overlayHtml(bg) {
   if (b.grain && b.grainStrength > 0) {
     const g = GRAIN[b.grainType] || GRAIN.fine;
     const op = ((b.grainStrength / 100) * g.max).toFixed(3);
-    html += `<div aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;mix-blend-mode:${g.blend};opacity:${op};background-image:url("${grainUri(g)}");background-size:${g.size}px ${g.size}px;"></div>`;
+    html += `<div aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;mix-blend-mode:${g.blend};opacity:${op};background-image:url(&quot;${grainUri(g)}&quot;);background-size:${g.size}px ${g.size}px;"></div>`;
   }
   return html;
 }

@@ -1,5 +1,5 @@
-<div class="flex items-center justify-between mb-6">
-  <div class="flex items-center gap-2 text-sm">
+<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+  <div class="flex flex-wrap items-center gap-2 text-sm">
     <% const tabs = [
       { label: 'Wszystkie', q: '' },
       { label: 'Aktywne', q: 'status=active' },
@@ -12,7 +12,7 @@
       </a>
     <% }); %>
   </div>
-  <div class="flex items-center gap-2">
+  <div class="flex flex-wrap items-center gap-2">
     <a href="/admin/transfers/new-upload" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">
       + Link uploadu
     </a>
@@ -30,11 +30,12 @@
 <% } else { %>
   <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
     <div class="overflow-x-auto">
-    <table class="w-full text-sm min-w-[640px]">
+    <table class="w-full text-sm min-w-[720px]">
       <thead class="bg-slate-50 text-slate-500 text-left">
         <tr>
           <th class="px-4 py-3 font-medium">Tytuł</th>
           <th class="px-4 py-3 font-medium">Pliki</th>
+          <th class="px-4 py-3 font-medium">Rozmiar</th>
           <th class="px-4 py-3 font-medium">Pobrania</th>
           <th class="px-4 py-3 font-medium">Wygasa</th>
           <th class="px-4 py-3 font-medium">Status</th>
@@ -52,11 +53,12 @@
               </span>
             </td>
             <td class="px-4 py-3 text-slate-500"><%= t.files.length %></td>
+            <td class="px-4 py-3 text-slate-500"><% let _sz = 0n; t.files.forEach(function(f){ _sz += BigInt(f.size); }); %><%= fmt.bytes(_sz) %></td>
             <td class="px-4 py-3 text-slate-500"><%= t.direction === 'incoming' ? '—' : (t.downloadCount + (t.maxDownloads ? ' / ' + t.maxDownloads : '')) %></td>
             <td class="px-4 py-3 text-slate-500"><%= t.expiresAt ? fmt.date(t.expiresAt) : '—' %></td>
             <td class="px-4 py-3">
               <% const s = t.status; const cls = s==='active' ? 'bg-green-50 text-green-700' : (s==='expired' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500'); %>
-              <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium <%= cls %>"><%= s %></span>
+              <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium <%= cls %>"><%= fmt.status(s) %></span>
             </td>
             <td class="px-4 py-3 text-slate-400"><%= fmt.date(t.createdAt) %></td>
           </tr>

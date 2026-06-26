@@ -22,4 +22,15 @@ function date(d) {
   });
 }
 
-module.exports = { bytes, date };
+// Status transferu/projektu po polsku.
+const STATUS_PL = {
+  active: 'Aktywny',
+  expired: 'Wygasły',
+  deleted: 'Usunięty',
+  archived: 'Zarchiwizowany',
+};
+function status(s) {
+  return STATUS_PL[s] || s;
+}
+
+module.exports = { bytes, date, status };

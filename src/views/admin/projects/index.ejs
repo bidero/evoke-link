@@ -1,5 +1,5 @@
-<div class="flex items-center justify-between mb-6">
-  <div class="flex items-center gap-2 text-sm">
+<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+  <div class="flex flex-wrap items-center gap-2 text-sm">
     <% const tabs = [ { label: 'Aktywne', q: 'active' }, { label: 'Zarchiwizowane', q: 'archived' }, { label: 'Wszystkie', q: '' } ]; %>
     <% tabs.forEach(function(t){ const isActive = (filter.status||'') === t.q; %>
       <a href="/admin/projects<%= t.q ? '?status=' + t.q : '' %>"

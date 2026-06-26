@@ -76,8 +76,16 @@ html.dark {
   --card-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.6);
 }
 
-/* Tło stron klienta — w dark zastępujemy konfigurowane tło ciemnym kolorem. */
-html.dark body { background: var(--dk-bg) !important; }
+/* Strony klienta/logowania: w dark mode ZACHOWUJEMY skonfigurowane tło
+   (gradient/obraz) i nakładamy przyciemniającą warstwę, by było ciemniejsze. */
+html.dark body.client-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: rgba(2, 6, 23, 0.62);
+}
 
 /* Nadpisanie najczęstszych klas powierzchni/tekstu pod .dark. */
 html.dark .bg-white { background-color: var(--dk-surface) !important; }

@@ -51,7 +51,7 @@
               <span class="block text-sm font-medium text-slate-800 truncate">${t.title || ('Transfer ' + t.token)}</span>
               <span class="block text-xs text-slate-400">${t.files.length} plik(ów) · ${fmt.date(t.createdAt)}</span>
             </span>
-            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusCls} shrink-0">${t.status}</span>
+            <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusCls} shrink-0">${fmt.status(t.status)}</span>
           </a>`;
         }).join('');
       };

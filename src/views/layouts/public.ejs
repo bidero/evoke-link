@@ -27,12 +27,12 @@
   const heroS = dark ? 'text-slate-200/80' : 'text-slate-500';
   const footerText = (typeof settings !== 'undefined' && settings && settings.texts && settings.texts.footer) ? settings.texts.footer : (appName + ' · bezpieczna wymiana plików');
 %>
-<body class="min-h-screen text-slate-800 antialiased" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
+<body class="client-bg min-h-screen text-slate-800 antialiased" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
   <%- typeof bgOverlay !== 'undefined' ? bgOverlay : '' %>
   <div class="relative z-10 min-h-screen flex flex-col">
 
     <button type="button" onclick="window.toggleTheme&&window.toggleTheme()" title="Tryb jasny/ciemny" aria-label="Przełącz tryb"
-      class="fixed top-4 right-4 z-30 rounded-full p-2 bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 backdrop-blur transition <%= dark ? 'text-white' : 'text-slate-700' %> dark:text-slate-100">
+      class="fixed top-4 right-4 z-30 w-10 h-10 inline-flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 backdrop-blur transition <%= dark ? 'text-white' : 'text-slate-700' %> dark:text-slate-100">
       <span class="dark:hidden"><%- icon('moon', { size: 18, cls: '' }) %></span>
       <span class="hidden dark:inline"><%- icon('sun', { size: 18, cls: '' }) %></span>
     </button>

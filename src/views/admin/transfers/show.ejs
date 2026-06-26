@@ -54,7 +54,7 @@
   <!-- Parametry -->
   <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
     <% const box = (label, val) => `<div class="bg-white rounded-xl border border-slate-200 p-3"><div class="text-xs text-slate-400">${label}</div><div class="text-sm font-medium text-slate-700 mt-0.5">${val}</div></div>`; %>
-    <%- box('Status', transfer.status) %>
+    <%- box('Status', fmt.status(transfer.status)) %>
     <% if (incoming) { %>
       <%- box('Otrzymane pliki', transfer.files.length) %>
     <% } else { %>
