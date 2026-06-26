@@ -7,7 +7,7 @@
       <a href="/admin/transfers" class="text-sm text-slate-500 hover:text-slate-700">← Wszystkie transfery</a>
     <% } %>
     <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium <%= incoming ? 'bg-sky-50 text-sky-700' : 'bg-violet-50 text-brand-700' %>">
-      <%- icon(incoming ? 'upload' : 'download', { size: 13, cls: '' }) %>
+      <%- icon(incoming ? 'download' : 'upload', { size: 13, cls: '' }) %>
       <%= incoming ? 'Upload (klient → Ty)' : 'Wysyłka (Ty → klient)' %>
     </span>
   </div>

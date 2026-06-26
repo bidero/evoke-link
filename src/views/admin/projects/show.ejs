@@ -62,12 +62,12 @@
     %>
 
     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-      <div class="px-5 py-3 border-b border-slate-100 text-sm font-medium text-slate-700 flex items-center gap-2"><%- icon('download', { size: 16 }) %> Wysłane do klienta (<%= outgoing.length %>)</div>
+      <div class="px-5 py-3 border-b border-slate-100 text-sm font-medium text-slate-700 flex items-center gap-2"><%- icon('upload', { size: 16 }) %> Wysłane do klienta (<%= outgoing.length %>)</div>
       <div class="divide-y divide-slate-100"><%- renderList(outgoing, 'Brak wysłanych transferów.') %></div>
     </div>
 
     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-      <div class="px-5 py-3 border-b border-slate-100 text-sm font-medium text-slate-700 flex items-center gap-2"><%- icon('upload', { size: 16 }) %> Odebrane od klienta (<%= incoming.length %>)</div>
+      <div class="px-5 py-3 border-b border-slate-100 text-sm font-medium text-slate-700 flex items-center gap-2"><%- icon('download', { size: 16 }) %> Odebrane od klienta (<%= incoming.length %>)</div>
       <div class="divide-y divide-slate-100"><%- renderList(incoming, 'Brak linków uploadu.') %></div>
     </div>
   </div>

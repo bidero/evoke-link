@@ -57,7 +57,7 @@
             <td class="px-4 py-3" @click.stop><input type="checkbox" name="ids" value="<%= t.id %>" class="rounded border-slate-300" /></td>
             <td class="px-4 py-3 font-medium text-slate-800">
               <span class="inline-flex items-center gap-1.5">
-                <% if (t.direction === 'incoming') { %><span title="Upload od klienta"><%- icon('upload', { size: 15, cls: 'text-sky-600' }) %></span><% } else { %><span title="Wysyłka do klienta"><%- icon('download', { size: 15 }) %></span><% } %>
+                <% if (t.direction === 'incoming') { %><span title="Odebrane od klienta"><%- icon('download', { size: 15, cls: 'text-sky-600' }) %></span><% } else { %><span title="Wysłane do klienta"><%- icon('upload', { size: 15 }) %></span><% } %>
                 <span><%= t.title || ('Transfer ' + t.token) %></span>
                 <% if (t.passwordHash) { %><%- icon('lock', { size: 13, cls: 'text-slate-400' }) %><% } %>
               </span>
