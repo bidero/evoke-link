@@ -50,6 +50,17 @@
 /* Alpine: ukryj elementy z x-cloak do czasu inicjalizacji (bez migotania). */
 [x-cloak] { display: none !important; }
 
+/* Mobile: pola formularza ≥16px, żeby iOS Safari/Chrome NIE robiły auto-zoomu
+   przy kliknięciu. Dotyczy tylko telefonów (≤640px) i tylko pól tekstowych —
+   desktop zostaje kompaktowy (text-sm). */
+@media (max-width: 640px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* ── Dark mode ──────────────────────────────────────────────────────────────
    Klasa .dark na <html> (przełączana ikoną, zapis w localStorage). Domyślne
    kolory ciemne poniżej; admin może je nadpisać (app.js → darkStyleTag). */
