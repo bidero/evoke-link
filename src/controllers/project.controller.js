@@ -1,7 +1,10 @@
 // Panel: zarządzanie projektami.
 const projectService = require('../services/project.service');
+const clientService = require('../services/client.service');
 const events = require('../services/event.service');
 const config = require('../config');
+
+const parseClientId = (v) => (v ? parseInt(v, 10) : null);
 
 async function listProjects(req, res, next) {
   try {
@@ -18,17 +21,23 @@ async function listProjects(req, res, next) {
   }
 }
 
-function showCreateForm(req, res) {
-  res.render('admin/projects/new', { title: 'Nowy projekt', active: 'projects', error: null });
+async function showCreateForm(req, res, next) {
+  try {
+    const clients = await clientService.options();
+    res.render('admin/projects/new', { title: 'Nowy projekt', active: 'projects', error: null, clients });
+  } catch (err) {
+    next(err);
+  }
 }
 
 async function createProject(req, res, next) {
   try {
     const { name, clientName, description } = req.body;
     if (!name || !name.trim()) {
-      return res.status(400).render('admin/projects/new', { title: 'Nowy projekt', active: 'projects', error: 'Podaj nazwę projektu.' });
+      const clients = await clientService.options();
+      return res.status(400).render('admin/projects/new', { title: 'Nowy projekt', active: 'projects', error: 'Podaj nazwę projektu.', clients });
     }
-    const project = await projectService.create({ name, clientName, description });
+    const project = await projectService.create({ name, clientName, description, clientId: parseClientId(req.body.clientId) });
     await events.log({ type: 'created', message: `Utworzono projekt: ${project.name}`, projectId: project.id, ip: req.ip });
     res.redirect(`/admin/projects/${project.id}`);
   } catch (err) {
@@ -69,7 +78,8 @@ async function showEditForm(req, res, next) {
   try {
     const project = await projectService.getById(req.params.id);
     if (!project) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
-    res.render('admin/projects/edit', { title: 'Edytuj projekt', active: 'projects', project, error: null });
+    const clients = await clientService.options();
+    res.render('admin/projects/edit', { title: 'Edytuj projekt', active: 'projects', project, error: null, clients });
   } catch (err) {
     next(err);
   }
@@ -80,10 +90,12 @@ async function updateProject(req, res, next) {
     const { name, clientName, description, status } = req.body;
     if (!name || !name.trim()) {
       const project = await projectService.getById(req.params.id);
-      return res.status(400).render('admin/projects/edit', { title: 'Edytuj projekt', active: 'projects', project, error: 'Podaj nazwę projektu.' });
+      const clients = await clientService.options();
+      return res.status(400).render('admin/projects/edit', { title: 'Edytuj projekt', active: 'projects', project, error: 'Podaj nazwę projektu.', clients });
     }
     await projectService.update(req.params.id, {
       name, clientName, description, status,
+      clientId: parseClientId(req.body.clientId),
       newClientPassword: req.body.clientPassword && req.body.clientPassword.trim() ? req.body.clientPassword.trim() : null,
       removeClientPassword: req.body.removeClientPassword === 'on',
     });

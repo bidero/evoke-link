@@ -24,10 +24,24 @@ model User {
 }
 
 // Projekt — pojemnik grupujący transfery, pliki i historię.
+// Klient agencji — może mieć wiele projektów. Dostęp do swoich projektów
+// przez publiczny token (/c/:token), bez logowania.
+model Client {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String?
+  token     String    @unique
+  note      String?
+  createdAt DateTime  @default(now())
+  projects  Project[]
+}
+
 model Project {
   id                 Int        @id @default(autoincrement())
   name               String
-  clientName         String?
+  clientName         String?    // wolny tekst (legacy) — etykieta, gdy brak przypisanego klienta
+  client             Client?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId           Int?
   description        String?
   status             String     @default("active") // active | archived
   clientToken        String?    @unique             // publiczny link do panelu klienta /p/:token

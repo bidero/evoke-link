@@ -4,6 +4,7 @@ const express = require('express');
 const download = require('../controllers/download.controller');
 const receive = require('../controllers/receive.controller');
 const portal = require('../controllers/portal.controller');
+const clientCtrl = require('../controllers/client.controller');
 const { chunkParser, receiveChunk, receiveUpload } = require('../middleware/chunkUpload');
 
 const router = express.Router();
@@ -31,5 +32,8 @@ router.get('/p/:token/zip', portal.downloadAllZip);
 router.get('/p/:token/file/:fileId', portal.downloadFile);
 router.post('/p/:token/chunk', chunkParser, receiveChunk);
 router.post('/p/:token/upload', receiveUpload('files'), portal.submitUpload);
+
+// Portal klienta — wszystkie projekty przypisane do klienta (/c/:token).
+router.get('/c/:token', clientCtrl.showClientPortal);
 
 module.exports = router;

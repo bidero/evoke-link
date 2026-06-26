@@ -36,6 +36,7 @@ function getById(id) {
   return prisma.project.findUnique({
     where: { id: Number(id) },
     include: {
+      client: true,
       transfers: { include: { files: true }, orderBy: { createdAt: 'desc' } },
     },
   });
@@ -50,22 +51,24 @@ function getHistory(projectId, limit = 100) {
   });
 }
 
-function create({ name, clientName, description }) {
+function create({ name, clientName, description, clientId }) {
   return prisma.project.create({
     data: {
       name: name.trim(),
       clientName: clientName && clientName.trim() ? clientName.trim() : null,
       description: description && description.trim() ? description.trim() : null,
+      clientId: clientId || null,
       clientToken: makeToken(), // od razu nadajemy link do panelu klienta
     },
   });
 }
 
-async function update(id, { name, clientName, description, status, newClientPassword, removeClientPassword }) {
+async function update(id, { name, clientName, description, status, clientId, newClientPassword, removeClientPassword }) {
   const data = {
     name: name.trim(),
     clientName: clientName && clientName.trim() ? clientName.trim() : null,
     description: description && description.trim() ? description.trim() : null,
+    clientId: clientId != null ? clientId : null,
   };
   if (status) data.status = status;
   if (removeClientPassword) data.clientPasswordHash = null;

@@ -6,6 +6,7 @@ const { chunkParser, receiveChunk, receiveUpload } = require('../middleware/chun
 const { showDashboard } = require('../controllers/dashboard.controller');
 const transfers = require('../controllers/transfer.controller');
 const projects = require('../controllers/project.controller');
+const clients = require('../controllers/client.controller');
 const notifications = require('../controllers/notification.controller');
 const settings = require('../controllers/settings.controller');
 const account = require('../controllers/account.controller');
@@ -53,6 +54,14 @@ router.get('/projects/:id', projects.showProject);
 router.get('/projects/:id/edit', projects.showEditForm);
 router.post('/projects/:id', projects.updateProject);
 router.post('/projects/:id/delete', projects.deleteProject);
+
+// Klienci (Grupa 4).
+router.get('/clients', clients.listClients);
+router.get('/clients/new', clients.showCreateForm);
+router.post('/clients', clients.createClient);
+router.get('/clients/:id/edit', clients.showEditForm);
+router.post('/clients/:id', clients.updateClient);
+router.post('/clients/:id/delete', clients.deleteClient);
 
 // Powiadomienia (Etap 4).
 router.get('/notifications', notifications.index);

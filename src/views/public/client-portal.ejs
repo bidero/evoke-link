@@ -1,0 +1,22 @@
+<div class="w-full max-w-2xl">
+  <div class="evoke-card p-5 sm:p-8">
+    <h1 class="text-2xl font-semibold tracking-tight mb-1"><%= client.name %></h1>
+    <p class="text-sm text-slate-500 mb-6">Twoje projekty — wybierz, aby zobaczyć i przesłać pliki.</p>
+
+    <% if (!client.projects.length) { %>
+      <p class="text-sm text-slate-400">Brak projektów.</p>
+    <% } else { %>
+      <div class="rounded-xl border border-slate-200 divide-y divide-slate-100">
+        <% client.projects.forEach(function(p){ %>
+          <a href="/p/<%= p.clientToken %>" class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition group">
+            <span class="min-w-0">
+              <span class="block text-sm font-medium text-slate-800 truncate"><%= p.name %></span>
+              <% if (p.description) { %><span class="block text-xs text-slate-400 truncate"><%= p.description %></span><% } %>
+            </span>
+            <span class="text-brand-600 opacity-0 group-hover:opacity-100 transition shrink-0"><%- icon('arrowRight', { size: 16 }) %></span>
+          </a>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+</div>
