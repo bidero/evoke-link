@@ -10,8 +10,9 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 async function listClients(req, res, next) {
   try {
     const q = req.query.q || '';
-    const clients = await clientService.list(q);
-    res.render('admin/clients/index', { title: 'Klienci', active: 'clients', clients, appUrl: config.appUrl, q, mailReady: mail.isConfigured(), sent: req.query.sent || null });
+    const status = ['lead', 'active', 'inactive'].includes(req.query.status) ? req.query.status : '';
+    const clients = await clientService.list({ q, status });
+    res.render('admin/clients/index', { title: 'Klienci', active: 'clients', clients, appUrl: config.appUrl, q, status, mailReady: mail.isConfigured(), sent: req.query.sent || null });
   } catch (err) {
     next(err);
   }
@@ -41,11 +42,11 @@ async function showClient(req, res, next) {
 
 async function createClient(req, res, next) {
   try {
-    const { name, email, note } = req.body;
+    const { name, email, note, company, phone, status, tags } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).render('admin/clients/new', { title: 'Nowy klient', active: 'clients', error: 'Podaj nazwę klienta.' });
     }
-    const client = await clientService.create({ name, email, note });
+    const client = await clientService.create({ name, email, note, company, phone, status, tags });
     res.redirect(`/admin/clients/${client.id}/edit`);
   } catch (err) {
     next(err);
@@ -85,12 +86,12 @@ async function sendPanel(req, res, next) {
 
 async function updateClient(req, res, next) {
   try {
-    const { name, email, note } = req.body;
+    const { name, email, note, company, phone, status, tags } = req.body;
     if (!name || !name.trim()) {
       const client = await clientService.getById(req.params.id);
-      return res.status(400).render('admin/clients/edit', { title: 'Edytuj klienta', active: 'clients', client, error: 'Podaj nazwę klienta.', portalUrl: `${config.appUrl}/c/${client.token}` });
+      return res.status(400).render('admin/clients/edit', { title: 'Edytuj klienta', active: 'clients', client, error: 'Podaj nazwę klienta.', portalUrl: `${config.appUrl}/c/${client.token}`, mailReady: mail.isConfigured() });
     }
-    await clientService.update(req.params.id, { name, email, note });
+    await clientService.update(req.params.id, { name, email, note, company, phone, status, tags });
     res.redirect(`/admin/clients/${req.params.id}/edit`);
   } catch (err) {
     next(err);

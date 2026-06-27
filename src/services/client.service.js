@@ -6,12 +6,16 @@ function makeToken() {
   return crypto.randomBytes(9).toString('base64url');
 }
 
-function list(q) {
+const STATUSES = ['lead', 'active', 'inactive'];
+const normStatus = (s) => (STATUSES.includes(s) ? s : 'active');
+
+function list({ q, status } = {}) {
   const where = {};
   if (q && q.trim()) {
     const s = q.trim();
-    where.OR = [{ name: { contains: s } }, { email: { contains: s } }]; // SQLite LIKE — bez rozróżniania wielkości (ASCII)
+    where.OR = [{ name: { contains: s } }, { email: { contains: s } }, { company: { contains: s } }]; // SQLite LIKE — bez rozróżniania wielkości (ASCII)
   }
+  if (STATUSES.includes(status)) where.status = status;
   return prisma.client.findMany({
     where,
     include: { _count: { select: { projects: true } } },
@@ -70,24 +74,34 @@ function options() {
   return prisma.client.findMany({ orderBy: { name: 'asc' } });
 }
 
-function create({ name, email, note }) {
+const clean = (v) => (v && v.trim() ? v.trim() : null);
+
+function create({ name, email, note, company, phone, status, tags }) {
   return prisma.client.create({
     data: {
       name: name.trim(),
-      email: email && email.trim() ? email.trim() : null,
-      note: note && note.trim() ? note.trim() : null,
+      email: clean(email),
+      note: clean(note),
+      company: clean(company),
+      phone: clean(phone),
+      status: normStatus(status),
+      tags: clean(tags),
       token: makeToken(),
     },
   });
 }
 
-function update(id, { name, email, note }) {
+function update(id, { name, email, note, company, phone, status, tags }) {
   return prisma.client.update({
     where: { id: Number(id) },
     data: {
       name: name.trim(),
-      email: email && email.trim() ? email.trim() : null,
-      note: note && note.trim() ? note.trim() : null,
+      email: clean(email),
+      note: clean(note),
+      company: clean(company),
+      phone: clean(phone),
+      status: normStatus(status),
+      tags: clean(tags),
     },
   });
 }

@@ -30,6 +30,10 @@ model Client {
   id        Int       @id @default(autoincrement())
   name      String
   email     String?
+  company   String?
+  phone     String?
+  status    String    @default("active") // lead | active | inactive
+  tags      String?                       // wolny tekst, oddzielone przecinkami
   token     String    @unique
   note      String?
   createdAt DateTime  @default(now())

@@ -1,7 +1,14 @@
 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
-  <form method="GET" action="/admin/clients" class="relative w-full sm:max-w-xs">
-    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><%- icon('search', { size: 16 }) %></span>
-    <input type="search" name="q" value="<%= q %>" placeholder="Szukaj klienta lub e-maila…" class="w-full rounded-lg border border-slate-300 pl-9 pr-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+  <form method="GET" action="/admin/clients" class="flex flex-col gap-2 sm:flex-row sm:items-center w-full sm:w-auto">
+    <div class="relative w-full sm:max-w-xs">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><%- icon('search', { size: 16 }) %></span>
+      <input type="search" name="q" value="<%= q %>" placeholder="Szukaj klienta, e-maila lub firmy…" class="w-full rounded-lg border border-slate-300 pl-9 pr-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+    </div>
+    <select name="status" onchange="this.form.submit()" class="rounded-lg border border-slate-300 pl-3 pr-9 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+      <% [['','Wszyscy'],['lead','Lead'],['active','Aktywni'],['inactive','Nieaktywni']].forEach(function(o){ %>
+        <option value="<%= o[0] %>" <%= status === o[0] ? 'selected' : '' %>><%= o[1] %></option>
+      <% }); %>
+    </select>
   </form>
   <a href="/admin/clients/new" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition self-start sm:self-auto shrink-0">+ Nowy klient</a>
 </div>
@@ -30,6 +37,7 @@
       <thead class="bg-slate-50 text-slate-500 text-left">
         <tr>
           <th class="px-4 py-3 font-medium">Klient</th>
+          <th class="px-4 py-3 font-medium">Status</th>
           <th class="px-4 py-3 font-medium">E-mail</th>
           <th class="px-4 py-3 font-medium">Projekty</th>
           <th class="px-4 py-3 font-medium">Portal klienta</th>
@@ -37,9 +45,14 @@
         </tr>
       </thead>
       <tbody class="divide-y divide-slate-100">
-        <% clients.forEach(function(c){ %>
+        <% const _statusMap = { lead: ['Lead', 'bg-amber-50 text-amber-700'], active: ['Aktywny', 'bg-green-50 text-green-700'], inactive: ['Nieaktywny', 'bg-slate-100 text-slate-500'] }; %>
+        <% clients.forEach(function(c){ const _s = _statusMap[c.status] || _statusMap.active; %>
           <tr class="hover:bg-slate-50 cursor-pointer" onclick="window.location='/admin/clients/<%= c.id %>'">
-            <td class="px-4 py-3 font-medium text-slate-800"><%= c.name %></td>
+            <td class="px-4 py-3 font-medium text-slate-800">
+              <%= c.name %>
+              <% if (c.company) { %><span class="block text-xs font-normal text-slate-400"><%= c.company %></span><% } %>
+            </td>
+            <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded-full <%= _s[1] %>"><%= _s[0] %></span></td>
             <td class="px-4 py-3 text-slate-500"><%= c.email || '—' %></td>
             <td class="px-4 py-3 text-slate-500"><%= c._count.projects %></td>
             <td class="px-4 py-3 text-slate-400"><a href="<%= appUrl %>/c/<%= c.token %>" target="_blank" @click.stop class="text-brand-700 hover:underline" onclick="event.stopPropagation()">/c/<%= c.token %></a></td>
