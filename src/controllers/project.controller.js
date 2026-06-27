@@ -11,7 +11,15 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 async function listProjects(req, res, next) {
   try {
     const { status, q } = req.query;
-    const sort = ['activity', 'created', 'name', 'manual'].includes(req.query.sort) ? req.query.sort : 'activity';
+    const SORTS = ['activity', 'created', 'name', 'manual'];
+    // Zapamiętujemy ostatnio wybrane sortowanie w sesji; wejście bez ?sort= używa zapamiętanego.
+    let sort;
+    if (SORTS.includes(req.query.sort)) {
+      sort = req.query.sort;
+      if (req.session) req.session.projectSort = sort;
+    } else {
+      sort = (req.session && SORTS.includes(req.session.projectSort)) ? req.session.projectSort : 'activity';
+    }
     const projects = await projectService.list({ status, q, sort });
     res.render('admin/projects/index', {
       title: 'Projekty',
