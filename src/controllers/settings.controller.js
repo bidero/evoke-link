@@ -118,6 +118,12 @@ async function updateSettings(req, res, next) {
     const pdf = {
       template: ['standard', 'band', 'accent', 'proforma'].includes(b.pdfTemplate) ? b.pdfTemplate : 'standard',
       logoHeight: Math.min(90, Math.max(20, parseInt(b.pdfLogoHeight, 10) || 48)),
+      seller: {
+        name: (b.sellerName || '').trim(),
+        address: (b.sellerAddress || '').trim(),
+        nip: (b.sellerNip || '').trim(),
+        bank: (b.sellerBank || '').trim(),
+      },
     };
 
     const data = {

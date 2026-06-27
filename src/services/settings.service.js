@@ -25,8 +25,8 @@ const DEFAULTS = {
     uploadSubject: '', downloadSubject: '',
     clientConfirm: false, clientConfirmSubject: '', clientConfirmBody: '',
   },
-  // Wydruk PDF rozliczenia: szablon + wysokość logo (px).
-  pdf: { template: 'standard', logoHeight: 48 },
+  // Wydruk PDF rozliczenia: szablon + wysokość logo (px) + dane sprzedawcy na dokument.
+  pdf: { template: 'standard', logoHeight: 48, seller: { name: '', address: '', nip: '', bank: '' } },
 };
 
 const ALIGNS = ['left', 'center', 'right'];
@@ -38,9 +38,12 @@ const PDF_TEMPLATES = ['standard', 'band', 'accent', 'proforma'];
 function normPdf(p) {
   const x = p && typeof p === 'object' ? p : {};
   const h = parseInt(x.logoHeight, 10);
+  const s = x.seller && typeof x.seller === 'object' ? x.seller : {};
+  const str = (v) => (typeof v === 'string' ? v.trim() : '');
   return {
     template: PDF_TEMPLATES.includes(x.template) ? x.template : DEFAULTS.pdf.template,
     logoHeight: Math.min(90, Math.max(20, Number.isFinite(h) ? h : DEFAULTS.pdf.logoHeight)),
+    seller: { name: str(s.name), address: str(s.address), nip: str(s.nip), bank: str(s.bank) },
   };
 }
 

@@ -89,19 +89,62 @@ function projectTables(charges, brand, style) {
   return out;
 }
 
-function totalsBlock(total, paid, brand) {
+// Blok Sprzedawca / Nabywca (wszystkie układy). boxed = ramki (proforma).
+function sellerBuyerBlock(seller, appName, client, boxed) {
+  const sStack = [{ text: 'Sprzedawca', color: MUTED, fontSize: 8 }, { text: seller.name || appName, bold: true, fontSize: 11 }];
+  if (seller.address) sStack.push({ text: seller.address, fontSize: 9, color: '#334155' });
+  if (seller.nip) sStack.push({ text: `NIP: ${seller.nip}`, fontSize: 9, color: MUTED });
+
+  const bStack = [{ text: 'Nabywca', color: MUTED, fontSize: 8 }, { text: client.name + (client.company ? ` · ${client.company}` : ''), bold: true, fontSize: 11 }];
+  if (client.address) bStack.push({ text: client.address, fontSize: 9, color: '#334155' });
+  if (client.nip) bStack.push({ text: `NIP: ${client.nip}`, fontSize: 9, color: MUTED });
+  if (client.email) bStack.push({ text: client.email, fontSize: 9, color: MUTED });
+
+  if (boxed) {
+    const L = { hLineWidth: () => 0.5, vLineWidth: () => 0.5, hLineColor: () => '#e2e8f0', vLineColor: () => '#e2e8f0', paddingLeft: () => 9, paddingRight: () => 9, paddingTop: () => 7, paddingBottom: () => 7 };
+    return {
+      margin: [0, 22, 0, 0],
+      columns: [
+        { width: '*', margin: [0, 0, 6, 0], table: { widths: ['*'], body: [[{ stack: sStack }]] }, layout: L },
+        { width: '*', margin: [6, 0, 0, 0], table: { widths: ['*'], body: [[{ stack: bStack }]] }, layout: L },
+      ],
+    };
+  }
   return {
-    margin: [0, 16, 0, 0],
+    margin: [0, 22, 0, 0],
+    columns: [
+      { width: '*', margin: [0, 0, 10, 0], stack: sStack },
+      { width: '*', margin: [10, 0, 0, 0], stack: bStack },
+    ],
+  };
+}
+
+// Wyróżnione podsumowanie (wypełniony panel z brandowym akcentem u góry) + nr konta.
+function totalsBlock(total, paid, brand, seller) {
+  const outstanding = total - paid;
+  const box = {
     table: {
       widths: ['*', 'auto'],
       body: [
-        [{ text: 'Wartość', alignment: 'right', color: MUTED }, { text: fmt.money(total), alignment: 'right' }],
-        [{ text: 'Rozliczono', alignment: 'right', color: MUTED }, { text: fmt.money(paid), alignment: 'right', color: '#16a34a' }],
-        [{ text: 'Do zapłaty', alignment: 'right', bold: true, fontSize: 12 }, { text: fmt.money(total - paid), alignment: 'right', bold: true, fontSize: 12, color: brand }],
+        [{ text: 'Wartość', color: MUTED }, { text: fmt.money(total), alignment: 'right' }],
+        [{ text: 'Rozliczono', color: MUTED }, { text: fmt.money(paid), alignment: 'right', color: '#16a34a' }],
+        [{ text: 'Do zapłaty', bold: true, fontSize: 13, margin: [0, 3, 0, 0] }, { text: fmt.money(outstanding), alignment: 'right', bold: true, fontSize: 13, color: brand, margin: [0, 3, 0, 0] }],
       ],
     },
-    layout: 'noBorders',
+    layout: {
+      hLineWidth: (i) => (i === 0 ? 2.5 : 0.5),
+      vLineWidth: () => 0.5,
+      hLineColor: (i) => (i === 0 ? brand : '#e5e7eb'),
+      vLineColor: () => '#e5e7eb',
+      fillColor: () => '#f8fafc',
+      paddingLeft: () => 12, paddingRight: () => 12, paddingTop: () => 7, paddingBottom: () => 7,
+    },
   };
+  const stack = [box];
+  if (outstanding > 0 && seller.bank) {
+    stack.push({ text: `Do zapłaty na konto: ${seller.bank}`, color: MUTED, fontSize: 8, alignment: 'right', margin: [0, 6, 0, 0] });
+  }
+  return { margin: [0, 22, 0, 0], columns: [{ width: '*', text: '' }, { width: '58%', stack }] };
 }
 
 function filterLine(filters) {
@@ -117,26 +160,30 @@ function filterLine(filters) {
 function clientStatement(res, { client, charges, filters = {}, settings }) {
   const brand = safeHex(settings.colors && settings.colors.primary, '#6e00a5');
   const appName = settings.appName || 'Evoke LINK';
-  const tpl = (settings.pdf && settings.pdf.template) || 'standard';
-  const logoH = (settings.pdf && settings.pdf.logoHeight) || 48;
+  const pdfCfg = settings.pdf || {};
+  const tpl = pdfCfg.template || 'standard';
+  const logoH = pdfCfg.logoHeight || 48;
+  const seller = pdfCfg.seller || { name: '', address: '', nip: '', bank: '' };
   const today = fmt.dateOnly(new Date());
+  const now = new Date();
+  const docNr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${client.id}`;
+  const meta = `Nr ${docNr} · wystawiono ${today}`;
 
   let total = 0;
   let paid = 0;
   charges.forEach((c) => { total += c.amount; if (c.paidAt) paid += c.amount; });
 
   const logo = logoNode(settings, logoH);
-  const tableStyle = tpl === 'proforma' ? 'bordered' : 'light';
   const sections = charges.length
-    ? projectTables(charges, brand, tableStyle)
-    : [{ text: 'Brak pozycji dla wybranych kryteriów.', color: MUTED, italics: true, margin: [0, 16, 0, 0] }];
+    ? projectTables(charges, brand, tpl === 'proforma' ? 'bordered' : 'light')
+    : [{ text: 'Brak pozycji dla wybranych kryteriów.', color: MUTED, italics: true, margin: [0, 18, 0, 0] }];
   const fLine = filterLine(filters);
 
   const content = [];
   const docDef = {
     pageSize: 'A4',
-    pageMargins: tpl === 'accent' ? [56, 40, 40, 50] : [40, 40, 40, 50],
-    defaultStyle: { font: 'Roboto', fontSize: 9, color: '#0f172a' },
+    pageMargins: tpl === 'accent' ? [60, 48, 48, 56] : [48, 48, 48, 56],
+    defaultStyle: { font: 'Roboto', fontSize: 9, color: '#0f172a', lineHeight: 1.15 },
     content,
     footer: (cp, pc) => ({ text: `${appName} · strona ${cp}/${pc}`, alignment: 'center', color: '#94a3b8', fontSize: 7, margin: [0, 16, 0, 0] }),
   };
@@ -148,7 +195,7 @@ function clientStatement(res, { client, charges, filters = {}, settings }) {
         widths: ['*'],
         body: [[{
           fillColor: brand,
-          margin: [14, 12, 14, 12],
+          margin: [16, 14, 16, 14],
           columns: [
             logo ? { width: 'auto', ...logo } : { width: '*', text: appName, color: '#ffffff', bold: true, fontSize: 16 },
             { width: '*', text: 'Rozliczenie', color: '#ffffff', bold: true, fontSize: 18, alignment: 'right', margin: [0, logoH > 30 ? 10 : 0, 0, 0] },
@@ -157,7 +204,7 @@ function clientStatement(res, { client, charges, filters = {}, settings }) {
       },
       layout: 'noBorders',
     });
-    docDef.content.push({ text: `${appName} · wystawiono ${today}`, color: MUTED, fontSize: 8, margin: [0, 8, 0, 0] });
+    docDef.content.push({ text: meta, color: MUTED, fontSize: 8, margin: [0, 10, 0, 0] });
   } else if (tpl === 'accent') {
     docDef.background = (cp, pageSize) => ({ canvas: [{ type: 'rect', x: 0, y: 0, w: 16, h: pageSize.height, color: brand }] });
     docDef.content.push({
@@ -173,10 +220,8 @@ function clientStatement(res, { client, charges, filters = {}, settings }) {
         },
       ],
     });
-    docDef.content.push({ text: `${appName} · wystawiono ${today}`, color: MUTED, fontSize: 8, margin: [0, 8, 0, 0] });
+    docDef.content.push({ text: meta, color: MUTED, fontSize: 8, margin: [0, 10, 0, 0] });
   } else if (tpl === 'proforma') {
-    const now = new Date();
-    const docNr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${client.id}`;
     docDef.content.push({
       columns: [
         logo ? { width: 'auto', ...logo } : { width: 'auto', text: appName, bold: true, fontSize: 14, color: brand },
@@ -193,34 +238,16 @@ function clientStatement(res, { client, charges, filters = {}, settings }) {
         logo ? { width: 'auto', ...logo } : { width: 'auto', text: appName, bold: true, fontSize: 16, color: brand },
         { width: '*', stack: [
           { text: 'Rozliczenie', fontSize: 18, bold: true, alignment: 'right', color: brand },
-          { text: appName, alignment: 'right', color: MUTED, fontSize: 9 },
-          { text: `Wystawiono: ${today}`, alignment: 'right', color: MUTED, fontSize: 8, margin: [0, 2, 0, 0] },
+          { text: meta, alignment: 'right', color: MUTED, fontSize: 8, margin: [0, 3, 0, 0] },
         ] },
       ],
     });
   }
 
-  // --- Dane klienta / sprzedawca-nabywca ---
-  if (tpl === 'proforma') {
-    const cellSeller = { stack: [{ text: 'Sprzedawca', color: MUTED, fontSize: 8 }, { text: appName, bold: true, fontSize: 11 }] };
-    const buyerLines = [{ text: 'Nabywca', color: MUTED, fontSize: 8 }, { text: client.name + (client.company ? ` · ${client.company}` : ''), bold: true, fontSize: 11 }];
-    if (client.email) buyerLines.push({ text: client.email, color: MUTED, fontSize: 9 });
-    docDef.content.push({
-      margin: [0, 16, 0, 0],
-      columns: [
-        { width: '*', margin: [0, 0, 6, 0], stack: cellSeller.stack },
-        { width: '*', margin: [6, 0, 0, 0], stack: buyerLines },
-      ],
-    });
-  } else {
-    docDef.content.push({ text: 'Klient', color: MUTED, fontSize: 8, margin: [0, 18, 0, 0] });
-    docDef.content.push({ text: client.name + (client.company ? ` · ${client.company}` : ''), bold: true, fontSize: 11 });
-    if (client.email) docDef.content.push({ text: client.email, color: MUTED, fontSize: 9 });
-  }
+  docDef.content.push(sellerBuyerBlock(seller, appName, client, tpl === 'proforma'));
   if (fLine) docDef.content.push(fLine);
-
   sections.forEach((s) => docDef.content.push(s));
-  docDef.content.push(totalsBlock(total, paid, brand));
+  docDef.content.push(totalsBlock(total, paid, brand, seller));
 
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="rozliczenie-${slug(client.name)}-${today.replace(/\./g, '-')}.pdf"`);

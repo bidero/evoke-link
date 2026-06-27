@@ -32,6 +32,8 @@ model Client {
   email     String?
   company   String?
   phone     String?
+  nip       String?                       // NIP nabywcy (na dokument rozliczenia)
+  address   String?                       // adres nabywcy (na dokument rozliczenia)
   status    String    @default("active") // lead | active | inactive
   tags      String?                       // wolny tekst, oddzielone przecinkami
   token     String    @unique
