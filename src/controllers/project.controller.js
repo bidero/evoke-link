@@ -10,9 +10,12 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 async function listProjects(req, res, next) {
   try {
-    const { status, q } = req.query;
+    const { q } = req.query;
     const SORTS = ['activity', 'created', 'name', 'manual'];
-    // Zapamiętujemy ostatnio wybrane sortowanie w sesji; wejście bez ?sort= używa zapamiętanego.
+    const STATUSES = ['active', 'archived', 'all']; // 'all' = bez filtra
+
+    // Zapamiętujemy ostatnio wybrane sortowanie i zakładkę statusu w sesji;
+    // wejście bez parametru (np. z menu bocznego) używa zapamiętanych.
     let sort;
     if (SORTS.includes(req.query.sort)) {
       sort = req.query.sort;
@@ -20,6 +23,16 @@ async function listProjects(req, res, next) {
     } else {
       sort = (req.session && SORTS.includes(req.session.projectSort)) ? req.session.projectSort : 'activity';
     }
+
+    let statusSel;
+    if (STATUSES.includes(req.query.status)) {
+      statusSel = req.query.status;
+      if (req.session) req.session.projectStatus = statusSel;
+    } else {
+      statusSel = (req.session && STATUSES.includes(req.session.projectStatus)) ? req.session.projectStatus : 'all';
+    }
+    const status = statusSel === 'all' ? '' : statusSel; // '' → serwis nie filtruje
+
     const projects = await projectService.list({ status, q, sort });
     res.render('admin/projects/index', {
       title: 'Projekty',
