@@ -25,12 +25,24 @@ const DEFAULTS = {
     uploadSubject: '', downloadSubject: '',
     clientConfirm: false, clientConfirmSubject: '', clientConfirmBody: '',
   },
+  // Wydruk PDF rozliczenia: szablon + wysokość logo (px).
+  pdf: { template: 'standard', logoHeight: 48 },
 };
 
 const ALIGNS = ['left', 'center', 'right'];
 const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner'];
 const CARD_STYLES = ['solid', 'glass', 'elevated'];
 const BUTTON_STYLES = ['rounded', 'pill'];
+const PDF_TEMPLATES = ['standard', 'band', 'accent', 'proforma'];
+
+function normPdf(p) {
+  const x = p && typeof p === 'object' ? p : {};
+  const h = parseInt(x.logoHeight, 10);
+  return {
+    template: PDF_TEMPLATES.includes(x.template) ? x.template : DEFAULTS.pdf.template,
+    logoHeight: Math.min(90, Math.max(20, Number.isFinite(h) ? h : DEFAULTS.pdf.logoHeight)),
+  };
+}
 
 function normLogo(l) {
   const x = l && typeof l === 'object' ? l : {};
@@ -69,6 +81,8 @@ function normalize(row) {
   try { layout = row.layout ? JSON.parse(row.layout) : {}; } catch (_) {}
   let emails = {};
   try { emails = row.emails ? JSON.parse(row.emails) : {}; } catch (_) {}
+  let pdf = {};
+  try { pdf = row.pdf ? JSON.parse(row.pdf) : {}; } catch (_) {}
   return {
     appName: row.appName || DEFAULTS.appName,
     logoPath: row.logoPath || null,
@@ -80,6 +94,7 @@ function normalize(row) {
     layout: normLayout(layout),
     customCss: row.customCss || '',
     emails: { ...DEFAULTS.emails, ...emails },
+    pdf: normPdf(pdf),
   };
 }
 
@@ -109,6 +124,7 @@ async function update(data) {
   if (data.layout !== undefined) patch.layout = JSON.stringify(data.layout);
   if (data.customCss !== undefined) patch.customCss = data.customCss;
   if (data.emails !== undefined) patch.emails = JSON.stringify(data.emails);
+  if (data.pdf !== undefined) patch.pdf = JSON.stringify(data.pdf);
 
   const row = await prisma.settings.upsert({
     where: { id: 1 },

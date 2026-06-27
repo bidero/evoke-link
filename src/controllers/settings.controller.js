@@ -114,6 +114,12 @@ async function updateSettings(req, res, next) {
       button: ['rounded', 'pill'].includes(b.layoutButton) ? b.layoutButton : 'rounded',
     };
 
+    // --- Wydruk PDF rozliczenia ---
+    const pdf = {
+      template: ['standard', 'band', 'accent', 'proforma'].includes(b.pdfTemplate) ? b.pdfTemplate : 'standard',
+      logoHeight: Math.min(90, Math.max(20, parseInt(b.pdfLogoHeight, 10) || 48)),
+    };
+
     const data = {
       appName: b.appName && b.appName.trim() ? b.appName.trim() : null,
       colors,
@@ -121,6 +127,7 @@ async function updateSettings(req, res, next) {
       background,
       logo: logoCfg,
       layout,
+      pdf,
       customCss: sanitizeCss(b.customCss || ''),
       emails: {
         logoPath: current.emails.logoPath || null,
