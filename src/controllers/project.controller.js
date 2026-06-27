@@ -11,12 +11,13 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 async function listProjects(req, res, next) {
   try {
     const { status, q } = req.query;
-    const projects = await projectService.list({ status, q });
+    const sort = ['activity', 'created', 'name', 'manual'].includes(req.query.sort) ? req.query.sort : 'activity';
+    const projects = await projectService.list({ status, q, sort });
     res.render('admin/projects/index', {
       title: 'Projekty',
       active: 'projects',
       projects,
-      filter: { status: status || '', q: q || '' },
+      filter: { status: status || '', q: q || '', sort },
     });
   } catch (err) {
     next(err);
@@ -137,6 +138,16 @@ async function updateProject(req, res, next) {
   }
 }
 
+// Zapis ręcznej kolejności (drag & drop). Body: { ids: [..] }.
+async function reorderProjects(req, res, next) {
+  try {
+    await projectService.reorder(req.body.ids || []);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function deleteProject(req, res, next) {
   try {
     await projectService.remove(req.params.id);
@@ -146,4 +157,4 @@ async function deleteProject(req, res, next) {
   }
 }
 
-module.exports = { listProjects, showCreateForm, createProject, showProject, sendPanel, showEditForm, updateProject, deleteProject };
+module.exports = { listProjects, showCreateForm, createProject, showProject, sendPanel, showEditForm, updateProject, reorderProjects, deleteProject };

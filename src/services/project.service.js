@@ -8,8 +8,16 @@ function makeToken() {
   return crypto.randomBytes(9).toString('base64url');
 }
 
+// Tryby sortowania listy projektów. 'manual' = ręczna kolejność (drag & drop).
+const SORTS = {
+  activity: [{ updatedAt: 'desc' }],
+  created: [{ createdAt: 'desc' }],
+  name: [{ name: 'asc' }],
+  manual: [{ position: 'asc' }, { updatedAt: 'desc' }],
+};
+
 // Lista projektów z licznikami transferów (do widoku listy i dropdownów).
-async function list({ status, q } = {}) {
+async function list({ status, q, sort } = {}) {
   const where = {};
   if (status) where.status = status;
   if (q && q.trim()) {
@@ -23,7 +31,7 @@ async function list({ status, q } = {}) {
   const projects = await prisma.project.findMany({
     where,
     include: { _count: { select: { transfers: true } }, client: { select: { name: true } } },
-    orderBy: { updatedAt: 'desc' },
+    orderBy: SORTS[sort] || SORTS.activity,
   });
   // Liczba nieprzeczytanych powiadomień per projekt (badge „zaktualizowano").
   if (projects.length) {
@@ -92,6 +100,13 @@ function getByClientToken(token) {
   });
 }
 
+// Zapisuje ręczną kolejność: position = indeks na liście przekazanych id.
+async function reorder(ids) {
+  const list = (Array.isArray(ids) ? ids : [ids]).map((x) => parseInt(x, 10)).filter(Number.isInteger);
+  if (!list.length) return;
+  await prisma.$transaction(list.map((id, idx) => prisma.project.update({ where: { id }, data: { position: idx } })));
+}
+
 // Dla starszych projektów bez tokenu — dogeneruj przy pierwszym wejściu na stronę projektu.
 async function ensureClientToken(project) {
   if (project.clientToken) return project;
@@ -115,6 +130,7 @@ function remove(id) {
 
 module.exports = {
   list,
+  reorder,
   getById,
   getHistory,
   create,

@@ -49,6 +49,7 @@ router.post('/transfers/:id/delete', transfers.deleteTransfer);
 // Projekty (Etap 3).
 router.get('/projects', projects.listProjects);
 router.get('/projects/new', projects.showCreateForm);
+router.post('/projects/reorder', projects.reorderProjects); // przed :id!
 router.post('/projects', projects.createProject);
 router.get('/projects/:id', projects.showProject);
 router.post('/projects/:id/send-panel', projects.sendPanel);

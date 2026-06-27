@@ -9,10 +9,20 @@
     </div>
     <a href="/admin/projects/new" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition shrink-0">+ Nowy projekt</a>
   </div>
-  <form method="GET" action="/admin/projects" class="relative w-full sm:max-w-xs">
+  <form method="GET" action="/admin/projects" class="flex flex-col gap-2 sm:flex-row sm:items-center">
     <% if (filter.status) { %><input type="hidden" name="status" value="<%= filter.status %>" /><% } %>
-    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><%- icon('search', { size: 16 }) %></span>
-    <input type="search" name="q" value="<%= filter.q %>" placeholder="Szukaj projektu lub klienta…" class="w-full rounded-lg border border-slate-300 pl-9 pr-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+    <div class="relative w-full sm:max-w-xs">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><%- icon('search', { size: 16 }) %></span>
+      <input type="search" name="q" value="<%= filter.q %>" placeholder="Szukaj projektu lub klienta…" class="w-full rounded-lg border border-slate-300 pl-9 pr-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+    </div>
+    <div class="flex items-center gap-2 text-sm sm:ml-auto">
+      <label class="text-slate-500 shrink-0">Sortuj:</label>
+      <select name="sort" onchange="this.form.submit()" class="rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+        <% [['activity','Ostatnia aktywność'],['created','Najnowsze'],['name','Nazwa A-Z'],['manual','Ręczna kolejność']].forEach(function(o){ %>
+          <option value="<%= o[0] %>" <%= filter.sort === o[0] ? 'selected' : '' %>><%= o[1] %></option>
+        <% }); %>
+      </select>
+    </div>
   </form>
 </div>
 
@@ -26,11 +36,14 @@
     <% } %>
   </div>
 <% } else { %>
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  <div id="projectGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
     <% projects.forEach(function(p){ %>
-      <a href="/admin/projects/<%= p.id %>" class="block bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-sm transition">
-        <div class="flex items-start justify-between gap-2">
-          <h3 class="font-semibold text-slate-800"><%= p.name %></h3>
+      <a href="/admin/projects/<%= p.id %>" data-id="<%= p.id %>" class="block bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-sm transition">
+        <div class="flex items-start gap-2">
+          <% if (filter.sort === 'manual') { %>
+            <span class="drag-handle cursor-grab text-slate-300 hover:text-slate-500 -ml-1 mt-0.5 shrink-0" title="Przeciągnij, aby zmienić kolejność" onclick="event.preventDefault();event.stopPropagation();"><%- icon('menu', { size: 16 }) %></span>
+          <% } %>
+          <h3 class="font-semibold text-slate-800 flex-1 min-w-0"><%= p.name %></h3>
           <div class="flex items-center gap-2 shrink-0">
             <% if (p.unread > 0) { %>
               <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-brand-600 text-white text-xs font-semibold" title="Nowa aktywność">
@@ -50,4 +63,28 @@
       </a>
     <% }); %>
   </div>
+
+  <% if (filter.sort === 'manual') { %>
+    <p class="mt-3 text-xs text-slate-400">Przeciągnij karty za uchwyt (<span class="inline-block align-middle"><%- icon('menu', { size: 13 }) %></span>), aby zmienić kolejność — zapisuje się automatycznie.</p>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+    <script>
+      (function () {
+        var grid = document.getElementById('projectGrid');
+        if (!grid || !window.Sortable) return;
+        Sortable.create(grid, {
+          handle: '.drag-handle',
+          animation: 150,
+          ghostClass: 'opacity-50',
+          onEnd: function () {
+            var ids = Array.prototype.map.call(grid.querySelectorAll('[data-id]'), function (el) { return el.getAttribute('data-id'); });
+            fetch('/admin/projects/reorder', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ids: ids }),
+            }).catch(function () {});
+          },
+        });
+      })();
+    </script>
+  <% } %>
 <% } %>
