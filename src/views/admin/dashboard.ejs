@@ -2,17 +2,25 @@
 
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
   <% const widgets = [
-    { label: 'Aktywne transfery', value: stats.transfers, hint: 'w toku' },
-    { label: 'Aktywne projekty', value: stats.projects, hint: 'otwarte' },
-    { label: 'Oczekujące uploady', value: stats.pendingUploads, hint: 'od klientów' },
+    { label: 'Aktywne transfery', value: stats.transfers, hint: 'w toku', href: '/admin/transfers?status=active' },
+    { label: 'Aktywne projekty', value: stats.projects, hint: 'otwarte', href: '/admin/projects?status=active' },
+    { label: 'Oczekujące uploady', value: stats.pendingUploads, hint: 'od klientów', href: '/admin/transfers?status=active&direction=incoming' },
     { label: 'Wykorzystane miejsce', value: fmtBytes(stats.storageBytes), hint: 'na dysku' }
   ]; %>
   <% widgets.forEach(function(w){ %>
-    <div class="bg-white rounded-2xl border border-slate-200 p-5">
-      <div class="text-sm text-slate-500"><%= w.label %></div>
-      <div class="mt-2 text-3xl font-semibold tracking-tight"><%= w.value %></div>
-      <div class="mt-1 text-xs text-slate-400"><%= w.hint %></div>
-    </div>
+    <% if (w.href) { %>
+      <a href="<%= w.href %>" class="block bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-sm transition">
+        <div class="text-sm text-slate-500"><%= w.label %></div>
+        <div class="mt-2 text-3xl font-semibold tracking-tight"><%= w.value %></div>
+        <div class="mt-1 text-xs text-slate-400"><%= w.hint %></div>
+      </a>
+    <% } else { %>
+      <div class="bg-white rounded-2xl border border-slate-200 p-5">
+        <div class="text-sm text-slate-500"><%= w.label %></div>
+        <div class="mt-2 text-3xl font-semibold tracking-tight"><%= w.value %></div>
+        <div class="mt-1 text-xs text-slate-400"><%= w.hint %></div>
+      </div>
+    <% } %>
   <% }); %>
 </div>
 
