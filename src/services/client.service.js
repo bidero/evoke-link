@@ -13,7 +13,15 @@ function list({ q, status } = {}) {
   const where = {};
   if (q && q.trim()) {
     const s = q.trim();
-    where.OR = [{ name: { contains: s } }, { email: { contains: s } }, { company: { contains: s } }]; // SQLite LIKE — bez rozróżniania wielkości (ASCII)
+    // wyszukiwanie po wszystkich polach tekstowych (SQLite LIKE — bez rozróżniania wielkości, ASCII)
+    where.OR = [
+      { name: { contains: s } },
+      { email: { contains: s } },
+      { company: { contains: s } },
+      { phone: { contains: s } },
+      { tags: { contains: s } },
+      { note: { contains: s } },
+    ];
   }
   if (STATUSES.includes(status)) where.status = status;
   return prisma.client.findMany({
@@ -75,6 +83,21 @@ function options() {
   return prisma.client.findMany({ orderBy: { name: 'asc' } });
 }
 
+// Chmurka najczęściej używanych tagów (do podpowiadania spójnych tagów w formularzu).
+async function tagCloud(limit = 20) {
+  const rows = await prisma.client.findMany({ where: { tags: { not: null } }, select: { tags: true } });
+  const counts = {};
+  rows.forEach((r) => {
+    (r.tags || '').split(',').map((t) => t.trim()).filter(Boolean).forEach((t) => {
+      counts[t] = (counts[t] || 0) + 1;
+    });
+  });
+  return Object.entries(counts)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([tag, count]) => ({ tag, count }));
+}
+
 const clean = (v) => (v && v.trim() ? v.trim() : null);
 
 function create({ name, email, note, company, phone, status, tags }) {
@@ -114,4 +137,4 @@ async function remove(id) {
   return prisma.client.delete({ where: { id: Number(id) } });
 }
 
-module.exports = { list, getById, overview, getByToken, options, create, update, remove };
+module.exports = { list, getById, overview, getByToken, options, tagCloud, create, update, remove };

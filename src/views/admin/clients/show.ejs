@@ -20,7 +20,7 @@
       <% if (client.tags) { %>
         <div class="mt-3 flex flex-wrap gap-1.5">
           <% client.tags.split(',').map(function(t){ return t.trim(); }).filter(Boolean).forEach(function(tag){ %>
-            <span class="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700"><%= tag %></span>
+            <a href="/admin/clients?q=<%= encodeURIComponent(tag) %>" class="text-xs px-2 py-0.5 rounded-full bg-brand-50 text-brand-700 hover:bg-brand-100 transition" title="Pokaż klientów z tym tagiem"><%= tag %></a>
           <% }); %>
         </div>
       <% } %>

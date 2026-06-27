@@ -19,8 +19,12 @@ async function listClients(req, res, next) {
   }
 }
 
-function showCreateForm(req, res) {
-  res.render('admin/clients/new', { title: 'Nowy klient', active: 'clients', error: null });
+async function showCreateForm(req, res, next) {
+  try {
+    res.render('admin/clients/new', { title: 'Nowy klient', active: 'clients', error: null, tagCloud: await clientService.tagCloud() });
+  } catch (err) {
+    next(err);
+  }
 }
 
 // Strona klienta 360° — kontakt + jego projekty + ostatnie transfery + oś czasu.
@@ -45,7 +49,7 @@ async function createClient(req, res, next) {
   try {
     const { name, email, note, company, phone, status, tags } = req.body;
     if (!name || !name.trim()) {
-      return res.status(400).render('admin/clients/new', { title: 'Nowy klient', active: 'clients', error: 'Podaj nazwę klienta.' });
+      return res.status(400).render('admin/clients/new', { title: 'Nowy klient', active: 'clients', error: 'Podaj nazwę klienta.', tagCloud: await clientService.tagCloud() });
     }
     const client = await clientService.create({ name, email, note, company, phone, status, tags });
     res.redirect(`/admin/clients/${client.id}/edit`);
@@ -58,7 +62,7 @@ async function showEditForm(req, res, next) {
   try {
     const client = await clientService.getById(req.params.id);
     if (!client) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
-    res.render('admin/clients/edit', { title: client.name, active: 'clients', client, error: null, portalUrl: `${config.appUrl}/c/${client.token}`, panel: req.query.panel || null, mailReady: mail.isConfigured() });
+    res.render('admin/clients/edit', { title: client.name, active: 'clients', client, error: null, portalUrl: `${config.appUrl}/c/${client.token}`, panel: req.query.panel || null, mailReady: mail.isConfigured(), tagCloud: await clientService.tagCloud() });
   } catch (err) {
     next(err);
   }
@@ -90,7 +94,7 @@ async function updateClient(req, res, next) {
     const { name, email, note, company, phone, status, tags } = req.body;
     if (!name || !name.trim()) {
       const client = await clientService.getById(req.params.id);
-      return res.status(400).render('admin/clients/edit', { title: 'Edytuj klienta', active: 'clients', client, error: 'Podaj nazwę klienta.', portalUrl: `${config.appUrl}/c/${client.token}`, mailReady: mail.isConfigured() });
+      return res.status(400).render('admin/clients/edit', { title: 'Edytuj klienta', active: 'clients', client, error: 'Podaj nazwę klienta.', portalUrl: `${config.appUrl}/c/${client.token}`, mailReady: mail.isConfigured(), tagCloud: await clientService.tagCloud() });
     }
     await clientService.update(req.params.id, { name, email, note, company, phone, status, tags });
     res.redirect(`/admin/clients/${req.params.id}/edit`);

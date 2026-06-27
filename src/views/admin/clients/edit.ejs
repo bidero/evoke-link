@@ -42,6 +42,26 @@
       <label class="block text-sm font-medium text-slate-700 mb-1">Tagi <span class="text-slate-400 font-normal">(po przecinku)</span></label>
       <input name="tags" type="text" value="<%= client.tags || '' %>" placeholder="np. VIP, foto, retainer"
              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      <% if (typeof tagCloud !== 'undefined' && tagCloud.length) { %>
+        <div class="flex flex-wrap items-center gap-1.5 mt-2">
+          <span class="text-xs text-slate-400">Często używane:</span>
+          <% tagCloud.forEach(function(t){ %>
+            <button type="button" class="tag-chip text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-700 transition" data-tag="<%= t.tag %>"><%= t.tag %> <span class="text-slate-400"><%= t.count %></span></button>
+          <% }); %>
+        </div>
+        <script>
+          document.querySelectorAll('.tag-chip').forEach(function (b) {
+            b.addEventListener('click', function () {
+              var t = this.getAttribute('data-tag');
+              var i = document.querySelector('input[name=tags]');
+              if (!i) return;
+              var a = i.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+              if (a.indexOf(t) === -1) { a.push(t); i.value = a.join(', '); }
+              i.focus();
+            });
+          });
+        </script>
+      <% } %>
     </div>
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Notatka</label>
