@@ -15,6 +15,8 @@
 
 <% if (sent === 'ok') { %>
   <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Wysłano link panelu klienta.</div>
+<% } else if (sent === 'dev') { %>
+  <div class="mb-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-3 py-2">SMTP niewłączony — link panelu trafił do logów serwera (tryb deweloperski).</div>
 <% } else if (sent === 'invalid') { %>
   <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Klient nie ma poprawnego adresu e-mail.</div>
 <% } else if (sent === 'error') { %>
@@ -57,11 +59,13 @@
             <td class="px-4 py-3 text-slate-500"><%= c._count.projects %></td>
             <td class="px-4 py-3 text-slate-400"><a href="<%= appUrl %>/c/<%= c.token %>" target="_blank" @click.stop class="text-brand-700 hover:underline" onclick="event.stopPropagation()">/c/<%= c.token %></a></td>
             <td class="px-4 py-3 text-right whitespace-nowrap" onclick="event.stopPropagation()">
-              <% if (mailReady && c.email) { %>
+              <% if (c.email) { %>
                 <form method="POST" action="/admin/clients/<%= c.id %>/send-panel">
                   <input type="hidden" name="redirect" value="list" />
                   <button type="submit" title="Wyślij link panelu na <%= c.email %>" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-xs font-medium px-3 py-1.5 transition"><%- icon('mail', { size: 14 }) %> Wyślij</button>
                 </form>
+              <% } else { %>
+                <span class="text-xs text-slate-300">brak e-maila</span>
               <% } %>
             </td>
           </tr>

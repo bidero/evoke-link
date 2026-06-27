@@ -79,7 +79,7 @@ async function sendPanel(req, res, next) {
     const url = `${config.appUrl}/c/${client.token}`;
     try {
       await mail.sendPanelLink({ to, url, clientName: client.name });
-      res.redirect(toList ? '/admin/clients?sent=ok' : `/admin/clients/${client.id}/edit?panel=sent`);
+      res.redirect(toList ? `/admin/clients?sent=${mail.isConfigured() ? 'ok' : 'dev'}` : `/admin/clients/${client.id}/edit?panel=sent`);
     } catch (e) {
       console.error('[mail] panel klienta:', e.message);
       res.redirect(toList ? '/admin/clients?sent=error' : `/admin/clients/${client.id}/edit?panel=error`);
