@@ -257,7 +257,7 @@
             <span class="inline-flex items-center gap-1.5">Kolor 1 <input type="color" name="imgGradC1" x-model="imgGradC1" class="h-7 w-9 rounded border border-slate-300 cursor-pointer" /></span>
             <label class="inline-flex items-center gap-1.5"><input type="checkbox" x-model="imgGradC2on" class="rounded border-slate-300" /> Kolor 2</label>
             <span class="inline-flex items-center gap-1.5" x-show="imgGradC2on"><input type="color" x-model="imgGradC2" class="h-7 w-9 rounded border border-slate-300 cursor-pointer" /></span>
-            <span class="inline-flex items-center gap-1.5">Kąt <input type="number" name="imgGradAngle" x-model="imgGradAngle" min="0" max="360" class="w-16 rounded border border-slate-300 px-2 py-1 text-xs" />°</span>
+            <span class="inline-flex items-center gap-2">Kąt <input type="range" name="imgGradAngle" x-model="imgGradAngle" min="0" max="360" step="5" class="w-28 accent-brand-600" /><span class="tabular-nums w-9 text-right" x-text="imgGradAngle + '°'"></span></span>
           </div>
         </div>
       </div>

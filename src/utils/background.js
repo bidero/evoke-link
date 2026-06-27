@@ -64,10 +64,11 @@ function normCustom(c) {
 
 function normImageGrad(g) {
   const x = g && typeof g === 'object' ? g : {};
+  const a = parseInt(x.angle, 10); // ZACHOWUJ 0 — `|| default` mylił 0° z brakiem wartości
   return {
     c1: safeHex(x.c1, DEFAULTS.imageGrad.c1),
     c2: safeHex(x.c2, '') || '', // pusty = zanik do przezroczystości
-    angle: Math.min(360, Math.max(0, parseInt(x.angle, 10) || DEFAULTS.imageGrad.angle)),
+    angle: Number.isFinite(a) ? Math.min(360, Math.max(0, a)) : DEFAULTS.imageGrad.angle,
   };
 }
 

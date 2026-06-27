@@ -9,6 +9,13 @@ const { sanitizeSvg, looksLikeSvg } = require('../utils/svgSanitize');
 const { sanitizeCss } = require('../utils/css');
 const background = require('../utils/background');
 
+// parseInt z zakresem i domyślną wartością. Ważne: ZACHOWUJE 0
+// (wzorzec `parseInt(x) || dflt` mylił 0 z brakiem wartości — przez to kąt 0° nie zapisywał się).
+function clampInt(v, min, max, dflt) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : dflt;
+}
+
 async function showSettings(req, res, next) {
   try {
     const settings = await settingsService.get();
@@ -82,7 +89,7 @@ async function updateSettings(req, res, next) {
       imagePath: current.background.imagePath || null,
       overlay: Math.min(80, Math.max(0, parseInt(b.bgOverlay, 10) || 0)),
       imageGradient: b.bgImageGradient === 'on',
-      imageGrad: { c1: safeHex(b.imgGradC1, '#6e00a5'), c2: safeHex(b.imgGradC2, '') || '', angle: parseInt(b.imgGradAngle, 10) || 135 },
+      imageGrad: { c1: safeHex(b.imgGradC1, '#6e00a5'), c2: safeHex(b.imgGradC2, '') || '', angle: clampInt(b.imgGradAngle, 0, 360, 135) },
       grain: b.bgGrain === 'on',
       grainType: b.bgGrainType,
       grainStrength: Math.min(100, Math.max(0, parseInt(b.bgGrainStrength, 10) || 0)),
