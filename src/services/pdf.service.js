@@ -1,5 +1,5 @@
 // Generowanie PDF (pdfmake — czysty JS, font Roboto z polskimi znakami w pakiecie).
-// Wydruk rozliczenia klienta w jednym z 4 układów (Settings.pdf.template).
+// Wydruk rozliczenia/proformy klienta w jednym z 4 układów (Settings.pdf).
 const fs = require('fs');
 const path = require('path');
 const PdfPrinter = require('pdfmake/src/printer');
@@ -43,17 +43,17 @@ function slug(s) {
 // Tabele pozycji grupowane po projekcie. style: 'light' | 'bordered'.
 function projectTables(charges, brand, style) {
   const header = () => [
-    { text: 'Data', bold: true, color: MUTED, fontSize: 8 },
-    { text: 'Pozycja', bold: true, color: MUTED, fontSize: 8 },
-    { text: 'Status', bold: true, color: MUTED, fontSize: 8 },
-    { text: 'Kwota', bold: true, color: MUTED, fontSize: 8, alignment: 'right' },
+    { text: 'Data', bold: true, color: MUTED, fontSize: 9 },
+    { text: 'Pozycja', bold: true, color: MUTED, fontSize: 9 },
+    { text: 'Status', bold: true, color: MUTED, fontSize: 9 },
+    { text: 'Kwota', bold: true, color: MUTED, fontSize: 9, alignment: 'right' },
   ];
   const lightLayout = {
     hLineWidth: (i, node) => (i <= 1 || i === node.table.body.length ? 0.5 : 0.3),
     vLineWidth: () => 0,
     hLineColor: () => '#e2e8f0',
-    paddingTop: () => 4,
-    paddingBottom: () => 4,
+    paddingTop: () => 5,
+    paddingBottom: () => 5,
   };
   const borderedLayout = {
     hLineWidth: () => 0.5,
@@ -61,15 +61,15 @@ function projectTables(charges, brand, style) {
     hLineColor: () => '#cbd5e1',
     vLineColor: () => '#cbd5e1',
     fillColor: (rowIndex) => (rowIndex === 0 ? '#eef2f7' : rowIndex % 2 === 0 ? '#f8fafc' : null),
-    paddingTop: () => 4,
-    paddingBottom: () => 4,
+    paddingTop: () => 5,
+    paddingBottom: () => 5,
   };
   const out = [];
   let cur = null;
   let rows = null;
   const flush = () => {
     if (cur === null) return;
-    out.push({ text: cur, bold: true, color: brand, margin: [0, 12, 0, 4] });
+    out.push({ text: cur, bold: true, color: brand, fontSize: 11, margin: [0, 14, 0, 5] });
     out.push({
       table: { headerRows: 1, widths: ['auto', '*', 'auto', 'auto'], body: [header(), ...rows] },
       layout: style === 'bordered' ? borderedLayout : lightLayout,
@@ -79,40 +79,32 @@ function projectTables(charges, brand, style) {
     const name = (c.project && c.project.name) || 'Bez projektu';
     if (name !== cur) { flush(); cur = name; rows = []; }
     rows.push([
-      { text: fmt.dateOnly(c.date), fontSize: 9 },
-      { text: c.label || 'Pozycja', fontSize: 9 },
-      { text: c.paidAt ? 'Rozliczono' : 'Do zapłaty', fontSize: 8, color: c.paidAt ? '#16a34a' : '#d97706' },
-      { text: fmt.money(c.amount), fontSize: 9, alignment: 'right' },
+      { text: fmt.dateOnly(c.date), fontSize: 10 },
+      { text: c.label || 'Pozycja', fontSize: 10 },
+      { text: c.paidAt ? 'Rozliczono' : 'Do zapłaty', fontSize: 9, color: c.paidAt ? '#16a34a' : '#d97706' },
+      { text: fmt.money(c.amount), fontSize: 10, alignment: 'right' },
     ]);
   });
   flush();
   return out;
 }
 
-// Rozjaśnia kolor w stronę bieli (t=0..1, większe = jaśniej).
-function tint(hex, t) {
-  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
-  if (!m) return '#f1f5f9';
-  const mix = (c) => Math.round(parseInt(c, 16) + (255 - parseInt(c, 16)) * t);
-  return '#' + [mix(m[1]), mix(m[2]), mix(m[3])].map((n) => n.toString(16).padStart(2, '0')).join('');
-}
-
 // Strony dokumentu. Sprzedawca pokazywany TYLKO gdy uzupełniono jego dane.
 function partiesBlock(seller, appName, client, boxed) {
   const hasSeller = !!(seller.name || seller.address || seller.nip);
-  const buyer = [{ text: 'Nabywca', color: MUTED, fontSize: 8 }, { text: client.name + (client.company ? ` · ${client.company}` : ''), bold: true, fontSize: 11 }];
-  if (client.address) buyer.push({ text: client.address, fontSize: 9, color: '#334155' });
-  if (client.nip) buyer.push({ text: `NIP: ${client.nip}`, fontSize: 9, color: MUTED });
-  if (client.email) buyer.push({ text: client.email, fontSize: 9, color: MUTED });
+  const buyer = [{ text: 'Nabywca', color: MUTED, fontSize: 9 }, { text: client.name + (client.company ? ` · ${client.company}` : ''), bold: true, fontSize: 12 }];
+  if (client.address) buyer.push({ text: client.address, fontSize: 10, color: '#334155' });
+  if (client.nip) buyer.push({ text: `NIP: ${client.nip}`, fontSize: 10, color: MUTED });
+  if (client.email) buyer.push({ text: client.email, fontSize: 10, color: MUTED });
 
   if (!hasSeller) {
-    const single = [{ text: 'Klient', color: MUTED, fontSize: 8 }].concat(buyer.slice(1));
+    const single = [{ text: 'Klient', color: MUTED, fontSize: 9 }].concat(buyer.slice(1));
     return { margin: [0, 34, 0, 0], stack: single };
   }
 
-  const sStack = [{ text: 'Sprzedawca', color: MUTED, fontSize: 8 }, { text: seller.name || appName, bold: true, fontSize: 11 }];
-  if (seller.address) sStack.push({ text: seller.address, fontSize: 9, color: '#334155' });
-  if (seller.nip) sStack.push({ text: `NIP: ${seller.nip}`, fontSize: 9, color: MUTED });
+  const sStack = [{ text: 'Sprzedawca', color: MUTED, fontSize: 9 }, { text: seller.name || appName, bold: true, fontSize: 12 }];
+  if (seller.address) sStack.push({ text: seller.address, fontSize: 10, color: '#334155' });
+  if (seller.nip) sStack.push({ text: `NIP: ${seller.nip}`, fontSize: 10, color: MUTED });
 
   if (boxed) {
     const L = { hLineWidth: () => 0.5, vLineWidth: () => 0.5, hLineColor: () => '#e2e8f0', vLineColor: () => '#e2e8f0', paddingLeft: () => 9, paddingRight: () => 9, paddingTop: () => 7, paddingBottom: () => 7 };
@@ -133,26 +125,28 @@ function partiesBlock(seller, appName, client, boxed) {
   };
 }
 
-// Podsumowanie — czyste, z subtelnym chipem brandowym przy „Do zapłaty" (bez szarego panelu).
+// Podsumowanie — gruba brandowa linia nad „Do zapłaty" (bez tła), na szerokość pola.
 function totalsBlock(total, paid, brand, seller) {
   const outstanding = total - paid;
-  const light = tint(brand, 0.9);
   const box = {
     table: {
       widths: ['*', 'auto'],
       body: [
         [{ text: 'Wartość', color: MUTED, alignment: 'right' }, { text: fmt.money(total), alignment: 'right' }],
         [{ text: 'Rozliczono', color: MUTED, alignment: 'right' }, { text: fmt.money(paid), alignment: 'right', color: '#16a34a' }],
-        [{ text: 'Do zapłaty', bold: true, fontSize: 14, alignment: 'right', fillColor: light, margin: [0, 6, 10, 6] }, { text: fmt.money(outstanding), bold: true, fontSize: 14, color: brand, alignment: 'right', fillColor: light, margin: [0, 6, 0, 6] }],
+        [{ text: 'Do zapłaty', bold: true, fontSize: 16, alignment: 'right', margin: [0, 7, 0, 0] }, { text: fmt.money(outstanding), bold: true, fontSize: 16, color: brand, alignment: 'right', margin: [0, 7, 0, 0] }],
       ],
     },
-    layout: { hLineWidth: () => 0, vLineWidth: () => 0, paddingLeft: () => 6, paddingRight: () => 6, paddingTop: () => 4, paddingBottom: () => 4 },
+    layout: {
+      hLineWidth: (i) => (i === 2 ? 3 : 0),
+      vLineWidth: () => 0,
+      hLineColor: () => brand,
+      paddingLeft: () => 6, paddingRight: () => 6, paddingTop: () => 5, paddingBottom: () => 5,
+    },
   };
   const stack = [box];
-  if (outstanding > 0 && seller.bank) {
-    stack.push({ text: `Do zapłaty na konto: ${seller.bank}`, color: MUTED, fontSize: 8, alignment: 'right', margin: [0, 8, 0, 0] });
-  }
-  return { margin: [0, 20, 0, 0], columns: [{ width: '*', text: '' }, { width: '50%', stack }] };
+  if (outstanding > 0 && seller.bank) stack.push({ text: `Do zapłaty na konto: ${seller.bank}`, color: MUTED, fontSize: 9, alignment: 'right', margin: [0, 8, 0, 0] });
+  return { margin: [0, 36, 0, 0], columns: [{ width: '*', text: '' }, { width: '50%', stack }] };
 }
 
 function filterLine(filters) {
@@ -161,7 +155,7 @@ function filterLine(filters) {
   if (filters.to) p.push(`do ${fmt.dateOnly(filters.to)}`);
   if (filters.status === 'unpaid') p.push('tylko nierozliczone');
   else if (filters.status === 'paid') p.push('tylko rozliczone');
-  return p.length ? { text: `Zakres: ${p.join(', ')}`, color: '#94a3b8', fontSize: 8, margin: [0, 6, 0, 0] } : null;
+  return p.length ? { text: `Zakres: ${p.join(', ')}`, color: '#94a3b8', fontSize: 9, margin: [0, 8, 0, 0] } : null;
 }
 
 // Strumieniuje PDF rozliczenia klienta do odpowiedzi.
@@ -192,9 +186,9 @@ function clientStatement(res, { client, charges, filters = {}, settings }) {
   const docDef = {
     pageSize: 'A4',
     pageMargins: tpl === 'accent' ? [60, 48, 48, 56] : [48, 48, 48, 56],
-    defaultStyle: { font: 'Roboto', fontSize: 9, color: '#0f172a', lineHeight: 1.15 },
+    defaultStyle: { font: 'Roboto', fontSize: 10, color: '#0f172a', lineHeight: 1.15 },
     content,
-    footer: (cp, pc) => ({ text: `${appName} · strona ${cp}/${pc}`, alignment: 'center', color: '#94a3b8', fontSize: 7, margin: [0, 16, 0, 0] }),
+    footer: (cp, pc) => ({ text: `${appName} · strona ${cp}/${pc}`, alignment: 'center', color: '#94a3b8', fontSize: 8, margin: [0, 16, 0, 0] }),
   };
 
   // --- Nagłówek wg szablonu ---
@@ -206,48 +200,48 @@ function clientStatement(res, { client, charges, filters = {}, settings }) {
           fillColor: brand,
           margin: [16, 14, 16, 14],
           columns: [
-            logo ? { width: 'auto', ...logo } : { width: '*', text: appName, color: '#ffffff', bold: true, fontSize: 16 },
-            { width: '*', text: title, color: '#ffffff', bold: true, fontSize: 18, alignment: 'right', margin: [0, logoH > 30 ? 10 : 0, 0, 0] },
+            logo ? { width: 'auto', ...logo } : { width: '*', text: appName, color: '#ffffff', bold: true, fontSize: 18 },
+            { width: '*', text: title, color: '#ffffff', bold: true, fontSize: 20, alignment: 'right', margin: [0, logoH > 30 ? 10 : 0, 0, 0] },
           ],
         }]],
       },
       layout: 'noBorders',
     });
-    docDef.content.push({ text: meta, color: MUTED, fontSize: 8, margin: [0, 10, 0, 0] });
+    docDef.content.push({ text: meta, color: MUTED, fontSize: 9, margin: [0, 10, 0, 0] });
   } else if (tpl === 'accent') {
     docDef.background = (cp, pageSize) => ({ canvas: [{ type: 'rect', x: 0, y: 0, w: 16, h: pageSize.height, color: brand }] });
     docDef.content.push({
       columns: [
-        logo ? { width: 'auto', ...logo } : { width: 'auto', text: appName, bold: true, fontSize: 14, color: brand },
+        logo ? { width: 'auto', ...logo } : { width: 'auto', text: appName, bold: true, fontSize: 16, color: brand },
         {
           width: '*',
           stack: [
-            { text: title, color: brand, bold: true, fontSize: 12, alignment: 'right' },
-            { text: 'Do zapłaty', color: MUTED, fontSize: 8, alignment: 'right', margin: [0, 6, 0, 0] },
-            { text: fmt.money(total - paid), color: brand, bold: true, fontSize: 22, alignment: 'right' },
+            { text: title, color: brand, bold: true, fontSize: 13, alignment: 'right' },
+            { text: 'Do zapłaty', color: MUTED, fontSize: 9, alignment: 'right', margin: [0, 6, 0, 0] },
+            { text: fmt.money(total - paid), color: brand, bold: true, fontSize: 24, alignment: 'right' },
           ],
         },
       ],
     });
-    docDef.content.push({ text: meta, color: MUTED, fontSize: 8, margin: [0, 10, 0, 0] });
+    docDef.content.push({ text: meta, color: MUTED, fontSize: 9, margin: [0, 10, 0, 0] });
   } else if (tpl === 'proforma') {
     docDef.content.push({
       columns: [
-        logo ? { width: 'auto', ...logo } : { width: 'auto', text: appName, bold: true, fontSize: 14, color: brand },
+        logo ? { width: 'auto', ...logo } : { width: 'auto', text: appName, bold: true, fontSize: 16, color: brand },
         { width: '*', stack: [
-          { text: title, color: brand, bold: true, fontSize: 16, alignment: 'right' },
-          { text: `nr ${docNr}`, color: MUTED, fontSize: 9, alignment: 'right' },
-          { text: `Wystawiono: ${today}`, color: MUTED, fontSize: 8, alignment: 'right' },
+          { text: title, color: brand, bold: true, fontSize: 18, alignment: 'right' },
+          { text: `nr ${docNr}`, color: MUTED, fontSize: 10, alignment: 'right' },
+          { text: `Wystawiono: ${today}`, color: MUTED, fontSize: 9, alignment: 'right' },
         ] },
       ],
     });
   } else {
     docDef.content.push({
       columns: [
-        logo ? { width: 'auto', ...logo } : { width: 'auto', text: appName, bold: true, fontSize: 16, color: brand },
+        logo ? { width: 'auto', ...logo } : { width: 'auto', text: appName, bold: true, fontSize: 18, color: brand },
         { width: '*', stack: [
-          { text: title, fontSize: 18, bold: true, alignment: 'right', color: brand },
-          { text: meta, alignment: 'right', color: MUTED, fontSize: 8, margin: [0, 3, 0, 0] },
+          { text: title, fontSize: 20, bold: true, alignment: 'right', color: brand },
+          { text: meta, alignment: 'right', color: MUTED, fontSize: 9, margin: [0, 3, 0, 0] },
         ] },
       ],
     });
@@ -258,8 +252,8 @@ function clientStatement(res, { client, charges, filters = {}, settings }) {
   sections.forEach((s) => docDef.content.push(s));
   docDef.content.push(totalsBlock(total, paid, brand, seller));
 
-  res.setHeader('Content-Type', 'application/pdf');
   const filePrefix = pdfCfg.docType === 'proforma' ? 'proforma' : 'rozliczenie';
+  res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `inline; filename="${filePrefix}-${slug(client.name)}-${today.replace(/\./g, '-')}.pdf"`);
   const doc = printer.createPdfKitDocument(docDef);
   doc.pipe(res);
