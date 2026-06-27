@@ -21,7 +21,7 @@ async function list({ status } = {}) {
   if (projects.length) {
     const grouped = await prisma.event.groupBy({
       by: ['projectId'],
-      where: { isRead: false, type: { in: events.NOTIFY_TYPES }, projectId: { in: projects.map((p) => p.id) } },
+      where: { isRead: false, dismissed: false, type: { in: events.NOTIFY_TYPES }, projectId: { in: projects.map((p) => p.id) } },
       _count: { _all: true },
     });
     const map = {};

@@ -34,4 +34,24 @@ async function open(req, res, next) {
   }
 }
 
-module.exports = { index, readAll, open };
+// „Usuwa" pojedyncze powiadomienie z listy (miękko — zostaje w historii projektu).
+async function dismiss(req, res, next) {
+  try {
+    await events.dismiss(req.params.id);
+    res.redirect('/admin/notifications');
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Czyści całą listę powiadomień.
+async function clearAll(req, res, next) {
+  try {
+    await events.dismissAll();
+    res.redirect('/admin/notifications');
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { index, readAll, open, dismiss, clearAll };

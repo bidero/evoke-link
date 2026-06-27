@@ -68,7 +68,9 @@ router.post('/clients/:id/delete', clients.deleteClient);
 // Powiadomienia (Etap 4).
 router.get('/notifications', notifications.index);
 router.post('/notifications/read-all', notifications.readAll);
+router.post('/notifications/clear', notifications.clearAll); // przed :id
 router.get('/notifications/:id/open', notifications.open);
+router.post('/notifications/:id/dismiss', notifications.dismiss);
 
 // Customizacja (Etap 5 + 6: kolory panelu, tło stron klienta).
 router.get('/settings', settings.showSettings);

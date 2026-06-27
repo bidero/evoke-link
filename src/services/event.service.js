@@ -32,10 +32,10 @@ function recent(limit = 8) {
   });
 }
 
-// Lista powiadomień (tylko typy NOTIFY_TYPES).
+// Lista powiadomień (tylko typy NOTIFY_TYPES; pomijamy „usunięte" z listy).
 function listNotifications(limit = 100) {
   return prisma.event.findMany({
-    where: { type: { in: NOTIFY_TYPES } },
+    where: { type: { in: NOTIFY_TYPES }, dismissed: false },
     orderBy: { createdAt: 'desc' },
     take: limit,
     include: { transfer: true, project: true },
@@ -44,7 +44,7 @@ function listNotifications(limit = 100) {
 
 // Liczba nieprzeczytanych powiadomień (do dzwonka w nagłówku).
 function unreadCount() {
-  return prisma.event.count({ where: { type: { in: NOTIFY_TYPES }, isRead: false } });
+  return prisma.event.count({ where: { type: { in: NOTIFY_TYPES }, isRead: false, dismissed: false } });
 }
 
 function findById(id) {
@@ -63,6 +63,17 @@ function markAllRead() {
   return prisma.event.updateMany({ where: { type: { in: NOTIFY_TYPES }, isRead: false }, data: { isRead: true } });
 }
 
+// „Usuwa" pojedyncze powiadomienie z listy (miękko — zdarzenie zostaje w historii projektu).
+// updateMany zamiast update: nie rzuca, gdy id nie istnieje.
+function dismiss(id) {
+  return prisma.event.updateMany({ where: { id: Number(id) }, data: { dismissed: true } });
+}
+
+// Czyści całą listę powiadomień (historia projektu pozostaje).
+function dismissAll() {
+  return prisma.event.updateMany({ where: { type: { in: NOTIFY_TYPES }, dismissed: false }, data: { dismissed: true } });
+}
+
 // Oznacza powiadomienia jednego projektu jako przeczytane (po wejściu w projekt).
 function markProjectRead(projectId) {
   return prisma.event.updateMany({
@@ -71,5 +82,5 @@ function markProjectRead(projectId) {
   });
 }
 
-module.exports = { log, recent, listNotifications, unreadCount, findById, markRead, markAllRead, markProjectRead, NOTIFY_TYPES };
+module.exports = { log, recent, listNotifications, unreadCount, findById, markRead, markAllRead, markProjectRead, dismiss, dismissAll, NOTIFY_TYPES };
 

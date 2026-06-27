@@ -101,6 +101,7 @@ model Event {
   message    String?
   meta       String?   // dodatkowe dane jako JSON (string)
   isRead     Boolean   @default(false) // dla powiadomień w panelu
+  dismissed  Boolean   @default(false) // ukryte z listy powiadomień (historia projektu zostaje)
   ip         String?
   createdAt  DateTime  @default(now())
 }
