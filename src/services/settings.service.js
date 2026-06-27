@@ -26,7 +26,7 @@ const DEFAULTS = {
     clientConfirm: false, clientConfirmSubject: '', clientConfirmBody: '',
   },
   // Wydruk PDF rozliczenia: szablon + wysokość logo (px) + dane sprzedawcy na dokument.
-  pdf: { template: 'standard', logoHeight: 48, seller: { name: '', address: '', nip: '', bank: '' } },
+  pdf: { template: 'standard', docType: 'rozliczenie', logoHeight: 48, seller: { name: '', address: '', nip: '', bank: '' } },
 };
 
 const ALIGNS = ['left', 'center', 'right'];
@@ -34,6 +34,7 @@ const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', '
 const CARD_STYLES = ['solid', 'glass', 'elevated'];
 const BUTTON_STYLES = ['rounded', 'pill'];
 const PDF_TEMPLATES = ['standard', 'band', 'accent', 'proforma'];
+const PDF_DOCTYPES = ['rozliczenie', 'proforma'];
 
 function normPdf(p) {
   const x = p && typeof p === 'object' ? p : {};
@@ -42,6 +43,7 @@ function normPdf(p) {
   const str = (v) => (typeof v === 'string' ? v.trim() : '');
   return {
     template: PDF_TEMPLATES.includes(x.template) ? x.template : DEFAULTS.pdf.template,
+    docType: PDF_DOCTYPES.includes(x.docType) ? x.docType : DEFAULTS.pdf.docType,
     logoHeight: Math.min(90, Math.max(20, Number.isFinite(h) ? h : DEFAULTS.pdf.logoHeight)),
     seller: { name: str(s.name), address: str(s.address), nip: str(s.nip), bank: str(s.bank) },
   };
