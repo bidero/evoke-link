@@ -41,7 +41,7 @@
     <header class="px-6 py-5">
       <div class="flex items-center gap-2 w-full <%= justify %> <%= dark ? 'text-white' : '' %>">
         <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
-          <img src="<%= settings.logoPath %>" alt="<%= appName %>" style="height: <%= logoCfg.size %>px" class="max-w-[70%] object-contain" />
+          <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
         <% } else if (!L.hideName) { %>
           <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
           <span class="font-semibold tracking-tight"><%= appName %></span>
@@ -55,7 +55,7 @@
       <header class="bg-brand-600 text-white px-6 py-6">
         <div class="max-w-5xl mx-auto w-full flex items-center gap-2 <%= justify %>">
           <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
-            <img src="<%= settings.logoPath %>" alt="<%= appName %>" style="height: <%= logoCfg.size %>px" class="max-w-[60%] object-contain" />
+            <%- logoTag(settings, { appName, imgClass: 'max-w-[60%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
           <% } else if (!L.hideName) { %>
             <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white font-bold">E</div>
             <span class="font-semibold tracking-tight"><%= appName %></span>

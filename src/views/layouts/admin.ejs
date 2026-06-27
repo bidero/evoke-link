@@ -24,7 +24,7 @@
            :class="nav && '!translate-x-0'" style="color: var(--admin-sidebar-text)">
       <div class="h-16 flex items-center gap-2 px-6 border-b border-black/5">
         <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
-          <img src="<%= settings.logoPath %>" alt="<%= appName %>" class="h-8 max-w-[140px] object-contain" />
+          <%- logoTag(settings, { appName, imgClass: 'h-8 max-w-[140px] object-contain' }) %>
         <% } else { %>
           <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
           <span class="font-semibold tracking-tight"><%= appName %></span>

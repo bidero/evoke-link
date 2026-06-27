@@ -79,6 +79,7 @@ router.post(
   '/settings',
   brandingUpload.fields([
     { name: 'logo', maxCount: 1 },
+    { name: 'logoDark', maxCount: 1 },
     { name: 'favicon', maxCount: 1 },
     { name: 'bg', maxCount: 1 },
     { name: 'mailLogo', maxCount: 1 },

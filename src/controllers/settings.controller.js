@@ -99,6 +99,7 @@ async function updateSettings(req, res, next) {
     const logoCfg = {
       size: Math.min(120, Math.max(16, parseInt(b.logoSize, 10) || 36)),
       align: ['left', 'center', 'right'].includes(b.logoAlign) ? b.logoAlign : 'left',
+      darkPath: current.logo.darkPath || null, // zachowaj; nadpisywane niżej przy uploadzie/usuwaniu
     };
 
     // --- Układ stron klienta ---
@@ -139,6 +140,10 @@ async function updateSettings(req, res, next) {
     const logo = uploadedFile(req, 'logo');
     if (logo) { sanitizeIfSvg(logo); data.logoPath = `/branding/${logo.filename}`; }
     else if (b.removeLogo === 'on') data.logoPath = null;
+
+    const logoDark = uploadedFile(req, 'logoDark');
+    if (logoDark) { sanitizeIfSvg(logoDark); data.logo.darkPath = `/branding/${logoDark.filename}`; }
+    else if (b.removeLogoDark === 'on') data.logo.darkPath = null;
 
     const fav = uploadedFile(req, 'favicon');
     if (fav) { sanitizeIfSvg(fav); data.faviconPath = `/branding/${fav.filename}`; }

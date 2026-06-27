@@ -12,7 +12,7 @@ const DEFAULTS = {
   colors: { primary: '#6e00a5', adminAccent: '', adminText: '', adminSidebar: '#ffffff', adminBg: '#f8fafc', darkBg: '#0f172a', darkSurface: '#1e293b', darkText: '#e5e7eb' },
   texts: { heroTitle: '', heroSubtitle: '', footer: 'Evoke LINK · bezpieczna wymiana plików' },
   background: { ...background.DEFAULTS },
-  logo: { size: 36, align: 'left' }, // wysokość px, wyrównanie left|center|right
+  logo: { size: 36, align: 'left', darkPath: null }, // wysokość px, wyrównanie, osobne logo dla trybu ciemnego
   // Układ stron klienta. style: classic (obecny) | centered | split.
   // card: solid | glass | elevated. radius w px. button: rounded | pill.
   layout: { style: 'classic', card: 'solid', cardSide: 'right', hideName: false, heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded' },
@@ -36,7 +36,7 @@ function normLogo(l) {
   const x = l && typeof l === 'object' ? l : {};
   const size = Math.min(120, Math.max(16, parseInt(x.size, 10) || DEFAULTS.logo.size));
   const align = ALIGNS.includes(x.align) ? x.align : DEFAULTS.logo.align;
-  return { size, align };
+  return { size, align, darkPath: x.darkPath || null };
 }
 
 function normLayout(l) {

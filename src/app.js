@@ -9,6 +9,7 @@ const helmet = require('helmet');
 const config = require('./config');
 const fmt = require('./utils/format');
 const { icon, eventIcon } = require('./utils/icons');
+const { logoTag } = require('./utils/logo');
 const color = require('./utils/color');
 const bg = require('./utils/background');
 const { sanitizeCss } = require('./utils/css');
@@ -63,6 +64,7 @@ app.use((req, res, next) => {
   res.locals.fmt = fmt;
   res.locals.icon = icon;
   res.locals.eventIcon = eventIcon;
+  res.locals.logoTag = logoTag;
   next();
 });
 
