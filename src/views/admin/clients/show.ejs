@@ -117,6 +117,37 @@
           <div class="flex justify-between"><span>Wartość</span><span class="tabular-nums text-slate-600"><%= fmt.money(billing.total) %></span></div>
           <div class="flex justify-between"><span>Rozliczono</span><span class="tabular-nums text-green-600"><%= fmt.money(billing.paid) %></span></div>
         </div>
+
+        <form method="GET" action="/admin/clients/<%= client.id %>/rozliczenie.pdf" target="_blank" class="mt-4 pt-4 border-t border-slate-100 space-y-3">
+          <div class="text-xs font-medium text-slate-600">Wydruk rozliczenia (PDF)</div>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="block text-xs text-slate-500">Od<input type="date" name="from" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none" /></label>
+            <label class="block text-xs text-slate-500">Do<input type="date" name="to" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none" /></label>
+          </div>
+          <label class="block text-xs text-slate-500">Status
+            <select name="status" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none">
+              <option value="">Wszystkie</option>
+              <option value="unpaid">Nierozliczone</option>
+              <option value="paid">Rozliczone</option>
+            </select>
+          </label>
+          <div class="text-xs text-slate-500">Pozycje (odznacz, by pominąć):</div>
+          <div class="max-h-56 overflow-y-auto rounded-lg border border-slate-100 divide-y divide-slate-100">
+            <% let _cp = null; %>
+            <% charges.forEach(function(ch){ const _pn = (ch.project && ch.project.name) || 'Bez projektu'; %>
+              <% if (_pn !== _cp) { _cp = _pn; %>
+                <div class="px-3 py-1.5 bg-slate-50 text-xs font-medium text-slate-500"><%= _pn %></div>
+              <% } %>
+              <label class="flex items-center gap-2 px-3 py-1.5">
+                <input type="checkbox" name="ids" value="<%= ch.id %>" checked class="rounded border-slate-300 shrink-0" />
+                <span class="text-xs text-slate-400 w-16 shrink-0"><%= fmt.dateOnly(ch.date) %></span>
+                <span class="flex-1 min-w-0 truncate text-sm <%= ch.paidAt ? 'text-slate-400 line-through' : 'text-slate-700' %>"><%= ch.label || 'Pozycja' %></span>
+                <span class="tabular-nums text-xs shrink-0 <%= ch.paidAt ? 'text-slate-400' : 'text-slate-700' %>"><%= fmt.money(ch.amount) %></span>
+              </label>
+            <% }); %>
+          </div>
+          <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition"><%- icon('file', { size: 15, cls: '' }) %> Pobierz rozliczenie PDF</button>
+        </form>
       <% } else { %>
         <p class="text-sm text-slate-400">Brak pozycji rozliczeniowych. Dodasz je w projekcie.</p>
       <% } %>

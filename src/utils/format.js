@@ -22,6 +22,12 @@ function date(d) {
   });
 }
 
+// Sama data: 27.06.2026 (bez godziny).
+function dateOnly(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 // Status transferu/projektu po polsku.
 const STATUS_PL = {
   active: 'Aktywny',
@@ -39,4 +45,4 @@ function money(grosze) {
   return n.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
 }
 
-module.exports = { bytes, date, status, money };
+module.exports = { bytes, date, dateOnly, status, money };

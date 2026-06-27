@@ -67,6 +67,7 @@ router.post('/clients', clients.createClient);
 router.post('/clients/:id/send-panel', clients.sendPanel);
 router.get('/clients/:id/edit', clients.showEditForm);
 router.post('/clients/:id/note', clients.addNote);
+router.get('/clients/:id/rozliczenie.pdf', clients.clientStatementPdf);
 router.get('/clients/:id', clients.showClient);
 router.post('/clients/:id', clients.updateClient);
 router.post('/clients/:id/delete', clients.deleteClient);

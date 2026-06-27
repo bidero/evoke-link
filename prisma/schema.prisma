@@ -67,6 +67,7 @@ model Charge {
   projectId Int
   label     String?
   amount    Int       @default(0) // w groszach
+  date      DateTime? // data pozycji (do filtrowania zakresem i na wydruku)
   paidAt    DateTime?
   note      String?
   createdAt DateTime  @default(now())

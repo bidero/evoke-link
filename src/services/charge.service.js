@@ -27,12 +27,13 @@ function listByProject(projectId) {
   return prisma.charge.findMany({ where: { projectId: Number(projectId) }, orderBy: { createdAt: 'asc' } });
 }
 
-function create({ projectId, label, amount, note }) {
+function create({ projectId, label, amount, note, date }) {
   return prisma.charge.create({
     data: {
       projectId: Number(projectId),
       label: label && label.trim() ? label.trim() : null,
       amount: Number(amount) || 0,
+      date: date ? new Date(date) : new Date(),
       note: note && note.trim() ? note.trim() : null,
     },
   });
@@ -70,6 +71,27 @@ async function outstandingByClients(clientIds) {
   return map;
 }
 
+// Pozycje do wydruku rozliczenia klienta — filtr: zakres dat, status, zaznaczone id.
+function forStatement(clientId, { from, to, status, ids } = {}) {
+  const where = { project: { clientId: Number(clientId), status: { not: 'deleted' } } };
+  if (status === 'unpaid') where.paidAt = null;
+  else if (status === 'paid') where.paidAt = { not: null };
+  if (from || to) {
+    where.date = {};
+    if (from) where.date.gte = new Date(from);
+    if (to) { const d = new Date(to); d.setHours(23, 59, 59, 999); where.date.lte = d; }
+  }
+  if (ids && ids.length) {
+    const list = ids.map((x) => parseInt(x, 10)).filter(Number.isInteger);
+    where.id = { in: list.length ? list : [-1] }; // pusty wybór = nic
+  }
+  return prisma.charge.findMany({
+    where,
+    include: { project: { select: { id: true, name: true } } },
+    orderBy: [{ project: { name: 'asc' } }, { date: 'asc' }, { createdAt: 'asc' }],
+  });
+}
+
 // Łączna kwota do rozliczenia (projekty poza usuniętymi) — kafelek pulpitu.
 async function totalOutstanding() {
   const r = await prisma.charge.aggregate({
@@ -79,4 +101,4 @@ async function totalOutstanding() {
   return r._sum.amount || 0;
 }
 
-module.exports = { parseAmount, totals, getById, listByProject, create, setPaid, remove, clientTotals, outstandingByClients, totalOutstanding };
+module.exports = { parseAmount, totals, getById, listByProject, create, setPaid, remove, clientTotals, outstandingByClients, totalOutstanding, forStatement };

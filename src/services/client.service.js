@@ -80,14 +80,15 @@ async function overview(id) {
     }),
     prisma.charge.findMany({
       where: { project: { clientId: cid, status: { not: 'deleted' } } },
-      select: { amount: true, paidAt: true },
+      include: { project: { select: { id: true, name: true } } },
+      orderBy: [{ project: { name: 'asc' } }, { date: 'desc' }, { createdAt: 'desc' }],
     }),
   ]);
   let total = 0;
   let paid = 0;
   charges.forEach((c) => { total += c.amount; if (c.paidAt) paid += c.amount; });
   const billing = { total, paid, outstanding: total - paid };
-  return { client, transfers, events, billing };
+  return { client, transfers, events, billing, charges };
 }
 
 // Publiczny portal klienta — jego aktywne/zarchiwizowane projekty (bez usuniętych).

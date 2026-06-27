@@ -1,6 +1,9 @@
 // Panel: baza klientów + publiczny portal klienta (/c/:token) z jego projektami.
 const clientService = require('../services/client.service');
 const projectService = require('../services/project.service');
+const chargeService = require('../services/charge.service');
+const settingsService = require('../services/settings.service');
+const pdfService = require('../services/pdf.service');
 const events = require('../services/event.service');
 const mail = require('../services/mail.service');
 const config = require('../config');
@@ -111,6 +114,22 @@ async function updateClient(req, res, next) {
   }
 }
 
+// Wydruk PDF rozliczenia klienta (przefiltrowane pozycje: zakres dat / status / zaznaczone).
+async function clientStatementPdf(req, res, next) {
+  try {
+    const client = await clientService.getById(req.params.id);
+    if (!client) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
+    const { from, to, status } = req.query;
+    let ids = req.query.ids;
+    if (ids && !Array.isArray(ids)) ids = [ids];
+    const charges = await chargeService.forStatement(client.id, { from, to, status, ids });
+    const settings = await settingsService.get();
+    pdfService.clientStatement(res, { client, charges, filters: { from, to, status }, settings });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Dodanie ręcznej notatki do klienta (trafia na jego oś czasu jako zdarzenie typu 'note').
 async function addNote(req, res, next) {
   try {
@@ -151,4 +170,4 @@ async function showClientPortal(req, res, next) {
   }
 }
 
-module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, deleteClient, sendPanel, showClientPortal };
+module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, clientStatementPdf, deleteClient, sendPanel, showClientPortal };

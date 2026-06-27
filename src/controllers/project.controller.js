@@ -168,7 +168,7 @@ async function addCharge(req, res, next) {
     const amount = chargeService.parseAmount(req.body.amount);
     if (amount > 0) {
       const label = (req.body.label || '').trim();
-      await chargeService.create({ projectId: req.params.id, label, amount, note: req.body.note });
+      await chargeService.create({ projectId: req.params.id, label, amount, note: req.body.note, date: req.body.date });
       await events.log({ type: 'updated', message: `Dodano pozycję rozliczeniową${label ? ': ' + label : ''} — ${fmt.money(amount)}`, projectId: Number(req.params.id), ip: req.ip });
     }
     res.redirect(`/admin/projects/${req.params.id}#rozliczenia`);
