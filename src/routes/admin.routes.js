@@ -53,6 +53,9 @@ router.post('/projects/reorder', projects.reorderProjects); // przed :id!
 router.post('/projects', projects.createProject);
 router.get('/projects/:id', projects.showProject);
 router.post('/projects/:id/send-panel', projects.sendPanel);
+router.post('/projects/:id/charges', projects.addCharge);
+router.post('/projects/:id/charges/:chargeId/toggle', projects.toggleCharge);
+router.post('/projects/:id/charges/:chargeId/delete', projects.deleteCharge);
 router.get('/projects/:id/edit', projects.showEditForm);
 router.post('/projects/:id', projects.updateProject);
 router.post('/projects/:id/delete', projects.deleteProject);

@@ -1,10 +1,11 @@
 <% function fmtBytes(b){ if(!b) return '0 B'; const u=['B','KB','MB','GB','TB']; const i=Math.floor(Math.log(b)/Math.log(1024)); return (b/Math.pow(1024,i)).toFixed(1)+' '+u[i]; } %>
 
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
   <% const widgets = [
     { label: 'Aktywne transfery', value: stats.transfers, hint: 'w toku', href: '/admin/transfers?status=active' },
     { label: 'Aktywne projekty', value: stats.projects, hint: 'otwarte', href: '/admin/projects?status=active' },
     { label: 'Oczekujące uploady', value: stats.pendingUploads, hint: 'od klientów', href: '/admin/transfers?status=active&direction=incoming' },
+    { label: 'Do rozliczenia', value: fmt.money(stats.outstanding), hint: 'nierozliczone', href: '/admin/clients' },
     { label: 'Wykorzystane miejsce', value: fmtBytes(stats.storageBytes), hint: 'na dysku' }
   ]; %>
   <% widgets.forEach(function(w){ %>

@@ -9,7 +9,7 @@ function makeToken() {
 const STATUSES = ['lead', 'active', 'inactive'];
 const normStatus = (s) => (STATUSES.includes(s) ? s : 'active');
 
-function list({ q, status } = {}) {
+async function list({ q, status } = {}) {
   const where = {};
   if (q && q.trim()) {
     const s = q.trim();
@@ -24,11 +24,23 @@ function list({ q, status } = {}) {
     ];
   }
   if (STATUSES.includes(status)) where.status = status;
-  return prisma.client.findMany({
+  const clients = await prisma.client.findMany({
     where,
     include: { _count: { select: { projects: true } } },
     orderBy: { name: 'asc' },
   });
+  // Dolicz „do rozliczenia" (suma nierozliczonych pozycji po projektach klienta).
+  const ids = clients.map((c) => c.id);
+  if (ids.length) {
+    const charges = await prisma.charge.findMany({
+      where: { paidAt: null, project: { clientId: { in: ids }, status: { not: 'deleted' } } },
+      select: { amount: true, project: { select: { clientId: true } } },
+    });
+    const map = {};
+    charges.forEach((c) => { const k = c.project.clientId; if (k != null) map[k] = (map[k] || 0) + c.amount; });
+    clients.forEach((c) => { c.outstanding = map[c.id] || 0; });
+  }
+  return clients;
 }
 
 function getById(id) {
@@ -52,7 +64,7 @@ async function overview(id) {
     },
   });
   if (!client) return null;
-  const [transfers, events] = await Promise.all([
+  const [transfers, events, charges] = await Promise.all([
     prisma.transfer.findMany({
       where: { project: { clientId: cid } },
       include: { files: true, project: true },
@@ -66,8 +78,16 @@ async function overview(id) {
       orderBy: { createdAt: 'desc' },
       take: 15,
     }),
+    prisma.charge.findMany({
+      where: { project: { clientId: cid, status: { not: 'deleted' } } },
+      select: { amount: true, paidAt: true },
+    }),
   ]);
-  return { client, transfers, events };
+  let total = 0;
+  let paid = 0;
+  charges.forEach((c) => { total += c.amount; if (c.paidAt) paid += c.amount; });
+  const billing = { total, paid, outstanding: total - paid };
+  return { client, transfers, events, billing };
 }
 
 // Publiczny portal klienta — jego aktywne/zarchiwizowane projekty (bez usuniętych).

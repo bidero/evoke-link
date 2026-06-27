@@ -54,6 +54,7 @@ function getById(id) {
     include: {
       client: true,
       transfers: { include: { files: true }, orderBy: { createdAt: 'desc' } },
+      charges: { orderBy: { createdAt: 'asc' } },
     },
   });
 }

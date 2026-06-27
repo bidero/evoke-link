@@ -42,6 +42,7 @@
           <th class="px-4 py-3 font-medium">Status</th>
           <th class="px-4 py-3 font-medium">E-mail</th>
           <th class="px-4 py-3 font-medium">Projekty</th>
+          <th class="px-4 py-3 font-medium">Do rozliczenia</th>
           <th class="px-4 py-3 font-medium">Portal klienta</th>
           <th class="px-4 py-3"></th>
         </tr>
@@ -57,6 +58,7 @@
             <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded-full <%= _s[1] %>"><%= _s[0] %></span></td>
             <td class="px-4 py-3 text-slate-500"><%= c.email || '—' %></td>
             <td class="px-4 py-3 text-slate-500"><%= c._count.projects %></td>
+            <td class="px-4 py-3 tabular-nums"><% if (c.outstanding > 0) { %><span class="text-amber-600 font-medium"><%= fmt.money(c.outstanding) %></span><% } else { %><span class="text-slate-300">—</span><% } %></td>
             <td class="px-4 py-3 text-slate-400"><a href="<%= appUrl %>/c/<%= c.token %>" target="_blank" @click.stop class="text-brand-700 hover:underline" onclick="event.stopPropagation()">/c/<%= c.token %></a></td>
             <td class="px-4 py-3 text-right whitespace-nowrap" onclick="event.stopPropagation()">
               <% if (c.email) { %>

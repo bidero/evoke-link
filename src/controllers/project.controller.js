@@ -1,9 +1,11 @@
 // Panel: zarządzanie projektami.
 const projectService = require('../services/project.service');
 const clientService = require('../services/client.service');
+const chargeService = require('../services/charge.service');
 const events = require('../services/event.service');
 const mail = require('../services/mail.service');
 const config = require('../config');
+const fmt = require('../utils/format');
 
 const parseClientId = (v) => (v ? parseInt(v, 10) : null);
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -97,6 +99,7 @@ async function showProject(req, res, next) {
       panel: req.query.panel || null, // sent | invalid | error (flash po wysyłce panelu)
       clientEmail: project.client ? project.client.email || '' : '',
       mailReady: mail.isConfigured(),
+      chargeTotals: chargeService.totals(project.charges),
     });
   } catch (err) {
     next(err);
@@ -159,6 +162,47 @@ async function updateProject(req, res, next) {
   }
 }
 
+// Dodanie pozycji rozliczeniowej do projektu.
+async function addCharge(req, res, next) {
+  try {
+    const amount = chargeService.parseAmount(req.body.amount);
+    if (amount > 0) {
+      const label = (req.body.label || '').trim();
+      await chargeService.create({ projectId: req.params.id, label, amount, note: req.body.note });
+      await events.log({ type: 'updated', message: `Dodano pozycję rozliczeniową${label ? ': ' + label : ''} — ${fmt.money(amount)}`, projectId: Number(req.params.id), ip: req.ip });
+    }
+    res.redirect(`/admin/projects/${req.params.id}#rozliczenia`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Przełączenie pozycji rozliczone/nierozliczone.
+async function toggleCharge(req, res, next) {
+  try {
+    const charge = await chargeService.getById(req.params.chargeId);
+    if (charge && charge.projectId === Number(req.params.id)) {
+      const willPay = !charge.paidAt;
+      await chargeService.setPaid(charge.id, willPay);
+      await events.log({ type: 'updated', message: `${willPay ? 'Rozliczono' : 'Cofnięto rozliczenie'}${charge.label ? ': ' + charge.label : ''} — ${fmt.money(charge.amount)}`, projectId: Number(req.params.id), ip: req.ip });
+    }
+    res.redirect(`/admin/projects/${req.params.id}#rozliczenia`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Usunięcie pozycji rozliczeniowej.
+async function deleteCharge(req, res, next) {
+  try {
+    const charge = await chargeService.getById(req.params.chargeId);
+    if (charge && charge.projectId === Number(req.params.id)) await chargeService.remove(charge.id);
+    res.redirect(`/admin/projects/${req.params.id}#rozliczenia`);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Zapis ręcznej kolejności (drag & drop). Body: { ids: [..] }.
 async function reorderProjects(req, res, next) {
   try {
@@ -178,4 +222,4 @@ async function deleteProject(req, res, next) {
   }
 }
 
-module.exports = { listProjects, showCreateForm, createProject, showProject, sendPanel, showEditForm, updateProject, reorderProjects, deleteProject };
+module.exports = { listProjects, showCreateForm, createProject, showProject, sendPanel, showEditForm, updateProject, reorderProjects, addCharge, toggleCharge, deleteCharge, deleteProject };

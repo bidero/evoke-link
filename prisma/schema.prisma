@@ -56,6 +56,20 @@ model Project {
   updatedAt          DateTime   @updatedAt
   transfers          Transfer[]
   events             Event[]
+  charges            Charge[]
+}
+
+// Pozycja rozliczeniowa projektu (kwota). „Czasami po kilka" → osobne wiersze.
+// Kwota w GROSZACH (Int). paidAt = data rozliczenia (null = nierozliczone).
+model Charge {
+  id        Int       @id @default(autoincrement())
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int
+  label     String?
+  amount    Int       @default(0) // w groszach
+  paidAt    DateTime?
+  note      String?
+  createdAt DateTime  @default(now())
 }
 
 // Transfer — jeden obiekt obsługuje OBA kierunki (pole direction):

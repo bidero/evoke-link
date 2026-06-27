@@ -33,4 +33,10 @@ function status(s) {
   return STATUS_PL[s] || s;
 }
 
-module.exports = { bytes, date, status };
+// Kwota trzymana w groszach (Int) → czytelnie „1 500,00 zł".
+function money(grosze) {
+  const n = Number(grosze || 0) / 100;
+  return n.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
+}
+
+module.exports = { bytes, date, status, money };
