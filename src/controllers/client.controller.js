@@ -39,6 +39,7 @@ async function showClient(req, res, next) {
       transfers: data.transfers,
       events: data.events,
       portalUrl: `${config.appUrl}/c/${data.client.token}`,
+      sent: req.query.sent || null,
     });
   } catch (err) {
     next(err);
@@ -73,16 +74,23 @@ async function sendPanel(req, res, next) {
   try {
     const client = await clientService.getById(req.params.id);
     if (!client) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
-    const toList = req.body.redirect === 'list'; // wysyłka jednym kliknięciem z listy klientów
+    // Skąd wywołano wysyłkę — decyduje, dokąd wrócić: lista / strona klienta / (domyślnie) edycja.
+    const dest = req.body.redirect;
+    const back = (status) => {
+      if (dest === 'list') return `/admin/clients?sent=${status}`;
+      if (dest === 'show') return `/admin/clients/${client.id}?sent=${status}`;
+      const panel = status === 'ok' || status === 'dev' ? 'sent' : status; // strona edycji używa panel=sent/invalid/error
+      return `/admin/clients/${client.id}/edit?panel=${panel}`;
+    };
     const to = ((req.body.email || '').trim()) || (client.email || '');
-    if (!EMAIL_RE.test(to)) return res.redirect(toList ? '/admin/clients?sent=invalid' : `/admin/clients/${client.id}/edit?panel=invalid`);
+    if (!EMAIL_RE.test(to)) return res.redirect(back('invalid'));
     const url = `${config.appUrl}/c/${client.token}`;
     try {
       await mail.sendPanelLink({ to, url, clientName: client.name });
-      res.redirect(toList ? `/admin/clients?sent=${mail.isConfigured() ? 'ok' : 'dev'}` : `/admin/clients/${client.id}/edit?panel=sent`);
+      res.redirect(back(mail.isConfigured() ? 'ok' : 'dev'));
     } catch (e) {
       console.error('[mail] panel klienta:', e.message);
-      res.redirect(toList ? '/admin/clients?sent=error' : `/admin/clients/${client.id}/edit?panel=error`);
+      res.redirect(back('error'));
     }
   } catch (err) {
     next(err);
