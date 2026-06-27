@@ -29,7 +29,8 @@
             <% if (p.status === 'archived') { %><span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">archiwum</span><% } %>
           </div>
         </div>
-        <% if (p.clientName) { %><p class="text-sm text-slate-500 mt-0.5"><%= p.clientName %></p><% } %>
+        <% const _clientLabel = (p.client && p.client.name) ? p.client.name : p.clientName; %>
+        <% if (_clientLabel) { %><p class="text-sm text-slate-500 mt-0.5"><%= _clientLabel %></p><% } %>
         <div class="mt-4 flex items-center gap-4 text-xs text-slate-400">
           <span><%= p._count.transfers %> transfer(ów)</span>
           <span>·</span>

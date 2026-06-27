@@ -14,7 +14,7 @@ async function list({ status } = {}) {
   if (status) where.status = status;
   const projects = await prisma.project.findMany({
     where,
-    include: { _count: { select: { transfers: true } } },
+    include: { _count: { select: { transfers: true } }, client: { select: { name: true } } },
     orderBy: { updatedAt: 'desc' },
   });
   // Liczba nieprzeczytanych powiadomień per projekt (badge „zaktualizowano").
