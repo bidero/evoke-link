@@ -93,6 +93,12 @@
     <div class="px-5 py-3 border-b border-slate-100">
       <h2 class="text-sm font-medium text-slate-700">Oś czasu</h2>
     </div>
+    <form method="POST" action="/admin/clients/<%= client.id %>/note" class="px-5 py-3 border-b border-slate-100">
+      <textarea name="note" rows="2" required placeholder="Dodaj notatkę…" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+      <div class="mt-2 text-right">
+        <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium px-3 py-1.5 transition"><%- icon('pencil', { size: 13, cls: '' }) %> Dodaj notatkę</button>
+      </div>
+    </form>
     <% if (!events.length) { %>
       <div class="px-5 py-8 text-center text-sm text-slate-400">Brak aktywności.</div>
     <% } else { %>

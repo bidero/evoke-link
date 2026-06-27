@@ -38,6 +38,7 @@ model Client {
   note      String?
   createdAt DateTime  @default(now())
   projects  Project[]
+  events    Event[]
 }
 
 model Project {
@@ -102,7 +103,9 @@ model Event {
   projectId  Int?
   transfer   Transfer? @relation(fields: [transferId], references: [id], onDelete: Cascade)
   transferId Int?
-  type       String    // created | downloaded | uploaded | email_sent | expired | error
+  client     Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId   Int?      // oś czasu klienta; SetNull — usunięcie klienta nie kasuje historii
+  type       String    // created | downloaded | uploaded | email_sent | expired | error | note
   message    String?
   meta       String?   // dodatkowe dane jako JSON (string)
   isRead     Boolean   @default(false) // dla powiadomień w panelu

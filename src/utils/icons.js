@@ -44,6 +44,7 @@ const EVENT_ICON = {
   downloaded: 'download',
   uploaded: 'upload',
   updated: 'pencil',
+  note: 'pencil',
   email_sent: 'mail',
   expired: 'clock',
   error: 'alert',

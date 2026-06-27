@@ -2,14 +2,23 @@
 // Celowo "nie wybuchowe": błąd logowania zdarzenia nie może wywalić uploadu/pobrania.
 const prisma = require('../db/client');
 
-async function log({ type, message, projectId, transferId, meta, ip }) {
+async function log({ type, message, projectId, transferId, clientId, meta, ip }) {
   try {
+    // Powiązanie z klientem (oś czasu): jawne clientId lub doczytane z projektu.
+    let cid = clientId || null;
+    if (!cid && projectId) {
+      try {
+        const p = await prisma.project.findUnique({ where: { id: projectId }, select: { clientId: true } });
+        cid = p ? p.clientId : null;
+      } catch (_) { /* brak projektu — trudno */ }
+    }
     await prisma.event.create({
       data: {
         type,
         message: message || null,
         projectId: projectId || null,
         transferId: transferId || null,
+        clientId: cid,
         meta: meta ? JSON.stringify(meta) : null,
         ip: ip || null,
       },

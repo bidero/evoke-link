@@ -1,6 +1,7 @@
 // Panel: baza klientów + publiczny portal klienta (/c/:token) z jego projektami.
 const clientService = require('../services/client.service');
 const projectService = require('../services/project.service');
+const events = require('../services/event.service');
 const mail = require('../services/mail.service');
 const config = require('../config');
 
@@ -98,6 +99,17 @@ async function updateClient(req, res, next) {
   }
 }
 
+// Dodanie ręcznej notatki do klienta (trafia na jego oś czasu jako zdarzenie typu 'note').
+async function addNote(req, res, next) {
+  try {
+    const text = (req.body.note || '').trim();
+    if (text) await events.log({ type: 'note', message: text, clientId: Number(req.params.id), ip: req.ip });
+    res.redirect(`/admin/clients/${req.params.id}`);
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function deleteClient(req, res, next) {
   try {
     await clientService.remove(req.params.id);
@@ -127,4 +139,4 @@ async function showClientPortal(req, res, next) {
   }
 }
 
-module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, deleteClient, sendPanel, showClientPortal };
+module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, deleteClient, sendPanel, showClientPortal };

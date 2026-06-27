@@ -52,7 +52,8 @@ async function overview(id) {
       take: 8,
     }),
     prisma.event.findMany({
-      where: { project: { clientId: cid } },
+      // notatki (clientId bez projektu) + zdarzenia jego projektów (też historyczne, bez clientId)
+      where: { OR: [{ clientId: cid }, { project: { clientId: cid } }] },
       include: { project: true, transfer: true },
       orderBy: { createdAt: 'desc' },
       take: 15,
@@ -109,6 +110,7 @@ function update(id, { name, email, note, company, phone, status, tags }) {
 // Usuwa klienta. Projekty zostają, tracą tylko przypisanie (clientId → null).
 async function remove(id) {
   await prisma.project.updateMany({ where: { clientId: Number(id) }, data: { clientId: null } });
+  await prisma.event.updateMany({ where: { clientId: Number(id) }, data: { clientId: null } }); // zachowaj historię, odepnij od klienta
   return prisma.client.delete({ where: { id: Number(id) } });
 }
 
