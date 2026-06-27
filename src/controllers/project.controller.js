@@ -26,7 +26,7 @@ async function listProjects(req, res, next) {
 async function showCreateForm(req, res, next) {
   try {
     const clients = await clientService.options();
-    res.render('admin/projects/new', { title: 'Nowy projekt', active: 'projects', error: null, clients });
+    res.render('admin/projects/new', { title: 'Nowy projekt', active: 'projects', error: null, clients, selectedClientId: req.query.client ? parseInt(req.query.client, 10) : null });
   } catch (err) {
     next(err);
   }
@@ -37,7 +37,7 @@ async function createProject(req, res, next) {
     const { name, clientName, description } = req.body;
     if (!name || !name.trim()) {
       const clients = await clientService.options();
-      return res.status(400).render('admin/projects/new', { title: 'Nowy projekt', active: 'projects', error: 'Podaj nazwę projektu.', clients });
+      return res.status(400).render('admin/projects/new', { title: 'Nowy projekt', active: 'projects', error: 'Podaj nazwę projektu.', clients, selectedClientId: parseClientId(req.body.clientId) });
     }
     const project = await projectService.create({ name, clientName, description, clientId: parseClientId(req.body.clientId) });
     await events.log({ type: 'created', message: `Utworzono projekt: ${project.name}`, projectId: project.id, ip: req.ip });

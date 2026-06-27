@@ -26,6 +26,37 @@ function getById(id) {
   });
 }
 
+// Dane do strony klienta 360°: klient + jego projekty (z licznikiem transferów),
+// ostatnie transfery ze wszystkich jego projektów oraz oś czasu aktywności.
+async function overview(id) {
+  const cid = Number(id);
+  const client = await prisma.client.findUnique({
+    where: { id: cid },
+    include: {
+      projects: {
+        include: { _count: { select: { transfers: true } } },
+        orderBy: { updatedAt: 'desc' },
+      },
+    },
+  });
+  if (!client) return null;
+  const [transfers, events] = await Promise.all([
+    prisma.transfer.findMany({
+      where: { project: { clientId: cid } },
+      include: { files: true, project: true },
+      orderBy: { createdAt: 'desc' },
+      take: 8,
+    }),
+    prisma.event.findMany({
+      where: { project: { clientId: cid } },
+      include: { project: true, transfer: true },
+      orderBy: { createdAt: 'desc' },
+      take: 15,
+    }),
+  ]);
+  return { client, transfers, events };
+}
+
 // Publiczny portal klienta — jego aktywne/zarchiwizowane projekty (bez usuniętych).
 function getByToken(token) {
   return prisma.client.findUnique({
@@ -67,4 +98,4 @@ async function remove(id) {
   return prisma.client.delete({ where: { id: Number(id) } });
 }
 
-module.exports = { list, getById, getByToken, options, create, update, remove };
+module.exports = { list, getById, overview, getByToken, options, create, update, remove };

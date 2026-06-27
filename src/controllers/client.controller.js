@@ -21,6 +21,24 @@ function showCreateForm(req, res) {
   res.render('admin/clients/new', { title: 'Nowy klient', active: 'clients', error: null });
 }
 
+// Strona klienta 360° — kontakt + jego projekty + ostatnie transfery + oś czasu.
+async function showClient(req, res, next) {
+  try {
+    const data = await clientService.overview(req.params.id);
+    if (!data) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
+    res.render('admin/clients/show', {
+      title: data.client.name,
+      active: 'clients',
+      client: data.client,
+      transfers: data.transfers,
+      events: data.events,
+      portalUrl: `${config.appUrl}/c/${data.client.token}`,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function createClient(req, res, next) {
   try {
     const { name, email, note } = req.body;
@@ -107,4 +125,4 @@ async function showClientPortal(req, res, next) {
   }
 }
 
-module.exports = { listClients, showCreateForm, createClient, showEditForm, updateClient, deleteClient, sendPanel, showClientPortal };
+module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, deleteClient, sendPanel, showClientPortal };

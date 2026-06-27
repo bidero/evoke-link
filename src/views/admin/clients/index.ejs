@@ -29,7 +29,7 @@
       </thead>
       <tbody class="divide-y divide-slate-100">
         <% clients.forEach(function(c){ %>
-          <tr class="hover:bg-slate-50 cursor-pointer" onclick="window.location='/admin/clients/<%= c.id %>/edit'">
+          <tr class="hover:bg-slate-50 cursor-pointer" onclick="window.location='/admin/clients/<%= c.id %>'">
             <td class="px-4 py-3 font-medium text-slate-800"><%= c.name %></td>
             <td class="px-4 py-3 text-slate-500"><%= c.email || '—' %></td>
             <td class="px-4 py-3 text-slate-500"><%= c._count.projects %></td>
