@@ -41,6 +41,8 @@ async function showClient(req, res, next) {
       client: data.client,
       transfers: data.transfers,
       events: data.events,
+      billing: data.billing,
+      charges: data.charges,
       portalUrl: `${config.appUrl}/c/${data.client.token}`,
       sent: req.query.sent || null,
     });
