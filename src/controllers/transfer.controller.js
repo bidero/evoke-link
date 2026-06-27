@@ -17,13 +17,13 @@ function parseProjectId(value) {
 // Lista transferów z prostym filtrowaniem (?status=...&direction=...).
 async function listTransfers(req, res, next) {
   try {
-    const { status, direction } = req.query;
-    const transfers = await transferService.list({ status, direction });
+    const { status, direction, q } = req.query;
+    const transfers = await transferService.list({ status, direction, q });
     res.render('admin/transfers/index', {
       title: 'Transfery',
       active: 'transfers',
       transfers,
-      filter: { status: status || '', direction: direction || '' },
+      filter: { status: status || '', direction: direction || '', q: q || '' },
     });
   } catch (err) {
     next(err);

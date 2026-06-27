@@ -9,8 +9,9 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 async function listClients(req, res, next) {
   try {
-    const clients = await clientService.list();
-    res.render('admin/clients/index', { title: 'Klienci', active: 'clients', clients, appUrl: config.appUrl });
+    const q = req.query.q || '';
+    const clients = await clientService.list(q);
+    res.render('admin/clients/index', { title: 'Klienci', active: 'clients', clients, appUrl: config.appUrl, q });
   } catch (err) {
     next(err);
   }

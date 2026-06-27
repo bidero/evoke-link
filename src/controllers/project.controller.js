@@ -10,13 +10,13 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
 async function listProjects(req, res, next) {
   try {
-    const { status } = req.query;
-    const projects = await projectService.list({ status });
+    const { status, q } = req.query;
+    const projects = await projectService.list({ status, q });
     res.render('admin/projects/index', {
       title: 'Projekty',
       active: 'projects',
       projects,
-      filter: { status: status || '' },
+      filter: { status: status || '', q: q || '' },
     });
   } catch (err) {
     next(err);

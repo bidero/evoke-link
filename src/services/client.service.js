@@ -6,8 +6,14 @@ function makeToken() {
   return crypto.randomBytes(9).toString('base64url');
 }
 
-function list() {
+function list(q) {
+  const where = {};
+  if (q && q.trim()) {
+    const s = q.trim();
+    where.OR = [{ name: { contains: s } }, { email: { contains: s } }]; // SQLite LIKE — bez rozróżniania wielkości (ASCII)
+  }
   return prisma.client.findMany({
+    where,
     include: { _count: { select: { projects: true } } },
     orderBy: { name: 'asc' },
   });

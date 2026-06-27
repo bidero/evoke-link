@@ -68,10 +68,18 @@ function getById(id) {
 }
 
 // Lista transferów do panelu (z opcjonalnym filtrem).
-function list({ direction, status } = {}) {
+function list({ direction, status, q } = {}) {
   const where = {};
   if (direction) where.direction = direction;
   if (status) where.status = status;
+  if (q && q.trim()) {
+    const s = q.trim();
+    where.OR = [
+      { title: { contains: s } },
+      { token: { contains: s } },
+      { files: { some: { originalName: { contains: s } } } }, // wyszukiwanie po nazwie pliku
+    ];
+  }
   return prisma.transfer.findMany({
     where,
     include: { files: true, project: true },

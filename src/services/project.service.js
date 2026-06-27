@@ -9,9 +9,17 @@ function makeToken() {
 }
 
 // Lista projektów z licznikami transferów (do widoku listy i dropdownów).
-async function list({ status } = {}) {
+async function list({ status, q } = {}) {
   const where = {};
   if (status) where.status = status;
+  if (q && q.trim()) {
+    const s = q.trim();
+    where.OR = [
+      { name: { contains: s } },
+      { clientName: { contains: s } },
+      { client: { name: { contains: s } } }, // przypisany klient z bazy
+    ];
+  }
   const projects = await prisma.project.findMany({
     where,
     include: { _count: { select: { transfers: true } }, client: { select: { name: true } } },
