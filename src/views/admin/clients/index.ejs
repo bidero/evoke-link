@@ -6,6 +6,14 @@
   <a href="/admin/clients/new" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition self-start sm:self-auto shrink-0">+ Nowy klient</a>
 </div>
 
+<% if (sent === 'ok') { %>
+  <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Wysłano link panelu klienta.</div>
+<% } else if (sent === 'invalid') { %>
+  <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Klient nie ma poprawnego adresu e-mail.</div>
+<% } else if (sent === 'error') { %>
+  <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie udało się wysłać. Sprawdź ustawienia SMTP.</div>
+<% } %>
+
 <% if (!clients.length) { %>
   <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-500">
     <% if (q) { %>
@@ -25,6 +33,7 @@
           <th class="px-4 py-3 font-medium">E-mail</th>
           <th class="px-4 py-3 font-medium">Projekty</th>
           <th class="px-4 py-3 font-medium">Portal klienta</th>
+          <th class="px-4 py-3"></th>
         </tr>
       </thead>
       <tbody class="divide-y divide-slate-100">
@@ -34,6 +43,14 @@
             <td class="px-4 py-3 text-slate-500"><%= c.email || '—' %></td>
             <td class="px-4 py-3 text-slate-500"><%= c._count.projects %></td>
             <td class="px-4 py-3 text-slate-400"><a href="<%= appUrl %>/c/<%= c.token %>" target="_blank" @click.stop class="text-brand-700 hover:underline" onclick="event.stopPropagation()">/c/<%= c.token %></a></td>
+            <td class="px-4 py-3 text-right whitespace-nowrap" onclick="event.stopPropagation()">
+              <% if (mailReady && c.email) { %>
+                <form method="POST" action="/admin/clients/<%= c.id %>/send-panel">
+                  <input type="hidden" name="redirect" value="list" />
+                  <button type="submit" title="Wyślij link panelu na <%= c.email %>" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-xs font-medium px-3 py-1.5 transition"><%- icon('mail', { size: 14 }) %> Wyślij</button>
+                </form>
+              <% } %>
+            </td>
           </tr>
         <% }); %>
       </tbody>

@@ -11,7 +11,7 @@ async function listClients(req, res, next) {
   try {
     const q = req.query.q || '';
     const clients = await clientService.list(q);
-    res.render('admin/clients/index', { title: 'Klienci', active: 'clients', clients, appUrl: config.appUrl, q });
+    res.render('admin/clients/index', { title: 'Klienci', active: 'clients', clients, appUrl: config.appUrl, q, mailReady: mail.isConfigured(), sent: req.query.sent || null });
   } catch (err) {
     next(err);
   }
@@ -67,15 +67,16 @@ async function sendPanel(req, res, next) {
   try {
     const client = await clientService.getById(req.params.id);
     if (!client) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
+    const toList = req.body.redirect === 'list'; // wysyłka jednym kliknięciem z listy klientów
     const to = ((req.body.email || '').trim()) || (client.email || '');
-    if (!EMAIL_RE.test(to)) return res.redirect(`/admin/clients/${client.id}/edit?panel=invalid`);
+    if (!EMAIL_RE.test(to)) return res.redirect(toList ? '/admin/clients?sent=invalid' : `/admin/clients/${client.id}/edit?panel=invalid`);
     const url = `${config.appUrl}/c/${client.token}`;
     try {
       await mail.sendPanelLink({ to, url, clientName: client.name });
-      res.redirect(`/admin/clients/${client.id}/edit?panel=sent`);
+      res.redirect(toList ? '/admin/clients?sent=ok' : `/admin/clients/${client.id}/edit?panel=sent`);
     } catch (e) {
       console.error('[mail] panel klienta:', e.message);
-      res.redirect(`/admin/clients/${client.id}/edit?panel=error`);
+      res.redirect(toList ? '/admin/clients?sent=error' : `/admin/clients/${client.id}/edit?panel=error`);
     }
   } catch (err) {
     next(err);
