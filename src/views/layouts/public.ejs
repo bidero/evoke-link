@@ -16,6 +16,7 @@
   <script src="/js/chunked-upload.js"></script>
   <script src="/js/uploader.js"></script>
   <script defer src="/js/bg-rotate.js"></script>
+  <script defer src="/js/sticky-header.js"></script>
   <script defer src="/js/alpine.min.js"></script>
 </head>
 <%
@@ -31,6 +32,7 @@
   const footerText = (typeof settings !== 'undefined' && settings && settings.texts && settings.texts.footer) ? settings.texts.footer : (appName + ' · bezpieczna wymiana plików');
   const isPanel = L.style === 'panel';
   const sticky = !!L.stickyHeader;
+  const stickyBg = dark ? 'rgba(15,23,42,0.55)' : 'rgba(255,255,255,0.62)';
 %>
 <body class="client-bg min-h-screen text-slate-800 antialiased <%= isPanel ? 'evoke-panel-mode' : '' %>" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
   <%- typeof bgSlideshow !== 'undefined' ? bgSlideshow : '' %>
@@ -44,7 +46,7 @@
     </button>
 
     <% if (L.style !== 'banner' && !isPanel) { %>
-    <header class="px-6 py-5 <%= sticky ? 'sticky top-0 z-20 backdrop-blur' : '' %>">
+    <header class="px-6 py-5 <%= sticky ? 'sticky top-0 z-20' : '' %>"<% if (sticky) { %> data-sticky-header style="--sticky-bg:<%= stickyBg %>"<% } %>>
       <div class="flex items-center gap-2 w-full <%= justify %> <%= dark ? 'text-white' : '' %>">
         <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
           <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>

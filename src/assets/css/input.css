@@ -55,6 +55,17 @@
   backdrop-filter: none;
 }
 
+/* Przyklejony nagłówek: u góry przezroczysty, blur+tło wjeżdżają płynnie po przewinięciu
+   (klasę .evoke-scrolled dokłada /js/sticky-header.js). Tło z --sticky-bg (jasne/ciemne). */
+[data-sticky-header] {
+  transition: background-color .25s ease, backdrop-filter .25s ease, -webkit-backdrop-filter .25s ease;
+}
+[data-sticky-header].evoke-scrolled {
+  background: var(--sticky-bg, rgba(255, 255, 255, 0.62));
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
 /* Przyciski objęte kształtem z ustawień (zaokrąglony/pigułka). */
 .evoke-btn { border-radius: var(--btn-radius) !important; }
 
