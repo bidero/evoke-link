@@ -6,6 +6,7 @@ const storage = require('../services/storage.service');
 const zip = require('../services/zip.service');
 const mail = require('../services/mail.service');
 const events = require('../services/event.service');
+const { isRaster } = require('../utils/fileIcon');
 
 const PUBLIC_LAYOUT = 'layouts/public';
 
@@ -144,6 +145,30 @@ async function downloadFile(req, res, next) {
   }
 }
 
+// Podgląd miniatury (tylko rastrowy obraz) — inline, bez logowania zdarzeń.
+async function previewFile(req, res, next) {
+  try {
+    const project = await loadProject(req, res);
+    if (!project) return;
+    if (projectService.requiresClientPassword(project) && !isUnlocked(req, project.clientToken)) return res.status(403).end();
+    let file = null;
+    for (const t of project.transfers) {
+      const allowed = (t.direction === 'outgoing' && t.clientVisible) || t.direction === 'incoming';
+      if (!allowed) continue;
+      const f = t.files.find((x) => String(x.id) === String(req.params.fileId));
+      if (f) { file = f; break; }
+    }
+    if (!file || !isRaster(file.originalName, file.mimeType)) return res.status(404).end();
+    res.setHeader('Content-Type', file.mimeType || 'image/jpeg');
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    storage.readStream(file.storedPath).pipe(res);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Pobranie wszystkich plików „od nas" jednym ZIP-em.
 async function downloadAllZip(req, res, next) {
   try {
@@ -162,4 +187,4 @@ async function downloadAllZip(req, res, next) {
   }
 }
 
-module.exports = { showPortal, submitPassword, submitUpload, downloadFile, downloadAllZip };
+module.exports = { showPortal, submitPassword, submitUpload, downloadFile, previewFile, downloadAllZip };

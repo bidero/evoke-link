@@ -1,0 +1,15 @@
+<% const _m = fileMeta(f.originalName, f.mimeType); %>
+<a href="<%= downloadHref %>" class="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-slate-50 transition group">
+  <span class="shrink-0">
+    <% if (_m.thumb && typeof previewHref !== 'undefined' && previewHref) { %>
+      <img src="<%= previewHref %>" alt="" loading="lazy" class="w-9 h-9 rounded-lg object-cover border border-slate-200 bg-slate-50" />
+    <% } else { %>
+      <span class="w-9 h-9 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center"><%- icon(_m.icon, { size: 18, cls: _m.color }) %></span>
+    <% } %>
+  </span>
+  <span class="min-w-0 flex-1 truncate text-slate-700"><%= f.originalName %></span>
+  <span class="flex items-center gap-3 shrink-0">
+    <span class="text-slate-400"><%= fmt.bytes(f.size) %></span>
+    <span class="opacity-0 group-hover:opacity-100 transition"><%- icon('download', { size: 16 }) %></span>
+  </span>
+</a>

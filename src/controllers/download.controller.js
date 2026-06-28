@@ -4,6 +4,7 @@ const zipService = require('../services/zip.service');
 const storage = require('../services/storage.service');
 const events = require('../services/event.service');
 const mail = require('../services/mail.service');
+const { isRaster } = require('../utils/fileIcon');
 
 const PUBLIC_LAYOUT = 'layouts/public';
 
@@ -120,6 +121,23 @@ async function downloadFile(req, res, next) {
   }
 }
 
+// Podgląd miniatury (tylko rastrowy obraz) — inline, BEZ liczenia pobrań/powiadomień.
+async function previewFile(req, res, next) {
+  try {
+    const transfer = await guard(req, res);
+    if (!transfer) return;
+    const file = transfer.files.find((f) => String(f.id) === String(req.params.fileId));
+    if (!file || !isRaster(file.originalName, file.mimeType)) return res.status(404).end();
+    res.setHeader('Content-Type', file.mimeType || 'image/jpeg');
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    storage.readStream(file.storedPath).pipe(res);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Pobranie wszystkich plików jako ZIP.
 async function downloadZip(req, res, next) {
   try {
@@ -136,4 +154,4 @@ async function downloadZip(req, res, next) {
   }
 }
 
-module.exports = { showDownloadPage, submitPassword, downloadFile, downloadZip };
+module.exports = { showDownloadPage, submitPassword, downloadFile, previewFile, downloadZip };

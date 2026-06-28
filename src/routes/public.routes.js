@@ -18,6 +18,7 @@ router.get('/', (req, res) => res.redirect('/admin'));
 router.get('/t/:token', download.showDownloadPage);
 router.post('/t/:token', passwordLimiter, download.submitPassword);
 router.get('/t/:token/zip', download.downloadZip);
+router.get('/t/:token/preview/:fileId', download.previewFile);
 router.get('/t/:token/file/:fileId', download.downloadFile);
 
 // Publiczny upload od klienta (Etap 2).
@@ -30,6 +31,7 @@ router.post('/upload/:token', receiveUpload('files'), receive.submitUpload);
 router.get('/p/:token', portal.showPortal);
 router.post('/p/:token/password', passwordLimiter, portal.submitPassword);
 router.get('/p/:token/zip', portal.downloadAllZip);
+router.get('/p/:token/preview/:fileId', portal.previewFile);
 router.get('/p/:token/file/:fileId', portal.downloadFile);
 router.post('/p/:token/chunk', chunkParser, receiveChunk);
 router.post('/p/:token/upload', receiveUpload('files'), portal.submitUpload);
