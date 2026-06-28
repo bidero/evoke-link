@@ -98,7 +98,8 @@ Brak frameworka — używamy doraźnych skryptów E2E: krótki `scripts/*-test.j
 - [x] Chunked upload — dzielenie dużych plików na 5 MB (panel + /upload + portal), drop-in z fallbackiem multipart, sprawdzone E2E (integralność md5)
 - [x] Hero/podpis renderowane na stronach klienta; reset hasła z CLI (`npm run set-password`)
 - [x] Warianty układu stron klienta (klasyczny/karta-na-tle/hero+karta) + styl karty (biel/szkło/uniesiona) + rogi/przycisk + branding logowania; równoległy chunked upload (pula 3)
-- [ ] Do zrobienia: Alpine lokalnie zamiast CDN + włączenie CSP; podbicie multera do 2.x (1 high vuln); redesign WeTransfer + więcej opcji wyglądu
+- [x] Bezpieczeństwo/ops: backup automatyczny (`src/jobs/backup.job.js`), multer 2.x, rate-limit (login + hasła klienta), Alpine/Sortable lokalnie + CSP (helmet), nodemailer 9 (audit: 0 vuln)
+- [ ] Do zrobienia: rozliczenia (dueDate + przypomnienia + CSV); redesign WeTransfer + więcej opcji wyglądu; globalna wyszukiwarka; testy node:test
 
 ## Workflow Git
 Nie pushować automatycznie. Bump wersji + wpis w changelogu dopiero po potwierdzeniu. W komunikatach/URL-ach redagować token dostępowy.
