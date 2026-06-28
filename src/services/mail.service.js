@@ -28,7 +28,7 @@ function esc(s) {
 }
 
 // Lista wspieranych placeholderów (do podpowiedzi w panelu).
-const PLACEHOLDERS = ['{nazwa-aplikacji}', '{nazwa-projektu}', '{klient}', '{tytul}', '{link}', '{liczba-plikow}', '{pliki}', '{nadawca}', '{email-nadawcy}', '{wygasa}'];
+const PLACEHOLDERS = ['{nazwa-aplikacji}', '{nazwa-projektu}', '{klient}', '{tytul}', '{link}', '{liczba-plikow}', '{pliki}', '{nadawca}', '{email-nadawcy}', '{wygasa}', '{przycisk}'];
 
 // Komplet zmiennych (puste = brak danych w danym mailu); nadpisywane per e-mail.
 function baseVars(appName) {
@@ -43,7 +43,7 @@ function fillTpl(tpl, vars) {
 
 // Sprząta temat po podstawieniu pustych placeholderów (zwisające myślniki/spacje).
 function cleanSubject(s) {
-  return (s || '').replace(/\s+/g, ' ').replace(/^\s*[–—-]\s*/, '').replace(/\s*[–—-]\s*$/, '').trim();
+  return (s || '').replace(/\{przycisk\}/gi, '').replace(/\s+/g, ' ').replace(/^\s*[–—-]\s*/, '').replace(/\s*[–—-]\s*$/, '').trim();
 }
 
 async function send({ to, subject, html, text, replyTo, attachments }) {
@@ -85,6 +85,16 @@ async function wrap(content, { heading } = {}) {
 
 function btn(href, label, primary) {
   return `<a href="${esc(href)}" style="display:inline-block;background:${esc(primary || '#6e00a5')};color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:10px">${esc(label)}</a>`;
+}
+
+// Akapit wstępu jako HTML: tekst jest escapowany, a {przycisk} zamieniany na CTA w danym miejscu.
+// Wejście to tekst już z podstawionymi placeholderami. Zwraca { html, hasButton }.
+function introHtml(filledText, buttonHtml) {
+  const t = filledText || '';
+  if (/\{przycisk\}/i.test(t)) {
+    return { html: `<p style="margin:0 0 18px;white-space:pre-line">${t.split(/\{przycisk\}/i).map((seg) => esc(seg)).join(buttonHtml)}</p>`, hasButton: true };
+  }
+  return { html: `<p style="margin:0 0 16px;white-space:pre-line">${esc(t)}</p>`, hasButton: false };
 }
 
 // Powiadomienie do agencji o nowych plikach od klienta.
@@ -137,9 +147,10 @@ async function sendTransferLink({ to, transfer, message }) {
   // Treść wstępu: wiadomość z formularza > szablon z ustawień (placeholdery) > wbudowany.
   const intro = message || fillTpl(em.linkIntro, vars) || (incoming ? 'Pod tym linkiem prześlesz nam pliki:' : 'Pod tym linkiem pobierzesz przygotowane dla Ciebie pliki:');
 
+  const ib = introHtml(intro, btn(link, cta, primary));
   const inner = `
-    <p style="margin:0 0 16px;white-space:pre-line">${esc(intro)}</p>
-    <p style="margin:0 0 20px">${btn(link, cta, primary)}</p>
+    ${ib.html}
+    ${ib.hasButton ? '' : `<p style="margin:0 0 20px">${btn(link, cta, primary)}</p>`}
     <p style="margin:0;color:#64748b;font-size:13px">Lub skopiuj adres:<br><a href="${esc(link)}" style="color:${esc(primary)}">${esc(link)}</a></p>
     ${expiresStr ? `<p style="margin:16px 0 0;color:#94a3b8;font-size:12px">Link wygasa: ${expiresStr}</p>` : ''}`;
 
@@ -182,9 +193,10 @@ async function sendPanelLink({ to, url, projectName, clientName }) {
   const intro = fillTpl(em.panelIntro, vars) || defIntro;
   const heading = projectName || clientName || 'Twój panel';
 
+  const ib = introHtml(intro, btn(url, 'Otwórz panel', primary));
   const inner = `
-    <p style="margin:0 0 16px;white-space:pre-line">${esc(intro)}</p>
-    <p style="margin:0 0 20px">${btn(url, 'Otwórz panel', primary)}</p>
+    ${ib.html}
+    ${ib.hasButton ? '' : `<p style="margin:0 0 20px">${btn(url, 'Otwórz panel', primary)}</p>`}
     <p style="margin:0;color:#64748b;font-size:13px">Lub skopiuj adres:<br><a href="${esc(url)}" style="color:${esc(primary)}">${esc(url)}</a></p>`;
   const html = await wrap(inner, { heading });
   return send({ to, subject, html, text: `${intro}\n\nOtwórz panel: ${url}`, replyTo: config.admin.email });
@@ -197,7 +209,7 @@ async function sendUploadConfirmation({ to, transfer, projectName }) {
   if (!em.clientConfirm) return { skipped: true };
   const appName = s.appName || 'Evoke LINK';
   const vars = { ...baseVars(appName), 'nazwa-projektu': projectName || '', tytul: (transfer && transfer.title) || '' };
-  const body = fillTpl(em.clientConfirmBody, vars) || 'Dziękujemy! Otrzymaliśmy Twoje pliki.';
+  const body = (fillTpl(em.clientConfirmBody, vars) || 'Dziękujemy! Otrzymaliśmy Twoje pliki.').replace(/\{przycisk\}/gi, '');
   const inner = `
     <p style="margin:0 0 12px;white-space:pre-line">${esc(body)}</p>
     ${projectName ? `<p style="margin:0;color:#64748b;font-size:13px">Projekt: ${esc(projectName)}</p>` : ''}`;
