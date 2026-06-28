@@ -1,6 +1,6 @@
 {
   "name": "evoke-transfer",
-  "version": "0.31.0",
+  "version": "0.32.0",
   "private": true,
   "description": "Evoke Transfer — prywatny system wymiany plików agencja↔klient",
   "main": "app.js",
@@ -13,6 +13,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "cleanup": "node src/jobs/cleanup.job.js",
+    "backup": "node src/jobs/backup.job.js",
     "hash": "node scripts/hash-password.js",
     "set-password": "node scripts/set-password.js"
   },

@@ -89,6 +89,13 @@ W DirectAdmin → **Cron Jobs** dodaj (raz dziennie):
 ```
 Używamy crona systemowego zamiast `node-cron`, bo Passenger usypia proces przy braku ruchu.
 
+### Backup danych (cron)
+Spójna kopia bazy (`VACUUM INTO`) + pliki transferów spakowane ZIP-em do `backups/` (poza repo), z rotacją:
+```
+30 3 * * *  cd ~/domains/transfer.twojadomena.pl/app && node src/jobs/backup.job.js
+```
+Konfiguracja w `.env`: `BACKUP_DIR` (domyślnie `./backups`), `BACKUP_KEEP` (domyślnie 14). Odtworzenie = rozpakuj wybrany ZIP: `evoke.db` → `storage/`, `transfers/` → `storage/transfers/`.
+
 ---
 
 ## Ważne zasady projektu

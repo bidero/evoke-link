@@ -17,6 +17,9 @@ storage/*.db-shm
 # Sesje (session-file-store)
 sessions/
 
+# Backupy (ZIP bazy + plików) — generowane przez src/jobs/backup.job.js
+backups/
+
 # Zbudowany CSS jest COMMITOWANY (na hostingu produkcyjnym nie ma Tailwinda —
 # build:css uruchamiamy lokalnie i wrzucamy wynik do repo).
 
