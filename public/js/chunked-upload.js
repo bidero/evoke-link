@@ -2,11 +2,12 @@
 // Omija limity rozmiaru pojedynczego requestu na hostingu współdzielonym i jest
 // szybszy dzięki wysyłaniu kilku kawałków naraz (serwer składa je po indeksach).
 //
-// window.chunkedUpload(files, chunkUrl, onProgress, concurrency) -> Promise<uploadId>
-//   files       : FileList lub tablica File
-//   chunkUrl    : endpoint przyjmujący kawałki (np. '/admin/transfers/chunk')
-//   onProgress  : (percent 0..100) => void   (opcjonalnie)
-//   concurrency : ile kawałków naraz (domyślnie 3, zakres 1..4)
+// window.chunkedUpload(files, chunkUrl, onProgress, concurrency, onFileProgress) -> Promise<uploadId>
+//   files          : FileList lub tablica File
+//   chunkUrl       : endpoint przyjmujący kawałki (np. '/admin/transfers/chunk')
+//   onProgress     : (percent 0..100) => void                  (postęp łączny, opcjonalnie)
+//   concurrency    : ile kawałków naraz (domyślnie 3, zakres 1..4)
+//   onFileProgress : (fileIndex, percent 0..100) => void       (postęp per-plik, opcjonalnie)
 (function () {
   var CHUNK_SIZE = 5 * 1024 * 1024; // 5 MB
 
@@ -46,7 +47,7 @@
     });
   }
 
-  function chunkedUpload(files, chunkUrl, onProgress, concurrency) {
+  function chunkedUpload(files, chunkUrl, onProgress, concurrency, onFileProgress) {
     var arr = Array.prototype.slice.call(files);
     var uploadId = randomId();
     var totalBytes = arr.reduce(function (n, f) { return n + f.size; }, 0) || 1;
@@ -59,12 +60,21 @@
       for (var ci = 0; ci < total; ci++) jobs.push({ file: file, fi: fi, ci: ci, total: total });
     });
 
-    var doneBytes = 0;        // bajty z ukończonych kawałków
-    var liveLoaded = {};      // postęp aktualnie wysyłanych kawałków (po kluczu)
+    var doneBytes = 0;        // bajty z ukończonych kawałków (łącznie)
+    var doneByFile = {};      // ukończone bajty per plik (indeks fi)
+    var liveLoaded = {};      // postęp aktualnie wysyłanych kawałków (po kluczu fi_ci)
     function report() {
       var live = 0;
       for (var k in liveLoaded) live += liveLoaded[k];
       if (onProgress) onProgress(Math.min(99, Math.round(((doneBytes + live) / totalBytes) * 100)));
+      if (onFileProgress) {
+        var liveByFile = {};
+        for (var key in liveLoaded) { var f = key.split('_')[0]; liveByFile[f] = (liveByFile[f] || 0) + liveLoaded[key]; }
+        arr.forEach(function (file, fi) {
+          var got = (doneByFile[fi] || 0) + (liveByFile[fi] || 0);
+          onFileProgress(fi, Math.min(99, Math.round((got / (file.size || 1)) * 100)));
+        });
+      }
     }
     function onChunkProgress(job, loaded) { liveLoaded[job.fi + '_' + job.ci] = loaded; report(); }
 
@@ -75,7 +85,9 @@
       var key = job.fi + '_' + job.ci;
       return sendChunk(chunkUrl, uploadId, job, onChunkProgress).then(function () {
         var size = Math.min(CHUNK_SIZE, job.file.size - job.ci * CHUNK_SIZE);
-        doneBytes += size < 0 ? 0 : size;
+        size = size < 0 ? 0 : size;
+        doneBytes += size;
+        doneByFile[job.fi] = (doneByFile[job.fi] || 0) + size;
         delete liveLoaded[key];
         report();
         return worker();
@@ -86,6 +98,7 @@
       Array.apply(null, { length: pool }).map(function () { return worker(); })
     ).then(function () {
       if (onProgress) onProgress(100);
+      if (onFileProgress) arr.forEach(function (f, fi) { onFileProgress(fi, 100); });
       return uploadId;
     });
   }

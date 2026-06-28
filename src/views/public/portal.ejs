@@ -56,21 +56,22 @@
         <template x-if="files.length">
           <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 text-sm">
             <template x-for="(f, i) in files" :key="i">
-              <div class="flex items-center justify-between px-3 py-2">
-                <span class="truncate mr-3" x-text="f.name"></span>
-                <div class="flex items-center gap-3 shrink-0">
-                  <span class="text-slate-400" x-text="human(f.size)"></span>
-                  <button type="button" @click="remove(i)" class="text-slate-400 hover:text-red-600"><%- icon('x', { size: 16, cls: '' }) %></button>
+              <div class="flex items-center gap-3 px-3 py-2">
+                <template x-if="f.preview"><img :src="f.preview" alt="" class="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0" /></template>
+                <template x-if="!f.preview"><span class="w-9 h-9 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg></span></template>
+                <div class="min-w-0 flex-1">
+                  <div class="truncate text-slate-700" x-text="f.name"></div>
+                  <div class="mt-1 h-1.5 bg-slate-100 rounded-full overflow-hidden" x-show="uploading">
+                    <div class="h-full bg-brand-600 transition-all duration-200" :style="'width:' + Math.max(f.progress, 2) + '%'"></div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="text-xs text-slate-400" x-show="!uploading" x-text="human(f.size)"></span>
+                  <span class="text-xs text-slate-500 tabular-nums" x-show="uploading" x-text="f.progress + '%'"></span>
+                  <button type="button" @click="remove(i)" x-show="!uploading" class="text-slate-400 hover:text-red-600" aria-label="Usuń"><%- icon('x', { size: 16, cls: '' }) %></button>
                 </div>
               </div>
             </template>
-          </div>
-        </template>
-
-        <template x-if="uploading">
-          <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-            <div class="bg-brand-600 h-2 transition-all duration-200" :class="finalizing ? 'animate-pulse' : ''"
-                 :style="'width:' + (finalizing ? 100 : Math.max(progress, 4)) + '%'"></div>
           </div>
         </template>
 
@@ -99,30 +100,14 @@
 
 <script>
 function uploader() {
-  return {
-    files: [], dragging: false, uploading: false, finalizing: false, progress: 0,
-    addFiles(list) { this.files.push(...Array.from(list)); },
-    onDrop(e) { this.dragging = false; this.addFiles(e.dataTransfer.files); },
-    remove(i) { this.files.splice(i, 1); },
-    human(b) { if (!b) return '0 B'; const u=['B','KB','MB','GB','TB']; const i=Math.floor(Math.log(b)/Math.log(1024)); return (b/Math.pow(1024,i)).toFixed(i===0?0:1)+' '+u[i]; },
-    async submit() {
-      if (!this.files.length || this.uploading) return;
+  return makeUploader({
+    chunkUrl: function () { return window.location.pathname.replace(/\/$/, '') + '/chunk'; },
+    finalize: async function (uploadId) {
       const path = window.location.pathname.replace(/\/$/, '');
-      this.uploading = true; this.progress = 0;
-      try {
-        const uploadId = await window.chunkedUpload(this.files, path + '/chunk', (p) => { this.progress = p; });
-        this.finalizing = true;
-        const res = await fetch(path + '/upload', {
-          method: 'POST',
-          body: new URLSearchParams({ uploadId: uploadId }),
-        });
-        if (res.ok) { window.location = res.url || (window.location.pathname + '?sent=1'); }
-        else { this.uploading = false; this.finalizing = false; alert('Błąd wysyłania (' + res.status + ').'); }
-      } catch (err) {
-        this.uploading = false; this.finalizing = false;
-        alert(err && err.message ? err.message : 'Błąd wysyłania.');
-      }
+      const res = await fetch(path + '/upload', { method: 'POST', body: new URLSearchParams({ uploadId: uploadId }) });
+      if (!res.ok) throw new Error('Błąd wysyłania (' + res.status + ').');
+      window.location = res.url || (window.location.pathname + '?sent=1');
     },
-  };
+  });
 }
 </script>
