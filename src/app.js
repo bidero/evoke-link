@@ -32,9 +32,30 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(expressLayouts);
 app.set('layout', 'layouts/admin'); // domyślny układ panelu
 
-// Bezpieczeństwo nagłówków. CSP wyłączone na start (włączymy świadomie w Etapie 6,
-// gdy ustabilizują się źródła CSS/JS), żeby nie blokować Alpine/Tailwind w dev.
-app.use(helmet({ contentSecurityPolicy: false }));
+// Bezpieczeństwo nagłówków + CSP. Wszystkie zasoby z własnego origin (Alpine i Sortable
+// serwowane lokalnie z /js — brak CDN). 'unsafe-inline' dla stylów (wstrzykiwane <style>
+// brandingu + atrybuty style) i dla skryptów (inline theme-toggle + atrybuty onclick/onsubmit);
+// 'unsafe-eval' bo Alpine 3 ewaluuje wyrażenia. Bez upgrade-insecure-requests (działa też po http w dev).
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      useDefaults: false,
+      directives: {
+        defaultSrc: ["'self'"],
+        baseUri: ["'self'"],
+        fontSrc: ["'self'", 'data:'],
+        imgSrc: ["'self'", 'data:', 'blob:'],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        scriptSrcAttr: ["'unsafe-inline'"],
+        connectSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
+  })
+);
 
 // Parsowanie formularzy.
 app.use(express.urlencoded({ extended: true }));
