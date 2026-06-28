@@ -29,15 +29,21 @@ async function list({ q, status } = {}) {
     include: { _count: { select: { projects: true } } },
     orderBy: { name: 'asc' },
   });
-  // Dolicz „do rozliczenia" (suma nierozliczonych pozycji po projektach klienta).
+  // Dolicz „do rozliczenia" (nierozliczone pozycje: po projektach klienta + przypięte wprost).
   const ids = clients.map((c) => c.id);
   if (ids.length) {
     const charges = await prisma.charge.findMany({
-      where: { paidAt: null, project: { clientId: { in: ids }, status: { not: 'deleted' } } },
-      select: { amount: true, project: { select: { clientId: true } } },
+      where: {
+        paidAt: null,
+        OR: [
+          { clientId: { in: ids } },
+          { project: { clientId: { in: ids }, status: { not: 'deleted' } } },
+        ],
+      },
+      select: { amount: true, clientId: true, project: { select: { clientId: true } } },
     });
     const map = {};
-    charges.forEach((c) => { const k = c.project.clientId; if (k != null) map[k] = (map[k] || 0) + c.amount; });
+    charges.forEach((c) => { const k = c.clientId != null ? c.clientId : (c.project ? c.project.clientId : null); if (k != null) map[k] = (map[k] || 0) + c.amount; });
     clients.forEach((c) => { c.outstanding = map[c.id] || 0; });
   }
   return clients;
@@ -79,7 +85,8 @@ async function overview(id) {
       take: 15,
     }),
     prisma.charge.findMany({
-      where: { project: { clientId: cid, status: { not: 'deleted' } } },
+      // pozycje przypięte wprost (clientId) + z projektów klienta (poza usuniętymi)
+      where: { OR: [{ clientId: cid }, { project: { clientId: cid, status: { not: 'deleted' } } }] },
       include: { project: { select: { id: true, name: true } } },
       orderBy: [{ project: { name: 'asc' } }, { date: 'desc' }, { createdAt: 'desc' }],
     }),

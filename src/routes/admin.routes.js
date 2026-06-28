@@ -69,6 +69,10 @@ router.get('/clients/:id/edit', clients.showEditForm);
 router.post('/clients/:id/note', clients.addNote);
 router.get('/clients/:id/rozliczenie.pdf', clients.clientStatementPdf);
 router.post('/clients/:id/rozliczenie/send', clients.sendStatement);
+router.post('/clients/:id/charges', clients.addCharge);                       // dodaj pozycję (projekt lub „bez projektu")
+router.post('/clients/:id/charges/:chargeId/toggle', clients.toggleCharge);
+router.post('/clients/:id/charges/:chargeId/delete', clients.deleteCharge);
+router.post('/clients/:id/charges/:chargeId', clients.updateCharge);          // edycja (po wariantach /toggle, /delete)
 router.get('/clients/:id', clients.showClient);
 router.post('/clients/:id', clients.updateClient);
 router.post('/clients/:id/delete', clients.deleteClient);

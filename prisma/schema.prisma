@@ -41,6 +41,7 @@ model Client {
   createdAt DateTime  @default(now())
   projects  Project[]
   events    Event[]
+  charges   Charge[]                      // pozycje rozliczeniowe „bez projektu" (wprost na kliencie)
 }
 
 model Project {
@@ -61,18 +62,25 @@ model Project {
   charges            Charge[]
 }
 
-// Pozycja rozliczeniowa projektu (kwota). „Czasami po kilka" → osobne wiersze.
+// Pozycja rozliczeniowa (kwota). „Czasami po kilka" → osobne wiersze.
+// Należy do PROJEKTU (projectId) LUB wprost do KLIENTA (clientId, „bez projektu").
+// Reguła: ustawione dokładnie jedno z nich. Klient pozycji = clientId ?? project.clientId.
 // Kwota w GROSZACH (Int). paidAt = data rozliczenia (null = nierozliczone).
 model Charge {
   id        Int       @id @default(autoincrement())
-  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  projectId Int
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int?
+  client    Client?   @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  clientId  Int?
   label     String?
   amount    Int       @default(0) // w groszach
   date      DateTime? // data pozycji (do filtrowania zakresem i na wydruku)
   paidAt    DateTime?
   note      String?
   createdAt DateTime  @default(now())
+
+  @@index([projectId])
+  @@index([clientId])
 }
 
 // Transfer — jeden obiekt obsługuje OBA kierunki (pole direction):

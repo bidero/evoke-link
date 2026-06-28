@@ -7,9 +7,18 @@ const pdfService = require('../services/pdf.service');
 const events = require('../services/event.service');
 const mail = require('../services/mail.service');
 const config = require('../config');
+const fmt = require('../utils/format');
 
 const PUBLIC_LAYOUT = 'layouts/public';
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const parseProjectId = (v) => (v ? parseInt(v, 10) : null);
+
+// Sprawdza, czy projekt o danym id należy do tego klienta (zwraca id lub null).
+async function clientProjectId(projectId, clientId) {
+  if (!projectId) return null;
+  const p = await projectService.getById(projectId);
+  return p && p.clientId === clientId ? p.id : null;
+}
 
 async function listClients(req, res, next) {
   try {
@@ -160,6 +169,73 @@ async function sendStatement(req, res, next) {
   }
 }
 
+// --- Pozycje rozliczeniowe z poziomu klienta (centralna, edytowalna lista) ---
+
+// Dodanie pozycji do wybranego projektu klienta LUB wprost do klienta („bez projektu").
+async function addCharge(req, res, next) {
+  try {
+    const cid = Number(req.params.id);
+    const amount = chargeService.parseAmount(req.body.amount);
+    if (amount > 0) {
+      const projectId = await clientProjectId(parseProjectId(req.body.projectId), cid);
+      const label = (req.body.label || '').trim();
+      await chargeService.create({ projectId, clientId: projectId ? null : cid, label, amount, date: req.body.date });
+      await events.log({
+        type: 'updated',
+        message: `Dodano pozycję rozliczeniową${label ? ': ' + label : ''} — ${fmt.money(amount)}`,
+        projectId: projectId || undefined,
+        clientId: projectId ? undefined : cid,
+        ip: req.ip,
+      });
+    }
+    res.redirect(`/admin/clients/${cid}#rozliczenia`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Edycja pozycji (nazwa/kwota/data + przypisanie do projektu/„bez projektu").
+async function updateCharge(req, res, next) {
+  try {
+    const cid = Number(req.params.id);
+    const charge = await chargeService.getByIdWithProject(req.params.chargeId);
+    if (charge && chargeService.ownerClientId(charge) === cid) {
+      const amount = chargeService.parseAmount(req.body.amount);
+      if (amount > 0) {
+        const projectId = await clientProjectId(parseProjectId(req.body.projectId), cid);
+        await chargeService.update(charge.id, { label: req.body.label, amount, date: req.body.date, projectId }, cid);
+      }
+    }
+    res.redirect(`/admin/clients/${cid}#rozliczenia`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Przełączenie rozliczone/nierozliczone.
+async function toggleCharge(req, res, next) {
+  try {
+    const cid = Number(req.params.id);
+    const charge = await chargeService.getByIdWithProject(req.params.chargeId);
+    if (charge && chargeService.ownerClientId(charge) === cid) await chargeService.setPaid(charge.id, !charge.paidAt);
+    res.redirect(`/admin/clients/${cid}#rozliczenia`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Usunięcie pozycji.
+async function deleteCharge(req, res, next) {
+  try {
+    const cid = Number(req.params.id);
+    const charge = await chargeService.getByIdWithProject(req.params.chargeId);
+    if (charge && chargeService.ownerClientId(charge) === cid) await chargeService.remove(charge.id);
+    res.redirect(`/admin/clients/${cid}#rozliczenia`);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Dodanie ręcznej notatki do klienta (trafia na jego oś czasu jako zdarzenie typu 'note').
 async function addNote(req, res, next) {
   try {
@@ -173,6 +249,10 @@ async function addNote(req, res, next) {
 
 async function deleteClient(req, res, next) {
   try {
+    // Pozycje rozliczeniowe „bez projektu" istnieją tylko przy kliencie — blokujemy usunięcie.
+    if (await chargeService.directCount(req.params.id) > 0) {
+      return res.redirect(`/admin/clients/${req.params.id}?sent=has-charges`);
+    }
     await clientService.remove(req.params.id);
     res.redirect('/admin/clients');
   } catch (err) {
@@ -200,4 +280,4 @@ async function showClientPortal(req, res, next) {
   }
 }
 
-module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, clientStatementPdf, sendStatement, deleteClient, sendPanel, showClientPortal };
+module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, sendStatement, deleteClient, sendPanel, showClientPortal };
