@@ -44,6 +44,17 @@
   backdrop-filter: blur(var(--card-blur));
 }
 
+/* Układ „Panel na tle": karta staje się płaską treścią flush panelu
+   (panel daje tło/wysokość) — zerujemy własne tło/ramkę/cień/zaokrąglenie karty. */
+.evoke-panel-mode .evoke-card {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
 /* Przyciski objęte kształtem z ustawień (zaokrąglony/pigułka). */
 .evoke-btn { border-radius: var(--btn-radius) !important; }
 

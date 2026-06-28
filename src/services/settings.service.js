@@ -15,7 +15,7 @@ const DEFAULTS = {
   logo: { size: 36, align: 'left', darkPath: null }, // wysokość px, wyrównanie, osobne logo dla trybu ciemnego
   // Układ stron klienta. style: classic (obecny) | centered | split.
   // card: solid | glass | elevated. radius w px. button: rounded | pill.
-  layout: { style: 'classic', card: 'solid', cardSide: 'right', hideName: false, heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded' },
+  layout: { style: 'classic', card: 'solid', cardSide: 'right', hideName: false, heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded', stickyHeader: false },
   customCss: '',
   // E-mail: osobne logo + treści + powiadomienie do klienta. Puste pola = domyślne.
   emails: {
@@ -30,7 +30,7 @@ const DEFAULTS = {
 };
 
 const ALIGNS = ['left', 'center', 'right'];
-const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase'];
+const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel'];
 const CARD_STYLES = ['solid', 'glass', 'elevated'];
 const BUTTON_STYLES = ['rounded', 'pill'];
 const PDF_TEMPLATES = ['standard', 'band', 'accent', 'proforma'];
@@ -68,6 +68,7 @@ function normLayout(l) {
     applyToLogin: !!x.applyToLogin,
     radius: Math.min(40, Math.max(0, Number.isInteger(r) ? r : DEFAULTS.layout.radius)),
     button: BUTTON_STYLES.includes(x.button) ? x.button : DEFAULTS.layout.button,
+    stickyHeader: !!x.stickyHeader,
   };
 }
 

@@ -336,7 +336,7 @@
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Wariant</label>
         <div class="grid grid-cols-3 gap-2 text-sm">
-          <% [['classic','Klasyczny'],['centered','Landing'],['split','Split'],['showcase','Pełne tło'],['hero-card','Hero w karcie'],['minimal','Minimal'],['banner','Banner']].forEach(function(o){ %>
+          <% [['classic','Klasyczny'],['centered','Landing'],['split','Split'],['showcase','Pełne tło'],['panel','Panel na tle'],['hero-card','Hero w karcie'],['minimal','Minimal'],['banner','Banner']].forEach(function(o){ %>
             <label class="cursor-pointer">
               <input type="radio" name="layoutStyle" value="<%= o[0] %>" <%= settings.layout.style === o[0] ? 'checked' : '' %> class="peer sr-only" />
               <span class="block text-center rounded-lg border border-slate-300 px-2 py-2 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
@@ -400,6 +400,10 @@
         <label class="flex items-center gap-2 text-sm text-slate-600">
           <input type="checkbox" name="applyToLogin" <%= settings.layout.applyToLogin ? 'checked' : '' %> class="rounded border-slate-300" />
           Zastosuj styl karty/przycisku także na stronie logowania
+        </label>
+        <label class="flex items-center gap-2 text-sm text-slate-600">
+          <input type="checkbox" name="stickyHeader" <%= settings.layout.stickyHeader ? 'checked' : '' %> class="rounded border-slate-300" />
+          Przyklejony nagłówek (logo zostaje na górze przy przewijaniu)
         </label>
       </div>
     </div>

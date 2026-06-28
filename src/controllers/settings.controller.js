@@ -108,7 +108,7 @@ async function updateSettings(req, res, next) {
 
     // --- Układ stron klienta ---
     const layout = {
-      style: ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase'].includes(b.layoutStyle) ? b.layoutStyle : 'classic',
+      style: ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel'].includes(b.layoutStyle) ? b.layoutStyle : 'classic',
       card: ['solid', 'glass', 'elevated'].includes(b.layoutCard) ? b.layoutCard : 'solid',
       cardSide: ['left', 'right', 'center'].includes(b.cardSide) ? b.cardSide : 'right',
       hideName: b.hideName === 'on',
@@ -116,6 +116,7 @@ async function updateSettings(req, res, next) {
       applyToLogin: b.applyToLogin === 'on',
       radius: Math.min(40, Math.max(0, parseInt(b.layoutRadius, 10) >= 0 ? parseInt(b.layoutRadius, 10) : 24)),
       button: ['rounded', 'pill'].includes(b.layoutButton) ? b.layoutButton : 'rounded',
+      stickyHeader: b.stickyHeader === 'on',
     };
 
     // --- Wydruk PDF rozliczenia ---
