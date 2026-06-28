@@ -41,6 +41,24 @@
     </div>
   <% } %>
 
+  <% if (typeof themes !== 'undefined' && themes) { %>
+  <div class="bg-white rounded-2xl border border-slate-200 p-6 mb-6">
+    <h2 class="text-sm font-semibold text-slate-700">Gotowe motywy</h2>
+    <p class="text-xs text-slate-400 mb-3">Jeden klik ustawia kolor, tło, układ i typografię. Logo, treści i dane PDF zostają bez zmian.</p>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <% Object.entries(themes).forEach(function(entry){ const key = entry[0], t = entry[1]; %>
+        <form method="POST" action="/admin/settings/apply-theme">
+          <input type="hidden" name="theme" value="<%= key %>" />
+          <button type="submit" class="w-full flex items-center gap-2 rounded-lg border border-slate-300 hover:border-brand-400 hover:bg-brand-50 px-3 py-2 text-sm text-slate-700 transition">
+            <span class="w-4 h-4 rounded-full shrink-0 border border-slate-300" style="background: <%= (t.colors && t.colors.primary) || '#6e00a5' %>"></span>
+            <span class="truncate text-left"><%= t.label %></span>
+          </button>
+        </form>
+      <% }); %>
+    </div>
+  </div>
+  <% } %>
+
   <form method="POST" action="/admin/settings" enctype="multipart/form-data" class="space-y-6">
 
     <!-- Branding -->

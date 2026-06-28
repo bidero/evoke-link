@@ -87,6 +87,7 @@ router.post('/notifications/:id/dismiss', notifications.dismiss);
 // Customizacja (Etap 5 + 6: kolory panelu, tło stron klienta).
 router.get('/settings', settings.showSettings);
 router.post('/settings/test-email', settings.sendTestEmail);
+router.post('/settings/apply-theme', settings.applyTheme);
 router.post(
   '/settings',
   brandingUpload.fields([

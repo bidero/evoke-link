@@ -10,6 +10,7 @@ const { sanitizeCss } = require('../utils/css');
 const { sanitizeEmailHtml } = require('../utils/htmlEmail');
 const background = require('../utils/background');
 const fonts = require('../utils/fonts');
+const { THEMES } = require('../utils/themes');
 
 // parseInt z zakresem i domyślną wartością. Ważne: ZACHOWUJE 0
 // (wzorzec `parseInt(x) || dflt` mylił 0 z brakiem wartości — przez to kąt 0° nie zapisywał się).
@@ -26,6 +27,7 @@ async function showSettings(req, res, next) {
       active: 'settings',
       settings,
       presets: background.PRESETS,
+      themes: THEMES,
       saved: req.query.saved === '1',
       mailReady: mail.isConfigured(),
       adminEmail: config.admin.email,
@@ -197,6 +199,24 @@ async function updateSettings(req, res, next) {
   }
 }
 
+// Zastosowanie gotowego motywu — merge w bieżące ustawienia (kolor + tło + układ + typografia).
+async function applyTheme(req, res, next) {
+  try {
+    const t = THEMES[req.body.theme];
+    if (!t) return res.redirect('/admin/settings');
+    const cur = await settingsService.get();
+    const data = {};
+    if (t.colors) data.colors = { ...cur.colors, ...t.colors };
+    if (t.background) data.background = { ...background.DEFAULTS, ...t.background }; // czyste tło z motywu
+    if (t.layout) data.layout = { ...cur.layout, ...t.layout };
+    await settingsService.update(data);
+    await events.log({ type: 'updated', message: `Zastosowano motyw: ${t.label}`, ip: req.ip });
+    res.redirect('/admin/settings?saved=1');
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Wysyłka testowego e-maila (weryfikacja SMTP z .env).
 async function sendTestEmail(req, res, next) {
   try {
@@ -210,4 +230,4 @@ async function sendTestEmail(req, res, next) {
   }
 }
 
-module.exports = { showSettings, updateSettings, sendTestEmail };
+module.exports = { showSettings, updateSettings, applyTheme, sendTestEmail };
