@@ -44,6 +44,7 @@ async function showClient(req, res, next) {
   try {
     const data = await clientService.overview(req.params.id);
     if (!data) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
+    const TABS = ['przeglad', 'projekty', 'rozliczenia', 'transfery', 'historia'];
     res.render('admin/clients/show', {
       title: data.client.name,
       active: 'clients',
@@ -54,6 +55,7 @@ async function showClient(req, res, next) {
       charges: data.charges,
       portalUrl: `${config.appUrl}/c/${data.client.token}`,
       sent: req.query.sent || null,
+      activeTab: TABS.includes(req.query.tab) ? req.query.tab : 'przeglad',
     });
   } catch (err) {
     next(err);
@@ -147,7 +149,7 @@ async function sendStatement(req, res, next) {
     const client = await clientService.getById(req.params.id);
     if (!client) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
     const email = (client.email || '').trim();
-    if (!EMAIL_RE.test(email)) return res.redirect(`/admin/clients/${client.id}?sent=stmt-noemail`);
+    if (!EMAIL_RE.test(email)) return res.redirect(`/admin/clients/${client.id}?tab=rozliczenia&sent=stmt-noemail`);
     let ids = req.body.ids;
     if (ids && !Array.isArray(ids)) ids = [ids];
     const filters = { from: req.body.from, to: req.body.to, status: req.body.status };
@@ -159,10 +161,10 @@ async function sendStatement(req, res, next) {
     try {
       await mail.sendClientStatement({ to: email, client, pdfBuffer, filename, title });
       await events.log({ type: 'email_sent', message: `Wysłano ${title.toLowerCase()} do ${email}`, clientId: client.id, ip: req.ip });
-      res.redirect(`/admin/clients/${client.id}?sent=${mail.isConfigured() ? 'stmt-ok' : 'stmt-dev'}`);
+      res.redirect(`/admin/clients/${client.id}?tab=rozliczenia&sent=${mail.isConfigured() ? 'stmt-ok' : 'stmt-dev'}`);
     } catch (e) {
       console.error('[mail] rozliczenie:', e.message);
-      res.redirect(`/admin/clients/${client.id}?sent=stmt-error`);
+      res.redirect(`/admin/clients/${client.id}?tab=rozliczenia&sent=stmt-error`);
     }
   } catch (err) {
     next(err);
@@ -188,7 +190,7 @@ async function addCharge(req, res, next) {
         ip: req.ip,
       });
     }
-    res.redirect(`/admin/clients/${cid}#rozliczenia`);
+    res.redirect(`/admin/clients/${cid}?tab=rozliczenia`);
   } catch (err) {
     next(err);
   }
@@ -206,7 +208,7 @@ async function updateCharge(req, res, next) {
         await chargeService.update(charge.id, { label: req.body.label, amount, date: req.body.date, projectId }, cid);
       }
     }
-    res.redirect(`/admin/clients/${cid}#rozliczenia`);
+    res.redirect(`/admin/clients/${cid}?tab=rozliczenia`);
   } catch (err) {
     next(err);
   }
@@ -218,7 +220,7 @@ async function toggleCharge(req, res, next) {
     const cid = Number(req.params.id);
     const charge = await chargeService.getByIdWithProject(req.params.chargeId);
     if (charge && chargeService.ownerClientId(charge) === cid) await chargeService.setPaid(charge.id, !charge.paidAt);
-    res.redirect(`/admin/clients/${cid}#rozliczenia`);
+    res.redirect(`/admin/clients/${cid}?tab=rozliczenia`);
   } catch (err) {
     next(err);
   }
@@ -230,7 +232,7 @@ async function deleteCharge(req, res, next) {
     const cid = Number(req.params.id);
     const charge = await chargeService.getByIdWithProject(req.params.chargeId);
     if (charge && chargeService.ownerClientId(charge) === cid) await chargeService.remove(charge.id);
-    res.redirect(`/admin/clients/${cid}#rozliczenia`);
+    res.redirect(`/admin/clients/${cid}?tab=rozliczenia`);
   } catch (err) {
     next(err);
   }
@@ -241,7 +243,7 @@ async function addNote(req, res, next) {
   try {
     const text = (req.body.note || '').trim();
     if (text) await events.log({ type: 'note', message: text, clientId: Number(req.params.id), ip: req.ip });
-    res.redirect(`/admin/clients/${req.params.id}`);
+    res.redirect(`/admin/clients/${req.params.id}?tab=historia`);
   } catch (err) {
     next(err);
   }

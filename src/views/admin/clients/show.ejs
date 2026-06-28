@@ -19,10 +19,10 @@
 <% } else if (sent === 'stmt-error') { %>
   <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie udało się wysłać rozliczenia. Sprawdź ustawienia SMTP.</div>
 <% } else if (sent === 'has-charges') { %>
-  <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie można usunąć klienta — ma pozycje rozliczeniowe „bez projektu". Usuń je najpierw (sekcja „Pozycje rozliczeniowe").</div>
+  <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie można usunąć klienta — ma pozycje rozliczeniowe „bez projektu". Usuń je najpierw (zakładka „Rozliczenia").</div>
 <% } %>
 
-<!-- Nagłówek klienta -->
+<!-- Nagłówek klienta (stały nad zakładkami) -->
 <div class="bg-white rounded-2xl border border-slate-200 p-6 mb-5">
   <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
     <div class="min-w-0">
@@ -65,82 +65,186 @@
   </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-  <div class="lg:col-span-2 space-y-5">
-    <!-- Projekty klienta -->
-    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-      <div class="px-5 py-3 border-b border-slate-100">
-        <h2 class="text-sm font-medium text-slate-700">Projekty</h2>
-      </div>
-      <% if (!client.projects.length) { %>
-        <div class="px-5 py-8 text-center text-sm text-slate-400">Brak projektów. <a href="/admin/projects/new?client=<%= client.id %>" class="text-brand-700 hover:underline">Utwórz pierwszy →</a></div>
-      <% } else { %>
-        <ul class="divide-y divide-slate-100">
-          <% client.projects.forEach(function(p){ %>
-            <li>
-              <a href="/admin/projects/<%= p.id %>" class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 transition">
-                <span class="min-w-0">
-                  <span class="block text-sm font-medium text-slate-800 truncate"><%= p.name %></span>
-                  <span class="block text-xs text-slate-400 mt-0.5"><%= p._count.transfers %> transfer(ów) · akt. <%= fmt.date(p.updatedAt) %></span>
-                </span>
-                <% if (p.status === 'archived') { %><span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">archiwum</span><% } else { %><span class="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 shrink-0">aktywny</span><% } %>
-              </a>
-            </li>
-          <% }); %>
-        </ul>
-      <% } %>
-    </div>
-
-    <!-- Ostatnie transfery -->
-    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-      <div class="px-5 py-3 border-b border-slate-100">
-        <h2 class="text-sm font-medium text-slate-700">Ostatnie transfery</h2>
-      </div>
-      <% if (!transfers.length) { %>
-        <div class="px-5 py-8 text-center text-sm text-slate-400">Brak transferów.</div>
-      <% } else { %>
-        <ul class="divide-y divide-slate-100">
-          <% transfers.forEach(function(t){ %>
-            <li>
-              <a href="/admin/transfers/<%= t.id %>" class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition">
-                <span class="shrink-0"><% if (t.direction === 'incoming') { %><%- icon('download', { size: 15, cls: 'text-sky-600' }) %><% } else { %><%- icon('upload', { size: 15 }) %><% } %></span>
-                <span class="min-w-0 flex-1">
-                  <span class="block text-sm text-slate-700 truncate"><%= t.title || ('Transfer ' + t.token) %></span>
-                  <span class="block text-xs text-slate-400 mt-0.5"><%= t.files.length %> plików<%= t.project ? ' · ' + t.project.name : '' %> · <%= fmt.date(t.createdAt) %></span>
-                </span>
-              </a>
-            </li>
-          <% }); %>
-        </ul>
-      <% } %>
-    </div>
+<!-- Zakładki -->
+<div x-data="{ tab: '<%= activeTab %>' }" x-init="$watch('tab', function(v){ history.replaceState(null, '', '?tab=' + v); })" x-cloak>
+  <div class="border-b border-slate-200 flex flex-wrap">
+    <% [['przeglad','Przegląd'],['projekty','Projekty'],['rozliczenia','Rozliczenia'],['transfery','Transfery'],['historia','Oś czasu']].forEach(function(t){ %>
+      <button type="button" @click="tab='<%= t[0] %>'" class="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition" :class="tab==='<%= t[0] %>' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'"><%= t[1] %></button>
+    <% }); %>
   </div>
 
-  <div class="space-y-5 self-start">
-    <!-- Rozliczenia -->
-    <div class="bg-white rounded-2xl border border-slate-200 p-5">
-      <h2 class="text-sm font-medium text-slate-700 mb-3">Rozliczenia</h2>
-      <% if (billing.total > 0) { %>
-        <div class="text-3xl font-semibold tracking-tight <%= billing.outstanding > 0 ? 'text-amber-600' : 'text-green-600' %>"><%= fmt.money(billing.outstanding) %></div>
-        <div class="text-xs text-slate-400 mt-1">do rozliczenia</div>
-        <div class="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500 space-y-1">
-          <div class="flex justify-between"><span>Wartość</span><span class="tabular-nums text-slate-600"><%= fmt.money(billing.total) %></span></div>
-          <div class="flex justify-between"><span>Rozliczono</span><span class="tabular-nums text-green-600"><%= fmt.money(billing.paid) %></span></div>
+  <div class="pt-5">
+
+    <!-- ===== Przegląd ===== -->
+    <div x-show="tab==='przeglad'" class="space-y-5">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <div class="text-xs text-slate-400">Projekty</div>
+          <div class="text-2xl font-semibold text-slate-800 mt-1"><%= client.projects.length %></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <div class="text-xs text-slate-400">Do rozliczenia</div>
+          <div class="text-2xl font-semibold mt-1 <%= billing.outstanding > 0 ? 'text-amber-600' : 'text-green-600' %>"><%= fmt.money(billing.outstanding) %></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <div class="text-xs text-slate-400">Pozycje</div>
+          <div class="text-2xl font-semibold text-slate-800 mt-1"><%= charges.length %></div>
+        </div>
+        <div class="bg-white rounded-2xl border border-slate-200 p-4">
+          <div class="text-xs text-slate-400">Ostatni transfer</div>
+          <div class="text-2xl font-semibold text-slate-800 mt-1"><%= transfers.length ? fmt.date(transfers[0].createdAt) : '—' %></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="text-sm font-medium text-slate-700">Ostatnie transfery</h2>
+            <% if (transfers.length > 3) { %><button type="button" @click="tab='transfery'" class="text-xs text-brand-700 hover:underline">Wszystkie →</button><% } %>
+          </div>
+          <% if (!transfers.length) { %>
+            <div class="px-5 py-8 text-center text-sm text-slate-400">Brak transferów.</div>
+          <% } else { %>
+            <ul class="divide-y divide-slate-100">
+              <% transfers.slice(0,3).forEach(function(t){ %>
+                <li>
+                  <a href="/admin/transfers/<%= t.id %>" class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition">
+                    <span class="shrink-0"><% if (t.direction === 'incoming') { %><%- icon('download', { size: 15, cls: 'text-sky-600' }) %><% } else { %><%- icon('upload', { size: 15 }) %><% } %></span>
+                    <span class="min-w-0 flex-1">
+                      <span class="block text-sm text-slate-700 truncate"><%= t.title || ('Transfer ' + t.token) %></span>
+                      <span class="block text-xs text-slate-400 mt-0.5"><%= t.files.length %> plików<%= t.project ? ' · ' + t.project.name : '' %> · <%= fmt.date(t.createdAt) %></span>
+                    </span>
+                  </a>
+                </li>
+              <% }); %>
+            </ul>
+          <% } %>
         </div>
 
-        <form method="GET" action="/admin/clients/<%= client.id %>/rozliczenie.pdf" target="_blank" class="mt-4 pt-4 border-t border-slate-100 space-y-3">
-          <div class="text-xs font-medium text-slate-600">Wydruk rozliczenia (PDF)</div>
-          <div class="grid grid-cols-2 gap-2">
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+            <h2 class="text-sm font-medium text-slate-700">Ostatnia aktywność</h2>
+            <% if (events.length > 3) { %><button type="button" @click="tab='historia'" class="text-xs text-brand-700 hover:underline">Cała oś czasu →</button><% } %>
+          </div>
+          <% if (!events.length) { %>
+            <div class="px-5 py-8 text-center text-sm text-slate-400">Brak aktywności.</div>
+          <% } else { %>
+            <ul class="divide-y divide-slate-100">
+              <% events.slice(0,3).forEach(function(e){ %>
+                <li class="px-5 py-3 flex gap-3 items-start">
+                  <span class="mt-0.5"><%- eventIcon(e.type) %></span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block text-sm text-slate-700"><%= e.message || e.type %></span>
+                    <span class="block text-xs text-slate-400 mt-0.5"><%= fmt.date(e.createdAt) %><%= e.project ? ' · ' + e.project.name : '' %></span>
+                  </span>
+                </li>
+              <% }); %>
+            </ul>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== Projekty ===== -->
+    <div x-show="tab==='projekty'">
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+          <h2 class="text-sm font-medium text-slate-700">Projekty</h2>
+          <a href="/admin/projects/new?client=<%= client.id %>" class="text-xs text-brand-700 hover:underline">+ Nowy projekt</a>
+        </div>
+        <% if (!client.projects.length) { %>
+          <div class="px-5 py-8 text-center text-sm text-slate-400">Brak projektów. <a href="/admin/projects/new?client=<%= client.id %>" class="text-brand-700 hover:underline">Utwórz pierwszy →</a></div>
+        <% } else { %>
+          <ul class="divide-y divide-slate-100">
+            <% client.projects.forEach(function(p){ %>
+              <li>
+                <a href="/admin/projects/<%= p.id %>" class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 transition">
+                  <span class="min-w-0">
+                    <span class="block text-sm font-medium text-slate-800 truncate"><%= p.name %></span>
+                    <span class="block text-xs text-slate-400 mt-0.5"><%= p._count.transfers %> transfer(ów) · akt. <%= fmt.date(p.updatedAt) %></span>
+                  </span>
+                  <% if (p.status === 'archived') { %><span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">archiwum</span><% } else { %><span class="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 shrink-0">aktywny</span><% } %>
+                </a>
+              </li>
+            <% }); %>
+          </ul>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- ===== Rozliczenia ===== -->
+    <div x-show="tab==='rozliczenia'" id="rozliczenia" class="space-y-5">
+      <!-- Pozycje (edytowalne) -->
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <h2 class="text-sm font-medium text-slate-700">Pozycje rozliczeniowe</h2>
+          <% if (billing.total > 0) { %>
+            <div class="text-xs text-slate-400">
+              Wartość <span class="text-slate-600 font-medium"><%= fmt.money(billing.total) %></span> ·
+              Rozliczono <span class="text-slate-600 font-medium"><%= fmt.money(billing.paid) %></span> ·
+              Pozostało <span class="font-semibold <%= billing.outstanding > 0 ? 'text-amber-600' : 'text-green-600' %>"><%= fmt.money(billing.outstanding) %></span>
+            </div>
+          <% } %>
+        </div>
+
+        <% if (charges.length) { %>
+          <div class="divide-y divide-slate-100">
+            <% let _gp = undefined; %>
+            <% charges.forEach(function(ch){ const _pn = (ch.project && ch.project.name) || 'Bez projektu'; %>
+              <% if (_pn !== _gp) { _gp = _pn; %>
+                <div class="px-5 py-1.5 bg-slate-50 text-xs font-medium text-slate-500"><%= _pn %></div>
+              <% } %>
+              <form method="POST" action="/admin/clients/<%= client.id %>/charges/<%= ch.id %>" class="flex flex-col sm:flex-row sm:items-center gap-2 px-5 py-2.5">
+                <button type="submit" formaction="/admin/clients/<%= client.id %>/charges/<%= ch.id %>/toggle" title="<%= ch.paidAt ? 'Oznacz jako nierozliczone' : 'Oznacz jako rozliczone' %>" class="shrink-0 w-5 h-5 rounded border flex items-center justify-center transition <%= ch.paidAt ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 text-transparent hover:border-brand-400' %>"><%- icon('check', { size: 13, cls: '' }) %></button>
+                <select name="projectId" title="Przypisanie do projektu" class="shrink-0 sm:w-44 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none">
+                  <option value="">— bez projektu —</option>
+                  <% client.projects.forEach(function(p){ %>
+                    <option value="<%= p.id %>" <%= ch.projectId === p.id ? 'selected' : '' %>><%= p.name %></option>
+                  <% }); %>
+                </select>
+                <input name="label" type="text" value="<%= ch.label || '' %>" placeholder="Nazwa pozycji" class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-brand-500 outline-none <%= ch.paidAt ? 'text-slate-400' : '' %>" />
+                <input name="date" type="date" value="<%= ch.date ? new Date(ch.date).toISOString().slice(0,10) : '' %>" title="Data pozycji" class="shrink-0 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none" />
+                <input name="amount" type="text" inputmode="decimal" value="<%= (ch.amount/100).toFixed(2) %>" title="Kwota (zł)" class="shrink-0 w-24 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-right tabular-nums focus:border-brand-500 outline-none" />
+                <button type="submit" title="Zapisz zmiany" class="shrink-0 rounded-lg border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 px-3 py-1.5 text-sm font-medium transition">Zapisz</button>
+                <button type="submit" formaction="/admin/clients/<%= client.id %>/charges/<%= ch.id %>/delete" onclick="return confirm('Usunąć pozycję rozliczeniową?')" title="Usuń pozycję" class="shrink-0 p-1.5 text-slate-300 hover:text-red-600 transition"><%- icon('trash', { size: 16 }) %></button>
+              </form>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <div class="px-5 py-6 text-center text-sm text-slate-400">Brak pozycji rozliczeniowych. Dodaj pierwszą poniżej.</div>
+        <% } %>
+
+        <form method="POST" action="/admin/clients/<%= client.id %>/charges" class="flex flex-col sm:flex-row sm:items-center gap-2 px-5 py-3 border-t border-slate-100 bg-slate-50">
+          <span class="hidden sm:block shrink-0 w-5"></span>
+          <select name="projectId" title="Przypisanie do projektu" class="shrink-0 sm:w-44 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-brand-500 outline-none">
+            <option value="">— bez projektu —</option>
+            <% client.projects.forEach(function(p){ %>
+              <option value="<%= p.id %>"><%= p.name %></option>
+            <% }); %>
+          </select>
+          <input name="label" type="text" placeholder="Nazwa (np. Sesja, Zaliczka)" class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <input name="date" type="date" value="<%= new Date().toISOString().slice(0,10) %>" title="Data pozycji" class="shrink-0 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-brand-500 outline-none" />
+          <input name="amount" type="text" inputmode="decimal" required placeholder="Kwota zł" class="shrink-0 w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm text-right focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <button type="submit" class="shrink-0 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">Dodaj</button>
+        </form>
+      </div>
+
+      <!-- Wydruk / wysyłka PDF -->
+      <% if (charges.length) { %>
+      <div class="bg-white rounded-2xl border border-slate-200 p-5">
+        <h2 class="text-sm font-medium text-slate-700 mb-3">Wydruk i wysyłka (PDF)</h2>
+        <form method="GET" action="/admin/clients/<%= client.id %>/rozliczenie.pdf" target="_blank" class="space-y-3">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
             <label class="block text-xs text-slate-500">Od<input type="date" name="from" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none" /></label>
             <label class="block text-xs text-slate-500">Do<input type="date" name="to" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none" /></label>
+            <label class="block text-xs text-slate-500">Status
+              <select name="status" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none">
+                <option value="">Wszystkie</option>
+                <option value="unpaid">Nierozliczone</option>
+                <option value="paid">Rozliczone</option>
+              </select>
+            </label>
           </div>
-          <label class="block text-xs text-slate-500">Status
-            <select name="status" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none">
-              <option value="">Wszystkie</option>
-              <option value="unpaid">Nierozliczone</option>
-              <option value="paid">Rozliczone</option>
-            </select>
-          </label>
           <div class="text-xs text-slate-500">Pozycje (odznacz, by pominąć):</div>
           <div class="max-h-56 overflow-y-auto rounded-lg border border-slate-100 divide-y divide-slate-100">
             <% let _cp = null; %>
@@ -156,99 +260,72 @@
               </label>
             <% }); %>
           </div>
-          <div class="flex flex-col gap-2">
+          <div class="flex flex-col sm:flex-row gap-2">
+            <button type="submit" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition"><%- icon('file', { size: 15 }) %> Pobierz PDF</button>
             <% if (client.email) { %>
-              <button type="submit" formaction="/admin/clients/<%= client.id %>/rozliczenie/send" formmethod="post" formtarget="_self" title="Wyślij PDF na <%= client.email %>" class="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition"><%- icon('mail', { size: 15, cls: '' }) %> Wyślij e-mailem</button>
+              <button type="submit" formaction="/admin/clients/<%= client.id %>/rozliczenie/send" formmethod="post" formtarget="_self" title="Wyślij PDF na <%= client.email %>" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition"><%- icon('mail', { size: 15, cls: '' }) %> Wyślij e-mailem</button>
             <% } %>
-            <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition"><%- icon('file', { size: 15 }) %> Pobierz PDF</button>
           </div>
         </form>
-      <% } else { %>
-        <p class="text-sm text-slate-400">Brak pozycji rozliczeniowych. Dodasz je niżej (sekcja „Pozycje rozliczeniowe") lub w projekcie.</p>
+      </div>
       <% } %>
     </div>
 
-    <!-- Oś czasu aktywności -->
-    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-    <div class="px-5 py-3 border-b border-slate-100">
-      <h2 class="text-sm font-medium text-slate-700">Oś czasu</h2>
-    </div>
-    <form method="POST" action="/admin/clients/<%= client.id %>/note" class="px-5 py-3 border-b border-slate-100">
-      <textarea name="note" rows="2" required placeholder="Dodaj notatkę…" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
-      <div class="mt-2 text-right">
-        <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium px-3 py-1.5 transition"><%- icon('pencil', { size: 13, cls: '' }) %> Dodaj notatkę</button>
-      </div>
-    </form>
-    <% if (!events.length) { %>
-      <div class="px-5 py-8 text-center text-sm text-slate-400">Brak aktywności.</div>
-    <% } else { %>
-      <ul class="divide-y divide-slate-100">
-        <% events.forEach(function(e){ %>
-          <li class="px-5 py-3 flex gap-3 items-start">
-            <span class="mt-0.5"><%- eventIcon(e.type) %></span>
-            <span class="min-w-0 flex-1">
-              <span class="block text-sm text-slate-700"><%= e.message || e.type %></span>
-              <span class="block text-xs text-slate-400 mt-0.5"><%= fmt.date(e.createdAt) %><%= e.project ? ' · ' + e.project.name : '' %></span>
-            </span>
-          </li>
-        <% }); %>
-      </ul>
-    <% } %>
-    </div>
-  </div>
-</div>
-
-<!-- Pozycje rozliczeniowe — centralna, edytowalna lista (projektowe + „bez projektu") -->
-<div id="rozliczenia" class="mt-5 bg-white rounded-2xl border border-slate-200 overflow-hidden">
-  <div class="px-5 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-    <h2 class="text-sm font-medium text-slate-700">Pozycje rozliczeniowe</h2>
-    <% if (billing.total > 0) { %>
-      <div class="text-xs text-slate-400">
-        Wartość <span class="text-slate-600 font-medium"><%= fmt.money(billing.total) %></span> ·
-        Rozliczono <span class="text-slate-600 font-medium"><%= fmt.money(billing.paid) %></span> ·
-        Pozostało <span class="font-semibold <%= billing.outstanding > 0 ? 'text-amber-600' : 'text-green-600' %>"><%= fmt.money(billing.outstanding) %></span>
-      </div>
-    <% } %>
-  </div>
-
-  <% if (charges.length) { %>
-    <div class="divide-y divide-slate-100">
-      <% let _gp = undefined; %>
-      <% charges.forEach(function(ch){ const _pn = (ch.project && ch.project.name) || 'Bez projektu'; %>
-        <% if (_pn !== _gp) { _gp = _pn; %>
-          <div class="px-5 py-1.5 bg-slate-50 text-xs font-medium text-slate-500"><%= _pn %></div>
-        <% } %>
-        <form method="POST" action="/admin/clients/<%= client.id %>/charges/<%= ch.id %>" class="flex flex-col sm:flex-row sm:items-center gap-2 px-5 py-2.5">
-          <button type="submit" formaction="/admin/clients/<%= client.id %>/charges/<%= ch.id %>/toggle" title="<%= ch.paidAt ? 'Oznacz jako nierozliczone' : 'Oznacz jako rozliczone' %>" class="shrink-0 w-5 h-5 rounded border flex items-center justify-center transition <%= ch.paidAt ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 text-transparent hover:border-brand-400' %>"><%- icon('check', { size: 13, cls: '' }) %></button>
-          <select name="projectId" title="Przypisanie do projektu" class="shrink-0 sm:w-44 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none">
-            <option value="">— bez projektu —</option>
-            <% client.projects.forEach(function(p){ %>
-              <option value="<%= p.id %>" <%= ch.projectId === p.id ? 'selected' : '' %>><%= p.name %></option>
+    <!-- ===== Transfery ===== -->
+    <div x-show="tab==='transfery'">
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100">
+          <h2 class="text-sm font-medium text-slate-700">Transfery</h2>
+        </div>
+        <% if (!transfers.length) { %>
+          <div class="px-5 py-8 text-center text-sm text-slate-400">Brak transferów.</div>
+        <% } else { %>
+          <ul class="divide-y divide-slate-100">
+            <% transfers.forEach(function(t){ %>
+              <li>
+                <a href="/admin/transfers/<%= t.id %>" class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition">
+                  <span class="shrink-0"><% if (t.direction === 'incoming') { %><%- icon('download', { size: 15, cls: 'text-sky-600' }) %><% } else { %><%- icon('upload', { size: 15 }) %><% } %></span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block text-sm text-slate-700 truncate"><%= t.title || ('Transfer ' + t.token) %></span>
+                    <span class="block text-xs text-slate-400 mt-0.5"><%= t.files.length %> plików<%= t.project ? ' · ' + t.project.name : '' %> · <%= fmt.date(t.createdAt) %></span>
+                  </span>
+                </a>
+              </li>
             <% }); %>
-          </select>
-          <input name="label" type="text" value="<%= ch.label || '' %>" placeholder="Nazwa pozycji" class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-brand-500 outline-none <%= ch.paidAt ? 'text-slate-400' : '' %>" />
-          <input name="date" type="date" value="<%= ch.date ? new Date(ch.date).toISOString().slice(0,10) : '' %>" title="Data pozycji" class="shrink-0 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none" />
-          <input name="amount" type="text" inputmode="decimal" value="<%= (ch.amount/100).toFixed(2) %>" title="Kwota (zł)" class="shrink-0 w-24 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-right tabular-nums focus:border-brand-500 outline-none" />
-          <button type="submit" title="Zapisz zmiany" class="shrink-0 rounded-lg border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 px-3 py-1.5 text-sm font-medium transition">Zapisz</button>
-          <button type="submit" formaction="/admin/clients/<%= client.id %>/charges/<%= ch.id %>/delete" onclick="return confirm('Usunąć pozycję rozliczeniową?')" title="Usuń pozycję" class="shrink-0 p-1.5 text-slate-300 hover:text-red-600 transition"><%- icon('trash', { size: 16 }) %></button>
-        </form>
-      <% }); %>
+          </ul>
+        <% } %>
+      </div>
     </div>
-  <% } else { %>
-    <div class="px-5 py-6 text-center text-sm text-slate-400">Brak pozycji rozliczeniowych. Dodaj pierwszą poniżej.</div>
-  <% } %>
 
-  <form method="POST" action="/admin/clients/<%= client.id %>/charges" class="flex flex-col sm:flex-row sm:items-center gap-2 px-5 py-3 border-t border-slate-100 bg-slate-50">
-    <span class="hidden sm:block shrink-0 w-5"></span>
-    <select name="projectId" title="Przypisanie do projektu" class="shrink-0 sm:w-44 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-brand-500 outline-none">
-      <option value="">— bez projektu —</option>
-      <% client.projects.forEach(function(p){ %>
-        <option value="<%= p.id %>"><%= p.name %></option>
-      <% }); %>
-    </select>
-    <input name="label" type="text" placeholder="Nazwa (np. Sesja, Zaliczka)" class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-    <input name="date" type="date" value="<%= new Date().toISOString().slice(0,10) %>" title="Data pozycji" class="shrink-0 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-brand-500 outline-none" />
-    <input name="amount" type="text" inputmode="decimal" required placeholder="Kwota zł" class="shrink-0 w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm text-right focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-    <button type="submit" class="shrink-0 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">Dodaj</button>
-  </form>
+    <!-- ===== Oś czasu ===== -->
+    <div x-show="tab==='historia'">
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100">
+          <h2 class="text-sm font-medium text-slate-700">Oś czasu</h2>
+        </div>
+        <form method="POST" action="/admin/clients/<%= client.id %>/note" class="px-5 py-3 border-b border-slate-100">
+          <textarea name="note" rows="2" required placeholder="Dodaj notatkę…" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+          <div class="mt-2 text-right">
+            <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium px-3 py-1.5 transition"><%- icon('pencil', { size: 13, cls: '' }) %> Dodaj notatkę</button>
+          </div>
+        </form>
+        <% if (!events.length) { %>
+          <div class="px-5 py-8 text-center text-sm text-slate-400">Brak aktywności.</div>
+        <% } else { %>
+          <ul class="divide-y divide-slate-100">
+            <% events.forEach(function(e){ %>
+              <li class="px-5 py-3 flex gap-3 items-start">
+                <span class="mt-0.5"><%- eventIcon(e.type) %></span>
+                <span class="min-w-0 flex-1">
+                  <span class="block text-sm text-slate-700"><%= e.message || e.type %></span>
+                  <span class="block text-xs text-slate-400 mt-0.5"><%= fmt.date(e.createdAt) %><%= e.project ? ' · ' + e.project.name : '' %></span>
+                </span>
+              </li>
+            <% }); %>
+          </ul>
+        <% } %>
+      </div>
+    </div>
+
+  </div>
 </div>

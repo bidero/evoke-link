@@ -75,14 +75,14 @@ async function overview(id) {
       where: { project: { clientId: cid } },
       include: { files: true, project: true },
       orderBy: { createdAt: 'desc' },
-      take: 8,
+      take: 50, // zakładka „Transfery" pokazuje pełną listę; „Przegląd" bierze pierwsze 3
     }),
     prisma.event.findMany({
       // notatki (clientId bez projektu) + zdarzenia jego projektów (też historyczne, bez clientId)
       where: { OR: [{ clientId: cid }, { project: { clientId: cid } }] },
       include: { project: true, transfer: true },
       orderBy: { createdAt: 'desc' },
-      take: 15,
+      take: 50, // zakładka „Oś czasu" pełna; „Przegląd" bierze pierwsze 3
     }),
     prisma.charge.findMany({
       // pozycje przypięte wprost (clientId) + z projektów klienta (poza usuniętymi)
