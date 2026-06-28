@@ -46,14 +46,14 @@ function cleanSubject(s) {
   return (s || '').replace(/\s+/g, ' ').replace(/^\s*[–—-]\s*/, '').replace(/\s*[–—-]\s*$/, '').trim();
 }
 
-async function send({ to, subject, html, text, replyTo }) {
+async function send({ to, subject, html, text, replyTo, attachments }) {
   const t = getTransporter();
   if (!t) {
-    console.log('\n[mail:DEV] (SMTP niewłączony) =>', { to, subject });
+    console.log('\n[mail:DEV] (SMTP niewłączony) =>', { to, subject, attachments: attachments ? attachments.map((a) => a.filename) : undefined });
     console.log('[mail:DEV] treść:\n' + (text || html) + '\n');
     return { dev: true };
   }
-  return t.sendMail({ from: config.mail.from, to, subject, html, text, replyTo });
+  return t.sendMail({ from: config.mail.from, to, subject, html, text, replyTo, attachments });
 }
 
 // Brandowany szablon HTML maila (logo/kolor/nazwa z ustawień). content = HTML wnętrza.
@@ -205,6 +205,27 @@ async function sendUploadConfirmation({ to, transfer, projectName }) {
   return send({ to, subject: cleanSubject(fillTpl(em.clientConfirmSubject, vars)) || `${appName} — potwierdzenie odbioru plików`, html, text: body, replyTo: config.admin.email });
 }
 
+// Wysyłka rozliczenia/proformy do klienta z PDF w załączniku.
+async function sendClientStatement({ to, client, pdfBuffer, filename, title }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const appName = s.appName || 'Evoke LINK';
+  const docWord = title || 'Rozliczenie';
+  const intro = `W załączniku przesyłamy ${docWord.toLowerCase()} (PDF).`;
+  const inner = `
+    <p style="margin:0 0 10px">Dzień dobry${client && client.name ? ' ' + esc(client.name) : ''},</p>
+    <p style="margin:0 0 6px">${esc(intro)}</p>`;
+  const html = await wrap(inner, { heading: docWord });
+  const text = `Dzień dobry${client && client.name ? ' ' + client.name : ''},\n\n${intro}\n\n${appName}`;
+  return send({
+    to,
+    subject: `${docWord} — ${appName}`,
+    html,
+    text,
+    replyTo: config.admin.email,
+    attachments: [{ filename: filename || 'rozliczenie.pdf', content: pdfBuffer, contentType: 'application/pdf' }],
+  });
+}
+
 // Testowy e-mail do weryfikacji konfiguracji SMTP.
 async function sendTest({ to }) {
   const inner = `<p style="margin:0 0 8px">To jest testowa wiadomość z Twojej instancji.</p>
@@ -213,4 +234,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, PLACEHOLDERS, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendTest };
+module.exports = { send, isConfigured, PLACEHOLDERS, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendTest };

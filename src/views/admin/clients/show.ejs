@@ -10,6 +10,14 @@
   <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Klient nie ma poprawnego adresu e-mail.</div>
 <% } else if (sent === 'error') { %>
   <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie udało się wysłać. Sprawdź ustawienia SMTP.</div>
+<% } else if (sent === 'stmt-ok') { %>
+  <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Wysłano rozliczenie do klienta.</div>
+<% } else if (sent === 'stmt-dev') { %>
+  <div class="mb-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-3 py-2">SMTP niewłączony — rozliczenie trafiło do logów serwera (tryb deweloperski).</div>
+<% } else if (sent === 'stmt-noemail') { %>
+  <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Klient nie ma adresu e-mail — uzupełnij go w edycji.</div>
+<% } else if (sent === 'stmt-error') { %>
+  <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie udało się wysłać rozliczenia. Sprawdź ustawienia SMTP.</div>
 <% } %>
 
 <!-- Nagłówek klienta -->
@@ -146,7 +154,12 @@
               </label>
             <% }); %>
           </div>
-          <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition"><%- icon('file', { size: 15, cls: '' }) %> Pobierz rozliczenie PDF</button>
+          <div class="flex gap-2">
+            <button type="submit" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition"><%- icon('file', { size: 15, cls: '' }) %> Pobierz PDF</button>
+            <% if (client.email) { %>
+              <button type="submit" formaction="/admin/clients/<%= client.id %>/rozliczenie/send" formmethod="post" formtarget="_self" title="Wyślij PDF na <%= client.email %>" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-sm font-medium px-4 py-2 transition"><%- icon('mail', { size: 15 }) %> Wyślij e-mailem</button>
+            <% } %>
+          </div>
         </form>
       <% } else { %>
         <p class="text-sm text-slate-400">Brak pozycji rozliczeniowych. Dodasz je w projekcie.</p>

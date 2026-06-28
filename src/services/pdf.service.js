@@ -158,8 +158,8 @@ function filterLine(filters) {
   return p.length ? { text: `Zakres: ${p.join(', ')}`, color: '#94a3b8', fontSize: 9, margin: [0, 8, 0, 0] } : null;
 }
 
-// Strumieniuje PDF rozliczenia klienta do odpowiedzi.
-function clientStatement(res, { client, charges, filters = {}, settings }) {
+// Buduje definicję dokumentu pdfmake (wspólne dla strumienia i Buffera).
+function buildDoc({ client, charges, filters = {}, settings }) {
   const brand = safeHex(settings.colors && settings.colors.primary, '#6e00a5');
   const appName = settings.appName || 'Evoke LINK';
   const pdfCfg = settings.pdf || {};
@@ -252,12 +252,35 @@ function clientStatement(res, { client, charges, filters = {}, settings }) {
   sections.forEach((s) => docDef.content.push(s));
   docDef.content.push(totalsBlock(total, paid, brand, seller));
 
-  const filePrefix = pdfCfg.docType === 'proforma' ? 'proforma' : 'rozliczenie';
+  return docDef;
+}
+
+function statementFilename(client, settings) {
+  const dt = settings.pdf && settings.pdf.docType === 'proforma' ? 'proforma' : 'rozliczenie';
+  return `${dt}-${slug(client.name)}-${fmt.dateOnly(new Date()).replace(/\./g, '-')}.pdf`;
+}
+
+// Strumieniuje PDF rozliczenia klienta do odpowiedzi (podgląd/pobranie).
+function clientStatement(res, opts) {
+  const docDef = buildDoc(opts);
   res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `inline; filename="${filePrefix}-${slug(client.name)}-${today.replace(/\./g, '-')}.pdf"`);
+  res.setHeader('Content-Disposition', `inline; filename="${statementFilename(opts.client, opts.settings)}"`);
   const doc = printer.createPdfKitDocument(docDef);
   doc.pipe(res);
   doc.end();
 }
 
-module.exports = { clientStatement };
+// PDF jako Buffer (do załącznika e-mail).
+function clientStatementBuffer(opts) {
+  const docDef = buildDoc(opts);
+  return new Promise((resolve, reject) => {
+    const doc = printer.createPdfKitDocument(docDef);
+    const chunks = [];
+    doc.on('data', (c) => chunks.push(c));
+    doc.on('end', () => resolve(Buffer.concat(chunks)));
+    doc.on('error', reject);
+    doc.end();
+  });
+}
+
+module.exports = { clientStatement, clientStatementBuffer, statementFilename };

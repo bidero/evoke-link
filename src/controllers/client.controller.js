@@ -132,6 +132,34 @@ async function clientStatementPdf(req, res, next) {
   }
 }
 
+// Wysyłka rozliczenia/proformy do klienta e-mailem (PDF w załączniku, respektuje filtr).
+async function sendStatement(req, res, next) {
+  try {
+    const client = await clientService.getById(req.params.id);
+    if (!client) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
+    const email = (client.email || '').trim();
+    if (!EMAIL_RE.test(email)) return res.redirect(`/admin/clients/${client.id}?sent=stmt-noemail`);
+    let ids = req.body.ids;
+    if (ids && !Array.isArray(ids)) ids = [ids];
+    const filters = { from: req.body.from, to: req.body.to, status: req.body.status };
+    const charges = await chargeService.forStatement(client.id, { ...filters, ids });
+    const settings = await settingsService.get();
+    const title = settings.pdf && settings.pdf.docType === 'proforma' ? 'Proforma' : 'Rozliczenie';
+    const pdfBuffer = await pdfService.clientStatementBuffer({ client, charges, filters, settings });
+    const filename = pdfService.statementFilename(client, settings);
+    try {
+      await mail.sendClientStatement({ to: email, client, pdfBuffer, filename, title });
+      await events.log({ type: 'email_sent', message: `Wysłano ${title.toLowerCase()} do ${email}`, clientId: client.id, ip: req.ip });
+      res.redirect(`/admin/clients/${client.id}?sent=${mail.isConfigured() ? 'stmt-ok' : 'stmt-dev'}`);
+    } catch (e) {
+      console.error('[mail] rozliczenie:', e.message);
+      res.redirect(`/admin/clients/${client.id}?sent=stmt-error`);
+    }
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Dodanie ręcznej notatki do klienta (trafia na jego oś czasu jako zdarzenie typu 'note').
 async function addNote(req, res, next) {
   try {
@@ -172,4 +200,4 @@ async function showClientPortal(req, res, next) {
   }
 }
 
-module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, clientStatementPdf, deleteClient, sendPanel, showClientPortal };
+module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, clientStatementPdf, sendStatement, deleteClient, sendPanel, showClientPortal };
