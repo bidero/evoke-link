@@ -4,6 +4,7 @@
 const nodemailer = require('nodemailer');
 const config = require('../config');
 const settingsService = require('./settings.service');
+const { stripTags } = require('../utils/htmlEmail');
 
 let transporter = null;
 function getTransporter() {
@@ -87,14 +88,22 @@ function btn(href, label, primary) {
   return `<a href="${esc(href)}" style="display:inline-block;background:${esc(primary || '#6e00a5')};color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:10px">${esc(label)}</a>`;
 }
 
-// Akapit wstępu jako HTML: tekst jest escapowany, a {przycisk} zamieniany na CTA w danym miejscu.
-// Wejście to tekst już z podstawionymi placeholderami. Zwraca { html, hasButton }.
-function introHtml(filledText, buttonHtml) {
-  const t = filledText || '';
-  if (/\{przycisk\}/i.test(t)) {
-    return { html: `<p style="margin:0 0 18px;white-space:pre-line">${t.split(/\{przycisk\}/i).map((seg) => esc(seg)).join(buttonHtml)}</p>`, hasButton: true };
+// Treść (wstęp/body) → bezpieczny HTML: podstawia placeholdery; jeśli to już HTML
+// (z edytora WYSIWYG, sanityzowany przy zapisie) zostawia, a tekst (wiadomość ad-hoc /
+// stare treści / domyślne) escapuje i zamienia nowe linie na <br>.
+function contentToHtml(value, vars) {
+  const filled = fillTpl(value || '', vars);
+  if (/<[a-z][\s\S]*>/i.test(filled)) return filled;
+  return esc(filled).replace(/\r?\n/g, '<br>');
+}
+
+// Akapit wstępu jako HTML; {przycisk} zamieniany na przycisk CTA w danym miejscu.
+function introBlock(value, vars, buttonHtml) {
+  const html = contentToHtml(value, vars);
+  if (/\{przycisk\}/i.test(html)) {
+    return { html: `<div style="margin:0 0 18px">${html.split(/\{przycisk\}/i).join(buttonHtml)}</div>`, hasButton: true };
   }
-  return { html: `<p style="margin:0 0 16px;white-space:pre-line">${esc(t)}</p>`, hasButton: false };
+  return { html: `<div style="margin:0 0 16px">${html}</div>`, hasButton: false };
 }
 
 // Powiadomienie do agencji o nowych plikach od klienta.
@@ -145,9 +154,9 @@ async function sendTransferLink({ to, transfer, message }) {
     tytul: title, link, wygasa: expiresStr,
   };
   // Treść wstępu: wiadomość z formularza > szablon z ustawień (placeholdery) > wbudowany.
-  const intro = message || fillTpl(em.linkIntro, vars) || (incoming ? 'Pod tym linkiem prześlesz nam pliki:' : 'Pod tym linkiem pobierzesz przygotowane dla Ciebie pliki:');
+  const introSrc = message || em.linkIntro || (incoming ? 'Pod tym linkiem prześlesz nam pliki:' : 'Pod tym linkiem pobierzesz przygotowane dla Ciebie pliki:');
 
-  const ib = introHtml(intro, btn(link, cta, primary));
+  const ib = introBlock(introSrc, vars, btn(link, cta, primary));
   const inner = `
     ${ib.html}
     ${ib.hasButton ? '' : `<p style="margin:0 0 20px">${btn(link, cta, primary)}</p>`}
@@ -155,7 +164,7 @@ async function sendTransferLink({ to, transfer, message }) {
     ${expiresStr ? `<p style="margin:16px 0 0;color:#94a3b8;font-size:12px">Link wygasa: ${expiresStr}</p>` : ''}`;
 
   const html = await wrap(inner, { heading: title });
-  const text = `${intro}\n\n${cta}: ${link}`;
+  const text = `${stripTags(ib.html)}\n\n${cta}: ${link}`;
   return send({ to, subject: cleanSubject(fillTpl(em.linkSubject, vars)) || `${appName} — ${title}`, html, text, replyTo: config.admin.email });
 }
 
@@ -190,16 +199,16 @@ async function sendPanelLink({ to, url, projectName, clientName }) {
     ? `Panel projektu „${projectName}" — Twoje pliki i upload w jednym miejscu.`
     : 'Twój panel — wszystkie projekty w jednym miejscu.';
   const subject = cleanSubject(fillTpl(em.panelSubject, vars)) || defSubject;
-  const intro = fillTpl(em.panelIntro, vars) || defIntro;
+  const introSrc = em.panelIntro || defIntro;
   const heading = projectName || clientName || 'Twój panel';
 
-  const ib = introHtml(intro, btn(url, 'Otwórz panel', primary));
+  const ib = introBlock(introSrc, vars, btn(url, 'Otwórz panel', primary));
   const inner = `
     ${ib.html}
     ${ib.hasButton ? '' : `<p style="margin:0 0 20px">${btn(url, 'Otwórz panel', primary)}</p>`}
     <p style="margin:0;color:#64748b;font-size:13px">Lub skopiuj adres:<br><a href="${esc(url)}" style="color:${esc(primary)}">${esc(url)}</a></p>`;
   const html = await wrap(inner, { heading });
-  return send({ to, subject, html, text: `${intro}\n\nOtwórz panel: ${url}`, replyTo: config.admin.email });
+  return send({ to, subject, html, text: `${stripTags(ib.html)}\n\nOtwórz panel: ${url}`, replyTo: config.admin.email });
 }
 
 // Potwierdzenie do KLIENTA po przesłaniu plików (jeśli włączone i klient podał e-mail).
@@ -209,12 +218,12 @@ async function sendUploadConfirmation({ to, transfer, projectName }) {
   if (!em.clientConfirm) return { skipped: true };
   const appName = s.appName || 'Evoke LINK';
   const vars = { ...baseVars(appName), 'nazwa-projektu': projectName || '', tytul: (transfer && transfer.title) || '' };
-  const body = (fillTpl(em.clientConfirmBody, vars) || 'Dziękujemy! Otrzymaliśmy Twoje pliki.').replace(/\{przycisk\}/gi, '');
+  const bodyHtml = contentToHtml(em.clientConfirmBody || 'Dziękujemy! Otrzymaliśmy Twoje pliki.', vars).replace(/\{przycisk\}/gi, '');
   const inner = `
-    <p style="margin:0 0 12px;white-space:pre-line">${esc(body)}</p>
+    <div style="margin:0 0 12px">${bodyHtml}</div>
     ${projectName ? `<p style="margin:0;color:#64748b;font-size:13px">Projekt: ${esc(projectName)}</p>` : ''}`;
   const html = await wrap(inner, { heading: 'Potwierdzenie' });
-  return send({ to, subject: cleanSubject(fillTpl(em.clientConfirmSubject, vars)) || `${appName} — potwierdzenie odbioru plików`, html, text: body, replyTo: config.admin.email });
+  return send({ to, subject: cleanSubject(fillTpl(em.clientConfirmSubject, vars)) || `${appName} — potwierdzenie odbioru plików`, html, text: stripTags(bodyHtml), replyTo: config.admin.email });
 }
 
 // Wysyłka rozliczenia/proformy do klienta z PDF w załączniku.

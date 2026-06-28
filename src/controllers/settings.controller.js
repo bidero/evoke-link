@@ -7,6 +7,7 @@ const config = require('../config');
 const { safeHex } = require('../utils/color');
 const { sanitizeSvg, looksLikeSvg } = require('../utils/svgSanitize');
 const { sanitizeCss } = require('../utils/css');
+const { sanitizeEmailHtml } = require('../utils/htmlEmail');
 const background = require('../utils/background');
 
 // parseInt z zakresem i domyślną wartością. Ważne: ZACHOWUJE 0
@@ -139,14 +140,14 @@ async function updateSettings(req, res, next) {
       emails: {
         logoPath: current.emails.logoPath || null,
         linkSubject: (b.linkSubject || '').trim(),
-        linkIntro: (b.linkIntro || '').trim(),
+        linkIntro: sanitizeEmailHtml(b.linkIntro || ''),
         panelSubject: (b.panelSubject || '').trim(),
-        panelIntro: (b.panelIntro || '').trim(),
+        panelIntro: sanitizeEmailHtml(b.panelIntro || ''),
         uploadSubject: (b.uploadSubject || '').trim(),
         downloadSubject: (b.downloadSubject || '').trim(),
         clientConfirm: b.clientConfirm === 'on',
         clientConfirmSubject: (b.clientConfirmSubject || '').trim(),
-        clientConfirmBody: (b.clientConfirmBody || '').trim(),
+        clientConfirmBody: sanitizeEmailHtml(b.clientConfirmBody || ''),
       },
     };
 

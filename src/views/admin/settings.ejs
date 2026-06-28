@@ -512,13 +512,31 @@
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Wstęp w mailu z linkiem <span class="text-slate-400 font-normal">(gdy nie wpiszesz wiadomości przy wysyłce)</span></label>
-        <textarea name="linkIntro" rows="2" placeholder="np. W załączeniu link do plików dla Ciebie."
-                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= settings.emails.linkIntro %></textarea>
+        <div class="rte">
+          <div class="flex flex-wrap gap-1 mb-1">
+            <button type="button" data-cmd="bold" title="Pogrubienie" class="text-xs font-bold rounded border border-slate-300 w-7 h-7 hover:bg-slate-50">B</button>
+            <button type="button" data-cmd="italic" title="Kursywa" class="text-xs italic rounded border border-slate-300 w-7 h-7 hover:bg-slate-50">I</button>
+            <button type="button" data-cmd="insertUnorderedList" title="Lista" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">• Lista</button>
+            <button type="button" data-cmd="createLink" title="Wstaw link" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Link</button>
+            <button type="button" data-cmd="removeFormat" title="Wyczyść formatowanie" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Wyczyść</button>
+          </div>
+          <div class="rte-ed w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[64px] focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" contenteditable="true"></div>
+          <input type="hidden" name="linkIntro" value="<%= settings.emails.linkIntro %>" />
+        </div>
       </div>
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Wstęp w mailu z panelem klienta/projektu</label>
-        <textarea name="panelIntro" rows="2" placeholder="np. Pod tym linkiem masz dostęp do projektu {nazwa-projektu}."
-                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= settings.emails.panelIntro %></textarea>
+        <div class="rte">
+          <div class="flex flex-wrap gap-1 mb-1">
+            <button type="button" data-cmd="bold" title="Pogrubienie" class="text-xs font-bold rounded border border-slate-300 w-7 h-7 hover:bg-slate-50">B</button>
+            <button type="button" data-cmd="italic" title="Kursywa" class="text-xs italic rounded border border-slate-300 w-7 h-7 hover:bg-slate-50">I</button>
+            <button type="button" data-cmd="insertUnorderedList" title="Lista" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">• Lista</button>
+            <button type="button" data-cmd="createLink" title="Wstaw link" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Link</button>
+            <button type="button" data-cmd="removeFormat" title="Wyczyść formatowanie" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Wyczyść</button>
+          </div>
+          <div class="rte-ed w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[64px] focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" contenteditable="true"></div>
+          <input type="hidden" name="panelIntro" value="<%= settings.emails.panelIntro %>" />
+        </div>
       </div>
 
       <div class="border-t border-slate-100 pt-4 space-y-3">
@@ -528,25 +546,66 @@
         </label>
         <input name="clientConfirmSubject" type="text" value="<%= settings.emails.clientConfirmSubject %>" placeholder="Temat potwierdzenia (domyślny)"
                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-        <textarea name="clientConfirmBody" rows="2" placeholder="Treść potwierdzenia (domyślna: Dziękujemy! Otrzymaliśmy Twoje pliki.)"
-                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= settings.emails.clientConfirmBody %></textarea>
+        <div class="rte">
+          <div class="flex flex-wrap gap-1 mb-1">
+            <button type="button" data-cmd="bold" title="Pogrubienie" class="text-xs font-bold rounded border border-slate-300 w-7 h-7 hover:bg-slate-50">B</button>
+            <button type="button" data-cmd="italic" title="Kursywa" class="text-xs italic rounded border border-slate-300 w-7 h-7 hover:bg-slate-50">I</button>
+            <button type="button" data-cmd="insertUnorderedList" title="Lista" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">• Lista</button>
+            <button type="button" data-cmd="createLink" title="Wstaw link" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Link</button>
+            <button type="button" data-cmd="removeFormat" title="Wyczyść formatowanie" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Wyczyść</button>
+          </div>
+          <div class="rte-ed w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[64px] focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" contenteditable="true"></div>
+          <input type="hidden" name="clientConfirmBody" value="<%= settings.emails.clientConfirmBody %>" />
+        </div>
       </div>
       <script>
         (function () {
           var card = document.getElementById('emailCard');
           if (!card) return;
-          var last = null;
+          var last = null; // ostatnio aktywne pole: input/textarea LUB edytor RTE
+          card.querySelectorAll('.rte').forEach(function (rte) {
+            var ed = rte.querySelector('.rte-ed');
+            var hidden = rte.querySelector('input[type=hidden]');
+            if (!ed || !hidden) return;
+            ed.innerHTML = hidden.value || '';
+            var sync = function () { hidden.value = ed.innerHTML; };
+            ed.addEventListener('input', sync);
+            ed.addEventListener('blur', sync);
+            ed.addEventListener('focusin', function () { last = ed; });
+            rte.querySelectorAll('[data-cmd]').forEach(function (b) {
+              b.addEventListener('click', function () {
+                ed.focus();
+                var cmd = b.getAttribute('data-cmd');
+                if (cmd === 'createLink') { var u = prompt('Adres URL:', 'https://'); if (u) document.execCommand('createLink', false, u); }
+                else document.execCommand(cmd, false, null);
+                sync();
+              });
+            });
+          });
+          var form = card.closest('form');
+          if (form) form.addEventListener('submit', function () {
+            card.querySelectorAll('.rte').forEach(function (rte) {
+              var ed = rte.querySelector('.rte-ed'); var h = rte.querySelector('input[type=hidden]');
+              if (ed && h) h.value = ed.innerHTML;
+            });
+          });
           card.addEventListener('focusin', function (e) { if (e.target.matches('input[type=text], textarea')) last = e.target; });
           card.querySelectorAll('.ph-chip').forEach(function (chip) {
             chip.addEventListener('click', function () {
               if (!last) return;
               var t = chip.getAttribute('data-ph');
-              var s = last.selectionStart != null ? last.selectionStart : last.value.length;
-              var en = last.selectionEnd != null ? last.selectionEnd : last.value.length;
-              last.value = last.value.slice(0, s) + t + last.value.slice(en);
-              var pos = s + t.length;
-              last.focus();
-              try { last.setSelectionRange(pos, pos); } catch (_) {}
+              if (last.isContentEditable) {
+                last.focus();
+                document.execCommand('insertText', false, t);
+                last.dispatchEvent(new Event('input', { bubbles: true }));
+              } else {
+                var s = last.selectionStart != null ? last.selectionStart : last.value.length;
+                var en = last.selectionEnd != null ? last.selectionEnd : last.value.length;
+                last.value = last.value.slice(0, s) + t + last.value.slice(en);
+                var pos = s + t.length;
+                last.focus();
+                try { last.setSelectionRange(pos, pos); } catch (_) {}
+              }
             });
           });
         })();
