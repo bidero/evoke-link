@@ -99,6 +99,21 @@
         </div>
       </main>
 
+    <% } else if (L.style === 'showcase') { %>
+      <%# WeTransfer-like: pełne tło, kompaktowa karta przy boku (lewo/prawo/środek), hero nad kartą %>
+      <% const sideCls = L.cardSide === 'right' ? 'ml-auto' : (L.cardSide === 'center' ? 'mx-auto' : 'mr-auto'); %>
+      <main class="flex-1 flex items-center px-6 sm:px-10 py-10">
+        <div class="w-full max-w-md <%= sideCls %>">
+          <% if (showHero) { %>
+            <div class="mb-5 <%= L.cardSide === 'center' ? 'text-center' : ''%> <%= heroT %>">
+              <h1 class="text-3xl sm:text-4xl font-bold tracking-tight"><%= heroTitle %></h1>
+              <% if (heroSubtitle) { %><p class="mt-2 text-base <%= heroS %>"><%= heroSubtitle %></p><% } %>
+            </div>
+          <% } %>
+          <%- body %>
+        </div>
+      </main>
+
     <% } else if (L.style === 'centered') { %>
       <%# Landing: duży hero wyeksponowany nad kartą na pełnym tle %>
       <main class="flex-1 flex flex-col items-center justify-center px-6 py-10 gap-9">

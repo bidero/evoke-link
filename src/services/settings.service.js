@@ -30,7 +30,7 @@ const DEFAULTS = {
 };
 
 const ALIGNS = ['left', 'center', 'right'];
-const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner'];
+const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase'];
 const CARD_STYLES = ['solid', 'glass', 'elevated'];
 const BUTTON_STYLES = ['rounded', 'pill'];
 const PDF_TEMPLATES = ['standard', 'band', 'accent', 'proforma'];
@@ -62,7 +62,7 @@ function normLayout(l) {
   return {
     style: LAYOUT_STYLES.includes(x.style) ? x.style : DEFAULTS.layout.style,
     card: CARD_STYLES.includes(x.card) ? x.card : DEFAULTS.layout.card,
-    cardSide: ['left', 'right'].includes(x.cardSide) ? x.cardSide : DEFAULTS.layout.cardSide,
+    cardSide: ['left', 'right', 'center'].includes(x.cardSide) ? x.cardSide : DEFAULTS.layout.cardSide,
     hideName: !!x.hideName,
     heroOnBg: x.heroOnBg === undefined ? DEFAULTS.layout.heroOnBg : !!x.heroOnBg,
     applyToLogin: !!x.applyToLogin,

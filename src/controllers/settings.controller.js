@@ -105,9 +105,9 @@ async function updateSettings(req, res, next) {
 
     // --- Układ stron klienta ---
     const layout = {
-      style: ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner'].includes(b.layoutStyle) ? b.layoutStyle : 'classic',
+      style: ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase'].includes(b.layoutStyle) ? b.layoutStyle : 'classic',
       card: ['solid', 'glass', 'elevated'].includes(b.layoutCard) ? b.layoutCard : 'solid',
-      cardSide: ['left', 'right'].includes(b.cardSide) ? b.cardSide : 'right',
+      cardSide: ['left', 'right', 'center'].includes(b.cardSide) ? b.cardSide : 'right',
       hideName: b.hideName === 'on',
       heroOnBg: b.heroOnBg === 'on',
       applyToLogin: b.applyToLogin === 'on',
