@@ -93,7 +93,7 @@ router.post(
     { name: 'logo', maxCount: 1 },
     { name: 'logoDark', maxCount: 1 },
     { name: 'favicon', maxCount: 1 },
-    { name: 'bg', maxCount: 1 },
+    { name: 'bg', maxCount: 6 },
     { name: 'mailLogo', maxCount: 1 },
   ]),
   settings.updateSettings

@@ -88,6 +88,9 @@ async function updateSettings(req, res, next) {
         angle: Math.min(360, Math.max(0, parseInt(b.gradAngle, 10) || 0)),
       },
       imagePath: current.background.imagePath || null,
+      images: [],
+      rotate: b.bgRotate === 'on',
+      rotateSec: clampInt(b.bgRotateSec, 3, 30, 8),
       overlay: Math.min(80, Math.max(0, parseInt(b.bgOverlay, 10) || 0)),
       imageGradient: b.bgImageGradient === 'on',
       imageGrad: { c1: safeHex(b.imgGradC1, '#6e00a5'), c2: safeHex(b.imgGradC2, '') || '', angle: clampInt(b.imgGradAngle, 0, 360, 135) },
@@ -164,10 +167,18 @@ async function updateSettings(req, res, next) {
     if (fav) { sanitizeIfSvg(fav); data.faviconPath = `/branding/${fav.filename}`; }
     else if (b.removeFavicon === 'on') data.faviconPath = null;
 
-    // --- Plik: obraz tła ---
-    const bgImg = uploadedFile(req, 'bg');
-    if (bgImg) background.imagePath = `/branding/${bgImg.filename}`;
-    else if (b.removeBg === 'on') background.imagePath = null;
+    // --- Pliki: obrazy tła (wiele, do rotacji) ---
+    // Zacznij od obecnych, usuń zaznaczone, dołóż nowo wgrane.
+    let bgImages = Array.isArray(current.background.images) && current.background.images.length
+      ? current.background.images.slice()
+      : (current.background.imagePath ? [current.background.imagePath] : []);
+    let toRemove = b.removeBgImages;
+    if (toRemove) { if (!Array.isArray(toRemove)) toRemove = [toRemove]; bgImages = bgImages.filter((p) => !toRemove.includes(p)); }
+    if (b.removeBg === 'on') bgImages = [];
+    const bgFiles = (req.files && req.files.bg) || [];
+    bgFiles.forEach((f) => { sanitizeIfSvg(f); bgImages.push(`/branding/${f.filename}`); });
+    background.images = bgImages;
+    background.imagePath = bgImages[0] || null; // pierwszy = tło statyczne / zgodność wstecz
 
     // --- Plik: osobne logo w mailach ---
     const mailLogo = uploadedFile(req, 'mailLogo');

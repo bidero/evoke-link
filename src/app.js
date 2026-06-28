@@ -156,6 +156,7 @@ app.use(async (req, res, next) => {
     // Tło stron klienta (gradient/obraz/kolor + ziarno).
     res.locals.bgStyle = bg.bodyStyle(s.background);
     res.locals.bgOverlay = bg.overlayHtml(s.background);
+    res.locals.bgSlideshow = bg.slideshowHtml(s.background);
     res.locals.bgDark = bg.isDark(s.background);
 
     // Układ stron klienta + zmienne karty/rogów/przycisku (.evoke-card / .evoke-btn).
@@ -173,6 +174,7 @@ app.use(async (req, res, next) => {
     res.locals.darkStyleTag = '';
     res.locals.bgStyle = bg.bodyStyle(bg.DEFAULTS);
     res.locals.bgOverlay = '';
+    res.locals.bgSlideshow = '';
     res.locals.bgDark = false;
     res.locals.uiLayout = settingsService.DEFAULTS.layout;
     res.locals.surfaceStyleTag = '';

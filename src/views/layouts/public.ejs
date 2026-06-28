@@ -14,6 +14,7 @@
   <%- typeof customStyleTag !== 'undefined' ? customStyleTag : '' %>
   <script src="/js/chunked-upload.js"></script>
   <script src="/js/uploader.js"></script>
+  <script defer src="/js/bg-rotate.js"></script>
   <script defer src="/js/alpine.min.js"></script>
 </head>
 <%
@@ -29,6 +30,7 @@
   const footerText = (typeof settings !== 'undefined' && settings && settings.texts && settings.texts.footer) ? settings.texts.footer : (appName + ' · bezpieczna wymiana plików');
 %>
 <body class="client-bg min-h-screen text-slate-800 antialiased" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
+  <%- typeof bgSlideshow !== 'undefined' ? bgSlideshow : '' %>
   <%- typeof bgOverlay !== 'undefined' ? bgOverlay : '' %>
   <div class="relative z-10 min-h-screen flex flex-col">
 

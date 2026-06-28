@@ -59,6 +59,9 @@ const DEFAULTS = {
   // własny gradient: 2–3 przystanki + kąt
   custom: { c1: '#6e00a5', c2: '#a31fde', c3: '', angle: 135 },
   imagePath: null,
+  images: [], // wiele obrazów tła (do rotacji); imagePath = pierwszy (zgodność wstecz)
+  rotate: false, // slideshow — automatyczna zmiana obrazów
+  rotateSec: 8, // co ile sekund (3..30)
   overlay: 0, // przyciemnienie obrazu 0..80 (%)
   imageGradient: false, // nakładka gradientu na obraz
   imageGrad: { c1: '#6e00a5', c2: '', angle: 135 }, // kolory nakładki na obraz (c2 pusty = zanik)
@@ -102,12 +105,19 @@ function normalize(bg) {
   const preset = PRESETS[b.preset] ? b.preset : DEFAULTS.preset;
   const overlay = Math.min(80, Math.max(0, parseInt(b.overlay, 10) || 0));
   const grainStrength = Math.min(100, Math.max(0, parseInt(b.grainStrength, 10) || (b.grainStrength === 0 ? 0 : DEFAULTS.grainStrength)));
+  // Lista obrazów (do rotacji). Zgodność wstecz: gdy brak listy, użyj pojedynczego imagePath.
+  let images = Array.isArray(b.images) ? b.images.filter((p) => typeof p === 'string' && p) : [];
+  if (!images.length && b.imagePath) images = [b.imagePath];
+  const rs = parseInt(b.rotateSec, 10);
   return {
     type,
     preset,
     color: safeHex(b.color, DEFAULTS.color),
     custom: normCustom(b.custom),
-    imagePath: b.imagePath || null,
+    imagePath: images[0] || null, // pierwszy obraz z listy = tło statyczne (źródło prawdy)
+    images,
+    rotate: !!b.rotate,
+    rotateSec: Math.min(30, Math.max(3, Number.isFinite(rs) ? rs : DEFAULTS.rotateSec)),
     overlay,
     imageGradient: !!b.imageGradient,
     imageGrad: normImageGrad(b.imageGrad),
@@ -122,8 +132,9 @@ function bodyStyle(bg) {
   const b = normalize(bg);
   if (b.type === 'solid') return `background:${b.color};`;
   if (b.type === 'custom') return `background:${customCss(b.custom)};`;
-  if (b.type === 'image' && b.imagePath) {
-    return `background:#0f172a url('${b.imagePath}') center/cover no-repeat fixed;`;
+  if (b.type === 'image') {
+    const img = b.images[0] || b.imagePath;
+    if (img) return `background:#0f172a url('${img}') center/cover no-repeat fixed;`;
   }
   return `background:${(PRESETS[b.preset] || PRESETS[DEFAULT_PRESET]).css};`;
 }
@@ -189,4 +200,14 @@ function overlayHtml(bg) {
   return html;
 }
 
-module.exports = { PRESETS, DEFAULTS, normalize, bodyStyle, overlayHtml, isDark, customCss };
+// Warstwy slideshow (rotacja obrazów) — pełnoekranowe, pod treścią; cykluje je /js/bg-rotate.js.
+function slideshowHtml(bg) {
+  const b = normalize(bg);
+  if (b.type !== 'image' || !b.rotate || b.images.length < 2) return '';
+  const layers = b.images.map((src, i) =>
+    `<div class="bg-slide" style="position:fixed;inset:0;z-index:0;pointer-events:none;background:#0f172a url('${src}') center/cover no-repeat fixed;opacity:${i === 0 ? 1 : 0};transition:opacity 1.2s ease;"></div>`
+  ).join('');
+  return `<div data-bg-rotate="${b.rotateSec}" aria-hidden="true">${layers}</div>`;
+}
+
+module.exports = { PRESETS, DEFAULTS, normalize, bodyStyle, overlayHtml, slideshowHtml, isDark, customCss };
