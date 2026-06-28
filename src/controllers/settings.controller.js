@@ -9,6 +9,7 @@ const { sanitizeSvg, looksLikeSvg } = require('../utils/svgSanitize');
 const { sanitizeCss } = require('../utils/css');
 const { sanitizeEmailHtml } = require('../utils/htmlEmail');
 const background = require('../utils/background');
+const fonts = require('../utils/fonts');
 
 // parseInt z zakresem i domyślną wartością. Ważne: ZACHOWUJE 0
 // (wzorzec `parseInt(x) || dflt` mylił 0 z brakiem wartości — przez to kąt 0° nie zapisywał się).
@@ -117,6 +118,7 @@ async function updateSettings(req, res, next) {
       radius: Math.min(40, Math.max(0, parseInt(b.layoutRadius, 10) >= 0 ? parseInt(b.layoutRadius, 10) : 24)),
       button: ['rounded', 'pill'].includes(b.layoutButton) ? b.layoutButton : 'rounded',
       stickyHeader: b.stickyHeader === 'on',
+      font: fonts.PAIRS[b.layoutFont] ? b.layoutFont : 'system',
     };
 
     // --- Wydruk PDF rozliczenia ---

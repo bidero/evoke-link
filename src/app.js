@@ -13,6 +13,7 @@ const { fileMeta } = require('./utils/fileIcon');
 const { logoTag } = require('./utils/logo');
 const color = require('./utils/color');
 const bg = require('./utils/background');
+const fonts = require('./utils/fonts');
 const { sanitizeCss } = require('./utils/css');
 const settingsService = require('./services/settings.service');
 const { injectUser } = require('./middleware/auth');
@@ -164,6 +165,7 @@ app.use(async (req, res, next) => {
     // (tam `layout` to nazwa pliku układu przekazywana przez kontrolery).
     res.locals.uiLayout = s.layout;
     res.locals.surfaceStyleTag = surfaceVars(s.layout);
+    res.locals.typographyStyleTag = fonts.styleTag(s.layout && s.layout.font);
 
     // Własny CSS admina (escape hatch) — wstrzykiwany do wszystkich layoutów.
     res.locals.customStyleTag = s.customCss ? `<style>${sanitizeCss(s.customCss)}</style>` : '';
@@ -178,6 +180,7 @@ app.use(async (req, res, next) => {
     res.locals.bgDark = false;
     res.locals.uiLayout = settingsService.DEFAULTS.layout;
     res.locals.surfaceStyleTag = '';
+    res.locals.typographyStyleTag = '';
     res.locals.customStyleTag = '';
   }
   next();
