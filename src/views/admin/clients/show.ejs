@@ -204,6 +204,8 @@
                 </select>
                 <input name="label" type="text" value="<%= ch.label || '' %>" placeholder="Nazwa pozycji" class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-brand-500 outline-none <%= ch.paidAt ? 'text-slate-400' : '' %>" />
                 <input name="date" type="date" value="<%= ch.date ? new Date(ch.date).toISOString().slice(0,10) : '' %>" title="Data pozycji" class="shrink-0 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none" />
+                <% const _od = ch.dueDate && !ch.paidAt && new Date(ch.dueDate) < new Date(); %>
+                <input name="dueDate" type="date" value="<%= ch.dueDate ? new Date(ch.dueDate).toISOString().slice(0,10) : '' %>" title="Termin płatności<%= _od ? ' — po terminie!' : '' %>" class="shrink-0 rounded-lg border px-2 py-1.5 text-sm outline-none <%= _od ? 'border-red-400 text-red-600' : 'border-slate-300 focus:border-brand-500' %>" />
                 <input name="amount" type="text" inputmode="decimal" value="<%= (ch.amount/100).toFixed(2) %>" title="Kwota (zł)" class="shrink-0 w-24 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-right tabular-nums focus:border-brand-500 outline-none" />
                 <button type="submit" title="Zapisz zmiany" class="shrink-0 rounded-lg border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 px-3 py-1.5 text-sm font-medium transition">Zapisz</button>
                 <button type="submit" formaction="/admin/clients/<%= client.id %>/charges/<%= ch.id %>/delete" onclick="return confirm('Usunąć pozycję rozliczeniową?')" title="Usuń pozycję" class="shrink-0 p-1.5 text-slate-300 hover:text-red-600 transition"><%- icon('trash', { size: 16 }) %></button>
@@ -224,6 +226,7 @@
           </select>
           <input name="label" type="text" placeholder="Nazwa (np. Sesja, Zaliczka)" class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
           <input name="date" type="date" value="<%= new Date().toISOString().slice(0,10) %>" title="Data pozycji" class="shrink-0 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-brand-500 outline-none" />
+          <input name="dueDate" type="date" title="Termin płatności (opcjonalnie)" class="shrink-0 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-brand-500 outline-none" />
           <input name="amount" type="text" inputmode="decimal" required placeholder="Kwota zł" class="shrink-0 w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm text-right focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
           <button type="submit" class="shrink-0 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">Dodaj</button>
         </form>

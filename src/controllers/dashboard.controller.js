@@ -9,17 +9,18 @@ async function showDashboard(req, res, next) {
   try {
     // Liczniki liczymy odpornie: jeśli baza jest jeszcze pusta/niezmigrowana,
     // pokazujemy zera zamiast wywalać stronę.
-    let stats = { transfers: 0, projects: 0, pendingUploads: 0, storageBytes: 0, outstanding: 0 };
+    let stats = { transfers: 0, projects: 0, pendingUploads: 0, storageBytes: 0, outstanding: 0, overdue: 0 };
     let recent = [];
     try {
-      const [transfers, projects, pendingUploads, recentEvents, outstanding] = await Promise.all([
+      const [transfers, projects, pendingUploads, recentEvents, outstanding, overdue] = await Promise.all([
         prisma.transfer.count({ where: { status: 'active' } }),
         prisma.project.count({ where: { status: 'active' } }),
         prisma.transfer.count({ where: { direction: 'incoming', status: 'active' } }),
         events.recent(8),
         chargeService.totalOutstanding(),
+        chargeService.overdueTotal(),
       ]);
-      stats = { transfers, projects, pendingUploads, storageBytes: storage.totalUsedBytes(), outstanding };
+      stats = { transfers, projects, pendingUploads, storageBytes: storage.totalUsedBytes(), outstanding, overdue };
       recent = recentEvents;
     } catch (_) {
       // baza nie jest jeszcze gotowa — zostają zera

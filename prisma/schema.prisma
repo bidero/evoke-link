@@ -75,7 +75,9 @@ model Charge {
   label     String?
   amount    Int       @default(0) // w groszach
   date      DateTime? // data pozycji (do filtrowania zakresem i na wydruku)
+  dueDate   DateTime? // termin płatności (wiekowanie należności + przypomnienia)
   paidAt    DateTime?
+  remindedAt DateTime? // kiedy ostatnio wysłano przypomnienie o tej pozycji
   note      String?
   createdAt DateTime  @default(now())
 

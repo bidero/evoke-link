@@ -44,7 +44,7 @@ function listByProject(projectId) {
 }
 
 // Tworzy pozycję projektową (projectId) ALBO bezprojektową (clientId). Zawsze jedno z nich.
-function create({ projectId, clientId, label, amount, note, date }) {
+function create({ projectId, clientId, label, amount, note, date, dueDate }) {
   const pid = projectId ? Number(projectId) : null;
   const cid = clientId ? Number(clientId) : null;
   return prisma.charge.create({
@@ -54,6 +54,7 @@ function create({ projectId, clientId, label, amount, note, date }) {
       label: label && label.trim() ? label.trim() : null,
       amount: Number(amount) || 0,
       date: date ? new Date(date) : new Date(),
+      dueDate: dueDate ? new Date(dueDate) : null,
       note: note && note.trim() ? note.trim() : null,
     },
   });
@@ -61,7 +62,7 @@ function create({ projectId, clientId, label, amount, note, date }) {
 
 // Edycja pozycji + ewentualne przeniesienie między projektem a „bez projektu".
 // fallbackClientId — klient, do którego trafia pozycja po wybraniu „bez projektu".
-function update(id, { label, amount, date, projectId }, fallbackClientId) {
+function update(id, { label, amount, date, dueDate, projectId }, fallbackClientId) {
   const pid = projectId ? Number(projectId) : null;
   const data = {
     label: label && label.trim() ? label.trim() : null,
@@ -70,6 +71,7 @@ function update(id, { label, amount, date, projectId }, fallbackClientId) {
     clientId: pid ? null : (fallbackClientId != null ? Number(fallbackClientId) : null),
   };
   if (date !== undefined) data.date = date ? new Date(date) : null;
+  if (dueDate !== undefined) data.dueDate = dueDate ? new Date(dueDate) : null;
   return prisma.charge.update({ where: { id: Number(id) }, data });
 }
 
@@ -153,4 +155,17 @@ async function totalOutstanding() {
   return r._sum.amount || 0;
 }
 
-module.exports = { parseAmount, totals, getById, getByIdWithProject, ownerClientId, directCount, listByProject, create, update, setPaid, remove, clientTotals, outstandingByClients, totalOutstanding, forStatement };
+// Suma przeterminowanych należności (nierozliczone, dueDate < dziś) — kafelek pulpitu.
+async function overdueTotal() {
+  const r = await prisma.charge.aggregate({
+    _sum: { amount: true },
+    where: {
+      paidAt: null,
+      dueDate: { not: null, lt: new Date() },
+      OR: [{ projectId: null }, { project: { status: { not: 'deleted' } } }],
+    },
+  });
+  return r._sum.amount || 0;
+}
+
+module.exports = { parseAmount, totals, getById, getByIdWithProject, ownerClientId, directCount, listByProject, create, update, setPaid, remove, clientTotals, outstandingByClients, totalOutstanding, overdueTotal, forStatement };

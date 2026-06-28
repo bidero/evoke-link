@@ -181,7 +181,7 @@ async function addCharge(req, res, next) {
     if (amount > 0) {
       const projectId = await clientProjectId(parseProjectId(req.body.projectId), cid);
       const label = (req.body.label || '').trim();
-      await chargeService.create({ projectId, clientId: projectId ? null : cid, label, amount, date: req.body.date });
+      await chargeService.create({ projectId, clientId: projectId ? null : cid, label, amount, date: req.body.date, dueDate: req.body.dueDate });
       await events.log({
         type: 'updated',
         message: `Dodano pozycję rozliczeniową${label ? ': ' + label : ''} — ${fmt.money(amount)}`,
@@ -205,7 +205,7 @@ async function updateCharge(req, res, next) {
       const amount = chargeService.parseAmount(req.body.amount);
       if (amount > 0) {
         const projectId = await clientProjectId(parseProjectId(req.body.projectId), cid);
-        await chargeService.update(charge.id, { label: req.body.label, amount, date: req.body.date, projectId }, cid);
+        await chargeService.update(charge.id, { label: req.body.label, amount, date: req.body.date, dueDate: req.body.dueDate, projectId }, cid);
       }
     }
     res.redirect(`/admin/clients/${cid}?tab=rozliczenia`);
