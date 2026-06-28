@@ -22,6 +22,23 @@ const PRESETS = {
     label: 'Zmierzch (ciemny)',
     css: 'linear-gradient(160deg, rgb(var(--brand-900)) 0%, rgb(var(--brand-700)) 60%, rgb(var(--brand-800)) 100%)',
   },
+  // --- Art pack: kuratorowane tła „bohater" (CSS, brandowe, bez uploadu) ---
+  mesh: {
+    label: 'Mesh (kolorowa mgła)',
+    css: 'radial-gradient(at 18% 22%, rgb(var(--brand-200)) 0px, transparent 50%), radial-gradient(at 82% 8%, rgb(var(--brand-100)) 0px, transparent 50%), radial-gradient(at 8% 82%, rgb(var(--brand-300)) 0px, transparent 50%), radial-gradient(at 88% 88%, rgb(var(--brand-50)) 0px, transparent 50%), #ffffff',
+  },
+  spotlight: {
+    label: 'Reflektor',
+    css: 'radial-gradient(80% 60% at 50% -10%, rgb(var(--brand-200)) 0%, transparent 60%), linear-gradient(180deg, #ffffff 0%, rgb(var(--brand-50)) 100%)',
+  },
+  midnight: {
+    label: 'Mesh nocny (ciemny)',
+    css: 'radial-gradient(at 15% 15%, rgb(var(--brand-700)) 0px, transparent 50%), radial-gradient(at 85% 10%, rgb(var(--brand-800)) 0px, transparent 55%), radial-gradient(at 50% 92%, rgb(var(--brand-900)) 0px, transparent 50%), #0b0b14',
+  },
+  nebula: {
+    label: 'Mgławica (ciemny)',
+    css: 'radial-gradient(60% 80% at 20% 20%, rgb(var(--brand-600)) 0%, transparent 55%), radial-gradient(70% 70% at 90% 80%, rgb(var(--brand-800)) 0%, transparent 55%), linear-gradient(160deg, #0f0a1f 0%, rgb(var(--brand-900)) 100%)',
+  },
   plain: {
     label: 'Czysta biel',
     css: '#ffffff',
@@ -31,7 +48,7 @@ const PRESETS = {
 const DEFAULT_PRESET = 'brand-soft';
 
 // Czy preset jest ciemny (do wyboru jasnego tekstu na stronie).
-const DARK_PRESETS = new Set(['dusk']);
+const DARK_PRESETS = new Set(['dusk', 'midnight', 'nebula']);
 
 const TYPES = ['gradient', 'custom', 'image', 'solid'];
 
