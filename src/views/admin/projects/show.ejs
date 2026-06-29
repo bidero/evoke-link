@@ -121,20 +121,24 @@
         <div class="px-5 py-6 text-center text-sm text-slate-400">Brak pozycji rozliczeniowych.</div>
       <% } %>
 
-      <form method="POST" action="/admin/projects/<%= project.id %>/charges" class="flex flex-wrap items-end gap-2 px-5 py-3 border-t border-slate-100 bg-slate-50">
-        <label class="flex-1 min-w-[150px] text-[11px] text-slate-500">Nazwa
-          <input name="label" type="text" placeholder="np. Sesja, Zaliczka" class="mt-0.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-        </label>
-        <label class="text-[11px] text-slate-500">Data
-          <input name="date" type="date" value="<%= new Date().toISOString().slice(0,10) %>" class="mt-0.5 w-36 rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-        </label>
-        <label class="text-[11px] text-slate-500">Termin
-          <input name="dueDate" type="date" title="Termin płatności (opcjonalnie)" class="mt-0.5 w-36 rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-        </label>
-        <label class="text-[11px] text-slate-500">Kwota zł
-          <input name="amount" type="text" inputmode="decimal" required placeholder="0,00" class="mt-0.5 w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-        </label>
-        <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">Dodaj</button>
+      <form method="POST" action="/admin/projects/<%= project.id %>/charges" class="px-5 py-3 border-t border-slate-100 bg-slate-50 space-y-2">
+        <div class="flex flex-wrap items-end gap-2">
+          <label class="flex-1 min-w-[150px] text-[11px] text-slate-500">Nazwa
+            <input name="label" type="text" placeholder="np. Sesja, Zaliczka" class="mt-0.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          </label>
+          <label class="text-[11px] text-slate-500">Kwota zł
+            <input name="amount" type="text" inputmode="decimal" required placeholder="0,00" class="mt-0.5 w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          </label>
+        </div>
+        <div class="flex flex-wrap items-end gap-2">
+          <label class="text-[11px] text-slate-500">Data
+            <input name="date" type="date" value="<%= new Date().toISOString().slice(0,10) %>" class="mt-0.5 w-40 rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          </label>
+          <label class="text-[11px] text-slate-500">Termin
+            <input name="dueDate" type="date" title="Termin płatności (opcjonalnie)" class="mt-0.5 w-40 rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          </label>
+          <button type="submit" class="ml-auto rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2 transition whitespace-nowrap">Dodaj</button>
+        </div>
       </form>
     </div>
   </div>
