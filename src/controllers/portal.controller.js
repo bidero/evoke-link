@@ -90,7 +90,7 @@ async function submitUpload(req, res, next) {
 
     const { name, email } = req.body;
     const t = await transferService.createUploadRequest({
-      title: `Panel klienta — ${new Date().toLocaleDateString('pl-PL')}`,
+      title: `${project.name} — ${new Date().toLocaleDateString('pl-PL')}`,
       projectId: project.id,
       clientVisible: true,
     });
