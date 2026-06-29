@@ -110,12 +110,11 @@ async function updateSettings(req, res, next) {
       size: Math.min(120, Math.max(16, parseInt(b.logoSize, 10) || 36)),
       align: ['left', 'center', 'right'].includes(b.logoAlign) ? b.logoAlign : 'left',
       darkPath: current.logo.darkPath || null, // zachowaj; nadpisywane niżej przy uploadzie/usuwaniu
-      panelPath: current.logo.panelPath || null, // niezależne logo dla układu „Panel na tle"
     };
 
     // --- Układ stron klienta ---
     const layout = {
-      style: ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel', 'sidebar', 'corner'].includes(b.layoutStyle) ? b.layoutStyle : 'classic',
+      style: ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel', 'panel-bg', 'sidebar', 'corner'].includes(b.layoutStyle) ? b.layoutStyle : 'classic',
       card: ['solid', 'glass', 'elevated'].includes(b.layoutCard) ? b.layoutCard : 'solid',
       cardSide: ['left', 'right', 'center'].includes(b.cardSide) ? b.cardSide : 'right',
       hideName: b.hideName === 'on',
@@ -174,10 +173,6 @@ async function updateSettings(req, res, next) {
     const logoDark = uploadedFile(req, 'logoDark');
     if (logoDark) { sanitizeIfSvg(logoDark); data.logo.darkPath = `/branding/${logoDark.filename}`; }
     else if (b.removeLogoDark === 'on') data.logo.darkPath = null;
-
-    const logoPanel = uploadedFile(req, 'logoPanel');
-    if (logoPanel) { sanitizeIfSvg(logoPanel); data.logo.panelPath = `/branding/${logoPanel.filename}`; }
-    else if (b.removeLogoPanel === 'on') data.logo.panelPath = null;
 
     const fav = uploadedFile(req, 'favicon');
     if (fav) { sanitizeIfSvg(fav); data.faviconPath = `/branding/${fav.filename}`; }

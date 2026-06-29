@@ -13,7 +13,7 @@ const DEFAULTS = {
   colors: { primary: '#6e00a5', adminAccent: '', adminText: '', adminSidebar: '#ffffff', adminBg: '#f8fafc', darkBg: '#0f172a', darkSurface: '#1e293b', darkText: '#e5e7eb' },
   texts: { heroTitle: '', heroSubtitle: '', footer: 'Evoke LINK · bezpieczna wymiana plików' },
   background: { ...background.DEFAULTS },
-  logo: { size: 36, align: 'left', darkPath: null, panelPath: null }, // wysokość px, wyrównanie, osobne logo (tryb ciemny / układ „Panel na tle")
+  logo: { size: 36, align: 'left', darkPath: null }, // wysokość px, wyrównanie, osobne logo dla trybu ciemnego
   // Układ stron klienta. style: classic (obecny) | centered | split.
   // card: solid | glass | elevated. radius w px. button: rounded | pill.
   layout: { style: 'classic', card: 'solid', cardSide: 'right', hideName: false, heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded', stickyHeader: false, font: 'system' },
@@ -32,7 +32,7 @@ const DEFAULTS = {
 };
 
 const ALIGNS = ['left', 'center', 'right'];
-const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel', 'sidebar', 'corner'];
+const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel', 'panel-bg', 'sidebar', 'corner'];
 const CARD_STYLES = ['solid', 'glass', 'elevated'];
 const BUTTON_STYLES = ['rounded', 'pill'];
 const PDF_TEMPLATES = ['standard', 'band', 'accent', 'proforma'];
@@ -55,7 +55,7 @@ function normLogo(l) {
   const x = l && typeof l === 'object' ? l : {};
   const size = Math.min(120, Math.max(16, parseInt(x.size, 10) || DEFAULTS.logo.size));
   const align = ALIGNS.includes(x.align) ? x.align : DEFAULTS.logo.align;
-  return { size, align, darkPath: x.darkPath || null, panelPath: x.panelPath || null };
+  return { size, align, darkPath: x.darkPath || null };
 }
 
 function normLayout(l) {
