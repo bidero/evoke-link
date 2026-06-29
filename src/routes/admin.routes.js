@@ -68,6 +68,7 @@ router.post('/clients/:id/send-panel', clients.sendPanel);
 router.get('/clients/:id/edit', clients.showEditForm);
 router.post('/clients/:id/note', clients.addNote);
 router.get('/clients/:id/rozliczenie.pdf', clients.clientStatementPdf);
+router.get('/clients/:id/pozycje.csv', clients.clientChargesCsv);
 router.post('/clients/:id/rozliczenie/send', clients.sendStatement);
 router.post('/clients/:id/charges', clients.addCharge);                       // dodaj pozycję (projekt lub „bez projektu")
 router.post('/clients/:id/charges/:chargeId/toggle', clients.toggleCharge);

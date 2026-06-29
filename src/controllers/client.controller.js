@@ -143,6 +143,37 @@ async function clientStatementPdf(req, res, next) {
   }
 }
 
+// Eksport pozycji klienta do CSV (do księgowości) — respektuje ten sam filtr co wydruk.
+async function clientChargesCsv(req, res, next) {
+  try {
+    const client = await clientService.getById(req.params.id);
+    if (!client) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
+    const { from, to, status } = req.query;
+    let ids = req.query.ids;
+    if (ids && !Array.isArray(ids)) ids = [ids];
+    const charges = await chargeService.forStatement(client.id, { from, to, status, ids });
+
+    const SEP = ';'; // średnik — Excel PL otwiera w kolumnach bez importu
+    const cell = (v) => { const s = String(v == null ? '' : v); return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const money = (g) => (g / 100).toFixed(2).replace('.', ',');
+    const date = (d) => (d ? fmt.dateOnly(d) : '');
+    const rows = [['Data', 'Termin', 'Projekt', 'Pozycja', 'Kwota', 'Status', 'Rozliczono']];
+    charges.forEach((c) => rows.push([
+      date(c.date), date(c.dueDate),
+      (c.project && c.project.name) || 'Bez projektu',
+      c.label || 'Pozycja', money(c.amount),
+      c.paidAt ? 'Rozliczone' : 'Do zapłaty', date(c.paidAt),
+    ]));
+    const csv = '﻿' + rows.map((r) => r.map(cell).join(SEP)).join('\r\n') + '\r\n'; // BOM dla Excela
+    const slug = String(client.name || 'klient').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'klient';
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="pozycje-${slug}.csv"`);
+    res.send(csv);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Wysyłka rozliczenia/proformy do klienta e-mailem (PDF w załączniku, respektuje filtr).
 async function sendStatement(req, res, next) {
   try {
@@ -282,4 +313,4 @@ async function showClientPortal(req, res, next) {
   }
 }
 
-module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, sendStatement, deleteClient, sendPanel, showClientPortal };
+module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, showClientPortal };

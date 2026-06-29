@@ -265,6 +265,7 @@
           </div>
           <div class="flex flex-col sm:flex-row gap-2">
             <button type="submit" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition"><%- icon('file', { size: 15 }) %> Pobierz PDF</button>
+            <button type="submit" formaction="/admin/clients/<%= client.id %>/pozycje.csv" title="Eksport pozycji do CSV (księgowość)" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition"><%- icon('sheet', { size: 15 }) %> Pobierz CSV</button>
             <% if (client.email) { %>
               <button type="submit" formaction="/admin/clients/<%= client.id %>/rozliczenie/send" formmethod="post" formtarget="_self" title="Wyślij PDF na <%= client.email %>" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition"><%- icon('mail', { size: 15, cls: '' }) %> Wyślij e-mailem</button>
             <% } %>
