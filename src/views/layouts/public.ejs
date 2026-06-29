@@ -8,6 +8,25 @@
   <title><%= typeof title !== 'undefined' ? title + ' — ' + appName : appName %></title>
   <link rel="stylesheet" href="/css/app.css" />
   <% if (typeof settings !== 'undefined' && settings && settings.faviconPath) { %><link rel="icon" href="<%= settings.faviconPath %>" /><% } %>
+  <%
+    // Podgląd linku (OG/Twitter) — gdy klient wkleja link np. w czacie/mailu.
+    // UWAGA: tylko ogólne dane (tytuł strony, nazwa, logo) — NIE wyciekamy nazw plików.
+    var _ogTitle = (typeof title !== 'undefined' && title) ? title : appName;
+    var _ogDesc = (typeof metaDesc !== 'undefined' && metaDesc) ? metaDesc
+      : ((typeof settings !== 'undefined' && settings && settings.texts && settings.texts.heroSubtitle) ? settings.texts.heroSubtitle : (appName + ' — bezpieczna wymiana plików'));
+    var _ogImgPath = (typeof settings !== 'undefined' && settings) ? (settings.logoPath || settings.faviconPath || '') : '';
+    var _ogImg = _ogImgPath ? ((typeof appUrl !== 'undefined' ? appUrl : '') + _ogImgPath) : '';
+  %>
+  <meta name="description" content="<%= _ogDesc %>" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="<%= appName %>" />
+  <meta property="og:title" content="<%= _ogTitle %>" />
+  <meta property="og:description" content="<%= _ogDesc %>" />
+  <% if (typeof canonicalUrl !== 'undefined' && canonicalUrl) { %><meta property="og:url" content="<%= canonicalUrl %>" /><% } %>
+  <% if (_ogImg) { %><meta property="og:image" content="<%= _ogImg %>" /><meta name="twitter:image" content="<%= _ogImg %>" /><% } %>
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="<%= _ogTitle %>" />
+  <meta name="twitter:description" content="<%= _ogDesc %>" />
   <%- typeof brandStyleTag !== 'undefined' ? brandStyleTag : '' %>
   <%- typeof surfaceStyleTag !== 'undefined' ? surfaceStyleTag : '' %>
   <%- typeof darkStyleTag !== 'undefined' ? darkStyleTag : '' %>

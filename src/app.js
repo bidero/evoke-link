@@ -119,6 +119,8 @@ function surfaceVars(layout) {
 }
 
 app.use(async (req, res, next) => {
+  res.locals.appUrl = config.appUrl;
+  res.locals.canonicalUrl = config.appUrl + req.path; // og:url / kanoniczny link (bez query)
   try {
     const s = await settingsService.get();
     res.locals.settings = s;
