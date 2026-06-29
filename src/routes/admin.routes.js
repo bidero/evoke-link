@@ -9,6 +9,7 @@ const projects = require('../controllers/project.controller');
 const clients = require('../controllers/client.controller');
 const notifications = require('../controllers/notification.controller');
 const settings = require('../controllers/settings.controller');
+const search = require('../controllers/search.controller');
 const account = require('../controllers/account.controller');
 const brandingUpload = require('../middleware/brandingUpload');
 const events = require('../services/event.service');
@@ -28,6 +29,7 @@ router.use(async (req, res, next) => {
 });
 
 router.get('/', showDashboard);
+router.get('/search', search.index);
 
 // Transfery. Ważne: trasy z konkretnym słowem (new, new-upload, upload)
 // muszą być PRZED trasami z :id, żeby Express nie potraktował ich jak id.

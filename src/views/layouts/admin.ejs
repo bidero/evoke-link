@@ -70,6 +70,13 @@
           <button type="button" class="md:hidden opacity-70 hover:opacity-100" @click="nav = true" aria-label="Otwórz menu"><%- icon('menu', { size: 22, cls: '' }) %></button>
           <h1 class="text-lg font-semibold truncate"><%= typeof title !== 'undefined' ? title : '' %></h1>
         </div>
+        <form method="GET" action="/admin/search" class="hidden sm:block flex-1 max-w-xs mx-4">
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><%- icon('search', { size: 15, cls: '' }) %></span>
+            <input name="q" value="<%= typeof q !== 'undefined' ? q : '' %>" placeholder="Szukaj…" aria-label="Szukaj"
+                   class="w-full rounded-lg border border-slate-300 bg-white/80 pl-9 pr-3 py-1.5 text-sm text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          </div>
+        </form>
         <div class="flex items-center gap-4">
           <button type="button" onclick="window.toggleTheme&&window.toggleTheme()" class="opacity-70 hover:opacity-100" title="Tryb jasny/ciemny" aria-label="Przełącz tryb">
             <span class="dark:hidden"><%- icon('moon', { size: 19, cls: '' }) %></span>

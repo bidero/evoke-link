@@ -1,0 +1,75 @@
+<div class="mb-5">
+  <h1 class="text-xl font-semibold text-slate-800">Wyszukiwanie</h1>
+  <form method="GET" action="/admin/search" class="mt-3 max-w-lg">
+    <div class="relative">
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><%- icon('search', { size: 16, cls: '' }) %></span>
+      <input name="q" value="<%= q %>" placeholder="Szukaj klientów, projektów, transferów…" autofocus
+             class="w-full rounded-lg border border-slate-300 pl-9 pr-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+    </div>
+  </form>
+</div>
+
+<% if (!q || q.length < 2) { %>
+  <p class="text-sm text-slate-400">Wpisz co najmniej 2 znaki.</p>
+<% } else { %>
+  <% const total = results.clients.length + results.projects.length + results.transfers.length; %>
+  <% if (!total) { %>
+    <p class="text-sm text-slate-400">Brak wyników dla „<%= q %>".</p>
+  <% } else { %>
+    <div class="space-y-5">
+
+      <% if (results.clients.length) { %>
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div class="px-5 py-3 border-b border-slate-100 text-sm font-medium text-slate-700 flex items-center gap-2"><%- icon('mail', { size: 15 }) %> Klienci (<%= results.clients.length %>)</div>
+          <ul class="divide-y divide-slate-100">
+            <% results.clients.forEach(function(c){ %>
+              <li><a href="/admin/clients/<%= c.id %>" class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 transition">
+                <span class="min-w-0">
+                  <span class="block text-sm text-slate-800 truncate"><%= c.name %></span>
+                  <% const _sub = [c.company, c.email, c.phone].filter(Boolean).join(' · '); %>
+                  <% if (_sub) { %><span class="block text-xs text-slate-400 truncate"><%= _sub %></span><% } %>
+                </span>
+                <span class="text-xs text-slate-400 shrink-0"><%= c._count.projects %> proj.</span>
+              </a></li>
+            <% }); %>
+          </ul>
+        </div>
+      <% } %>
+
+      <% if (results.projects.length) { %>
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div class="px-5 py-3 border-b border-slate-100 text-sm font-medium text-slate-700 flex items-center gap-2"><%- icon('folder', { size: 15 }) %> Projekty (<%= results.projects.length %>)</div>
+          <ul class="divide-y divide-slate-100">
+            <% results.projects.forEach(function(p){ %>
+              <li><a href="/admin/projects/<%= p.id %>" class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 transition">
+                <span class="min-w-0">
+                  <span class="block text-sm text-slate-800 truncate"><%= p.name %></span>
+                  <span class="block text-xs text-slate-400 truncate"><%= (p.client && p.client.name) || p.clientName || '—' %> · <%= p._count.transfers %> transfer(ów)</span>
+                </span>
+                <% if (p.status === 'archived') { %><span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 shrink-0">archiwum</span><% } %>
+              </a></li>
+            <% }); %>
+          </ul>
+        </div>
+      <% } %>
+
+      <% if (results.transfers.length) { %>
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+          <div class="px-5 py-3 border-b border-slate-100 text-sm font-medium text-slate-700 flex items-center gap-2"><%- icon('upload', { size: 15 }) %> Transfery (<%= results.transfers.length %>)</div>
+          <ul class="divide-y divide-slate-100">
+            <% results.transfers.forEach(function(t){ %>
+              <li><a href="/admin/transfers/<%= t.id %>" class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition">
+                <span class="shrink-0"><% if (t.direction === 'incoming') { %><%- icon('download', { size: 15, cls: 'text-sky-600' }) %><% } else { %><%- icon('upload', { size: 15 }) %><% } %></span>
+                <span class="min-w-0 flex-1">
+                  <span class="block text-sm text-slate-700 truncate"><%= t.title || ('Transfer ' + t.token) %></span>
+                  <span class="block text-xs text-slate-400 truncate"><%= t._count.files %> plików<%= t.project ? ' · ' + t.project.name : '' %> · <%= fmt.date(t.createdAt) %></span>
+                </span>
+              </a></li>
+            <% }); %>
+          </ul>
+        </div>
+      <% } %>
+
+    </div>
+  <% } %>
+<% } %>
