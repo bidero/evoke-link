@@ -25,6 +25,7 @@ const DEFAULTS = {
     panelSubject: '', panelIntro: '',
     uploadSubject: '', downloadSubject: '',
     clientConfirm: false, clientConfirmSubject: '', clientConfirmBody: '',
+    reminders: false, reminderSubject: '', reminderIntro: '',
   },
   // Wydruk PDF rozliczenia: szablon + wysokość logo (px) + dane sprzedawcy na dokument.
   pdf: { template: 'standard', docType: 'rozliczenie', logoHeight: 48, seller: { name: '', address: '', nip: '', bank: '' } },

@@ -96,6 +96,13 @@ Spójna kopia bazy (`VACUUM INTO`) + pliki transferów spakowane ZIP-em do `back
 ```
 Konfiguracja w `.env`: `BACKUP_DIR` (domyślnie `./backups`), `BACKUP_KEEP` (domyślnie 14). Odtworzenie = rozpakuj wybrany ZIP: `evoke.db` → `storage/`, `transfers/` → `storage/transfers/`.
 
+### Przypomnienia o płatności (cron)
+Maile do klientów o przeterminowanych pozycjach (wymaga włączenia w Ustawieniach → E-mail oraz działającego SMTP):
+```
+0 8 * * *  cd ~/domains/transfer.twojadomena.pl/app && node src/jobs/reminders.job.js
+```
+Anty-spam: jeden klient nie częściej niż co `REMIND_EVERY_DAYS` (`.env`, domyślnie 7 dni).
+
 ---
 
 ## Ważne zasady projektu

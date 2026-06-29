@@ -247,6 +247,35 @@ async function sendClientStatement({ to, client, pdfBuffer, filename, title }) {
   });
 }
 
+// Przypomnienie o płatności — lista przeterminowanych pozycji + suma (cron reminders.job).
+async function sendPaymentReminder({ to, client, charges, total }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const em = s.emails || {};
+  const appName = s.appName || 'Evoke LINK';
+  const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const bank = (s.pdf && s.pdf.seller && s.pdf.seller.bank) || '';
+  const money = (g) => (g / 100).toFixed(2).replace('.', ',') + ' zł';
+  const date = (d) => new Date(d).toLocaleDateString('pl-PL');
+  const intro = em.reminderIntro || 'Przypominamy o nierozliczonych pozycjach po terminie płatności:';
+  const rows = charges.map((c) =>
+    `<tr><td style="padding:6px 0;border-top:1px solid #e2e8f0">${esc(c.label || 'Pozycja')}</td>` +
+    `<td style="padding:6px 0;border-top:1px solid #e2e8f0;color:#64748b">termin ${esc(date(c.dueDate))}</td>` +
+    `<td style="padding:6px 0;border-top:1px solid #e2e8f0;text-align:right">${esc(money(c.amount))}</td></tr>`
+  ).join('');
+  const inner = `
+    <p style="margin:0 0 10px">Dzień dobry${client && client.name ? ' ' + esc(client.name) : ''},</p>
+    <p style="margin:0 0 12px">${esc(intro)}</p>
+    <table role="presentation" width="100%" style="border-collapse:collapse;font-size:14px">${rows}</table>
+    <p style="margin:14px 0 0;text-align:right;font-size:16px"><b>Razem do zapłaty: <span style="color:${esc(primary)}">${esc(money(total))}</span></b></p>
+    ${bank ? `<p style="margin:14px 0 0;color:#64748b;font-size:13px">Numer konta: ${esc(bank)}</p>` : ''}`;
+  const html = await wrap(inner, { heading: 'Przypomnienie o płatności' });
+  const text = `Dzień dobry${client && client.name ? ' ' + client.name : ''},\n\n${intro}\n` +
+    charges.map((c) => ` • ${c.label || 'Pozycja'} (termin ${date(c.dueDate)}): ${money(c.amount)}`).join('\n') +
+    `\n\nRazem do zapłaty: ${money(total)}` + (bank ? `\nNumer konta: ${bank}` : '');
+  const subject = (em.reminderSubject || '').trim() || `${appName} — przypomnienie o płatności`;
+  return send({ to, subject, html, text, replyTo: config.admin.email });
+}
+
 // Testowy e-mail do weryfikacji konfiguracji SMTP.
 async function sendTest({ to }) {
   const inner = `<p style="margin:0 0 8px">To jest testowa wiadomość z Twojej instancji.</p>
@@ -255,4 +284,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, PLACEHOLDERS, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendTest };
+module.exports = { send, isConfigured, PLACEHOLDERS, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendTest };

@@ -156,6 +156,9 @@ async function updateSettings(req, res, next) {
         clientConfirm: b.clientConfirm === 'on',
         clientConfirmSubject: (b.clientConfirmSubject || '').trim(),
         clientConfirmBody: sanitizeEmailHtml(b.clientConfirmBody || ''),
+        reminders: b.reminders === 'on',
+        reminderSubject: (b.reminderSubject || '').trim(),
+        reminderIntro: (b.reminderIntro || '').trim(),
       },
     };
 
