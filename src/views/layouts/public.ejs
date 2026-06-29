@@ -127,8 +127,11 @@
       <% const panelRight = L.cardSide === 'right'; const panelCenter = L.cardSide === 'center'; %>
       <main class="flex-1 flex <%= panelCenter ? 'justify-center' : '' %>">
         <section class="evoke-panel w-full md:max-w-md bg-white min-h-screen flex flex-col px-6 sm:px-9 py-7 shrink-0 <%= panelRight ? 'md:order-2' : '' %>">
+          <% const panelLogo = (typeof settings !== 'undefined' && settings && settings.logo && settings.logo.panelPath) || null; %>
           <div class="flex items-center gap-2 <%= justify %> mb-6 <%= sticky ? 'sticky top-0 z-20 bg-white py-2 -my-2' : '' %>">
-            <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
+            <% if (panelLogo) { %>
+              <img src="<%= panelLogo %>" alt="<%= appName %>" class="max-w-[70%] object-contain" style="height: <%= logoCfg.size %>px" />
+            <% } else if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
               <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
             <% } else if (!L.hideName) { %>
               <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>

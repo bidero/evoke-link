@@ -108,6 +108,17 @@
           <p class="text-xs text-slate-400 mt-1">Używane w trybie ciemnym (puste = zwykłe logo).</p>
         </div>
         <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Logo dla układu „Panel na tle" <span class="text-slate-400 font-normal">(opcjonalne)</span></label>
+          <% if (settings.logo.panelPath) { %>
+            <div class="flex items-center gap-3 mb-2">
+              <img src="<%= settings.logo.panelPath %>" alt="logo panelu" class="h-10 rounded bg-white border border-slate-200 p-1" />
+              <label class="inline-flex items-center gap-1.5 text-xs text-slate-500"><input type="checkbox" name="removeLogoPanel" class="rounded border-slate-300" /> usuń</label>
+            </div>
+          <% } %>
+          <input name="logoPanel" type="file" accept="image/*,.svg" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm" />
+          <p class="text-xs text-slate-400 mt-1">Pokazywane w panelu układu „Panel na tle" (panel jest biały). Puste = zwykłe logo.</p>
+        </div>
+        <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Favicon</label>
           <% if (settings.faviconPath) { %>
             <div class="flex items-center gap-3 mb-2">
