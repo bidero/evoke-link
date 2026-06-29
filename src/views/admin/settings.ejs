@@ -18,6 +18,7 @@
     imgGradC2: settings.background.imageGrad.c2 || '#000000',
     imgGradC2on: !!settings.background.imageGrad.c2,
     imgGradAngle: settings.background.imageGrad.angle,
+    imgGradStrength: settings.background.imageGrad.strength,
     bgGrain: settings.background.grain,
     bgGrainType: settings.background.grainType,
     bgGrainStrength: settings.background.grainStrength,
@@ -322,6 +323,7 @@
             <label class="inline-flex items-center gap-1.5"><input type="checkbox" x-model="imgGradC2on" class="rounded border-slate-300" /> Kolor 2</label>
             <span class="inline-flex items-center gap-1.5" x-show="imgGradC2on"><input type="color" x-model="imgGradC2" class="h-7 w-9 rounded border border-slate-300 cursor-pointer" /></span>
             <span class="inline-flex items-center gap-2">Kąt <input type="range" name="imgGradAngle" x-model="imgGradAngle" min="0" max="360" step="5" class="w-28 accent-brand-600" /><span class="tabular-nums w-9 text-right" x-text="imgGradAngle + '°'"></span></span>
+            <span class="inline-flex items-center gap-2">Moc <input type="range" name="imgGradStrength" x-model="imgGradStrength" min="0" max="100" step="5" class="w-28 accent-brand-600" /><span class="tabular-nums w-9 text-right" x-text="imgGradStrength + '%'"></span></span>
           </div>
         </div>
       </div>
@@ -890,7 +892,7 @@ function settingsForm(init) {
       else bg = this.presetCss[this.bgPreset] || this.presetCss['brand-soft'];
       return css + ';background:' + bg;
     },
-    imageGradientCss(){ var c1=this._rgba(this.imgGradC1,0.6); var c2=this.imgGradC2on?this._rgba(this.imgGradC2,0.38):'rgba(0,0,0,0)'; return 'linear-gradient('+this.imgGradAngle+'deg, '+c1+' 0%, '+c2+' 55%, rgba(0,0,0,0) 100%)'; },
+    imageGradientCss(){ var s=Math.min(100,Math.max(0,this.imgGradStrength==null?60:this.imgGradStrength))/100; var c1=this._rgba(this.imgGradC1,+s.toFixed(3)); var c2=this.imgGradC2on?this._rgba(this.imgGradC2,+(s*0.633).toFixed(3)):'rgba(0,0,0,0)'; return 'linear-gradient('+this.imgGradAngle+'deg, '+c1+' 0%, '+c2+' 55%, rgba(0,0,0,0) 100%)'; },
     grainPreviewStyle(){ var P={fine:{f:0.85,o:2,size:160,max:0.5},soft:{f:0.55,o:3,size:220,max:0.42},coarse:{f:0.34,o:4,size:300,max:0.34}}; var g=P[this.bgGrainType]||P.fine; var op=((this.bgGrainStrength/100)*g.max).toFixed(3); var uri="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='"+g.size+"' height='"+g.size+"'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='"+g.f+"' numOctaves='"+g.o+"' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"; return 'mix-blend-mode:soft-light;background-size:'+g.size+'px '+g.size+'px;opacity:'+op+';background-image:url("'+uri+'")'; },
     onBgFile(e){ const f=e.target.files&&e.target.files[0]; this.previewImg = f ? URL.createObjectURL(f) : null; },
 
