@@ -68,6 +68,7 @@ const DEFAULTS = {
   grain: false,
   grainType: 'fine', // fine | soft | coarse — charakter ziarna
   grainStrength: 50, // moc szumu 0..100 (%)
+  scroll: false, // tło przesuwa się z przewijaniem (zamiast przyklejonego/fixed)
 };
 
 const GRAIN_TYPES = ['fine', 'soft', 'coarse'];
@@ -124,19 +125,22 @@ function normalize(bg) {
     grain: !!b.grain,
     grainType: GRAIN_TYPES.includes(b.grainType) ? b.grainType : DEFAULTS.grainType,
     grainStrength,
+    scroll: !!b.scroll,
   };
 }
 
-// Inline `style` dla <body>.
+// Inline `style` dla <body>. `scroll` → tło i nakładki przewijają się z treścią
+// (wymaga position:relative na body, by nakładki `absolute` objęły całą wysokość).
 function bodyStyle(bg) {
   const b = normalize(bg);
-  if (b.type === 'solid') return `background:${b.color};`;
-  if (b.type === 'custom') return `background:${customCss(b.custom)};`;
+  const rel = b.scroll ? 'position:relative;' : '';
+  if (b.type === 'solid') return `${rel}background:${b.color};`;
+  if (b.type === 'custom') return `${rel}background:${customCss(b.custom)};`;
   if (b.type === 'image') {
     const img = b.images[0] || b.imagePath;
-    if (img) return `background:#0f172a url('${img}') center/cover no-repeat fixed;`;
+    if (img) return `${rel}background:#0f172a url('${img}') center/cover no-repeat ${b.scroll ? 'scroll' : 'fixed'};`;
   }
-  return `background:${(PRESETS[b.preset] || PRESETS[DEFAULT_PRESET]).css};`;
+  return `${rel}background:${(PRESETS[b.preset] || PRESETS[DEFAULT_PRESET]).css};`;
 }
 
 // Czy tło jest ciemne (do wyboru jasnego tekstu na stronie).
@@ -185,17 +189,18 @@ function imageGradientCss(g) {
 // Kolejność warstw: gradient na obrazie → przyciemnienie → ziarno.
 function overlayHtml(bg) {
   const b = normalize(bg);
+  const pos = b.scroll ? 'absolute' : 'fixed';
   let html = '';
   if (b.type === 'image' && b.imagePath && b.imageGradient) {
-    html += `<div aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;background:${imageGradientCss(b.imageGrad)};"></div>`;
+    html += `<div aria-hidden="true" style="position:${pos};inset:0;z-index:0;pointer-events:none;background:${imageGradientCss(b.imageGrad)};"></div>`;
   }
   if (b.type === 'image' && b.imagePath && b.overlay > 0) {
-    html += `<div aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;background:rgba(15,23,42,${(b.overlay / 100).toFixed(2)});"></div>`;
+    html += `<div aria-hidden="true" style="position:${pos};inset:0;z-index:0;pointer-events:none;background:rgba(15,23,42,${(b.overlay / 100).toFixed(2)});"></div>`;
   }
   if (b.grain && b.grainStrength > 0) {
     const g = GRAIN[b.grainType] || GRAIN.fine;
     const op = ((b.grainStrength / 100) * g.max).toFixed(3);
-    html += `<div aria-hidden="true" style="position:fixed;inset:0;z-index:0;pointer-events:none;mix-blend-mode:${g.blend};opacity:${op};background-image:url(&quot;${grainUri(g)}&quot;);background-size:${g.size}px ${g.size}px;"></div>`;
+    html += `<div aria-hidden="true" style="position:${pos};inset:0;z-index:0;pointer-events:none;mix-blend-mode:${g.blend};opacity:${op};background-image:url(&quot;${grainUri(g)}&quot;);background-size:${g.size}px ${g.size}px;"></div>`;
   }
   return html;
 }
@@ -204,8 +209,10 @@ function overlayHtml(bg) {
 function slideshowHtml(bg) {
   const b = normalize(bg);
   if (b.type !== 'image' || !b.rotate || b.images.length < 2) return '';
+  const pos = b.scroll ? 'absolute' : 'fixed';
+  const att = b.scroll ? 'scroll' : 'fixed';
   const layers = b.images.map((src, i) =>
-    `<div class="bg-slide" style="position:fixed;inset:0;z-index:0;pointer-events:none;background:#0f172a url('${src}') center/cover no-repeat fixed;opacity:${i === 0 ? 1 : 0};transition:opacity 1.2s ease;"></div>`
+    `<div class="bg-slide" style="position:${pos};inset:0;z-index:0;pointer-events:none;background:#0f172a url('${src}') center/cover no-repeat ${att};opacity:${i === 0 ? 1 : 0};transition:opacity 1.2s ease;"></div>`
   ).join('');
   return `<div data-bg-rotate="${b.rotateSec}" aria-hidden="true">${layers}</div>`;
 }

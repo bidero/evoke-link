@@ -102,6 +102,7 @@ async function updateSettings(req, res, next) {
       grain: b.bgGrain === 'on',
       grainType: b.bgGrainType,
       grainStrength: Math.min(100, Math.max(0, parseInt(b.bgGrainStrength, 10) || 0)),
+      scroll: b.bgScroll === 'on',
     };
 
     // --- Logo: rozmiar + wyrównanie ---
@@ -113,7 +114,7 @@ async function updateSettings(req, res, next) {
 
     // --- Układ stron klienta ---
     const layout = {
-      style: ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel'].includes(b.layoutStyle) ? b.layoutStyle : 'classic',
+      style: ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel', 'sidebar', 'corner'].includes(b.layoutStyle) ? b.layoutStyle : 'classic',
       card: ['solid', 'glass', 'elevated'].includes(b.layoutCard) ? b.layoutCard : 'solid',
       cardSide: ['left', 'right', 'center'].includes(b.cardSide) ? b.cardSide : 'right',
       hideName: b.hideName === 'on',

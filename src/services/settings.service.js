@@ -32,7 +32,7 @@ const DEFAULTS = {
 };
 
 const ALIGNS = ['left', 'center', 'right'];
-const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel'];
+const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel', 'sidebar', 'corner'];
 const CARD_STYLES = ['solid', 'glass', 'elevated'];
 const BUTTON_STYLES = ['rounded', 'pill'];
 const PDF_TEMPLATES = ['standard', 'band', 'accent', 'proforma'];

@@ -345,6 +345,10 @@
         </div>
       </div>
 
+      <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+        <input type="checkbox" name="bgScroll" <%= settings.background.scroll ? 'checked' : '' %> class="rounded border-slate-300" /> Tło przesuwa się z przewijaniem <span class="text-slate-400">(domyślnie przyklejone)</span>
+      </label>
+
       <!-- Podgląd całej strony klienta (na żywo) -->
       <div>
         <span class="block text-xs font-medium text-slate-600 mb-1">Podgląd strony klienta (na żywo)</span>
@@ -397,7 +401,7 @@
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Wariant</label>
         <div class="grid grid-cols-3 gap-2 text-sm">
-          <% [['classic','Klasyczny'],['centered','Landing'],['split','Split'],['showcase','Pełne tło'],['panel','Panel na tle'],['hero-card','Hero w karcie'],['minimal','Minimal'],['banner','Banner']].forEach(function(o){ %>
+          <% [['classic','Klasyczny'],['centered','Landing'],['split','Split'],['showcase','Pełne tło'],['panel','Panel na tle'],['sidebar','Pasek boczny'],['corner','Róg'],['hero-card','Hero w karcie'],['minimal','Minimal'],['banner','Banner']].forEach(function(o){ %>
             <label class="cursor-pointer">
               <input type="radio" name="layoutStyle" value="<%= o[0] %>" <%= settings.layout.style === o[0] ? 'checked' : '' %> @change="layoutStyle=$event.target.value" class="peer sr-only" />
               <span class="block text-center rounded-lg border border-slate-300 px-2 py-2 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
