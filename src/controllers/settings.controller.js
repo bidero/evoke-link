@@ -98,7 +98,12 @@ async function updateSettings(req, res, next) {
       rotateSec: clampInt(b.bgRotateSec, 3, 30, 8),
       overlay: Math.min(80, Math.max(0, parseInt(b.bgOverlay, 10) || 0)),
       imageGradient: b.bgImageGradient === 'on',
-      imageGrad: { c1: safeHex(b.imgGradC1, '#6e00a5'), c2: safeHex(b.imgGradC2, '') || '', c3: safeHex(b.imgGradC3, '') || '', angle: clampInt(b.imgGradAngle, 0, 360, 135), strength: clampInt(b.imgGradStrength, 0, 100, 60) },
+      imageGrad: {
+        c1: safeHex(b.imgGradC1, '#6e00a5'), a1: clampInt(b.imgGradA1, 0, 100, 60),
+        c3: safeHex(b.imgGradC3, '') || '', a3: clampInt(b.imgGradA3, 0, 100, 60),
+        c2: safeHex(b.imgGradC2, '') || '', a2: clampInt(b.imgGradA2, 0, 100, 60),
+        angle: clampInt(b.imgGradAngle, 0, 360, 135),
+      },
       grain: b.bgGrain === 'on',
       grainType: b.bgGrainType,
       grainStrength: Math.min(100, Math.max(0, parseInt(b.bgGrainStrength, 10) || 0)),

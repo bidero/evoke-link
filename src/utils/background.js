@@ -64,7 +64,7 @@ const DEFAULTS = {
   rotateSec: 8, // co ile sekund (3..30)
   overlay: 0, // przyciemnienie obrazu 0..80 (%)
   imageGradient: false, // nakładka gradientu na obraz
-  imageGrad: { c1: '#6e00a5', c2: '', c3: '', angle: 135, strength: 60 }, // nakładka na obraz: c1=góra, c3=środek (opc.), c2=dół (pusty=zanik); strength = moc 0..100
+  imageGrad: { c1: '#6e00a5', a1: 60, c3: '', a3: 60, c2: '', a2: 60, angle: 135 }, // nakładka na obraz: c1=góra, c3=środek (opc.), c2=dół (pusty=zanik); aN = alpha danego koloru 0..100
   grain: false,
   grainType: 'fine', // fine | soft | coarse — charakter ziarna
   grainStrength: 50, // moc szumu 0..100 (%)
@@ -86,13 +86,12 @@ function normCustom(c) {
 function normImageGrad(g) {
   const x = g && typeof g === 'object' ? g : {};
   const a = parseInt(x.angle, 10); // ZACHOWUJ 0 — `|| default` mylił 0° z brakiem wartości
-  const st = parseInt(x.strength, 10);
+  const al = (v, d) => { const n = parseInt(v, 10); return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : d; };
   return {
-    c1: safeHex(x.c1, DEFAULTS.imageGrad.c1), // góra / start
-    c2: safeHex(x.c2, '') || '', // dół / koniec (pusty = zanik do przezroczystości)
-    c3: safeHex(x.c3, '') || '', // środek (opcjonalny)
+    c1: safeHex(x.c1, DEFAULTS.imageGrad.c1), a1: al(x.a1, DEFAULTS.imageGrad.a1), // góra / start
+    c3: safeHex(x.c3, '') || '', a3: al(x.a3, DEFAULTS.imageGrad.a3), // środek (opcjonalny)
+    c2: safeHex(x.c2, '') || '', a2: al(x.a2, DEFAULTS.imageGrad.a2), // dół / koniec (pusty = zanik)
     angle: Number.isFinite(a) ? Math.min(360, Math.max(0, a)) : DEFAULTS.imageGrad.angle,
-    strength: Number.isFinite(st) ? Math.min(100, Math.max(0, st)) : DEFAULTS.imageGrad.strength,
   };
 }
 
@@ -182,11 +181,10 @@ function rgba(hex, a) {
 
 // Gradient nakładany na obraz tła z konfiguracji (kolory + kąt). c2 pusty = zanik.
 function imageGradientCss(g) {
-  const s = Math.min(100, Math.max(0, g.strength == null ? 60 : g.strength)) / 100; // moc gradientu
-  const a = (hex) => rgba(hex, Number(s.toFixed(3)));
-  const stops = [`${a(g.c1)} 0%`]; // góra
-  if (g.c3) stops.push(`${a(g.c3)} 50%`); // środek (opcjonalny)
-  stops.push(`${g.c2 ? a(g.c2) : 'rgba(0,0,0,0)'} 100%`); // dół: kolor lub zanik do przezroczystości
+  const al = (v) => Math.min(100, Math.max(0, v == null ? 60 : v)) / 100; // alpha danego koloru
+  const stops = [`${rgba(g.c1, al(g.a1))} 0%`]; // góra
+  if (g.c3) stops.push(`${rgba(g.c3, al(g.a3))} 50%`); // środek (opcjonalny)
+  stops.push(`${g.c2 ? rgba(g.c2, al(g.a2)) : 'rgba(0,0,0,0)'} 100%`); // dół: kolor lub zanik do przezroczystości
   return `linear-gradient(${g.angle}deg, ${stops.join(', ')})`;
 }
 
