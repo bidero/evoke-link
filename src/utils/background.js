@@ -140,7 +140,10 @@ function bodyStyle(bg) {
   if (b.type === 'custom') return `${rel}background:${customCss(b.custom)};`;
   if (b.type === 'image') {
     const img = b.images[0] || b.imagePath;
-    if (img) return `${rel}background:#0f172a url('${img}') center/cover no-repeat ${b.scroll ? 'scroll' : 'fixed'};`;
+    // Obraz renderujemy jako pozycjonowaną warstwę w overlayHtml (NIE background-attachment:fixed
+    // na <body> — to naprawia brak malowania obrazu do czasu resize na niektórych GPU/przeglądarkach,
+    // ujawniany przy włączonym szumie/mix-blend-mode). Body daje tylko ciemny kolor bazowy.
+    if (img) return `${rel}background:#0f172a;`;
   }
   return `${rel}background:${(PRESETS[b.preset] || PRESETS[DEFAULT_PRESET]).css};`;
 }
@@ -194,11 +197,17 @@ function imageGradientCss(g) {
 function overlayHtml(bg) {
   const b = normalize(bg);
   const pos = b.scroll ? 'absolute' : 'fixed';
+  const img = b.images[0] || b.imagePath;
+  const slideshowActive = b.type === 'image' && b.rotate && b.images.length >= 2;
   let html = '';
-  if (b.type === 'image' && b.imagePath && b.imageGradient) {
+  // Obraz tła jako pozycjonowana warstwa (bez background-attachment:fixed). Slideshow ma własne warstwy.
+  if (b.type === 'image' && img && !slideshowActive) {
+    html += `<div aria-hidden="true" class="bg-img-layer" style="position:${pos};inset:0;z-index:0;pointer-events:none;background:#0f172a url('${img}') center/cover no-repeat;"></div>`;
+  }
+  if (b.type === 'image' && img && b.imageGradient) {
     html += `<div aria-hidden="true" style="position:${pos};inset:0;z-index:0;pointer-events:none;background:${imageGradientCss(b.imageGrad)};"></div>`;
   }
-  if (b.type === 'image' && b.imagePath && b.overlay > 0) {
+  if (b.type === 'image' && img && b.overlay > 0) {
     html += `<div aria-hidden="true" style="position:${pos};inset:0;z-index:0;pointer-events:none;background:rgba(15,23,42,${(b.overlay / 100).toFixed(2)});"></div>`;
   }
   if (b.grain && b.grainStrength > 0) {
@@ -214,9 +223,8 @@ function slideshowHtml(bg) {
   const b = normalize(bg);
   if (b.type !== 'image' || !b.rotate || b.images.length < 2) return '';
   const pos = b.scroll ? 'absolute' : 'fixed';
-  const att = b.scroll ? 'scroll' : 'fixed';
   const layers = b.images.map((src, i) =>
-    `<div class="bg-slide" style="position:${pos};inset:0;z-index:0;pointer-events:none;background:#0f172a url('${src}') center/cover no-repeat ${att};opacity:${i === 0 ? 1 : 0};transition:opacity 1.2s ease;"></div>`
+    `<div class="bg-slide" style="position:${pos};inset:0;z-index:0;pointer-events:none;background:#0f172a url('${src}') center/cover no-repeat;opacity:${i === 0 ? 1 : 0};transition:opacity 1.2s ease;"></div>`
   ).join('');
   return `<div data-bg-rotate="${b.rotateSec}" aria-hidden="true">${layers}</div>`;
 }
