@@ -105,7 +105,7 @@ async function submitUpload(req, res, next) {
       ip: req.ip,
     });
     mail
-      .sendUploadNotification({ transfer: updated, fileNames: files.map((f) => f.originalname), uploaderName: name, uploaderEmail: email, projectName: project.name })
+      .sendUploadNotification({ transfer: updated, fileNames: files.map((f) => f.originalname), uploaderName: name, uploaderEmail: email, projectName: project.name, client: project.client })
       .catch((e) => console.error('[mail] błąd:', e.message));
 
     res.redirect(`/p/${project.clientToken}?sent=1`);

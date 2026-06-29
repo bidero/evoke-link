@@ -128,10 +128,12 @@ async function tagCloud(limit = 20) {
 
 const clean = (v) => (v && v.trim() ? v.trim() : null);
 
-function create({ name, email, note, company, phone, nip, address, status, tags }) {
+function create({ name, firstName, lastName, email, note, company, phone, nip, address, status, tags }) {
   return prisma.client.create({
     data: {
       name: name.trim(),
+      firstName: clean(firstName),
+      lastName: clean(lastName),
       email: clean(email),
       note: clean(note),
       company: clean(company),
@@ -145,11 +147,13 @@ function create({ name, email, note, company, phone, nip, address, status, tags 
   });
 }
 
-function update(id, { name, email, note, company, phone, nip, address, status, tags }) {
+function update(id, { name, firstName, lastName, email, note, company, phone, nip, address, status, tags }) {
   return prisma.client.update({
     where: { id: Number(id) },
     data: {
       name: name.trim(),
+      firstName: clean(firstName),
+      lastName: clean(lastName),
       email: clean(email),
       note: clean(note),
       company: clean(company),

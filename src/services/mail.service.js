@@ -28,12 +28,17 @@ function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 }
 
+// Imię do powitania: firstName, a gdy puste → pełna (wyświetlana) nazwa klienta.
+const greetName = (client) => (client && (client.firstName || client.name)) || '';
+// Zmienne klienta do placeholderów: {klient} (pełna nazwa), {imie}, {nazwisko}.
+const clientVars = (client) => ({ klient: (client && client.name) || '', imie: (client && client.firstName) || '', nazwisko: (client && client.lastName) || '' });
+
 // Lista wspieranych placeholderów (do podpowiedzi w panelu).
-const PLACEHOLDERS = ['{nazwa-aplikacji}', '{nazwa-projektu}', '{klient}', '{tytul}', '{link}', '{liczba-plikow}', '{pliki}', '{nadawca}', '{email-nadawcy}', '{wygasa}', '{przycisk}'];
+const PLACEHOLDERS = ['{nazwa-aplikacji}', '{nazwa-projektu}', '{klient}', '{imie}', '{nazwisko}', '{tytul}', '{link}', '{liczba-plikow}', '{pliki}', '{nadawca}', '{email-nadawcy}', '{wygasa}', '{przycisk}'];
 
 // Komplet zmiennych (puste = brak danych w danym mailu); nadpisywane per e-mail.
 function baseVars(appName) {
-  return { 'nazwa-aplikacji': appName || 'Evoke LINK', 'nazwa-projektu': '', klient: '', tytul: '', link: '', 'liczba-plikow': '', pliki: '', nadawca: '', 'email-nadawcy': '', wygasa: '' };
+  return { 'nazwa-aplikacji': appName || 'Evoke LINK', 'nazwa-projektu': '', klient: '', imie: '', nazwisko: '', tytul: '', link: '', 'liczba-plikow': '', pliki: '', nadawca: '', 'email-nadawcy': '', wygasa: '' };
 }
 
 // Podstawia {token} znanymi wartościami (nieznane tokeny zostawia — sygnalizuje literówkę).
@@ -107,7 +112,7 @@ function introBlock(value, vars, buttonHtml) {
 }
 
 // Powiadomienie do agencji o nowych plikach od klienta.
-async function sendUploadNotification({ transfer, fileNames, uploaderName, uploaderEmail, projectName }) {
+async function sendUploadNotification({ transfer, fileNames, uploaderName, uploaderEmail, projectName, client }) {
   const adminUrl = `${config.appUrl}/admin/transfers/${transfer.id}`;
   const title = transfer.title || `Upload ${transfer.token}`;
   let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
@@ -131,7 +136,7 @@ async function sendUploadNotification({ transfer, fileNames, uploaderName, uploa
     ${btn(adminUrl, 'Zobacz w panelu', primary)}`;
 
   const html = await wrap(inner, { heading: `Nowe pliki: ${title}` });
-  const vars = { ...baseVars(s.appName), 'nazwa-projektu': projectName || '', tytul: title, 'liczba-plikow': fileNames.length, pliki: fileNames.join(', '), nadawca: uploaderName || '', 'email-nadawcy': uploaderEmail || '', link: adminUrl };
+  const vars = { ...baseVars(s.appName), ...clientVars(client), 'nazwa-projektu': projectName || '', tytul: title, 'liczba-plikow': fileNames.length, pliki: fileNames.join(', '), nadawca: uploaderName || '', 'email-nadawcy': uploaderEmail || '', link: adminUrl };
   const subject = cleanSubject(fillTpl(s.emails && s.emails.uploadSubject, vars)) || `${s.appName || 'Evoke LINK'} — nowe pliki: ${title}`;
   return send({ to: config.admin.email, subject, html, text });
 }
@@ -149,8 +154,8 @@ async function sendTransferLink({ to, transfer, message }) {
   const expiresStr = transfer.expiresAt ? new Date(transfer.expiresAt).toLocaleString('pl-PL') : '';
   const vars = {
     ...baseVars(appName),
+    ...clientVars(transfer.project && transfer.project.client),
     'nazwa-projektu': (transfer.project && transfer.project.name) || '',
-    klient: (transfer.project && transfer.project.client && transfer.project.client.name) || '',
     tytul: title, link, wygasa: expiresStr,
   };
   // Treść wstępu: wiadomość z formularza > szablon z ustawień (placeholdery) > wbudowany.
@@ -187,12 +192,12 @@ async function sendDownloadNotification({ transfer, ip }) {
 }
 
 // Wysyłka linku do panelu (projektu /p/:token lub klienta /c/:token) na adres e-mail.
-async function sendPanelLink({ to, url, projectName, clientName }) {
+async function sendPanelLink({ to, url, projectName, clientName, client }) {
   let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
   const primary = (s.colors && s.colors.primary) || '#6e00a5';
   const appName = s.appName || 'Evoke LINK';
   const em = s.emails || {};
-  const vars = { ...baseVars(appName), 'nazwa-projektu': projectName || '', klient: clientName || '', link: url };
+  const vars = { ...baseVars(appName), ...clientVars(client), 'nazwa-projektu': projectName || '', klient: (client && client.name) || clientName || '', link: url };
 
   const defSubject = projectName ? `${appName} — projekt ${projectName}` : `${appName} — Twoje projekty`;
   const defIntro = projectName
@@ -233,10 +238,10 @@ async function sendClientStatement({ to, client, pdfBuffer, filename, title }) {
   const docWord = title || 'Rozliczenie';
   const intro = `W załączniku przesyłamy ${docWord.toLowerCase()} (PDF).`;
   const inner = `
-    <p style="margin:0 0 10px">Dzień dobry${client && client.name ? ' ' + esc(client.name) : ''},</p>
+    <p style="margin:0 0 10px">Dzień dobry${greetName(client) ? ' ' + esc(greetName(client)) : ''},</p>
     <p style="margin:0 0 6px">${esc(intro)}</p>`;
   const html = await wrap(inner, { heading: docWord });
-  const text = `Dzień dobry${client && client.name ? ' ' + client.name : ''},\n\n${intro}\n\n${appName}`;
+  const text = `Dzień dobry${greetName(client) ? ' ' + greetName(client) : ''},\n\n${intro}\n\n${appName}`;
   return send({
     to,
     subject: `${docWord} — ${appName}`,
@@ -263,13 +268,13 @@ async function sendPaymentReminder({ to, client, charges, total }) {
     `<td style="padding:6px 0;border-top:1px solid #e2e8f0;text-align:right">${esc(money(c.amount))}</td></tr>`
   ).join('');
   const inner = `
-    <p style="margin:0 0 10px">Dzień dobry${client && client.name ? ' ' + esc(client.name) : ''},</p>
+    <p style="margin:0 0 10px">Dzień dobry${greetName(client) ? ' ' + esc(greetName(client)) : ''},</p>
     <p style="margin:0 0 12px">${esc(intro)}</p>
     <table role="presentation" width="100%" style="border-collapse:collapse;font-size:14px">${rows}</table>
     <p style="margin:14px 0 0;text-align:right;font-size:16px"><b>Razem do zapłaty: <span style="color:${esc(primary)}">${esc(money(total))}</span></b></p>
     ${bank ? `<p style="margin:14px 0 0;color:#64748b;font-size:13px">Numer konta: ${esc(bank)}</p>` : ''}`;
   const html = await wrap(inner, { heading: 'Przypomnienie o płatności' });
-  const text = `Dzień dobry${client && client.name ? ' ' + client.name : ''},\n\n${intro}\n` +
+  const text = `Dzień dobry${greetName(client) ? ' ' + greetName(client) : ''},\n\n${intro}\n` +
     charges.map((c) => ` • ${c.label || 'Pozycja'} (termin ${date(c.dueDate)}): ${money(c.amount)}`).join('\n') +
     `\n\nRazem do zapłaty: ${money(total)}` + (bank ? `\nNumer konta: ${bank}` : '');
   const subject = (em.reminderSubject || '').trim() || `${appName} — przypomnienie o płatności`;
