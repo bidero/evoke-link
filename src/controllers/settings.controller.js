@@ -34,6 +34,7 @@ async function showSettings(req, res, next) {
       mailReady: mail.isConfigured(),
       adminEmail: config.admin.email,
       placeholders: mail.PLACEHOLDERS,
+      placeholderSupport: mail.PLACEHOLDER_SUPPORT,
       test: req.query.test || null, // sent | dev | error
     });
   } catch (err) {

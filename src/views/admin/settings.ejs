@@ -671,7 +671,7 @@
     <div id="emailCard" x-show="tab==='email'" x-cloak class="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
       <h2 class="text-sm font-semibold text-slate-700">E-mail — wygląd i treści</h2>
       <div class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
-        <p class="text-xs text-slate-500 mb-1.5">Placeholdery — kliknij pole tekstowe poniżej, a potem placeholder, aby go wstawić:</p>
+        <p class="text-xs text-slate-500 mb-1.5">Placeholdery — kliknij pole tekstowe poniżej, a potem placeholder, aby go wstawić. Po kliknięciu pola podświetlą się tylko placeholdery, które w nim działają (pozostałe wyszarzone):</p>
         <div class="flex flex-wrap gap-1.5">
           <% placeholders.forEach(function(ph){ %><button type="button" data-ph="<%= ph %>" class="ph-chip text-xs bg-white border border-slate-200 text-slate-600 rounded px-1.5 py-0.5 font-mono hover:bg-brand-50 hover:text-brand-700 hover:border-brand-300 transition cursor-pointer"><%= ph %></button><% }); %>
         </div>
@@ -692,22 +692,22 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: link do plików</label>
-          <input name="linkSubject" type="text" value="<%= settings.emails.linkSubject %>" placeholder="domyślny"
+          <input name="linkSubject" data-phfield="linkSubject" type="text" value="<%= settings.emails.linkSubject %>" placeholder="domyślny"
                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: powiadomienie o uploadzie</label>
-          <input name="uploadSubject" type="text" value="<%= settings.emails.uploadSubject %>" placeholder="domyślny"
+          <input name="uploadSubject" data-phfield="uploadSubject" type="text" value="<%= settings.emails.uploadSubject %>" placeholder="domyślny"
                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: powiadomienie o pobraniu</label>
-          <input name="downloadSubject" type="text" value="<%= settings.emails.downloadSubject %>" placeholder="domyślny"
+          <input name="downloadSubject" data-phfield="downloadSubject" type="text" value="<%= settings.emails.downloadSubject %>" placeholder="domyślny"
                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: panel (projekt / klient)</label>
-          <input name="panelSubject" type="text" value="<%= settings.emails.panelSubject %>" placeholder="np. {nazwa-projektu} — Twój panel"
+          <input name="panelSubject" data-phfield="panelSubject" type="text" value="<%= settings.emails.panelSubject %>" placeholder="np. {nazwa-projektu} — Twój panel"
                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
         </div>
       </div>
@@ -745,7 +745,7 @@
           <input type="checkbox" name="clientConfirm" class="rounded border-slate-300" <%= settings.emails.clientConfirm ? 'checked' : '' %> />
           Wyślij klientowi potwierdzenie po przesłaniu plików (gdy podał e-mail)
         </label>
-        <input name="clientConfirmSubject" type="text" value="<%= settings.emails.clientConfirmSubject %>" placeholder="Temat potwierdzenia (domyślny)"
+        <input name="clientConfirmSubject" data-phfield="clientConfirmSubject" type="text" value="<%= settings.emails.clientConfirmSubject %>" placeholder="Temat potwierdzenia (domyślny)"
                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
         <div class="rte">
           <div class="flex flex-wrap gap-1 mb-1">
@@ -766,9 +766,9 @@
           Wysyłaj klientom przypomnienia o przeterminowanych płatnościach
         </label>
         <p class="text-xs text-slate-400 -mt-1">Wymaga włączonego SMTP i terminu (dueDate) na pozycjach. Uruchamiane cronem (<code>npm run reminders</code>); jeden klient nie częściej niż co kilka dni.</p>
-        <input name="reminderSubject" type="text" value="<%= settings.emails.reminderSubject %>" placeholder="Temat przypomnienia (domyślny)"
+        <input name="reminderSubject" data-phfield="reminderSubject" type="text" value="<%= settings.emails.reminderSubject %>" placeholder="Temat przypomnienia (domyślny)"
                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-        <textarea name="reminderIntro" rows="2" placeholder="Wstęp wiadomości (domyślny)"
+        <textarea name="reminderIntro" data-phfield="reminderIntro" rows="2" placeholder="Wstęp wiadomości (domyślny)"
                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= settings.emails.reminderIntro %></textarea>
       </div>
       <script>
@@ -776,15 +776,30 @@
           var card = document.getElementById('emailCard');
           if (!card) return;
           var last = null; // ostatnio aktywne pole: input/textarea LUB edytor RTE
+          var SUPPORT = <%- JSON.stringify(placeholderSupport) %>;
+          var chips = Array.prototype.slice.call(card.querySelectorAll('.ph-chip'));
+          // Po wejściu w pole: podświetl placeholdery działające w tym polu, wyszarz resztę.
+          function applyFilter(el) {
+            var field = el && el.getAttribute ? el.getAttribute('data-phfield') : null;
+            var allow = field && SUPPORT[field] ? SUPPORT[field] : null; // null = brak ograniczeń → wszystkie
+            chips.forEach(function (c) {
+              var ok = !allow || allow.indexOf(c.getAttribute('data-ph')) !== -1;
+              c.classList.toggle('opacity-30', !ok);
+              c.classList.toggle('cursor-not-allowed', !ok);
+              c.dataset.off = ok ? '' : '1';
+              c.title = ok ? '' : 'Ten placeholder nie działa w tym polu';
+            });
+          }
           card.querySelectorAll('.rte').forEach(function (rte) {
             var ed = rte.querySelector('.rte-ed');
             var hidden = rte.querySelector('input[type=hidden]');
             if (!ed || !hidden) return;
             ed.innerHTML = hidden.value || '';
+            ed.setAttribute('data-phfield', hidden.name || '');
             var sync = function () { hidden.value = ed.innerHTML; };
             ed.addEventListener('input', sync);
             ed.addEventListener('blur', sync);
-            ed.addEventListener('focusin', function () { last = ed; });
+            ed.addEventListener('focusin', function () { last = ed; applyFilter(ed); });
             rte.querySelectorAll('[data-cmd]').forEach(function (b) {
               b.addEventListener('click', function () {
                 ed.focus();
@@ -802,10 +817,11 @@
               if (ed && h) h.value = ed.innerHTML;
             });
           });
-          card.addEventListener('focusin', function (e) { if (e.target.matches('input[type=text], textarea')) last = e.target; });
+          card.addEventListener('focusin', function (e) { if (e.target.matches('input[type=text], textarea')) { last = e.target; applyFilter(e.target); } });
           card.querySelectorAll('.ph-chip').forEach(function (chip) {
             chip.addEventListener('click', function () {
               if (!last) return;
+              if (chip.dataset.off === '1') return;
               var t = chip.getAttribute('data-ph');
               if (last.isContentEditable) {
                 last.focus();

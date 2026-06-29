@@ -36,6 +36,22 @@ const clientVars = (client) => ({ klient: (client && client.name) || '', imie: (
 // Lista wspieranych placeholderów (do podpowiedzi w panelu).
 const PLACEHOLDERS = ['{nazwa-aplikacji}', '{nazwa-projektu}', '{klient}', '{imie}', '{nazwisko}', '{tytul}', '{link}', '{liczba-plikow}', '{pliki}', '{nadawca}', '{email-nadawcy}', '{wygasa}', '{przycisk}'];
 
+// Które placeholdery REALNIE działają w którym polu (uczciwa podpowiedź w panelu).
+// Klucz = nazwa pola formularza w Ustawieniach → E-mail. Musi zgadzać się z tym, co dana
+// funkcja maila faktycznie podstawia (vars). {przycisk} tylko we wstępach (nie w temacie).
+const PLACEHOLDER_SUPPORT = {
+  linkSubject: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{klient}', '{imie}', '{nazwisko}', '{tytul}', '{link}', '{wygasa}'],
+  linkIntro: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{klient}', '{imie}', '{nazwisko}', '{tytul}', '{link}', '{wygasa}', '{przycisk}'],
+  uploadSubject: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{klient}', '{imie}', '{nazwisko}', '{tytul}', '{link}', '{liczba-plikow}', '{pliki}', '{nadawca}', '{email-nadawcy}'],
+  downloadSubject: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{tytul}', '{link}'],
+  panelSubject: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{klient}', '{imie}', '{nazwisko}', '{link}'],
+  panelIntro: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{klient}', '{imie}', '{nazwisko}', '{link}', '{przycisk}'],
+  clientConfirmSubject: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{tytul}'],
+  clientConfirmBody: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{tytul}'],
+  reminderSubject: ['{nazwa-aplikacji}', '{klient}', '{imie}', '{nazwisko}'],
+  reminderIntro: ['{nazwa-aplikacji}', '{klient}', '{imie}', '{nazwisko}'],
+};
+
 // Komplet zmiennych (puste = brak danych w danym mailu); nadpisywane per e-mail.
 function baseVars(appName) {
   return { 'nazwa-aplikacji': appName || 'Evoke LINK', 'nazwa-projektu': '', klient: '', imie: '', nazwisko: '', tytul: '', link: '', 'liczba-plikow': '', pliki: '', nadawca: '', 'email-nadawcy': '', wygasa: '' };
@@ -261,7 +277,8 @@ async function sendPaymentReminder({ to, client, charges, total }) {
   const bank = (s.pdf && s.pdf.seller && s.pdf.seller.bank) || '';
   const money = (g) => (g / 100).toFixed(2).replace('.', ',') + ' zł';
   const date = (d) => new Date(d).toLocaleDateString('pl-PL');
-  const intro = em.reminderIntro || 'Przypominamy o nierozliczonych pozycjach po terminie płatności:';
+  const rvars = { ...baseVars(appName), ...clientVars(client) };
+  const intro = fillTpl(em.reminderIntro, rvars) || 'Przypominamy o nierozliczonych pozycjach po terminie płatności:';
   const rows = charges.map((c) =>
     `<tr><td style="padding:6px 0;border-top:1px solid #e2e8f0">${esc(c.label || 'Pozycja')}</td>` +
     `<td style="padding:6px 0;border-top:1px solid #e2e8f0;color:#64748b">termin ${esc(date(c.dueDate))}</td>` +
@@ -277,7 +294,7 @@ async function sendPaymentReminder({ to, client, charges, total }) {
   const text = `Dzień dobry${greetName(client) ? ' ' + greetName(client) : ''},\n\n${intro}\n` +
     charges.map((c) => ` • ${c.label || 'Pozycja'} (termin ${date(c.dueDate)}): ${money(c.amount)}`).join('\n') +
     `\n\nRazem do zapłaty: ${money(total)}` + (bank ? `\nNumer konta: ${bank}` : '');
-  const subject = (em.reminderSubject || '').trim() || `${appName} — przypomnienie o płatności`;
+  const subject = cleanSubject(fillTpl(em.reminderSubject, rvars)) || `${appName} — przypomnienie o płatności`;
   return send({ to, subject, html, text, replyTo: config.admin.email });
 }
 
@@ -289,4 +306,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, PLACEHOLDERS, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendTest };
+module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendTest };
