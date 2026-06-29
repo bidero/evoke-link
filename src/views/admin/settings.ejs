@@ -358,33 +358,92 @@
           <div x-show="bgType==='image' && bgOverlay>0" class="absolute inset-0" :style="'background:rgba(15,23,42,' + (bgOverlay/100) + ')'"></div>
           <div x-show="bgGrain" class="absolute inset-0 pointer-events-none" :style="grainPreviewStyle()"></div>
 
-          <!-- układ „Panel na tle" -->
+          <!-- Panel na tle: biały panel pełnej wysokości z boku -->
           <div x-show="layoutStyle==='panel'" x-cloak class="absolute inset-0 flex" :class="cardSide==='right' ? 'justify-end' : (cardSide==='center' ? 'justify-center' : '')">
-            <div class="h-full bg-white p-4 flex flex-col justify-center" style="width:44%">
+            <div class="h-full bg-white p-4 flex flex-col justify-center" style="width:46%">
               <div class="flex items-center gap-1.5 mb-3" x-show="!hideName"><span class="w-4 h-4 rounded bg-brand-600 text-white text-[8px] flex items-center justify-center font-bold">E</span><span class="text-[11px] font-semibold text-slate-700" x-text="appName"></span></div>
-              <div class="text-sm font-semibold text-slate-800" :style="'font-family:'+fontHeading()">Pliki dla Ciebie</div>
-              <div class="mt-2 h-1.5 w-2/3 rounded bg-slate-200"></div>
-              <div class="mt-1.5 h-1.5 w-1/2 rounded bg-slate-200"></div>
-              <div class="mt-3 inline-block text-[10px] text-white px-3 py-1.5 self-start" :style="'background:'+primary+';border-radius:'+btnRadius()">Pobierz</div>
+              <div class="text-[13px] font-semibold text-slate-800" :style="'font-family:'+fontHeading()">Pliki dla Ciebie</div>
+              <div class="mt-1.5 h-1.5 rounded bg-slate-200" style="width:66%"></div>
+              <div class="mt-1 h-1.5 rounded bg-slate-200" style="width:50%"></div>
+              <div class="mt-2 inline-block text-[10px] text-white px-3 py-1 self-start" :style="'background:'+primary+';border-radius:'+btnRadius()">Pobierz</div>
             </div>
           </div>
 
-          <!-- pozostałe układy: nagłówek + hero + karta na tle -->
-          <div x-show="layoutStyle!=='panel'" class="absolute inset-0 flex flex-col p-4">
-            <div class="flex items-center gap-1.5 mb-3" :class="logoAlign==='center'?'justify-center':(logoAlign==='right'?'justify-end':'')" x-show="!hideName">
+          <!-- Pasek boczny: kolorowy brand strip + karta na tle -->
+          <div x-show="layoutStyle==='sidebar'" x-cloak class="absolute inset-0 flex" :class="cardSide==='right' ? 'flex-row-reverse' : ''">
+            <div class="bg-brand-600 text-white p-3 flex flex-col justify-between" style="width:34%">
+              <div class="flex items-center gap-1.5" x-show="!hideName"><span class="w-4 h-4 rounded bg-white/20 flex items-center justify-center text-[8px] font-bold">E</span><span class="text-[10px] font-semibold" x-text="appName"></span></div>
+              <div x-show="heroOnBg && heroTitle" class="text-[12px] font-bold" :style="'font-family:'+fontHeading()" x-text="heroTitle"></div>
+              <div class="text-[8px] text-white/70" x-text="appName"></div>
+            </div>
+            <div class="flex-1 flex items-center justify-center p-4">
+              <div class="p-3" :style="cardStyle()+';width:82%'">
+                <div class="text-[13px] font-semibold text-slate-800" :style="'font-family:'+fontHeading()">Pliki dla Ciebie</div>
+                <div class="mt-1.5 h-1.5 rounded bg-slate-200" style="width:66%"></div>
+                <div class="mt-2 inline-block text-[10px] text-white px-3 py-1" :style="'background:'+primary+';border-radius:'+btnRadius()">Pobierz</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Róg: karta zadokowana w dolnym rogu -->
+          <div x-show="layoutStyle==='corner'" x-cloak class="absolute inset-0 flex flex-col p-4">
+            <div class="flex items-center gap-1.5" x-show="!hideName"><span class="w-4 h-4 rounded bg-brand-600 text-white text-[8px] flex items-center justify-center font-bold">E</span><span class="text-[11px] font-semibold" :class="bgIsDark()?'text-white':'text-slate-700'" x-text="appName"></span></div>
+            <div class="flex-1 flex items-end" :class="cardSide==='right'?'justify-end':(cardSide==='center'?'justify-center':'')">
+              <div class="p-3" :style="cardStyle()+';width:56%;max-width:240px'">
+                <div class="text-[13px] font-semibold text-slate-800" :style="'font-family:'+fontHeading()">Pliki dla Ciebie</div>
+                <div class="mt-1.5 h-1.5 rounded bg-slate-200" style="width:66%"></div>
+                <div class="mt-2 inline-block text-[10px] text-white px-3 py-1" :style="'background:'+primary+';border-radius:'+btnRadius()">Pobierz</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Banner: brandowy pasek u góry + karta pod spodem -->
+          <div x-show="layoutStyle==='banner'" x-cloak class="absolute inset-0 flex flex-col">
+            <div class="bg-brand-600 text-white px-4 py-3">
+              <div class="flex items-center gap-1.5" x-show="!hideName"><span class="w-4 h-4 rounded bg-white/20 flex items-center justify-center text-[8px] font-bold">E</span><span class="text-[10px] font-semibold" x-text="appName"></span></div>
+              <div x-show="heroOnBg && heroTitle" class="mt-1 text-sm font-bold" :style="'font-family:'+fontHeading()" x-text="heroTitle"></div>
+            </div>
+            <div class="flex-1 flex items-center justify-center p-4">
+              <div class="p-3" :style="cardStyle()+';width:60%;max-width:300px'">
+                <div class="text-[13px] font-semibold text-slate-800" :style="'font-family:'+fontHeading()">Pliki dla Ciebie</div>
+                <div class="mt-1.5 h-1.5 rounded bg-slate-200" style="width:66%"></div>
+                <div class="mt-2 inline-block text-[10px] text-white px-3 py-1" :style="'background:'+primary+';border-radius:'+btnRadius()">Pobierz</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Split: hero z jednej strony, karta z drugiej -->
+          <div x-show="layoutStyle==='split'" x-cloak class="absolute inset-0 grid grid-cols-2 items-center gap-3 p-4">
+            <div :class="cardSide==='left' ? 'order-2 text-right' : 'order-1'">
+              <div class="text-base font-bold" :class="bgIsDark()?'text-white':'text-slate-800'" :style="'font-family:'+fontHeading()" x-text="heroTitle || appName"></div>
+              <div x-show="heroSubtitle" class="text-[11px]" :class="bgIsDark()?'text-white/80':'text-slate-500'" x-text="heroSubtitle"></div>
+            </div>
+            <div class="flex" :class="cardSide==='left' ? 'order-1 justify-start' : 'order-2 justify-end'">
+              <div class="p-3" :style="cardStyle()+';width:100%;max-width:210px'">
+                <div class="text-[13px] font-semibold text-slate-800" :style="'font-family:'+fontHeading()">Pliki dla Ciebie</div>
+                <div class="mt-1.5 h-1.5 rounded bg-slate-200" style="width:66%"></div>
+                <div class="mt-2 inline-block text-[10px] text-white px-3 py-1" :style="'background:'+primary+';border-radius:'+btnRadius()">Pobierz</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pozostałe: klasyczny / landing / pełne tło / hero w karcie / minimal -->
+          <div x-show="['classic','centered','showcase','hero-card','minimal'].includes(layoutStyle)" x-cloak class="absolute inset-0 flex flex-col p-4">
+            <div class="flex items-center gap-1.5 mb-3" :class="logoAlign==='center'?'justify-center':(logoAlign==='right'?'justify-end':'')" x-show="!hideName && layoutStyle!=='minimal' && layoutStyle!=='hero-card'">
               <span class="w-4 h-4 rounded bg-brand-600 text-white text-[8px] flex items-center justify-center font-bold">E</span>
               <span class="text-[11px] font-semibold" :class="bgIsDark()?'text-white':'text-slate-700'" x-text="appName"></span>
             </div>
-            <div x-show="heroOnBg && heroTitle" class="mb-3" :class="layoutStyle==='centered'?'text-center':''">
-              <div class="text-base font-bold" :class="bgIsDark()?'text-white':'text-slate-800'" :style="'font-family:'+fontHeading()" x-text="heroTitle"></div>
+            <div x-show="heroOnBg && heroTitle && layoutStyle!=='hero-card'" class="mb-3" :class="layoutStyle==='centered'?'text-center':''">
+              <div class="font-bold" :class="(layoutStyle==='centered'?'text-lg ':'text-base ') + (bgIsDark()?'text-white':'text-slate-800')" :style="'font-family:'+fontHeading()" x-text="heroTitle"></div>
               <div class="text-[11px]" :class="bgIsDark()?'text-white/80':'text-slate-500'" x-text="heroSubtitle"></div>
             </div>
-            <div class="flex-1 flex items-center" :class="cardAlign()">
-              <div class="p-4" :style="cardStyle()+';width:58%;max-width:300px'">
-                <div class="text-sm font-semibold text-slate-800" :style="'font-family:'+fontHeading()">Pliki dla Ciebie</div>
-                <div class="mt-2 h-1.5 w-2/3 rounded bg-slate-200"></div>
-                <div class="mt-1.5 h-1.5 w-1/2 rounded bg-slate-200"></div>
-                <div class="mt-3 inline-block text-[10px] text-white px-3 py-1.5" :style="'background:'+primary+';border-radius:'+btnRadius()">Pobierz</div>
+            <div class="flex-1 flex items-center" :class="layoutStyle==='showcase' ? cardAlign() : 'justify-center'">
+              <div class="p-3" :style="cardStyle()+';width:60%;max-width:300px'">
+                <div x-show="layoutStyle==='hero-card' && heroTitle" class="text-sm font-bold text-slate-800 mb-1" :style="'font-family:'+fontHeading()" x-text="heroTitle"></div>
+                <div class="text-[13px] font-semibold text-slate-800" :style="'font-family:'+fontHeading()">Pliki dla Ciebie</div>
+                <div class="mt-1.5 h-1.5 rounded bg-slate-200" style="width:66%"></div>
+                <div class="mt-1 h-1.5 rounded bg-slate-200" style="width:50%"></div>
+                <div class="mt-2 inline-block text-[10px] text-white px-3 py-1" :style="'background:'+primary+';border-radius:'+btnRadius()">Pobierz</div>
               </div>
             </div>
           </div>
