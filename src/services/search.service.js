@@ -8,7 +8,8 @@ async function search(q, limit = 20) {
   const [clients, projects, transfers] = await Promise.all([
     prisma.client.findMany({
       where: { OR: [
-        { name: { contains: s } }, { email: { contains: s } }, { company: { contains: s } },
+        { name: { contains: s } }, { firstName: { contains: s } }, { lastName: { contains: s } },
+        { email: { contains: s } }, { company: { contains: s } },
         { phone: { contains: s } }, { tags: { contains: s } }, { nip: { contains: s } },
       ] },
       include: { _count: { select: { projects: true } } },

@@ -16,6 +16,8 @@ async function list({ q, status } = {}) {
     // wyszukiwanie po wszystkich polach tekstowych (SQLite LIKE — bez rozróżniania wielkości, ASCII)
     where.OR = [
       { name: { contains: s } },
+      { firstName: { contains: s } },
+      { lastName: { contains: s } },
       { email: { contains: s } },
       { company: { contains: s } },
       { phone: { contains: s } },
