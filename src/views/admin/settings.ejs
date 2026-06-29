@@ -756,6 +756,39 @@
       <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition whitespace-nowrap">Wyślij test</button>
     </form>
   </div>
+
+  <!-- Kopia zapasowa (zaawansowane) — osobne formularze poza głównym -->
+  <div x-show="tab==='advanced'" x-cloak class="mt-6 bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-slate-700 mb-1">Kopia zapasowa</h2>
+    <p class="text-xs text-slate-400">Pobierz kopię na swój komputer (ZIP) lub steruj automatycznym backupem (cron). Kopia = baza + pliki transferów.</p>
+
+    <form method="POST" action="/admin/settings/backup" class="flex flex-col sm:flex-row sm:items-end gap-3">
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Zakres</label>
+        <div class="flex gap-2 text-sm">
+          <label class="cursor-pointer"><input type="radio" name="scope" value="all" checked class="peer sr-only" /><span class="block rounded-lg border border-slate-300 px-3 py-1.5 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition">Baza + pliki</span></label>
+          <label class="cursor-pointer"><input type="radio" name="scope" value="db" class="peer sr-only" /><span class="block rounded-lg border border-slate-300 px-3 py-1.5 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition">Tylko baza</span></label>
+        </div>
+      </div>
+      <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition inline-flex items-center gap-1.5"><%- icon('download', { size: 15, cls: '' }) %> Pobierz kopię</button>
+    </form>
+
+    <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+      <div class="text-sm">
+        <span class="text-slate-600">Automatyczny backup (cron):</span>
+        <% if (autoBackupDisabled) { %><span class="font-medium text-amber-600">wyłączony</span><% } else { %><span class="font-medium text-green-600">włączony</span><% } %>
+      </div>
+      <form method="POST" action="/admin/settings/backup-auto">
+        <% if (autoBackupDisabled) { %>
+          <input type="hidden" name="enable" value="on" />
+          <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">Włącz</button>
+        <% } else { %>
+          <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-sm font-medium px-4 py-2 transition">Wyłącz</button>
+        <% } %>
+      </form>
+    </div>
+    <p class="text-[11px] text-slate-400">Auto-backup wykonuje cron (<code>node src/jobs/backup.job.js</code>); „Wyłącz" sprawia tylko, że cron pomija wykonanie (flaga w katalogu backupów).</p>
+  </div>
 </div>
 
 <script>

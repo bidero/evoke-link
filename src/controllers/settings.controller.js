@@ -10,6 +10,7 @@ const { sanitizeCss } = require('../utils/css');
 const { sanitizeEmailHtml } = require('../utils/htmlEmail');
 const background = require('../utils/background');
 const fonts = require('../utils/fonts');
+const backup = require('../services/backup.service');
 const { THEMES } = require('../utils/themes');
 
 // parseInt z zakresem i domyślną wartością. Ważne: ZACHOWUJE 0
@@ -28,6 +29,7 @@ async function showSettings(req, res, next) {
       settings,
       presets: background.PRESETS,
       themes: THEMES,
+      autoBackupDisabled: backup.isAutoDisabled(),
       saved: req.query.saved === '1',
       mailReady: mail.isConfigured(),
       adminEmail: config.admin.email,
@@ -220,6 +222,27 @@ async function applyTheme(req, res, next) {
   }
 }
 
+// Ręczne pobranie kopii zapasowej (z panelu). scope: 'all' (baza + pliki) | 'db' (sama baza).
+async function downloadBackup(req, res, next) {
+  try {
+    const scope = req.body.scope === 'db' ? 'db' : 'all';
+    await backup.streamBackup(res, scope);
+    await events.log({ type: 'updated', message: `Pobrano kopię zapasową (${scope === 'db' ? 'baza' : 'baza + pliki'})`, ip: req.ip });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Włączenie/wyłączenie automatycznego backupu (cron sprawdza flagę).
+function toggleAutoBackup(req, res, next) {
+  try {
+    backup.setAuto(req.body.enable === 'on');
+    res.redirect('/admin/settings?saved=1');
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Wysyłka testowego e-maila (weryfikacja SMTP z .env).
 async function sendTestEmail(req, res, next) {
   try {
@@ -233,4 +256,4 @@ async function sendTestEmail(req, res, next) {
   }
 }
 
-module.exports = { showSettings, updateSettings, applyTheme, sendTestEmail };
+module.exports = { showSettings, updateSettings, applyTheme, downloadBackup, toggleAutoBackup, sendTestEmail };

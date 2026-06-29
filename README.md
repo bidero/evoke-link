@@ -95,6 +95,7 @@ Spójna kopia bazy (`VACUUM INTO`) + pliki transferów spakowane ZIP-em do `back
 30 3 * * *  cd ~/domains/transfer.twojadomena.pl/app && node src/jobs/backup.job.js
 ```
 Konfiguracja w `.env`: `BACKUP_DIR` (domyślnie `./backups`), `BACKUP_KEEP` (domyślnie 14). Odtworzenie = rozpakuj wybrany ZIP: `evoke.db` → `storage/`, `transfers/` → `storage/transfers/`.
+Z panelu (Ustawienia → Zaawansowane): ręczne pobranie kopii (ZIP, zakres: baza / baza+pliki) oraz włączanie/wyłączanie automatycznego backupu (gdy wyłączony, cron pomija wykonanie).
 
 ### Przypomnienia o płatności (cron)
 Maile do klientów o przeterminowanych pozycjach (wymaga włączenia w Ustawieniach → E-mail oraz działającego SMTP):
