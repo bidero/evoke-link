@@ -26,10 +26,16 @@
     logoAlign: settings.logo.align,
     layoutStyle: settings.layout.style,
     layoutCard: settings.layout.card,
+    cardSide: settings.layout.cardSide,
+    layoutFont: settings.layout.font || 'system',
     heroOnBg: settings.layout.heroOnBg,
+    hideName: settings.layout.hideName,
     applyToLogin: settings.layout.applyToLogin,
     layoutRadius: settings.layout.radius,
     layoutButton: settings.layout.button,
+    appName: settings.appName || 'Evoke LINK',
+    heroTitle: (settings.texts && settings.texts.heroTitle) || '',
+    heroSubtitle: (settings.texts && settings.texts.heroSubtitle) || '',
     presetCss: Object.fromEntries(Object.entries(presets).map(([k, v]) => [k, v.css])),
   };
 %>
@@ -339,16 +345,47 @@
         </div>
       </div>
 
-      <!-- Podgląd tła -->
+      <!-- Podgląd całej strony klienta (na żywo) -->
       <div>
-        <span class="block text-xs font-medium text-slate-600 mb-1">Podgląd</span>
-        <div class="relative rounded-xl border border-slate-200 overflow-hidden h-32 flex items-center justify-center" :style="clientBgStyle()">
+        <span class="block text-xs font-medium text-slate-600 mb-1">Podgląd strony klienta (na żywo)</span>
+        <div class="relative rounded-xl border border-slate-200 overflow-hidden h-80" :style="clientBgStyle() + ';font-family:' + fontFamily()">
           <div x-show="bgType==='image' && (previewImg || imagePath)" class="absolute inset-0" :style="'background:#0f172a center/cover no-repeat; background-image:url(' + (previewImg || imagePath) + ')'"></div>
           <div x-show="bgType==='image' && bgImageGradient" class="absolute inset-0" :style="'background:' + imageGradientCss()"></div>
           <div x-show="bgType==='image' && bgOverlay>0" class="absolute inset-0" :style="'background:rgba(15,23,42,' + (bgOverlay/100) + ')'"></div>
           <div x-show="bgGrain" class="absolute inset-0 pointer-events-none" :style="grainPreviewStyle()"></div>
-          <div class="relative bg-white/85 rounded-lg px-4 py-2 text-xs text-slate-600 shadow">Karta klienta</div>
+
+          <!-- układ „Panel na tle" -->
+          <div x-show="layoutStyle==='panel'" x-cloak class="absolute inset-0 flex" :class="cardSide==='right' ? 'justify-end' : (cardSide==='center' ? 'justify-center' : '')">
+            <div class="h-full bg-white p-4 flex flex-col justify-center" style="width:44%">
+              <div class="flex items-center gap-1.5 mb-3" x-show="!hideName"><span class="w-4 h-4 rounded bg-brand-600 text-white text-[8px] flex items-center justify-center font-bold">E</span><span class="text-[11px] font-semibold text-slate-700" x-text="appName"></span></div>
+              <div class="text-sm font-semibold text-slate-800" :style="'font-family:'+fontHeading()">Pliki dla Ciebie</div>
+              <div class="mt-2 h-1.5 w-2/3 rounded bg-slate-200"></div>
+              <div class="mt-1.5 h-1.5 w-1/2 rounded bg-slate-200"></div>
+              <div class="mt-3 inline-block text-[10px] text-white px-3 py-1.5 self-start" :style="'background:'+primary+';border-radius:'+btnRadius()">Pobierz</div>
+            </div>
+          </div>
+
+          <!-- pozostałe układy: nagłówek + hero + karta na tle -->
+          <div x-show="layoutStyle!=='panel'" class="absolute inset-0 flex flex-col p-4">
+            <div class="flex items-center gap-1.5 mb-3" :class="logoAlign==='center'?'justify-center':(logoAlign==='right'?'justify-end':'')" x-show="!hideName">
+              <span class="w-4 h-4 rounded bg-brand-600 text-white text-[8px] flex items-center justify-center font-bold">E</span>
+              <span class="text-[11px] font-semibold" :class="bgIsDark()?'text-white':'text-slate-700'" x-text="appName"></span>
+            </div>
+            <div x-show="heroOnBg && heroTitle" class="mb-3" :class="layoutStyle==='centered'?'text-center':''">
+              <div class="text-base font-bold" :class="bgIsDark()?'text-white':'text-slate-800'" :style="'font-family:'+fontHeading()" x-text="heroTitle"></div>
+              <div class="text-[11px]" :class="bgIsDark()?'text-white/80':'text-slate-500'" x-text="heroSubtitle"></div>
+            </div>
+            <div class="flex-1 flex items-center" :class="cardAlign()">
+              <div class="p-4" :style="cardStyle()+';width:58%;max-width:300px'">
+                <div class="text-sm font-semibold text-slate-800" :style="'font-family:'+fontHeading()">Pliki dla Ciebie</div>
+                <div class="mt-2 h-1.5 w-2/3 rounded bg-slate-200"></div>
+                <div class="mt-1.5 h-1.5 w-1/2 rounded bg-slate-200"></div>
+                <div class="mt-3 inline-block text-[10px] text-white px-3 py-1.5" :style="'background:'+primary+';border-radius:'+btnRadius()">Pobierz</div>
+              </div>
+            </div>
+          </div>
         </div>
+        <p class="text-[11px] text-slate-400 mt-1">Poglądowo, na żywo: układ, karta, kolor, tło, font i hero. Dokładny wygląd — na stronach klienta po zapisaniu.</p>
       </div>
     </div>
 
@@ -362,7 +399,7 @@
         <div class="grid grid-cols-3 gap-2 text-sm">
           <% [['classic','Klasyczny'],['centered','Landing'],['split','Split'],['showcase','Pełne tło'],['panel','Panel na tle'],['hero-card','Hero w karcie'],['minimal','Minimal'],['banner','Banner']].forEach(function(o){ %>
             <label class="cursor-pointer">
-              <input type="radio" name="layoutStyle" value="<%= o[0] %>" <%= settings.layout.style === o[0] ? 'checked' : '' %> class="peer sr-only" />
+              <input type="radio" name="layoutStyle" value="<%= o[0] %>" <%= settings.layout.style === o[0] ? 'checked' : '' %> @change="layoutStyle=$event.target.value" class="peer sr-only" />
               <span class="block text-center rounded-lg border border-slate-300 px-2 py-2 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
             </label>
           <% }); %>
@@ -374,7 +411,7 @@
         <div class="grid grid-cols-3 gap-2 text-sm">
           <% [['left','Z lewej'],['center','Wyśrodkowana'],['right','Z prawej']].forEach(function(o){ %>
             <label class="cursor-pointer">
-              <input type="radio" name="cardSide" value="<%= o[0] %>" <%= settings.layout.cardSide === o[0] ? 'checked' : '' %> class="peer sr-only" />
+              <input type="radio" name="cardSide" value="<%= o[0] %>" <%= settings.layout.cardSide === o[0] ? 'checked' : '' %> @change="cardSide=$event.target.value" class="peer sr-only" />
               <span class="block text-center rounded-lg border border-slate-300 px-2 py-1.5 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
             </label>
           <% }); %>
@@ -386,7 +423,7 @@
         <div class="grid grid-cols-3 gap-2 text-sm">
           <% [['solid','Pełna biel'],['glass','Mrożone szkło'],['elevated','Uniesiona']].forEach(function(o){ %>
             <label class="cursor-pointer">
-              <input type="radio" name="layoutCard" value="<%= o[0] %>" <%= settings.layout.card === o[0] ? 'checked' : '' %> class="peer sr-only" />
+              <input type="radio" name="layoutCard" value="<%= o[0] %>" <%= settings.layout.card === o[0] ? 'checked' : '' %> @change="layoutCard=$event.target.value" class="peer sr-only" />
               <span class="block text-center rounded-lg border border-slate-300 px-2 py-2 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
             </label>
           <% }); %>
@@ -397,6 +434,7 @@
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Zaokrąglenie rogów: <span id="radiusOut"><%= settings.layout.radius %></span> px</label>
           <input type="range" name="layoutRadius" min="0" max="40" step="2" value="<%= settings.layout.radius %>"
+                 @input="layoutRadius=$event.target.value"
                  oninput="var e=document.getElementById('radiusOut'); if(e){e.textContent=this.value;}" class="w-full accent-brand-600" />
         </div>
         <div>
@@ -404,7 +442,7 @@
           <div class="grid grid-cols-2 gap-2 text-sm">
             <% [['rounded','Zaokrąglony'],['pill','Pigułka']].forEach(function(o){ %>
               <label class="cursor-pointer">
-                <input type="radio" name="layoutButton" value="<%= o[0] %>" <%= settings.layout.button === o[0] ? 'checked' : '' %> class="peer sr-only" />
+                <input type="radio" name="layoutButton" value="<%= o[0] %>" <%= settings.layout.button === o[0] ? 'checked' : '' %> @change="layoutButton=$event.target.value" class="peer sr-only" />
                 <span class="block text-center rounded-lg border border-slate-300 px-2 py-1.5 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
               </label>
             <% }); %>
@@ -417,7 +455,7 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
           <% [['system','Domyślny'],['serif','Serif nagłówki'],['editorial','Elegancki'],['mono','Techniczny']].forEach(function(o){ %>
             <label class="cursor-pointer">
-              <input type="radio" name="layoutFont" value="<%= o[0] %>" <%= (settings.layout.font || 'system') === o[0] ? 'checked' : '' %> class="peer sr-only" />
+              <input type="radio" name="layoutFont" value="<%= o[0] %>" <%= (settings.layout.font || 'system') === o[0] ? 'checked' : '' %> @change="layoutFont=$event.target.value" class="peer sr-only" />
               <span class="block text-center rounded-lg border border-slate-300 px-2 py-2 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
             </label>
           <% }); %>
@@ -426,11 +464,11 @@
 
       <div class="space-y-2 pt-1">
         <label class="flex items-center gap-2 text-sm text-slate-600">
-          <input type="checkbox" name="heroOnBg" <%= settings.layout.heroOnBg ? 'checked' : '' %> class="rounded border-slate-300" />
+          <input type="checkbox" name="heroOnBg" <%= settings.layout.heroOnBg ? 'checked' : '' %> @change="heroOnBg=$event.target.checked" class="rounded border-slate-300" />
           Pokaż nagłówek (hero) na stronach klienta
         </label>
         <label class="flex items-center gap-2 text-sm text-slate-600">
-          <input type="checkbox" name="hideName" <%= settings.layout.hideName ? 'checked' : '' %> class="rounded border-slate-300" />
+          <input type="checkbox" name="hideName" <%= settings.layout.hideName ? 'checked' : '' %> @change="hideName=$event.target.checked" class="rounded border-slate-300" />
           Ukryj nazwę aplikacji (gdy nagłówek wyłączony / brak logo)
         </label>
         <label class="flex items-center gap-2 text-sm text-slate-600">
@@ -759,6 +797,31 @@ function settingsForm(init) {
     imageGradientCss(){ var c1=this._rgba(this.imgGradC1,0.6); var c2=this.imgGradC2on?this._rgba(this.imgGradC2,0.38):'rgba(0,0,0,0)'; return 'linear-gradient('+this.imgGradAngle+'deg, '+c1+' 0%, '+c2+' 55%, rgba(0,0,0,0) 100%)'; },
     grainPreviewStyle(){ var P={fine:{f:0.85,o:2,size:160,max:0.5},soft:{f:0.55,o:3,size:220,max:0.42},coarse:{f:0.34,o:4,size:300,max:0.34}}; var g=P[this.bgGrainType]||P.fine; var op=((this.bgGrainStrength/100)*g.max).toFixed(3); var uri="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='"+g.size+"' height='"+g.size+"'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='"+g.f+"' numOctaves='"+g.o+"' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"; return 'mix-blend-mode:soft-light;background-size:'+g.size+'px '+g.size+'px;opacity:'+op+';background-image:url("'+uri+'")'; },
     onBgFile(e){ const f=e.target.files&&e.target.files[0]; this.previewImg = f ? URL.createObjectURL(f) : null; },
+
+    // --- podgląd całej strony ---
+    _fonts: { system:"ui-sans-serif, system-ui, 'Segoe UI', Roboto, Arial, sans-serif", serif:"ui-serif, Georgia, 'Times New Roman', serif", editorial:"ui-serif, Georgia, 'Times New Roman', serif", mono:"ui-monospace, Consolas, monospace" },
+    fontFamily(){ return this._fonts[this.layoutFont] || this._fonts.system; },
+    fontHeading(){ return (this.layoutFont==='serif'||this.layoutFont==='editorial') ? this._fonts.serif : (this.layoutFont==='mono' ? this._fonts.mono : this._fonts.system); },
+    bgIsDark(){
+      if(this.bgType==='gradient') return ['dusk','midnight','nebula'].includes(this.bgPreset);
+      if(this.bgType==='image') return this.bgOverlay>=35 || this.bgImageGradient;
+      if(this.bgType==='solid') return this._readable(this.bgColor)==='#ffffff';
+      if(this.bgType==='custom') return this._readable(this.gradC1)==='#ffffff' && this._readable(this.gradC2)==='#ffffff';
+      return false;
+    },
+    cardAlign(){
+      if(this.layoutStyle==='split'||this.layoutStyle==='showcase'){
+        return this.cardSide==='left' ? 'justify-start' : (this.cardSide==='center' ? 'justify-center' : 'justify-end');
+      }
+      return 'justify-center';
+    },
+    cardStyle(){
+      var r='border-radius:'+Math.min(28,this.layoutRadius)+'px';
+      if(this.layoutCard==='glass') return 'background:rgba(255,255,255,0.62);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.5);'+r;
+      if(this.layoutCard==='elevated') return 'background:#fff;box-shadow:0 18px 40px -12px rgba(2,6,23,0.45);'+r;
+      return 'background:#fff;box-shadow:0 6px 16px rgba(2,6,23,0.12);'+r;
+    },
+    btnRadius(){ return this.layoutButton==='pill' ? '9999px' : '8px'; },
   };
 }
 </script>
