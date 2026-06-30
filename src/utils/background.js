@@ -200,15 +200,17 @@ function overlayHtml(bg) {
   const img = b.images[0] || b.imagePath;
   const slideshowActive = b.type === 'image' && b.rotate && b.images.length >= 2;
   let html = '';
-  // Obraz tła jako pozycjonowana warstwa (bez background-attachment:fixed). Slideshow ma własne warstwy.
+  // Obraz tła + nakładki w JEDNEJ warstwie, odsłanianej (opacity 0→1) DOPIERO po załadowaniu
+  // obrazu. Bez tego nakładka gradientu (czysty CSS) maluje się natychmiast, zanim doładuje się
+  // zdjęcie — przez chwilę widać sam gradient nad ciemną bazą, najbardziej za kartą „szkło"
+  // (backdrop-blur). Preloader <img onload> odsłania całość, gdy zdjęcie jest gotowe.
+  // Slideshow ma własne warstwy (rotacja).
   if (b.type === 'image' && img && !slideshowActive) {
-    html += `<div aria-hidden="true" class="bg-img-layer" style="position:${pos};inset:0;z-index:0;pointer-events:none;background:#0f172a url('${img}') center/cover no-repeat;"></div>`;
-  }
-  if (b.type === 'image' && img && b.imageGradient) {
-    html += `<div aria-hidden="true" style="position:${pos};inset:0;z-index:0;pointer-events:none;background:${imageGradientCss(b.imageGrad)};"></div>`;
-  }
-  if (b.type === 'image' && img && b.overlay > 0) {
-    html += `<div aria-hidden="true" style="position:${pos};inset:0;z-index:0;pointer-events:none;background:rgba(15,23,42,${(b.overlay / 100).toFixed(2)});"></div>`;
+    let inner = `<div style="position:absolute;inset:0;background:#0f172a url('${img}') center/cover no-repeat;"></div>`;
+    if (b.imageGradient) inner += `<div style="position:absolute;inset:0;background:${imageGradientCss(b.imageGrad)};"></div>`;
+    if (b.overlay > 0) inner += `<div style="position:absolute;inset:0;background:rgba(15,23,42,${(b.overlay / 100).toFixed(2)});"></div>`;
+    html += `<div aria-hidden="true" class="bg-img-layer" style="position:${pos};inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .45s ease;">${inner}</div>`;
+    html += `<img src="${img}" alt="" aria-hidden="true" decoding="async" style="position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1;" onload="var l=this.previousElementSibling;if(l)l.style.opacity=1;" onerror="var l=this.previousElementSibling;if(l)l.style.opacity=1;" />`;
   }
   if (b.grain && b.grainStrength > 0) {
     const g = GRAIN[b.grainType] || GRAIN.fine;
