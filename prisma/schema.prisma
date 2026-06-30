@@ -149,6 +149,7 @@ model Settings {
   appName      String   @default("Evoke LINK")
   logoPath     String?
   faviconPath  String?
+  ogImagePath  String?  // obraz podglądu linku (OpenGraph); puste = używane jest logo
   colors       String?  // JSON: { primary, adminAccent, adminText, adminSidebar, adminBg }
   texts        String?  // JSON: { heroTitle, heroSubtitle, footer, messages }
   background   String?  // JSON: { type, preset, color, custom, imagePath, overlay, grain, grainStrength } — tło stron klienta

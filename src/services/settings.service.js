@@ -8,6 +8,7 @@ const DEFAULTS = {
   appName: 'Evoke LINK',
   logoPath: null,
   faviconPath: null,
+  ogImagePath: null,
   // primary = kolor przewodni (strona klienta). adminAccent/Sidebar/Bg = elementy panelu;
   // adminAccent puste = dziedziczy primary.
   colors: { primary: '#6e00a5', adminAccent: '', adminText: '', adminSidebar: '#ffffff', adminBg: '#f8fafc', darkBg: '#0f172a', darkSurface: '#1e293b', darkText: '#e5e7eb' },
@@ -96,6 +97,7 @@ function normalize(row) {
     appName: row.appName || DEFAULTS.appName,
     logoPath: row.logoPath || null,
     faviconPath: row.faviconPath || null,
+    ogImagePath: row.ogImagePath || null,
     colors: { ...DEFAULTS.colors, ...colors },
     texts: { ...DEFAULTS.texts, ...texts },
     background: background.normalize(bg),
@@ -126,6 +128,7 @@ async function update(data) {
   if (data.appName !== undefined) patch.appName = data.appName || DEFAULTS.appName;
   if (data.logoPath !== undefined) patch.logoPath = data.logoPath;
   if (data.faviconPath !== undefined) patch.faviconPath = data.faviconPath;
+  if (data.ogImagePath !== undefined) patch.ogImagePath = data.ogImagePath;
   if (data.colors !== undefined) patch.colors = JSON.stringify(data.colors);
   if (data.texts !== undefined) patch.texts = JSON.stringify(data.texts);
   if (data.background !== undefined) patch.background = JSON.stringify(data.background);

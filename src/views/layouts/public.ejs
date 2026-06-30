@@ -14,7 +14,7 @@
     var _ogTitle = (typeof title !== 'undefined' && title) ? title : appName;
     var _ogDesc = (typeof metaDesc !== 'undefined' && metaDesc) ? metaDesc
       : ((typeof settings !== 'undefined' && settings && settings.texts && settings.texts.heroSubtitle) ? settings.texts.heroSubtitle : (appName + ' — bezpieczna wymiana plików'));
-    var _ogImgPath = (typeof settings !== 'undefined' && settings) ? (settings.logoPath || settings.faviconPath || '') : '';
+    var _ogImgPath = (typeof settings !== 'undefined' && settings) ? (settings.ogImagePath || settings.logoPath || settings.faviconPath || '') : '';
     var _ogImg = _ogImgPath ? ((typeof appUrl !== 'undefined' ? appUrl : '') + _ogImgPath) : '';
   %>
   <meta name="description" content="<%= _ogDesc %>" />

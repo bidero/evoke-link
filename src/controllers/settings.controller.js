@@ -184,6 +184,10 @@ async function updateSettings(req, res, next) {
     if (fav) { sanitizeIfSvg(fav); data.faviconPath = `/branding/${fav.filename}`; }
     else if (b.removeFavicon === 'on') data.faviconPath = null;
 
+    const ogImage = uploadedFile(req, 'ogImage');
+    if (ogImage) { sanitizeIfSvg(ogImage); data.ogImagePath = `/branding/${ogImage.filename}`; }
+    else if (b.removeOgImage === 'on') data.ogImagePath = null;
+
     // --- Pliki: obrazy tła (wiele, do rotacji) ---
     // Zacznij od obecnych, usuń zaznaczone, dołóż nowo wgrane.
     let bgImages = Array.isArray(current.background.images) && current.background.images.length
