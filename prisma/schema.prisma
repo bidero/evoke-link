@@ -45,6 +45,7 @@ model Client {
   events    Event[]
   charges   Charge[]                      // pozycje rozliczeniowe „bez projektu" (wprost na kliencie)
   messages  Message[]                     // wiadomości od klienta (z portalu /c)
+  reminders Reminder[]                    // zadania/przypomnienia powiązane z klientem
 }
 
 model Project {
@@ -64,6 +65,7 @@ model Project {
   events             Event[]
   charges            Charge[]
   messages           Message[]
+  reminders          Reminder[]
 }
 
 // Pozycja rozliczeniowa (kwota). „Czasami po kilka" → osobne wiersze.
@@ -186,4 +188,25 @@ model Message {
   @@index([clientId])
   @@index([projectId])
   @@index([transferId])
+}
+
+// Zadanie/przypomnienie w kalendarzu (menedżer zadań). Opcjonalnie powiązane z klientem/projektem.
+model Reminder {
+  id        Int       @id @default(autoincrement())
+  title     String
+  note      String?
+  dueAt     DateTime  // termin (data + godzina)
+  done      Boolean   @default(false)
+  doneAt    DateTime?
+  priority  String    @default("normal") // low | normal | high
+  client    Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId  Int?
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId Int?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([dueAt])
+  @@index([clientId])
+  @@index([projectId])
 }

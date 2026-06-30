@@ -33,6 +33,7 @@
       <nav class="flex-1 px-3 py-4 space-y-1 text-sm">
         <% const items = [
           { key: 'dashboard', label: 'Pulpit', href: '/admin' },
+          { key: 'calendar', label: 'Kalendarz', href: '/admin/calendar' },
           { key: 'projects', label: 'Projekty', href: '/admin/projects' },
           { key: 'clients', label: 'Klienci', href: '/admin/clients' },
           { key: 'transfers', label: 'Transfery', href: '/admin/transfers' },
@@ -42,8 +43,9 @@
         ]; %>
         <% const unread = (typeof unreadCount !== 'undefined') ? unreadCount : 0; %>
         <% const unreadM = (typeof unreadMessages !== 'undefined') ? unreadMessages : 0; %>
+        <% const calDue = (typeof calendarDue !== 'undefined') ? calendarDue : 0; %>
         <% items.forEach(function(it){ %>
-          <% const badge = it.key === 'notifications' ? unread : (it.key === 'messages' ? unreadM : 0); %>
+          <% const badge = it.key === 'notifications' ? unread : (it.key === 'messages' ? unreadM : (it.key === 'calendar' ? calDue : 0)); %>
           <a href="<%= it.href %>"
              class="flex items-center justify-between px-3 py-2 rounded-lg transition <%= (typeof active !== 'undefined' && active === it.key) ? 'bg-brand-50 text-brand-700 font-medium' : 'opacity-70 hover:opacity-100 hover:bg-black/5' %>">
             <span><%= it.label %></span>

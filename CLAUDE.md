@@ -54,6 +54,7 @@ storage/                  pliki użytkowników + evoke.db (poza repo, .gitignore
 - **File** — `originalName`, `storedName`, `storedPath` (względna do storage), `size` (BigInt!), `mimeType`. onDelete Cascade.
 - **Event** — historia + powiadomienia + dane widżetów. `type` (created|downloaded|uploaded|viewed|email_sent|note|updated|expired|error), `projectId?`, `transferId?`, `clientId?` (oś czasu klienta), `isRead`, `dismissed`, `meta` (JSON string). Powiadomienia (dzwonek) = tylko `NOTIFY_TYPES` (uploaded|downloaded|error); `viewed` jest w osi czasu, ale NIE dzwoni.
 - **Message** — wiadomość klient↔agencja. `direction` in|out, kontekst `clientId?`/`projectId?`/`transferId?` (definiuje wątek), `senderName?`/`senderEmail?`, `isRead` (dla agencji). Skrzynka panelu grupuje po kontekście (wątki); klient widzi wątek w popupie + badge nowej odpowiedzi (sesja `msgSeen`).
+- **Reminder** — zadanie/przypomnienie kalendarza (menedżer zadań). `title`, `note?`, `dueAt`, `done`/`doneAt?`, `priority` low|normal|high, opcjonalnie `clientId?`/`projectId?`. `calendar.service` agreguje je z terminami płatności (`Charge.dueDate`) i wygasaniem transferów (`Transfer.expiresAt`) w jeden strumień wydarzeń.
 - **Settings** — branding/customizacja (1 rekord, `id=1`). Kolumny: `appName`, `logoPath`, `faviconPath`, `ogImagePath` (obraz podglądu linku OG), `customCss` + JSON-y: `colors` (`primary`, `adminAccent`, `adminText`, `adminSidebar`, `adminHeader` (pasek nagłówka, puste=jak sidebar), `adminBg`, `darkBg/darkSurface/darkText`), `texts` (`heroTitle`, `heroSubtitle`, `footer`), `background` (`type` gradient|custom|image|solid, `preset`, `color`, `custom`, `imagePath`/`images[]`/`rotate`/`rotateSec`, `overlay`, `imageGradient`+`imageGrad`, `grain`/`grainType`/`grainStrength`, `scroll`), `logo` (`size`, `align`, `darkPath`), `layout` (`style`,`card`,`cardSide`,`radius`,`button`,`stickyHeader`,`font`,`hideName`,`heroOnBg`,`applyToLogin`), `emails` (loga/tematy/wstępy + przypomnienia), `pdf` (szablon + dane sprzedawcy).
 - **User** — w MVP login z `.env`, ale `auth.service.setAdminPassword` zapisuje hash admina do tej tabeli (po zmianie hasła w panelu baza ma pierwszeństwo nad `.env`).
 
@@ -116,7 +117,8 @@ storage/                  pliki użytkowników + evoke.db (poza repo, .gitignore
 - [x] Wiadomości klient↔agencja (dwukierunkowo): koperta + wątek (popup) na `/p`/`/t`/`/c` + badge nowej odpowiedzi; panel = widok wątków (grupowanie po kontekście) + odpowiedź + mail; model `Message`
 - [x] Ostrzeżenie o wygasaniu transferu — mail do agencji o wychodzących wygasających <24 h, niepobranych (cron `reminders`, toggle `emails.expiryWarn`, anty-powtórka `Transfer.expiryWarnedAt`)
 - [x] Testy `node:test` (`npm test`): smoke + przepływ wiadomości + ostrzeżenie o wygasaniu (`test/*.test.js`)
-- [ ] Do zrobienia: dane do przelewu na stronie rozliczeń klienta; (odłożone) white-label per-klient
+- [x] Kalendarz / menedżer zadań — siatka miesiąca + „Nadchodzące", przypomnienia (status/priorytet, powiązanie z klientem/projektem) + agregacja terminów płatności i wygasania; badge „do zrobienia" w menu (`calendar`/`reminder` service, `/admin/calendar`)
+- [ ] Do zrobienia: maile o przypomnieniach (Faza B kalendarza); dane do przelewu na stronie rozliczeń; (odłożone) white-label per-klient
 
 ## Workflow Git
 Nie pushować automatycznie. Bump wersji + wpis w changelogu dopiero po potwierdzeniu. W komunikatach/URL-ach redagować token dostępowy.

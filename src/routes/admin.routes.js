@@ -15,6 +15,8 @@ const brandingUpload = require('../middleware/brandingUpload');
 const events = require('../services/event.service');
 const messages = require('../controllers/message.controller');
 const messageService = require('../services/message.service');
+const calendar = require('../controllers/calendar.controller');
+const reminderService = require('../services/reminder.service');
 
 const router = express.Router();
 
@@ -25,9 +27,11 @@ router.use(async (req, res, next) => {
   try {
     res.locals.unreadCount = await events.unreadCount();
     res.locals.unreadMessages = await messageService.unreadCount();
+    res.locals.calendarDue = await reminderService.dueCount();
   } catch (_) {
     res.locals.unreadCount = 0;
     res.locals.unreadMessages = 0;
+    res.locals.calendarDue = 0;
   }
   next();
 });
@@ -36,6 +40,13 @@ router.get('/', showDashboard);
 router.get('/search', search.index);
 
 // Wiadomości od klientów (skrzynka).
+// Kalendarz / przypomnienia.
+router.get('/calendar', calendar.index);
+router.post('/calendar/reminders', calendar.createReminder);
+router.post('/calendar/reminders/:id', calendar.updateReminder);
+router.post('/calendar/reminders/:id/toggle', calendar.toggleReminder);
+router.post('/calendar/reminders/:id/delete', calendar.deleteReminder);
+
 router.get('/messages', messages.listMessages);
 router.post('/messages/read-all', messages.markAllRead);
 router.post('/messages/:id/reply', messages.replyMessage);
