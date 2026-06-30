@@ -102,6 +102,7 @@ model Transfer {
   message       String?
   passwordHash  String?                          // opcjonalna ochrona hasłem
   expiresAt     DateTime?                         // opcjonalna data wygaśnięcia
+  expiryWarnedAt DateTime?                        // kiedy wysłano ostrzeżenie o wygasaniu (anty-powtórka)
   maxDownloads  Int?                             // opcjonalny limit pobrań
   downloadCount Int       @default(0)
   clientVisible Boolean   @default(false)         // czy pokazać w panelu klienta /p/:token

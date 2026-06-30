@@ -110,7 +110,8 @@ Brak frameworka — używamy doraźnych skryptów E2E: krótki `scripts/*-test.j
 - [x] Podgląd linku OG/meta + własny obraz OG (`Settings.ogImagePath`); „klient otworzył link" (`Event(type:viewed)` na `/t` i `/p`); kod QR linku (inline SVG, `utils/qr.js`)
 - [x] Miniatury obrazów + Quick Look (lightbox) w panelu transferu (`/admin/transfers/:id/preview/:fileId`); fix migania gradientu tła za kartą „szkło" (warstwa odsłaniana po `onload`)
 - [x] Wiadomości klient↔agencja (dwukierunkowo): koperta + wątek (popup) na `/p`/`/t`/`/c` + badge nowej odpowiedzi; panel = widok wątków (grupowanie po kontekście) + odpowiedź + mail; model `Message`
-- [ ] Do zrobienia: testy `node:test`; ostrzeżenie o wygasaniu transferu; dane do przelewu na stronie rozliczeń klienta; (odłożone) white-label per-klient
+- [x] Ostrzeżenie o wygasaniu transferu — mail do agencji o wychodzących wygasających <24 h, niepobranych (cron `reminders`, toggle `emails.expiryWarn`, anty-powtórka `Transfer.expiryWarnedAt`)
+- [ ] Do zrobienia: testy `node:test`; dane do przelewu na stronie rozliczeń klienta; (odłożone) white-label per-klient
 
 ## Workflow Git
 Nie pushować automatycznie. Bump wersji + wpis w changelogu dopiero po potwierdzeniu. W komunikatach/URL-ach redagować token dostępowy.

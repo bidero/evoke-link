@@ -153,4 +153,5 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Podgląd linku** — meta OpenGraph + własny obraz OG; „klient otworzył link" w osi czasu; kod QR linku
 - [x] **Panel: miniatury + Quick Look** — podgląd obrazów w liście plików transferu (lightbox jak na Macu); osobny kolor paska nagłówka panelu
 - [x] **Wiadomości** — dwukierunkowa rozmowa klient↔agencja (koperta + wątek na stronach klienta, badge nowej odpowiedzi; skrzynka wątków w panelu)
-- [ ] **Do zrobienia** — testy `node:test`; ostrzeżenie o wygasaniu transferu
+- [x] **Ostrzeżenie o wygasaniu** — mail do agencji o transferach wygasających w 24 h, których klient nie pobrał (cron, przełącznik w Ustawieniach)
+- [ ] **Do zrobienia** — testy `node:test`

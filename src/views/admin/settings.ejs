@@ -795,6 +795,14 @@
         <textarea name="reminderIntro" data-phfield="reminderIntro" rows="2" placeholder="Wstęp wiadomości (domyślny)"
                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= settings.emails.reminderIntro %></textarea>
       </div>
+
+      <div class="border-t border-slate-100 pt-4 space-y-1">
+        <label class="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" name="expiryWarn" class="rounded border-slate-300" <%= settings.emails.expiryWarn ? 'checked' : '' %> />
+          Ostrzegaj mnie o transferach wygasających w ciągu 24 h, których klient nie pobrał
+        </label>
+        <p class="text-xs text-slate-400">Jeden zbiorczy mail do agencji. Wymaga SMTP; uruchamiane tym samym cronem co przypomnienia (<code>npm run reminders</code>).</p>
+      </div>
       <script>
         (function () {
           var card = document.getElementById('emailCard');

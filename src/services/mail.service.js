@@ -339,6 +339,26 @@ async function sendClientReply({ to, body, link }) {
   return send({ to, subject: `${appName} — odpowiedź na Twoją wiadomość`, html, text, replyTo: config.admin.email });
 }
 
+// Ostrzeżenie do agencji: transfery wygasające <24h, których klient nie pobrał (cron reminders).
+async function sendExpiryWarning({ transfers }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const appName = s.appName || 'Evoke LINK';
+  const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const when = (d) => new Date(d).toLocaleString('pl-PL');
+  const rows = transfers.map((t) => {
+    const url = `${config.appUrl}/admin/transfers/${t.id}`;
+    const title = t.title || `Transfer ${t.token}`;
+    return `<tr><td style="padding:6px 0;border-top:1px solid #e2e8f0"><a href="${esc(url)}" style="color:${esc(primary)}">${esc(title)}</a>${t.project ? ` <span style="color:#94a3b8">(${esc(t.project.name)})</span>` : ''}</td>` +
+      `<td style="padding:6px 0;border-top:1px solid #e2e8f0;color:#64748b;text-align:right;white-space:nowrap">wygasa ${esc(when(t.expiresAt))}</td></tr>`;
+  }).join('');
+  const inner = `
+    <p style="margin:0 0 12px">Te transfery wygasają w ciągu 24 h, a klient ich jeszcze nie pobrał:</p>
+    <table role="presentation" width="100%" style="border-collapse:collapse;font-size:14px">${rows}</table>`;
+  const html = await wrap(inner, { heading: 'Transfery wygasają wkrótce' });
+  const text = transfers.map((t) => ` • ${t.title || t.token} — wygasa ${when(t.expiresAt)} — ${config.appUrl}/admin/transfers/${t.id}`).join('\n');
+  return send({ to: config.admin.email, subject: `${appName} — transfery wygasają wkrótce (${transfers.length})`, html, text });
+}
+
 // Testowy e-mail do weryfikacji konfiguracji SMTP.
 async function sendTest({ to }) {
   const inner = `<p style="margin:0 0 8px">To jest testowa wiadomość z Twojej instancji.</p>
@@ -347,4 +367,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendClientReply, sendTest };
+module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendClientReply, sendExpiryWarning, sendTest };

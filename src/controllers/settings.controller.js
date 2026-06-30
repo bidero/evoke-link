@@ -169,6 +169,7 @@ async function updateSettings(req, res, next) {
         reminders: b.reminders === 'on',
         reminderSubject: (b.reminderSubject || '').trim(),
         reminderIntro: (b.reminderIntro || '').trim(),
+        expiryWarn: b.expiryWarn === 'on',
       },
     };
 

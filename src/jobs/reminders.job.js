@@ -14,8 +14,14 @@ const EVERY_DAYS = parseInt(process.env.REMIND_EVERY_DAYS, 10) || 7;
 
 async function run() {
   const s = await settingsService.get();
-  if (!(s.emails && s.emails.reminders)) { console.log('[reminders] wyłączone w ustawieniach — pomijam'); return; }
   if (!mail.isConfigured()) { console.log('[reminders] SMTP niewłączony — pomijam'); return; }
+  await runPaymentReminders(s);
+  await runExpiryWarnings(s);
+}
+
+// Przypomnienia o przeterminowanych płatnościach (gdy włączone w Ustawieniach → E-mail).
+async function runPaymentReminders(s) {
+  if (!(s.emails && s.emails.reminders)) { console.log('[reminders] przypomnienia wyłączone — pomijam'); return; }
 
   const now = new Date();
   const cooldown = new Date(now.getTime() - EVERY_DAYS * 86400000);
@@ -59,6 +65,32 @@ async function run() {
   console.log(`[reminders] wysłano przypomnień: ${sent}`);
 }
 
-run()
-  .catch((e) => { console.error('[reminders] błąd:', e); process.exit(1); })
-  .finally(async () => { await prisma.$disconnect(); });
+// Ostrzeżenie o wygasaniu transferów (gdy włączone w Ustawieniach → E-mail).
+// Wychodzące, aktywne, wygasające w ciągu 24 h, NIE pobrane, jeszcze nie ostrzeżone.
+async function runExpiryWarnings(s) {
+  if (!(s.emails && s.emails.expiryWarn)) { console.log('[expiry] ostrzeżenia o wygasaniu wyłączone — pomijam'); return; }
+  const now = new Date();
+  const soon = new Date(now.getTime() + 24 * 3600000);
+  const transfers = await prisma.transfer.findMany({
+    where: { direction: 'outgoing', status: 'active', downloadCount: 0, expiryWarnedAt: null, expiresAt: { gt: now, lte: soon } },
+    include: { project: { select: { name: true } } },
+    orderBy: { expiresAt: 'asc' },
+  });
+  if (!transfers.length) { console.log('[expiry] brak wygasających do ostrzeżenia'); return; }
+  try {
+    await mail.sendExpiryWarning({ transfers });
+    await prisma.transfer.updateMany({ where: { id: { in: transfers.map((t) => t.id) } }, data: { expiryWarnedAt: now } });
+    console.log(`[expiry] ostrzeżenie wysłane (${transfers.length} transfer(ów))`);
+  } catch (e) {
+    console.error('[expiry] błąd:', e.message);
+  }
+}
+
+// Auto-uruchom tylko gdy plik odpalono bezpośrednio (cron), nie przy require (testy).
+if (require.main === module) {
+  run()
+    .catch((e) => { console.error('[reminders] błąd:', e); process.exit(1); })
+    .finally(async () => { await prisma.$disconnect(); });
+}
+
+module.exports = { run, runPaymentReminders, runExpiryWarnings };
