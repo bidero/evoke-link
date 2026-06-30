@@ -3,6 +3,7 @@ const transferService = require('../services/transfer.service');
 const zipService = require('../services/zip.service');
 const storage = require('../services/storage.service');
 const events = require('../services/event.service');
+const messageService = require('../services/message.service');
 const mail = require('../services/mail.service');
 const { isRaster } = require('../utils/fileIcon');
 
@@ -68,11 +69,27 @@ async function showDownloadPage(req, res, next) {
       events.log({ type: 'viewed', message: 'Klient otworzył link do pobrania', transferId: transfer.id, projectId: transfer.projectId, ip: req.ip });
     }
 
+    res.locals.msgContext = { action: `/t/${transfer.token}/message`, scope: transfer.title || '' };
+    res.locals.msgSent = req.query.msg === '1';
     res.render('public/download', {
       title: transfer.title || 'Pobierz pliki',
       layout: PUBLIC_LAYOUT,
       transfer,
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Wiadomość od klienta ze strony pobierania (/t) → skrzynka + mail do agencji.
+async function submitMessage(req, res, next) {
+  try {
+    const transfer = await loadAvailable(req, res);
+    if (!transfer) return;
+    const { body, senderName, senderEmail } = req.body;
+    const msg = await messageService.create({ body, senderName, senderEmail, transferId: transfer.id, projectId: transfer.projectId, clientId: transfer.project ? transfer.project.clientId : null, ip: req.ip });
+    if (msg) mail.sendNewMessageNotification({ message: msg, project: transfer.project, transfer }).catch((e) => console.error('[mail] wiadomość:', e.message));
+    res.redirect(`/t/${transfer.token}?msg=1`);
   } catch (err) {
     next(err);
   }
@@ -166,4 +183,4 @@ async function downloadZip(req, res, next) {
   }
 }
 
-module.exports = { showDownloadPage, submitPassword, downloadFile, previewFile, downloadZip };
+module.exports = { showDownloadPage, submitMessage, submitPassword, downloadFile, previewFile, downloadZip };

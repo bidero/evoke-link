@@ -13,6 +13,8 @@ const search = require('../controllers/search.controller');
 const account = require('../controllers/account.controller');
 const brandingUpload = require('../middleware/brandingUpload');
 const events = require('../services/event.service');
+const messages = require('../controllers/message.controller');
+const messageService = require('../services/message.service');
 
 const router = express.Router();
 
@@ -22,14 +24,22 @@ router.use(requireAuth);
 router.use(async (req, res, next) => {
   try {
     res.locals.unreadCount = await events.unreadCount();
+    res.locals.unreadMessages = await messageService.unreadCount();
   } catch (_) {
     res.locals.unreadCount = 0;
+    res.locals.unreadMessages = 0;
   }
   next();
 });
 
 router.get('/', showDashboard);
 router.get('/search', search.index);
+
+// Wiadomości od klientów (skrzynka).
+router.get('/messages', messages.listMessages);
+router.post('/messages/read-all', messages.markAllRead);
+router.post('/messages/:id/read', messages.markRead);
+router.post('/messages/:id/delete', messages.deleteMessage);
 
 // Transfery. Ważne: trasy z konkretnym słowem (new, new-upload, upload)
 // muszą być PRZED trasami z :id, żeby Express nie potraktował ich jak id.

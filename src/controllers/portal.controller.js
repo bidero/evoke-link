@@ -6,6 +6,7 @@ const storage = require('../services/storage.service');
 const zip = require('../services/zip.service');
 const mail = require('../services/mail.service');
 const events = require('../services/event.service');
+const messageService = require('../services/message.service');
 const { isRaster } = require('../utils/fileIcon');
 
 const PUBLIC_LAYOUT = 'layouts/public';
@@ -63,8 +64,24 @@ async function showPortal(req, res, next) {
     if (firstViewThisSession(req, project.clientToken)) {
       events.log({ type: 'viewed', message: 'Klient otworzył panel projektu', projectId: project.id, ip: req.ip });
     }
+    res.locals.msgContext = { action: `/p/${project.clientToken}/message`, scope: `projekt „${project.name}"` };
+    res.locals.msgSent = req.query.msg === '1';
     const { fromUs, fromClient } = visibleSets(project);
     res.render('public/portal', { title: project.name, layout: PUBLIC_LAYOUT, project, fromUs, fromClient, sent: req.query.sent === '1' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Wiadomość od klienta z panelu projektu (/p) → skrzynka + mail do agencji.
+async function submitMessage(req, res, next) {
+  try {
+    const project = await loadProject(req, res);
+    if (!project) return;
+    const { body, senderName, senderEmail } = req.body;
+    const msg = await messageService.create({ body, senderName, senderEmail, projectId: project.id, clientId: project.clientId, ip: req.ip });
+    if (msg) mail.sendNewMessageNotification({ message: msg, client: project.client, project }).catch((e) => console.error('[mail] wiadomość:', e.message));
+    res.redirect(`/p/${project.clientToken}?msg=1`);
   } catch (err) {
     next(err);
   }
@@ -198,4 +215,4 @@ async function downloadAllZip(req, res, next) {
   }
 }
 
-module.exports = { showPortal, submitPassword, submitUpload, downloadFile, previewFile, downloadAllZip };
+module.exports = { showPortal, submitMessage, submitPassword, submitUpload, downloadFile, previewFile, downloadAllZip };

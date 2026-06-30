@@ -6,6 +6,7 @@ const settingsService = require('../services/settings.service');
 const pdfService = require('../services/pdf.service');
 const events = require('../services/event.service');
 const mail = require('../services/mail.service');
+const messageService = require('../services/message.service');
 const config = require('../config');
 const fmt = require('../utils/format');
 
@@ -307,10 +308,26 @@ async function showClientPortal(req, res, next) {
       }
     }
 
+    res.locals.msgContext = { action: `/c/${client.token}/message`, scope: '' };
+    res.locals.msgSent = req.query.msg === '1';
     res.render('public/client-portal', { title: client.name, layout: PUBLIC_LAYOUT, client });
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, showClientPortal };
+// Wiadomość od klienta z portalu klienta (/c) → skrzynka + mail do agencji.
+async function submitClientMessage(req, res, next) {
+  try {
+    const client = await clientService.getByToken(req.params.token);
+    if (!client) return res.status(404).render('public/unavailable', { title: 'Nie znaleziono', layout: PUBLIC_LAYOUT, reason: 'not_found' });
+    const { body, senderName, senderEmail } = req.body;
+    const msg = await messageService.create({ body, senderName, senderEmail, clientId: client.id, ip: req.ip });
+    if (msg) mail.sendNewMessageNotification({ message: msg, client }).catch((e) => console.error('[mail] wiadomość:', e.message));
+    res.redirect(`/c/${client.token}?msg=1`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, showClientPortal, submitClientMessage };

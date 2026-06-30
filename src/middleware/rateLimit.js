@@ -28,4 +28,12 @@ const passwordLimiter = rateLimit({
   handler: (req, res) => res.status(429).send('Zbyt wiele prób. Spróbuj ponownie za kilka minut.'),
 });
 
-module.exports = { loginLimiter, passwordLimiter };
+// Wiadomości od klienta (publiczny endpoint) — anty-spam.
+const messageLimiter = rateLimit({
+  ...base,
+  windowMs: 10 * 60 * 1000,
+  limit: 12,
+  handler: (req, res) => res.status(429).send('Zbyt wiele wiadomości. Spróbuj ponownie za kilka minut.'),
+});
+
+module.exports = { loginLimiter, passwordLimiter, messageLimiter };

@@ -67,6 +67,36 @@
       <span class="hidden dark:inline"><%- icon('sun', { size: 18, cls: '' }) %></span>
     </button>
 
+    <% if (typeof msgContext !== 'undefined' && msgContext) { %>
+    <div class="fixed top-4 right-16 z-30" x-data="{ open: false }" @keydown.escape.window="open = false">
+      <button type="button" @click="open = !open" title="Napisz do nas" aria-label="Napisz wiadomość"
+        class="w-10 h-10 inline-flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 backdrop-blur transition text-brand-600 dark:text-slate-100">
+        <%- icon('mail', { size: 18, cls: '' }) %>
+      </button>
+      <div x-show="open" x-cloak x-transition @click.outside="open = false"
+        class="absolute right-0 mt-2 w-80 max-w-[88vw] rounded-2xl border border-slate-200 bg-white shadow-xl p-4 text-left text-slate-800">
+        <div class="text-sm font-semibold mb-1">Napisz do nas</div>
+        <% if (msgContext.scope) { %><p class="text-xs text-slate-400 mb-2"><%= msgContext.scope %></p><% } %>
+        <form method="POST" action="<%= msgContext.action %>" class="space-y-2">
+          <textarea name="body" required rows="4" maxlength="4000" placeholder="Twoja wiadomość…"
+            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+          <div class="grid grid-cols-2 gap-2">
+            <input name="senderName" type="text" placeholder="Imię (opc.)" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+            <input name="senderEmail" type="email" placeholder="E-mail (opc.)" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          </div>
+          <button type="submit" class="w-full rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium py-2 transition">Wyślij</button>
+        </form>
+      </div>
+    </div>
+    <% } %>
+
+    <% if (typeof msgSent !== 'undefined' && msgSent) { %>
+    <div x-data="{ show: true }" x-show="show" x-cloak x-init="setTimeout(() => show = false, 4000)" x-transition
+      class="fixed top-4 left-1/2 -translate-x-1/2 z-40 rounded-full bg-green-600 text-white text-sm px-4 py-2 shadow-lg">
+      Dziękujemy! Wiadomość wysłana.
+    </div>
+    <% } %>
+
     <% if (L.style !== 'banner' && !noChrome) { %>
     <header class="px-6 py-5 <%= sticky ? 'sticky top-0 z-20' : '' %>"<% if (sticky) { %> data-sticky-header style="--sticky-bg:<%= stickyBg %>"<% } %>>
       <div class="flex items-center gap-2 w-full <%= justify %> <%= dark ? 'text-white' : '' %>">

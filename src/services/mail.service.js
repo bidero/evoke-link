@@ -298,6 +298,34 @@ async function sendPaymentReminder({ to, client, charges, total }) {
   return send({ to, subject, html, text, replyTo: config.admin.email });
 }
 
+// Powiadomienie do agencji o nowej wiadomości od klienta (z portalu /p, /t, /c).
+async function sendNewMessageNotification({ message, client, project, transfer }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const appName = s.appName || 'Evoke LINK';
+  const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const adminUrl = `${config.appUrl}/admin/messages`;
+  const ctx = [
+    client ? `Klient: ${client.name}` : null,
+    project ? `Projekt: ${project.name}` : null,
+    transfer ? `Transfer: ${transfer.title || transfer.token}` : null,
+    message.senderName ? `Od: ${message.senderName}` : null,
+    message.senderEmail ? `E-mail: ${message.senderEmail}` : null,
+  ].filter(Boolean);
+  const inner = `
+    ${ctx.map((l) => `<p style="margin:2px 0;color:#64748b;font-size:13px">${esc(l)}</p>`).join('')}
+    <div style="margin:12px 0 18px;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;white-space:pre-wrap">${esc(message.body)}</div>
+    ${btn(adminUrl, 'Zobacz w panelu', primary)}`;
+  const html = await wrap(inner, { heading: 'Nowa wiadomość od klienta' });
+  const text = `${ctx.join('\n')}\n\n${message.body}\n\nZobacz: ${adminUrl}`;
+  return send({
+    to: config.admin.email,
+    subject: `${appName} — nowa wiadomość${message.senderName ? ' od ' + message.senderName : ''}`,
+    html,
+    text,
+    replyTo: message.senderEmail || config.admin.email,
+  });
+}
+
 // Testowy e-mail do weryfikacji konfiguracji SMTP.
 async function sendTest({ to }) {
   const inner = `<p style="margin:0 0 8px">To jest testowa wiadomość z Twojej instancji.</p>
@@ -306,4 +334,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendTest };
+module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendTest };

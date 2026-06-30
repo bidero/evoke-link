@@ -6,7 +6,7 @@ const receive = require('../controllers/receive.controller');
 const portal = require('../controllers/portal.controller');
 const clientCtrl = require('../controllers/client.controller');
 const { chunkParser, receiveChunk, receiveUpload } = require('../middleware/chunkUpload');
-const { passwordLimiter } = require('../middleware/rateLimit');
+const { passwordLimiter, messageLimiter } = require('../middleware/rateLimit');
 
 const router = express.Router();
 
@@ -20,6 +20,7 @@ router.post('/t/:token', passwordLimiter, download.submitPassword);
 router.get('/t/:token/zip', download.downloadZip);
 router.get('/t/:token/preview/:fileId', download.previewFile);
 router.get('/t/:token/file/:fileId', download.downloadFile);
+router.post('/t/:token/message', messageLimiter, download.submitMessage);
 
 // Publiczny upload od klienta (Etap 2).
 router.get('/upload/:token', receive.showUploadPage);
@@ -35,8 +36,10 @@ router.get('/p/:token/preview/:fileId', portal.previewFile);
 router.get('/p/:token/file/:fileId', portal.downloadFile);
 router.post('/p/:token/chunk', chunkParser, receiveChunk);
 router.post('/p/:token/upload', receiveUpload('files'), portal.submitUpload);
+router.post('/p/:token/message', messageLimiter, portal.submitMessage);
 
 // Portal klienta — wszystkie projekty przypisane do klienta (/c/:token).
 router.get('/c/:token', clientCtrl.showClientPortal);
+router.post('/c/:token/message', messageLimiter, clientCtrl.submitClientMessage);
 
 module.exports = router;

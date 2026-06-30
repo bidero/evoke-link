@@ -1,0 +1,44 @@
+<div class="flex items-center justify-between mb-6 gap-3">
+  <p class="text-sm text-slate-500">Wiadomości od klientów (z portali <code>/p</code>, <code>/t</code>, <code>/c</code>). Odpowiadasz e-mailem.</p>
+  <% if (messages.length && messages.some(function(m){ return !m.isRead; })) { %>
+    <form method="POST" action="/admin/messages/read-all">
+      <button type="submit" class="text-sm text-brand-700 hover:underline whitespace-nowrap">Oznacz wszystkie jako przeczytane</button>
+    </form>
+  <% } %>
+</div>
+
+<% if (!messages.length) { %>
+  <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center text-sm text-slate-400">Brak wiadomości.</div>
+<% } else { %>
+  <div class="space-y-3">
+    <% messages.forEach(function(m){ %>
+      <div class="bg-white rounded-2xl border <%= m.isRead ? 'border-slate-200' : 'border-brand-300' %> p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap text-xs text-slate-500 mb-1.5">
+              <% if (!m.isRead) { %><span class="inline-block w-2 h-2 rounded-full bg-brand-600" title="nieprzeczytane"></span><% } %>
+              <span class="font-medium text-slate-700"><%= m.senderName || 'Klient' %></span>
+              <% if (m.senderEmail) { %><a href="mailto:<%= m.senderEmail %>" class="text-brand-700 hover:underline"><%= m.senderEmail %></a><% } %>
+              <span>· <%= fmt.date(m.createdAt) %></span>
+            </div>
+            <div class="text-sm text-slate-800 whitespace-pre-wrap break-words"><%= m.body %></div>
+            <div class="mt-2 flex items-center gap-1.5 flex-wrap text-xs">
+              <% if (m.client) { %><a href="/admin/clients/<%= m.client.id %>" class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-700 transition">Klient: <%= m.client.name %></a><% } %>
+              <% if (m.project) { %><a href="/admin/projects/<%= m.project.id %>" class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-700 transition">Projekt: <%= m.project.name %></a><% } %>
+              <% if (m.transfer) { %><a href="/admin/transfers/<%= m.transfer.id %>" class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-700 transition">Transfer: <%= m.transfer.title || m.transfer.token %></a><% } %>
+            </div>
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <% if (m.senderEmail) { %>
+              <a href="mailto:<%= m.senderEmail %>?subject=Re: Twoja wiadomość" class="text-slate-400 hover:text-brand-700 px-2 py-1" title="Odpowiedz e-mailem"><%- icon('mail', { size: 16, cls: '' }) %></a>
+            <% } %>
+            <% if (!m.isRead) { %>
+              <form method="POST" action="/admin/messages/<%= m.id %>/read"><button type="submit" class="text-slate-400 hover:text-green-600 px-2 py-1" title="Oznacz jako przeczytane"><%- icon('check', { size: 16, cls: '' }) %></button></form>
+            <% } %>
+            <form method="POST" action="/admin/messages/<%= m.id %>/delete" onsubmit="return confirm('Usunąć wiadomość?');"><button type="submit" class="text-slate-400 hover:text-red-600 px-2 py-1" title="Usuń"><%- icon('trash', { size: 16, cls: '' }) %></button></form>
+          </div>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+<% } %>

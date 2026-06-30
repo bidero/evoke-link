@@ -36,16 +36,19 @@
           { key: 'projects', label: 'Projekty', href: '/admin/projects' },
           { key: 'clients', label: 'Klienci', href: '/admin/clients' },
           { key: 'transfers', label: 'Transfery', href: '/admin/transfers' },
+          { key: 'messages', label: 'Wiadomości', href: '/admin/messages' },
           { key: 'notifications', label: 'Powiadomienia', href: '/admin/notifications' },
           { key: 'settings', label: 'Ustawienia', href: '/admin/settings' }
         ]; %>
         <% const unread = (typeof unreadCount !== 'undefined') ? unreadCount : 0; %>
+        <% const unreadM = (typeof unreadMessages !== 'undefined') ? unreadMessages : 0; %>
         <% items.forEach(function(it){ %>
+          <% const badge = it.key === 'notifications' ? unread : (it.key === 'messages' ? unreadM : 0); %>
           <a href="<%= it.href %>"
              class="flex items-center justify-between px-3 py-2 rounded-lg transition <%= (typeof active !== 'undefined' && active === it.key) ? 'bg-brand-50 text-brand-700 font-medium' : 'opacity-70 hover:opacity-100 hover:bg-black/5' %>">
             <span><%= it.label %></span>
-            <% if (it.key === 'notifications' && unread > 0) { %>
-              <span class="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-brand-600 text-white text-xs font-semibold"><%= unread %></span>
+            <% if (badge > 0) { %>
+              <span class="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-brand-600 text-white text-xs font-semibold"><%= badge %></span>
             <% } %>
           </a>
         <% }); %>

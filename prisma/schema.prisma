@@ -44,6 +44,7 @@ model Client {
   projects  Project[]
   events    Event[]
   charges   Charge[]                      // pozycje rozliczeniowe „bez projektu" (wprost na kliencie)
+  messages  Message[]                     // wiadomości od klienta (z portalu /c)
 }
 
 model Project {
@@ -62,6 +63,7 @@ model Project {
   transfers          Transfer[]
   events             Event[]
   charges            Charge[]
+  messages           Message[]
 }
 
 // Pozycja rozliczeniowa (kwota). „Czasami po kilka" → osobne wiersze.
@@ -110,6 +112,7 @@ model Transfer {
   createdAt     DateTime  @default(now())
   files         File[]
   events        Event[]
+  messages      Message[]
 }
 
 // Pojedynczy plik należący do transferu.
@@ -159,4 +162,27 @@ model Settings {
   emails       String?  // JSON: { logoPath, linkSubject, linkIntro, uploadSubject, downloadSubject, clientConfirm, clientConfirmSubject, clientConfirmBody }
   pdf          String?  // JSON: { template, logoHeight } — wygląd wydruku PDF rozliczenia
   updatedAt    DateTime @updatedAt
+}
+
+// Wiadomość od klienta (Faza A: jednokierunkowo klient → agencja). Przypięta do kontekstu,
+// z którego wysłano: projekt (/p), transfer (/t) lub klient (/c). `direction` pod przyszłe odpowiedzi.
+model Message {
+  id          Int       @id @default(autoincrement())
+  body        String
+  senderName  String?
+  senderEmail String?
+  direction   String    @default("in") // in = klient→agencja (out = przyszłe odpowiedzi agencji)
+  client      Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId    Int?
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId   Int?
+  transfer    Transfer? @relation(fields: [transferId], references: [id], onDelete: SetNull)
+  transferId  Int?
+  isRead      Boolean   @default(false)
+  ip          String?
+  createdAt   DateTime  @default(now())
+
+  @@index([clientId])
+  @@index([projectId])
+  @@index([transferId])
 }
