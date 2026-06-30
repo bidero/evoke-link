@@ -5,8 +5,8 @@ const config = require('../config');
 
 async function listMessages(req, res, next) {
   try {
-    const list = await messageService.listInbox();
-    res.render('admin/messages/index', { title: 'Wiadomości', active: 'messages', messages: list });
+    const threads = await messageService.listThreads();
+    res.render('admin/messages/index', { title: 'Wiadomości', active: 'messages', threads });
   } catch (err) {
     next(err);
   }
@@ -14,7 +14,8 @@ async function listMessages(req, res, next) {
 
 async function markRead(req, res, next) {
   try {
-    await messageService.markRead(req.params.id);
+    const m = await messageService.getById(req.params.id);
+    if (m) await messageService.markThreadRead(m);
     res.redirect('/admin/messages');
   } catch (err) {
     next(err);
@@ -32,7 +33,8 @@ async function markAllRead(req, res, next) {
 
 async function deleteMessage(req, res, next) {
   try {
-    await messageService.remove(req.params.id);
+    const m = await messageService.getById(req.params.id);
+    if (m) await messageService.deleteThread(m);
     res.redirect('/admin/messages');
   } catch (err) {
     next(err);
@@ -46,7 +48,7 @@ async function replyMessage(req, res, next) {
     if (!original) return res.redirect('/admin/messages');
     const reply = await messageService.reply({ original, body: req.body.body });
     if (reply) {
-      await messageService.markRead(original.id);
+      await messageService.markThreadRead(original);
       const to = (original.senderEmail || (original.client && original.client.email) || '').trim();
       if (to) {
         // Link zwrotny: projekt → /p, inaczej klient → /c.

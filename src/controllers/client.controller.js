@@ -308,13 +308,21 @@ async function showClientPortal(req, res, next) {
       }
     }
 
-    res.locals.msgContext = { action: `/c/${client.token}/message`, scope: '' };
+    res.locals.msgContext = { action: `/c/${client.token}/message`, seen: `/c/${client.token}/messages/seen`, scope: '' };
     res.locals.msgSent = req.query.msg === '1';
     res.locals.msgThread = await messageService.thread({ clientId: client.id });
+    res.locals.msgHasReply = messageService.hasUnseen(res.locals.msgThread, (req.session.msgSeen || {})[client.token]);
     res.render('public/client-portal', { title: client.name, layout: PUBLIC_LAYOUT, client });
   } catch (err) {
     next(err);
   }
+}
+
+// Oznacz wątek jako „obejrzany" przez klienta (chowa badge nowej odpowiedzi).
+function markSeen(req, res) {
+  req.session.msgSeen = req.session.msgSeen || {};
+  req.session.msgSeen[req.params.token] = Date.now();
+  res.status(204).end();
 }
 
 // Wiadomość od klienta z portalu klienta (/c) → skrzynka + mail do agencji.
@@ -331,4 +339,4 @@ async function submitClientMessage(req, res, next) {
   }
 }
 
-module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, showClientPortal, submitClientMessage };
+module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, showClientPortal, submitClientMessage, markSeen };

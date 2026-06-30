@@ -21,6 +21,7 @@ router.get('/t/:token/zip', download.downloadZip);
 router.get('/t/:token/preview/:fileId', download.previewFile);
 router.get('/t/:token/file/:fileId', download.downloadFile);
 router.post('/t/:token/message', messageLimiter, download.submitMessage);
+router.post('/t/:token/messages/seen', download.markSeen);
 
 // Publiczny upload od klienta (Etap 2).
 router.get('/upload/:token', receive.showUploadPage);
@@ -37,9 +38,11 @@ router.get('/p/:token/file/:fileId', portal.downloadFile);
 router.post('/p/:token/chunk', chunkParser, receiveChunk);
 router.post('/p/:token/upload', receiveUpload('files'), portal.submitUpload);
 router.post('/p/:token/message', messageLimiter, portal.submitMessage);
+router.post('/p/:token/messages/seen', portal.markSeen);
 
 // Portal klienta — wszystkie projekty przypisane do klienta (/c/:token).
 router.get('/c/:token', clientCtrl.showClientPortal);
 router.post('/c/:token/message', messageLimiter, clientCtrl.submitClientMessage);
+router.post('/c/:token/messages/seen', clientCtrl.markSeen);
 
 module.exports = router;

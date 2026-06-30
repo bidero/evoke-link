@@ -64,14 +64,22 @@ async function showPortal(req, res, next) {
     if (firstViewThisSession(req, project.clientToken)) {
       events.log({ type: 'viewed', message: 'Klient otworzył panel projektu', projectId: project.id, ip: req.ip });
     }
-    res.locals.msgContext = { action: `/p/${project.clientToken}/message`, scope: `projekt „${project.name}"` };
+    res.locals.msgContext = { action: `/p/${project.clientToken}/message`, seen: `/p/${project.clientToken}/messages/seen`, scope: `projekt „${project.name}"` };
     res.locals.msgSent = req.query.msg === '1';
     res.locals.msgThread = await messageService.thread({ projectId: project.id });
+    res.locals.msgHasReply = messageService.hasUnseen(res.locals.msgThread, (req.session.msgSeen || {})[project.clientToken]);
     const { fromUs, fromClient } = visibleSets(project);
     res.render('public/portal', { title: project.name, layout: PUBLIC_LAYOUT, project, fromUs, fromClient, sent: req.query.sent === '1' });
   } catch (err) {
     next(err);
   }
+}
+
+// Oznacz wątek jako „obejrzany" przez klienta (chowa badge nowej odpowiedzi).
+function markSeen(req, res) {
+  req.session.msgSeen = req.session.msgSeen || {};
+  req.session.msgSeen[req.params.token] = Date.now();
+  res.status(204).end();
 }
 
 // Wiadomość od klienta z panelu projektu (/p) → skrzynka + mail do agencji.
@@ -216,4 +224,4 @@ async function downloadAllZip(req, res, next) {
   }
 }
 
-module.exports = { showPortal, submitMessage, submitPassword, submitUpload, downloadFile, previewFile, downloadAllZip };
+module.exports = { showPortal, submitMessage, markSeen, submitPassword, submitUpload, downloadFile, previewFile, downloadAllZip };

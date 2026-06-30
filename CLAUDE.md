@@ -53,6 +53,7 @@ storage/                  pliki użytkowników + evoke.db (poza repo, .gitignore
 - **Transfer** — JEDEN model dla obu kierunków: `direction` = `outgoing` (agencja→klient, `/t/:token`) lub `incoming` (klient→agencja, `/upload/:token`). Pola: `token`, `passwordHash?`, `expiresAt?`, `maxDownloads?`, `downloadCount`, `clientVisible` (czy w panelu klienta), `notifyOnDownload` (e-mail przy 1. pobraniu), `projectId?`, `status` active|expired|deleted.
 - **File** — `originalName`, `storedName`, `storedPath` (względna do storage), `size` (BigInt!), `mimeType`. onDelete Cascade.
 - **Event** — historia + powiadomienia + dane widżetów. `type` (created|downloaded|uploaded|viewed|email_sent|note|updated|expired|error), `projectId?`, `transferId?`, `clientId?` (oś czasu klienta), `isRead`, `dismissed`, `meta` (JSON string). Powiadomienia (dzwonek) = tylko `NOTIFY_TYPES` (uploaded|downloaded|error); `viewed` jest w osi czasu, ale NIE dzwoni.
+- **Message** — wiadomość klient↔agencja. `direction` in|out, kontekst `clientId?`/`projectId?`/`transferId?` (definiuje wątek), `senderName?`/`senderEmail?`, `isRead` (dla agencji). Skrzynka panelu grupuje po kontekście (wątki); klient widzi wątek w popupie + badge nowej odpowiedzi (sesja `msgSeen`).
 - **Settings** — branding/customizacja (1 rekord, `id=1`). Kolumny: `appName`, `logoPath`, `faviconPath`, `ogImagePath` (obraz podglądu linku OG), `customCss` + JSON-y: `colors` (`primary`, `adminAccent`, `adminText`, `adminSidebar`, `adminHeader` (pasek nagłówka, puste=jak sidebar), `adminBg`, `darkBg/darkSurface/darkText`), `texts` (`heroTitle`, `heroSubtitle`, `footer`), `background` (`type` gradient|custom|image|solid, `preset`, `color`, `custom`, `imagePath`/`images[]`/`rotate`/`rotateSec`, `overlay`, `imageGradient`+`imageGrad`, `grain`/`grainType`/`grainStrength`, `scroll`), `logo` (`size`, `align`, `darkPath`), `layout` (`style`,`card`,`cardSide`,`radius`,`button`,`stickyHeader`,`font`,`hideName`,`heroOnBg`,`applyToLogin`), `emails` (loga/tematy/wstępy + przypomnienia), `pdf` (szablon + dane sprzedawcy).
 - **User** — w MVP login z `.env`, ale `auth.service.setAdminPassword` zapisuje hash admina do tej tabeli (po zmianie hasła w panelu baza ma pierwszeństwo nad `.env`).
 
@@ -108,7 +109,8 @@ Brak frameworka — używamy doraźnych skryptów E2E: krótki `scripts/*-test.j
 - [x] Uczciwe placeholdery e-mail per-pole (`mail.PLACEHOLDER_SUPPORT`); osobny kolor paska nagłówka panelu (`colors.adminHeader`)
 - [x] Podgląd linku OG/meta + własny obraz OG (`Settings.ogImagePath`); „klient otworzył link" (`Event(type:viewed)` na `/t` i `/p`); kod QR linku (inline SVG, `utils/qr.js`)
 - [x] Miniatury obrazów + Quick Look (lightbox) w panelu transferu (`/admin/transfers/:id/preview/:fileId`); fix migania gradientu tła za kartą „szkło" (warstwa odsłaniana po `onload`)
-- [ ] Do zrobienia: testy `node:test`; ostrzeżenie o wygasaniu transferu; dane do przelewu na stronie rozliczeń klienta; (odłożone) white-label per-klient; (rozważane) wiadomości klient↔agencja
+- [x] Wiadomości klient↔agencja (dwukierunkowo): koperta + wątek (popup) na `/p`/`/t`/`/c` + badge nowej odpowiedzi; panel = widok wątków (grupowanie po kontekście) + odpowiedź + mail; model `Message`
+- [ ] Do zrobienia: testy `node:test`; ostrzeżenie o wygasaniu transferu; dane do przelewu na stronie rozliczeń klienta; (odłożone) white-label per-klient
 
 ## Workflow Git
 Nie pushować automatycznie. Bump wersji + wpis w changelogu dopiero po potwierdzeniu. W komunikatach/URL-ach redagować token dostępowy.

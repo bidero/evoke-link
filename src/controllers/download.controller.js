@@ -69,9 +69,10 @@ async function showDownloadPage(req, res, next) {
       events.log({ type: 'viewed', message: 'Klient otworzył link do pobrania', transferId: transfer.id, projectId: transfer.projectId, ip: req.ip });
     }
 
-    res.locals.msgContext = { action: `/t/${transfer.token}/message`, scope: transfer.title || '' };
+    res.locals.msgContext = { action: `/t/${transfer.token}/message`, seen: `/t/${transfer.token}/messages/seen`, scope: transfer.title || '' };
     res.locals.msgSent = req.query.msg === '1';
     res.locals.msgThread = await messageService.thread({ transferId: transfer.id });
+    res.locals.msgHasReply = messageService.hasUnseen(res.locals.msgThread, (req.session.msgSeen || {})[transfer.token]);
     res.render('public/download', {
       title: transfer.title || 'Pobierz pliki',
       layout: PUBLIC_LAYOUT,
@@ -80,6 +81,13 @@ async function showDownloadPage(req, res, next) {
   } catch (err) {
     next(err);
   }
+}
+
+// Oznacz wątek jako „obejrzany" przez klienta (chowa badge nowej odpowiedzi).
+function markSeen(req, res) {
+  req.session.msgSeen = req.session.msgSeen || {};
+  req.session.msgSeen[req.params.token] = Date.now();
+  res.status(204).end();
 }
 
 // Wiadomość od klienta ze strony pobierania (/t) → skrzynka + mail do agencji.
@@ -184,4 +192,4 @@ async function downloadZip(req, res, next) {
   }
 }
 
-module.exports = { showDownloadPage, submitMessage, submitPassword, downloadFile, previewFile, downloadZip };
+module.exports = { showDownloadPage, submitMessage, markSeen, submitPassword, downloadFile, previewFile, downloadZip };

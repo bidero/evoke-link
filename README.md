@@ -152,4 +152,5 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Więcej wyglądu** — dodatkowe układy stron klienta, sticky header, typografia, gotowe motywy, dark mode
 - [x] **Podgląd linku** — meta OpenGraph + własny obraz OG; „klient otworzył link" w osi czasu; kod QR linku
 - [x] **Panel: miniatury + Quick Look** — podgląd obrazów w liście plików transferu (lightbox jak na Macu); osobny kolor paska nagłówka panelu
-- [ ] **Do zrobienia** — testy `node:test`; ostrzeżenie o wygasaniu transferu; (rozważane) wiadomości klient↔agencja
+- [x] **Wiadomości** — dwukierunkowa rozmowa klient↔agencja (koperta + wątek na stronach klienta, badge nowej odpowiedzi; skrzynka wątków w panelu)
+- [ ] **Do zrobienia** — testy `node:test`; ostrzeżenie o wygasaniu transferu

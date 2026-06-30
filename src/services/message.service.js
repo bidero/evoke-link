@@ -89,4 +89,50 @@ function remove(id) {
   return prisma.message.deleteMany({ where: { id: Number(id) } });
 }
 
-module.exports = { create, listInbox, unreadCount, getById, thread, reply, markRead, markAllRead, remove };
+// Wątki do panelu — wszystkie wiadomości pogrupowane po kontekście (rozmowy), najnowsze u góry.
+async function listThreads(limit = 100) {
+  const all = await prisma.message.findMany({
+    orderBy: { createdAt: 'asc' },
+    include: {
+      client: { select: { id: true, name: true } },
+      project: { select: { id: true, name: true } },
+      transfer: { select: { id: true, title: true, token: true } },
+    },
+  });
+  const map = new Map();
+  for (const m of all) {
+    const key = m.transferId ? 't' + m.transferId : (m.projectId ? 'p' + m.projectId : (m.clientId ? 'c' + m.clientId : 'm' + m.id));
+    let t = map.get(key);
+    if (!t) { t = { key, messages: [], client: null, project: null, transfer: null, unread: 0, lastAt: m.createdAt, lastId: m.id }; map.set(key, t); }
+    t.messages.push(m);
+    if (m.direction === 'in' && !m.isRead) t.unread += 1;
+    if (m.client) t.client = m.client;
+    if (m.project) t.project = m.project;
+    if (m.transfer) t.transfer = m.transfer;
+    t.lastAt = m.createdAt; // asc → ostatni wpis = najnowszy
+    t.lastId = m.id;
+  }
+  return Array.from(map.values()).sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt)).slice(0, limit);
+}
+
+// Zakres „wątku" (kontekstu) z dowolnej wiadomości — do oznaczania/kasowania całej rozmowy.
+function scopeOf(m) {
+  if (m.transferId) return { transferId: m.transferId };
+  if (m.projectId) return { projectId: m.projectId };
+  if (m.clientId) return { clientId: m.clientId, projectId: null, transferId: null };
+  return { id: m.id };
+}
+function markThreadRead(m) {
+  return prisma.message.updateMany({ where: { ...scopeOf(m), direction: 'in' }, data: { isRead: true } });
+}
+function deleteThread(m) {
+  return prisma.message.deleteMany({ where: scopeOf(m) });
+}
+
+// Czy w wątku jest odpowiedź agencji (out) nowsza niż ostatnio „obejrzane" przez klienta (ts).
+function hasUnseen(thread, lastSeen) {
+  const ts = Number(lastSeen) || 0;
+  return (thread || []).some((m) => m.direction === 'out' && new Date(m.createdAt).getTime() > ts);
+}
+
+module.exports = { create, listInbox, listThreads, unreadCount, getById, thread, reply, markThreadRead, deleteThread, hasUnseen, markRead, markAllRead, remove };
