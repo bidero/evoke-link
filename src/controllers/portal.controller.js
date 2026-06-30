@@ -66,6 +66,7 @@ async function showPortal(req, res, next) {
     }
     res.locals.msgContext = { action: `/p/${project.clientToken}/message`, scope: `projekt „${project.name}"` };
     res.locals.msgSent = req.query.msg === '1';
+    res.locals.msgThread = await messageService.thread({ projectId: project.id });
     const { fromUs, fromClient } = visibleSets(project);
     res.render('public/portal', { title: project.name, layout: PUBLIC_LAYOUT, project, fromUs, fromClient, sent: req.query.sent === '1' });
   } catch (err) {

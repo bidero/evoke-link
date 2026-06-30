@@ -38,6 +38,7 @@ router.get('/search', search.index);
 // Wiadomości od klientów (skrzynka).
 router.get('/messages', messages.listMessages);
 router.post('/messages/read-all', messages.markAllRead);
+router.post('/messages/:id/reply', messages.replyMessage);
 router.post('/messages/:id/read', messages.markRead);
 router.post('/messages/:id/delete', messages.deleteMessage);
 

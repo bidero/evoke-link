@@ -77,6 +77,15 @@
         class="absolute right-0 mt-2 w-80 max-w-[88vw] rounded-2xl border border-slate-200 bg-white shadow-xl p-4 text-left text-slate-800">
         <div class="text-sm font-semibold mb-1">Napisz do nas</div>
         <% if (msgContext.scope) { %><p class="text-xs text-slate-400 mb-2"><%= msgContext.scope %></p><% } %>
+        <% if (typeof msgThread !== 'undefined' && msgThread && msgThread.length) { %>
+          <div class="mb-3 max-h-56 overflow-y-auto space-y-2 pr-1">
+            <% msgThread.forEach(function(mm){ var out = mm.direction === 'out'; %>
+              <div class="flex <%= out ? 'justify-start' : 'justify-end' %>">
+                <div class="max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words <%= out ? 'bg-slate-100 text-slate-800' : 'bg-brand-600 text-white' %>"><%= mm.body %></div>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
         <form method="POST" action="<%= msgContext.action %>" class="space-y-2">
           <textarea name="body" required rows="4" maxlength="4000" placeholder="Twoja wiadomość…"
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>

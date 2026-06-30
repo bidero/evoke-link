@@ -71,6 +71,7 @@ async function showDownloadPage(req, res, next) {
 
     res.locals.msgContext = { action: `/t/${transfer.token}/message`, scope: transfer.title || '' };
     res.locals.msgSent = req.query.msg === '1';
+    res.locals.msgThread = await messageService.thread({ transferId: transfer.id });
     res.render('public/download', {
       title: transfer.title || 'Pobierz pliki',
       layout: PUBLIC_LAYOUT,

@@ -326,6 +326,19 @@ async function sendNewMessageNotification({ message, client, project, transfer }
   });
 }
 
+// Odpowiedź agencji do klienta (Faza B) — mail z treścią + link zwrotny do panelu.
+async function sendClientReply({ to, body, link }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const appName = s.appName || 'Evoke LINK';
+  const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const inner = `
+    <div style="margin:0 0 16px;white-space:pre-wrap">${esc(body)}</div>
+    ${link ? `<p style="margin:0 0 8px">${btn(link, 'Otwórz panel i odpisz', primary)}</p>` : ''}`;
+  const html = await wrap(inner, { heading: `Odpowiedź od ${appName}` });
+  const text = `${body}` + (link ? `\n\nOtwórz panel: ${link}` : '');
+  return send({ to, subject: `${appName} — odpowiedź na Twoją wiadomość`, html, text, replyTo: config.admin.email });
+}
+
 // Testowy e-mail do weryfikacji konfiguracji SMTP.
 async function sendTest({ to }) {
   const inner = `<p style="margin:0 0 8px">To jest testowa wiadomość z Twojej instancji.</p>
@@ -334,4 +347,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendTest };
+module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendClientReply, sendTest };

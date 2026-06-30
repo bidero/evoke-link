@@ -12,7 +12,7 @@
 <% } else { %>
   <div class="space-y-3">
     <% messages.forEach(function(m){ %>
-      <div class="bg-white rounded-2xl border <%= m.isRead ? 'border-slate-200' : 'border-brand-300' %> p-4">
+      <div class="bg-white rounded-2xl border <%= m.isRead ? 'border-slate-200' : 'border-brand-300' %> p-4" x-data="{ reply: false }">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <div class="flex items-center gap-2 flex-wrap text-xs text-slate-500 mb-1.5">
@@ -29,14 +29,21 @@
             </div>
           </div>
           <div class="flex items-center gap-1 shrink-0">
-            <% if (m.senderEmail) { %>
-              <a href="mailto:<%= m.senderEmail %>?subject=Re: Twoja wiadomość" class="text-slate-400 hover:text-brand-700 px-2 py-1" title="Odpowiedz e-mailem"><%- icon('mail', { size: 16, cls: '' }) %></a>
-            <% } %>
+            <button type="button" @click="reply = !reply" class="text-slate-400 hover:text-brand-700 px-2 py-1" title="Odpowiedz"><%- icon('mail', { size: 16, cls: '' }) %></button>
             <% if (!m.isRead) { %>
               <form method="POST" action="/admin/messages/<%= m.id %>/read"><button type="submit" class="text-slate-400 hover:text-green-600 px-2 py-1" title="Oznacz jako przeczytane"><%- icon('check', { size: 16, cls: '' }) %></button></form>
             <% } %>
             <form method="POST" action="/admin/messages/<%= m.id %>/delete" onsubmit="return confirm('Usunąć wiadomość?');"><button type="submit" class="text-slate-400 hover:text-red-600 px-2 py-1" title="Usuń"><%- icon('trash', { size: 16, cls: '' }) %></button></form>
           </div>
+        </div>
+        <div x-show="reply" x-cloak x-transition class="mt-3 border-t border-slate-100 pt-3">
+          <form method="POST" action="/admin/messages/<%= m.id %>/reply" class="flex flex-col gap-2">
+            <textarea name="body" required rows="3" maxlength="4000" placeholder="Twoja odpowiedź…" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-1.5 transition">Wyślij odpowiedź</button>
+              <span class="text-xs text-slate-400"><% if (m.senderEmail) { %>Mail trafi na: <%= m.senderEmail %><% } else { %>Klient zobaczy odpowiedź w panelu (brak e-maila)<% } %></span>
+            </div>
+          </form>
         </div>
       </div>
     <% }); %>

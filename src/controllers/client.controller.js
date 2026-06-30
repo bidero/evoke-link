@@ -310,6 +310,7 @@ async function showClientPortal(req, res, next) {
 
     res.locals.msgContext = { action: `/c/${client.token}/message`, scope: '' };
     res.locals.msgSent = req.query.msg === '1';
+    res.locals.msgThread = await messageService.thread({ clientId: client.id });
     res.render('public/client-portal', { title: client.name, layout: PUBLIC_LAYOUT, client });
   } catch (err) {
     next(err);
