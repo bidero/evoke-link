@@ -11,6 +11,7 @@ const fmt = require('./utils/format');
 const { icon, eventIcon } = require('./utils/icons');
 const { fileMeta } = require('./utils/fileIcon');
 const { logoTag } = require('./utils/logo');
+const qr = require('./utils/qr');
 const color = require('./utils/color');
 const bg = require('./utils/background');
 const fonts = require('./utils/fonts');
@@ -89,6 +90,7 @@ app.use((req, res, next) => {
   res.locals.eventIcon = eventIcon;
   res.locals.fileMeta = fileMeta;
   res.locals.logoTag = logoTag;
+  res.locals.qrSvg = qr.svg; // kod QR jako inline SVG: <%- qrSvg(url) %>
   next();
 });
 
