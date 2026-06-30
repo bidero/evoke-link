@@ -80,7 +80,16 @@
   <% } %>
 
   <!-- Pliki -->
-  <div class="mt-4 bg-white rounded-2xl border border-slate-200 overflow-hidden">
+  <%
+    // Obrazy (raster) do Quick Look — Alpine cyklicznie przegląda po tej liście.
+    const _imgs = transfer.files.filter((f) => fileMeta(f.originalName, f.mimeType).thumb);
+    const _lb = _imgs.map((f) => ({
+      src: `/admin/transfers/${transfer.id}/preview/${f.id}`,
+      dl: `/admin/transfers/${transfer.id}/file/${f.id}`,
+      name: f.originalName,
+    }));
+  %>
+  <div class="mt-4 bg-white rounded-2xl border border-slate-200 overflow-hidden" x-data="lightbox(<%= JSON.stringify(_lb) %>)">
     <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
       <span class="text-sm font-medium text-slate-700">
         <%= incoming ? 'Otrzymane pliki' : 'Pliki' %> (<%= transfer.files.length %>)
@@ -96,18 +105,65 @@
     <% } else { %>
       <div class="divide-y divide-slate-100">
         <% transfer.files.forEach(function(f){ %>
-          <a href="/admin/transfers/<%= transfer.id %>/file/<%= f.id %>"
-             class="flex items-center justify-between px-5 py-2.5 text-sm hover:bg-slate-50 transition group">
-            <span class="truncate mr-3 text-slate-700"><%= f.originalName %></span>
+          <%
+            const _m = fileMeta(f.originalName, f.mimeType);
+            const _dl = `/admin/transfers/${transfer.id}/file/${f.id}`;
+            const _prev = `/admin/transfers/${transfer.id}/preview/${f.id}`;
+            const _ii = _m.thumb ? _imgs.indexOf(f) : -1;
+          %>
+          <div class="flex items-center justify-between px-5 py-2.5 text-sm hover:bg-slate-50 transition group">
+            <div class="flex items-center gap-3 min-w-0 mr-3">
+              <% if (_m.thumb) { %>
+                <button type="button" @click="open(<%= _ii %>)" class="shrink-0" title="Podgląd (Quick Look)">
+                  <img src="<%= _prev %>" alt="" loading="lazy" class="w-12 h-12 rounded-lg object-cover border border-slate-200 bg-slate-50" />
+                </button>
+                <button type="button" @click="open(<%= _ii %>)" class="min-w-0 truncate text-left text-slate-700 hover:text-brand-700"><%= f.originalName %></button>
+              <% } else { %>
+                <span class="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0"><%- icon(_m.icon, { size: 22, cls: _m.color }) %></span>
+                <a href="<%= _dl %>" class="min-w-0 truncate text-slate-700 hover:text-brand-700"><%= f.originalName %></a>
+              <% } %>
+            </div>
             <span class="flex items-center gap-3 shrink-0">
               <span class="text-slate-400"><%= fmt.bytes(f.size) %></span>
-              <span class="opacity-0 group-hover:opacity-100 transition"><%- icon('download', { size: 16 }) %></span>
+              <a href="<%= _dl %>" class="text-slate-400 hover:text-brand-700 opacity-0 group-hover:opacity-100 transition" aria-label="Pobierz" title="Pobierz"><%- icon('download', { size: 16 }) %></a>
             </span>
-          </a>
+          </div>
         <% }); %>
       </div>
     <% } %>
+
+    <!-- Quick Look (podgląd jak na Macu): Esc zamyka, ← → przewija -->
+    <div x-show="show" x-cloak
+         @keydown.escape.window="close()" @keydown.arrow-right.window="next()" @keydown.arrow-left.window="prev()"
+         class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" @click.self="close()">
+      <button type="button" @click="close()" class="absolute top-4 right-4 w-10 h-10 inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white" aria-label="Zamknij"><%- icon('x', { size: 20, cls: '' }) %></button>
+      <button type="button" x-show="items.length > 1" @click.stop="prev()" class="absolute left-3 sm:left-6 w-11 h-11 inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white" aria-label="Poprzedni"><%- icon('arrowLeft', { size: 22, cls: '' }) %></button>
+      <button type="button" x-show="items.length > 1" @click.stop="next()" class="absolute right-3 sm:right-6 w-11 h-11 inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white" aria-label="Następny"><%- icon('arrowRight', { size: 22, cls: '' }) %></button>
+      <div class="flex flex-col items-center gap-3 max-w-[92vw]">
+        <img :src="cur.src" :alt="cur.name" class="max-w-[92vw] max-h-[80vh] rounded-lg object-contain shadow-2xl" />
+        <div class="flex items-center gap-4 text-white text-sm">
+          <span class="truncate max-w-[60vw]" x-text="cur.name"></span>
+          <span class="text-white/50" x-show="items.length > 1" x-text="(i + 1) + ' / ' + items.length"></span>
+          <a :href="cur.dl" class="underline hover:text-white/80">Pobierz</a>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <script>
+    function lightbox(items) {
+      return {
+        items: items || [],
+        i: 0,
+        show: false,
+        open(idx) { if (idx == null || idx < 0) return; this.i = idx; this.show = true; },
+        close() { this.show = false; },
+        next() { if (this.items.length) this.i = (this.i + 1) % this.items.length; },
+        prev() { if (this.items.length) this.i = (this.i - 1 + this.items.length) % this.items.length; },
+        get cur() { return this.items[this.i] || {}; },
+      };
+    }
+  </script>
 
   <!-- Usuwanie -->
   <form method="POST" action="/admin/transfers/<%= transfer.id %>/delete" class="mt-4"

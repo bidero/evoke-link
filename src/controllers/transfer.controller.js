@@ -6,6 +6,7 @@ const zipService = require('../services/zip.service');
 const events = require('../services/event.service');
 const mail = require('../services/mail.service');
 const config = require('../config');
+const { isRaster } = require('../utils/fileIcon');
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -238,6 +239,22 @@ async function adminDownloadFile(req, res, next) {
   }
 }
 
+// Podgląd inline rastrowego obrazu w panelu (miniatury + Quick Look). Tylko obrazy www.
+async function adminPreviewFile(req, res, next) {
+  try {
+    const transfer = await transferService.getById(req.params.id);
+    const file = transfer && transfer.files.find((f) => String(f.id) === String(req.params.fileId));
+    if (!file || !isRaster(file.originalName, file.mimeType)) return res.status(404).end();
+    res.setHeader('Content-Type', file.mimeType || 'image/jpeg');
+    res.setHeader('Content-Disposition', 'inline');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    storage.readStream(file.storedPath).pipe(res);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Pobranie ZIP przez admina.
 async function adminDownloadZip(req, res, next) {
   try {
@@ -287,6 +304,7 @@ module.exports = {
   showEditForm,
   updateTransfer,
   adminDownloadFile,
+  adminPreviewFile,
   adminDownloadZip,
   bulkDelete,
   deleteTransfer,

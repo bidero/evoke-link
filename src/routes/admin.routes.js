@@ -45,6 +45,7 @@ router.get('/transfers/:id/edit', transfers.showEditForm);
 router.post('/transfers/:id/send', transfers.sendLinkEmail);
 router.get('/transfers/:id/zip', transfers.adminDownloadZip);
 router.get('/transfers/:id/file/:fileId', transfers.adminDownloadFile);
+router.get('/transfers/:id/preview/:fileId', transfers.adminPreviewFile);
 router.post('/transfers/:id', transfers.updateTransfer);
 router.post('/transfers/:id/delete', transfers.deleteTransfer);
 
