@@ -4,6 +4,7 @@
     adminAccent: settings.colors.adminAccent || '',
     adminText: settings.colors.adminText || '',
     adminSidebar: settings.colors.adminSidebar,
+    adminHeader: settings.colors.adminHeader || '',
     adminBg: settings.colors.adminBg,
     bgType: settings.background.type,
     bgPreset: settings.background.preset,
@@ -213,6 +214,14 @@
             </div>
           </div>
           <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Pasek nagłówka (góra) <span class="text-slate-400 font-normal">(puste = jak sidebar)</span></label>
+            <div class="flex items-center gap-2">
+              <input type="color" :value="adminHeader || adminSidebar" @input="adminHeader = $event.target.value" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
+              <input type="text" name="adminHeader" x-model="adminHeader" maxlength="7" placeholder="(jak sidebar)" class="w-32 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-mono" />
+              <button type="button" x-show="adminHeader" @click="adminHeader=''" class="text-xs text-slate-400 hover:text-slate-600 underline">wyczyść</button>
+            </div>
+          </div>
+          <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">Tło panelu</label>
             <div class="flex items-center gap-2">
               <input type="color" name="adminBg" x-model="adminBg" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
@@ -231,10 +240,12 @@
               <div class="opacity-70 px-1.5 py-1">Projekty</div>
               <div class="opacity-70 px-1.5 py-1">Transfery</div>
             </div>
-            <div class="flex-1 p-2 text-[10px]">
-              <div class="font-semibold mb-1.5">Nagłówek treści</div>
-              <div class="bg-white/80 rounded h-5 mb-2 border border-slate-200/60"></div>
-              <span class="inline-block rounded px-2 py-1 text-white" :style="'background:' + accentEff()">Przycisk</span>
+            <div class="flex-1 flex flex-col">
+              <div class="px-2 py-1.5 text-[10px] font-semibold border-b border-black/5" :style="'background:' + headerEff() + ';color:' + headerText()">Pasek nagłówka</div>
+              <div class="p-2 text-[10px]">
+                <div class="bg-white/80 rounded h-5 mb-2 border border-slate-200/60"></div>
+                <span class="inline-block rounded px-2 py-1 text-white" :style="'background:' + accentEff()">Przycisk</span>
+              </div>
             </div>
           </div>
         </div>
@@ -939,6 +950,8 @@ function settingsForm(init) {
       const L=b.map(c=>{const s=c/255;return s<=0.03928?s/12.92:Math.pow((s+0.055)/1.055,2.4);});
       return (0.2126*L[0]+0.7152*L[1]+0.0722*L[2])>0.5 ? '#0f172a' : '#ffffff'; },
     sidebarText(){ return this._readable(this.adminSidebar); },
+    headerEff(){ return /^#[0-9a-fA-F]{6}$/.test(this.adminHeader) ? this.adminHeader : this.adminSidebar; },
+    headerText(){ return this._readable(this.headerEff()); },
     textAuto(){ return this._readable(this.adminBg); },
     textEff(){ return /^#[0-9a-fA-F]{6}$/.test(this.adminText) ? this.adminText : this.textAuto(); },
 

@@ -140,12 +140,16 @@ app.use(async (req, res, next) => {
     const adminBg = color.safeHex(c.adminBg, '#f8fafc');
     // Kolor czcionki panelu: jawny albo auto-kontrast z tła panelu.
     const adminText = color.safeHex(c.adminText, '') || color.readableText(adminBg);
+    // Pasek nagłówka panelu — osobny kolor; puste = jak sidebar (zgodność wstecz).
+    const adminHeader = color.safeHex(c.adminHeader, '') || adminSidebar;
     const adminVars = [
       accent.toLowerCase() !== '#6e00a5' ? paletteVars(accent) : '',
       `--admin-bg:${adminBg}`,
       `--admin-text:${adminText}`,
       `--admin-sidebar:${adminSidebar}`,
       `--admin-sidebar-text:${color.readableText(adminSidebar)}`,
+      `--admin-header:${adminHeader}`,
+      `--admin-header-text:${color.readableText(adminHeader)}`,
     ].filter(Boolean).join(';');
     res.locals.adminStyleTag = `<style>:root{${adminVars}}</style>`;
 

@@ -68,6 +68,7 @@ async function updateSettings(req, res, next) {
       adminAccent: safeHex(b.adminAccent, '') || '', // puste = dziedziczy primary
       adminText: safeHex(b.adminText, '') || '',      // puste = auto-kontrast z tła
       adminSidebar: safeHex(b.adminSidebar, '#ffffff'),
+      adminHeader: safeHex(b.adminHeader, '') || '', // puste = jak sidebar
       adminBg: safeHex(b.adminBg, '#f8fafc'),
       darkBg: safeHex(b.darkBg, '#0f172a'),
       darkSurface: safeHex(b.darkSurface, '#1e293b'),
