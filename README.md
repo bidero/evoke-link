@@ -154,4 +154,4 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Panel: miniatury + Quick Look** — podgląd obrazów w liście plików transferu (lightbox jak na Macu); osobny kolor paska nagłówka panelu
 - [x] **Wiadomości** — dwukierunkowa rozmowa klient↔agencja (koperta + wątek na stronach klienta, badge nowej odpowiedzi; skrzynka wątków w panelu)
 - [x] **Ostrzeżenie o wygasaniu** — mail do agencji o transferach wygasających w 24 h, których klient nie pobrał (cron, przełącznik w Ustawieniach)
-- [ ] **Do zrobienia** — testy `node:test`
+- [x] **Testy** — `npm test` (node:test): smoke + przepływ wiadomości + ostrzeżenie o wygasaniu

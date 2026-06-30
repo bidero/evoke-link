@@ -1,12 +1,13 @@
 {
   "name": "evoke-transfer",
-  "version": "0.73.1",
+  "version": "0.74.0",
   "private": true,
   "description": "Evoke Transfer — prywatny system wymiany plików agencja↔klient",
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
     "dev": "node app.js",
+    "test": "node --test",
     "build:css": "tailwindcss -i ./src/assets/css/input.css -o ./public/css/app.css --minify",
     "watch:css": "tailwindcss -i ./src/assets/css/input.css -o ./public/css/app.css --watch",
     "prisma:generate": "prisma generate",

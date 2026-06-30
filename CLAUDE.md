@@ -87,7 +87,11 @@ storage/                  pliki użytkowników + evoke.db (poza repo, .gitignore
   - **GOTCHA kontrolki**: radia/checkboxy układu w `settings.ejs` są NATYWNE (EJS `checked`, bez Alpine `x-model`/`x-for`) — wzorzec `<template x-for>`+`x-model` na radiach był zawodny w przeglądarce (nie dało się wybrać). Podświetlenie działa przez `peer-checked` natywnie. Reaktywne kontrolki (kolory/tło) dalej na Alpine, bo mają podgląd na żywo.
 
 ## Testy
-Brak frameworka — używamy doraźnych skryptów E2E: krótki `scripts/*-test.js` startuje `app.listen(0)`, woła endpointy przez globalny `fetch`/`FormData` (Node 18+), sprząta dane i kasuje się po przebiegu. Uwaga: cookie-session ustawia 2 ciasteczka (`evoke` + `evoke.sig`) — w teście brać oba przez `res.headers.getSetCookie()`.
+`npm test` = `node --test` na katalogu `test/` (smoke + przepływ wiadomości + ostrzeżenie o wygasaniu). Każdy plik startuje `app.listen(0)`, woła endpointy globalnym `fetch`-em, sprząta utworzone dane i kończy się sam. Uwagi:
+- działa na **dev-DB** (`storage/evoke.db`) — testy tworzą i kasują własne rekordy; uruchamiaj lokalnie.
+- login admina wymaga `ADMIN_PASSWORD` w `.env` (test wiadomości robi `t.skip` bez niego).
+- cookie-session ustawia 2 ciasteczka (`evoke` + `evoke.sig`) — brać oba przez `res.headers.getSetCookie()`.
+- joby (np. `reminders.job.js`) mają guard `require.main === module`, więc `require` w teście nie odpala `run()` — można wołać wyeksportowane funkcje (`runExpiryWarnings`).
 
 ## Status / roadmapa
 - [x] Etap 0 — szkielet, logowanie, layout, model danych
@@ -111,7 +115,8 @@ Brak frameworka — używamy doraźnych skryptów E2E: krótki `scripts/*-test.j
 - [x] Miniatury obrazów + Quick Look (lightbox) w panelu transferu (`/admin/transfers/:id/preview/:fileId`); fix migania gradientu tła za kartą „szkło" (warstwa odsłaniana po `onload`)
 - [x] Wiadomości klient↔agencja (dwukierunkowo): koperta + wątek (popup) na `/p`/`/t`/`/c` + badge nowej odpowiedzi; panel = widok wątków (grupowanie po kontekście) + odpowiedź + mail; model `Message`
 - [x] Ostrzeżenie o wygasaniu transferu — mail do agencji o wychodzących wygasających <24 h, niepobranych (cron `reminders`, toggle `emails.expiryWarn`, anty-powtórka `Transfer.expiryWarnedAt`)
-- [ ] Do zrobienia: testy `node:test`; dane do przelewu na stronie rozliczeń klienta; (odłożone) white-label per-klient
+- [x] Testy `node:test` (`npm test`): smoke + przepływ wiadomości + ostrzeżenie o wygasaniu (`test/*.test.js`)
+- [ ] Do zrobienia: dane do przelewu na stronie rozliczeń klienta; (odłożone) white-label per-klient
 
 ## Workflow Git
 Nie pushować automatycznie. Bump wersji + wpis w changelogu dopiero po potwierdzeniu. W komunikatach/URL-ach redagować token dostępowy.
