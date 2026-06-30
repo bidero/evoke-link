@@ -135,7 +135,7 @@ async function updateSettings(req, res, next) {
 
     // --- Wydruk PDF rozliczenia ---
     const pdf = {
-      template: ['standard', 'band', 'accent', 'proforma'].includes(b.pdfTemplate) ? b.pdfTemplate : 'standard',
+      template: ['standard', 'band', 'accent', 'proforma', 'accent-card', 'accent-band', 'accent-min', 'clean'].includes(b.pdfTemplate) ? b.pdfTemplate : 'standard',
       docType: ['rozliczenie', 'proforma'].includes(b.pdfDocType) ? b.pdfDocType : 'rozliczenie',
       logoHeight: Math.min(90, Math.max(20, parseInt(b.pdfLogoHeight, 10) || 48)),
       seller: {

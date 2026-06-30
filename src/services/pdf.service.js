@@ -125,27 +125,81 @@ function partiesBlock(seller, appName, client, boxed) {
   };
 }
 
-// Podsumowanie — gruba brandowa linia nad „Do zapłaty" (bez tła), na szerokość pola.
-function totalsBlock(total, paid, brand, seller) {
+// Jasny odcień brandu (mix do bieli) — tło miękkiej karty podsumowania.
+function tintHex(hex, t) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || '');
+  if (!m) return '#f3e9fb';
+  const ch = [1, 2, 3].map((i) => parseInt(m[i], 16)).map((c) => Math.round(c + (255 - c) * t));
+  return '#' + ch.map((c) => c.toString(16).padStart(2, '0')).join('');
+}
+
+// Podsumowanie. variant: 'line' (kreska — domyślne), 'card' (miękka karta),
+// 'band' (pełny pasek brandowy z białą sumą), 'minimal' (cienka kreska, lekkie).
+function totalsBlock(total, paid, brand, seller, variant) {
   const outstanding = total - paid;
+  const bank = outstanding > 0 && seller.bank
+    ? { text: `Do zapłaty na konto: ${seller.bank}`, color: MUTED, fontSize: 9, alignment: 'right', margin: [0, 8, 0, 0] }
+    : null;
+
+  if (variant === 'card') {
+    const card = {
+      table: { widths: ['*', 'auto'], body: [
+        [{ text: 'Wartość', color: MUTED, fontSize: 10 }, { text: fmt.money(total), alignment: 'right', fontSize: 10 }],
+        [{ text: 'Rozliczono', color: MUTED, fontSize: 10 }, { text: fmt.money(paid), alignment: 'right', color: '#16a34a', fontSize: 10 }],
+        [{ text: 'Do zapłaty', bold: true, fontSize: 15 }, { text: fmt.money(outstanding), bold: true, fontSize: 15, color: brand, alignment: 'right' }],
+      ] },
+      layout: {
+        hLineWidth: () => 0, vLineWidth: () => 0, fillColor: () => tintHex(brand, 0.88),
+        paddingLeft: () => 12, paddingRight: () => 12,
+        paddingTop: (i) => (i === 0 ? 10 : i === 2 ? 8 : 3),
+        paddingBottom: (i, node) => (i === node.table.body.length - 1 ? 11 : 3),
+      },
+    };
+    const stack = [card]; if (bank) stack.push(bank);
+    return { margin: [0, 34, 0, 0], columns: [{ width: '*', text: '' }, { width: '60%', stack }] };
+  }
+
+  if (variant === 'band') {
+    const band = {
+      table: { widths: ['*', 'auto'], body: [[
+        { stack: [
+          { text: `Wartość ${fmt.money(total)}`, color: '#ffffff', fontSize: 9 },
+          { text: `Rozliczono ${fmt.money(paid)}`, color: '#ffffff', fontSize: 9, margin: [0, 2, 0, 0] },
+        ], margin: [16, 12, 0, 12] },
+        { stack: [
+          { text: 'DO ZAPŁATY', color: '#ffffff', fontSize: 8, alignment: 'right', characterSpacing: 1 },
+          { text: fmt.money(outstanding), color: '#ffffff', bold: true, fontSize: 17, alignment: 'right' },
+        ], margin: [0, 9, 16, 9] },
+      ]] },
+      layout: { hLineWidth: () => 0, vLineWidth: () => 0, fillColor: () => brand },
+    };
+    const stack = [band]; if (bank) stack.push(bank);
+    return { margin: [0, 30, 0, 0], stack };
+  }
+
+  if (variant === 'minimal') {
+    const rows = {
+      table: { widths: ['*', 'auto'], body: [
+        [{ text: 'Wartość', color: MUTED, alignment: 'right', fontSize: 10 }, { text: fmt.money(total), alignment: 'right', fontSize: 10 }],
+        [{ text: 'Rozliczono', color: MUTED, alignment: 'right', fontSize: 10 }, { text: fmt.money(paid), alignment: 'right', color: '#16a34a', fontSize: 10 }],
+        [{ text: 'Do zapłaty', bold: true, fontSize: 13, alignment: 'right', margin: [0, 7, 0, 0] }, { text: fmt.money(outstanding), bold: true, fontSize: 13, color: brand, alignment: 'right', margin: [0, 7, 0, 0] }],
+      ] },
+      layout: { hLineWidth: (i) => (i === 2 ? 0.8 : 0), vLineWidth: () => 0, hLineColor: () => '#cbd5e1', paddingTop: () => 3, paddingBottom: () => 3 },
+    };
+    const stack = [rows]; if (bank) stack.push(bank);
+    return { margin: [0, 34, 0, 0], columns: [{ width: '*', text: '' }, { width: '48%', stack }] };
+  }
+
+  // 'line' — istniejące: gruba brandowa kreska nad „Do zapłaty".
   const box = {
-    table: {
-      widths: ['*', 'auto'],
-      body: [
-        [{ text: 'Wartość', color: MUTED, alignment: 'right' }, { text: fmt.money(total), alignment: 'right' }],
-        [{ text: 'Rozliczono', color: MUTED, alignment: 'right' }, { text: fmt.money(paid), alignment: 'right', color: '#16a34a' }],
-        [{ text: 'Do zapłaty', bold: true, fontSize: 16, alignment: 'right', margin: [0, 7, 0, 0] }, { text: fmt.money(outstanding), bold: true, fontSize: 16, color: brand, alignment: 'right', margin: [0, 7, 0, 0] }],
-      ],
-    },
-    layout: {
-      hLineWidth: (i) => (i === 2 ? 3 : 0),
-      vLineWidth: () => 0,
-      hLineColor: () => brand,
-      paddingLeft: () => 6, paddingRight: () => 6, paddingTop: () => 5, paddingBottom: () => 5,
-    },
+    table: { widths: ['*', 'auto'], body: [
+      [{ text: 'Wartość', color: MUTED, alignment: 'right' }, { text: fmt.money(total), alignment: 'right' }],
+      [{ text: 'Rozliczono', color: MUTED, alignment: 'right' }, { text: fmt.money(paid), alignment: 'right', color: '#16a34a' }],
+      [{ text: 'Do zapłaty', bold: true, fontSize: 16, alignment: 'right', margin: [0, 7, 0, 0] }, { text: fmt.money(outstanding), bold: true, fontSize: 16, color: brand, alignment: 'right', margin: [0, 7, 0, 0] }],
+    ] },
+    layout: { hLineWidth: (i) => (i === 2 ? 3 : 0), vLineWidth: () => 0, hLineColor: () => brand, paddingLeft: () => 6, paddingRight: () => 6, paddingTop: () => 5, paddingBottom: () => 5 },
   };
-  const stack = [box];
-  if (outstanding > 0 && seller.bank) stack.push({ text: `Do zapłaty na konto: ${seller.bank}`, color: MUTED, fontSize: 9, alignment: 'right', margin: [0, 8, 0, 0] });
+  const stack = [box]; if (bank) stack.push(bank);
   return { margin: [0, 36, 0, 0], columns: [{ width: '*', text: '' }, { width: '50%', stack }] };
 }
 
@@ -182,14 +236,19 @@ function buildDoc({ client, charges, filters = {}, settings }) {
     : [{ text: 'Brak pozycji dla wybranych kryteriów.', color: MUTED, italics: true, margin: [0, 18, 0, 0] }];
   const fLine = filterLine(filters);
 
+  const isAccentNew = tpl === 'accent-card' || tpl === 'accent-band' || tpl === 'accent-min';
+  const sideBar = tpl === 'accent' || isAccentNew;
   const content = [];
   const docDef = {
     pageSize: 'A4',
-    pageMargins: tpl === 'accent' ? [60, 48, 48, 56] : [48, 48, 48, 56],
+    pageMargins: sideBar ? [60, 48, 48, 56] : [48, 48, 48, 56],
     defaultStyle: { font: 'Roboto', fontSize: 10, color: '#0f172a', lineHeight: 1.15 },
     content,
     footer: (cp, pc) => ({ text: `${appName} · strona ${cp}/${pc}`, alignment: 'center', color: '#94a3b8', fontSize: 8, margin: [0, 16, 0, 0] }),
   };
+
+  // Boczny akcent (pasek brandowy przy lewej krawędzi) — dla 'accent' i wariantów 'accent-*'.
+  if (sideBar) docDef.background = (cp, pageSize) => ({ canvas: [{ type: 'rect', x: 0, y: 0, w: 16, h: pageSize.height, color: brand }] });
 
   // --- Nagłówek wg szablonu ---
   if (tpl === 'band') {
@@ -209,7 +268,6 @@ function buildDoc({ client, charges, filters = {}, settings }) {
     });
     docDef.content.push({ text: meta, color: MUTED, fontSize: 9, margin: [0, 10, 0, 0] });
   } else if (tpl === 'accent') {
-    docDef.background = (cp, pageSize) => ({ canvas: [{ type: 'rect', x: 0, y: 0, w: 16, h: pageSize.height, color: brand }] });
     docDef.content.push({
       columns: [
         logo ? { width: 'auto', ...logo } : { width: 'auto', text: appName, bold: true, fontSize: 16, color: brand },
@@ -224,6 +282,27 @@ function buildDoc({ client, charges, filters = {}, settings }) {
       ],
     });
     docDef.content.push({ text: meta, color: MUTED, fontSize: 9, margin: [0, 10, 0, 0] });
+  } else if (isAccentNew) {
+    // Boczny akcent + czysty nagłówek (suma na dole jako karta/pasek/minimal — bez dublowania).
+    docDef.content.push({
+      columns: [
+        logo ? { width: 'auto', ...logo } : { width: 'auto', text: appName, bold: true, fontSize: 16, color: brand },
+        { width: '*', stack: [
+          { text: title, color: brand, bold: true, fontSize: 18, alignment: 'right' },
+          { text: meta, color: MUTED, fontSize: 9, alignment: 'right', margin: [0, 3, 0, 0] },
+        ] },
+      ],
+    });
+  } else if (tpl === 'clean') {
+    docDef.content.push({
+      columns: [
+        logo ? { width: 'auto', ...logo } : { width: 'auto', text: appName, bold: true, fontSize: 16, color: '#0f172a' },
+        { width: '*', stack: [
+          { text: title, fontSize: 18, bold: true, alignment: 'right', color: '#0f172a' },
+          { text: meta, alignment: 'right', color: MUTED, fontSize: 9, margin: [0, 3, 0, 0] },
+        ] },
+      ],
+    });
   } else if (tpl === 'proforma') {
     docDef.content.push({
       columns: [
@@ -250,7 +329,8 @@ function buildDoc({ client, charges, filters = {}, settings }) {
   docDef.content.push(partiesBlock(seller, appName, client, tpl === 'proforma'));
   if (fLine) docDef.content.push(fLine);
   sections.forEach((s) => docDef.content.push(s));
-  docDef.content.push(totalsBlock(total, paid, brand, seller));
+  const totalsVariant = tpl === 'accent-card' ? 'card' : tpl === 'accent-band' ? 'band' : (tpl === 'accent-min' || tpl === 'clean') ? 'minimal' : 'line';
+  docDef.content.push(totalsBlock(total, paid, brand, seller, totalsVariant));
 
   return docDef;
 }

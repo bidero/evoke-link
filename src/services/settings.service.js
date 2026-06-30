@@ -37,7 +37,7 @@ const ALIGNS = ['left', 'center', 'right'];
 const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel', 'panel-bg', 'sidebar', 'corner'];
 const CARD_STYLES = ['solid', 'glass', 'elevated'];
 const BUTTON_STYLES = ['rounded', 'pill'];
-const PDF_TEMPLATES = ['standard', 'band', 'accent', 'proforma'];
+const PDF_TEMPLATES = ['standard', 'band', 'accent', 'proforma', 'accent-card', 'accent-band', 'accent-min', 'clean'];
 const PDF_DOCTYPES = ['rozliczenie', 'proforma'];
 
 function normPdf(p) {
