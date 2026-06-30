@@ -146,3 +146,10 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Panel klienta** — portal projektu `/p/:token` (hasło, widoczność per transfer, pobieranie + upload)
 - [x] **Etap 5** — customizacja (logo, favicon, nazwa, kolor, treści z panelu; kolor przez zmienne CSS bez rebuildu)
 - [x] **Etap 6** — rozszerzona customizacja: tła stron klienta (presety / własny gradient / obraz / ziarno), osobne kolory panelu, logo (rozmiar + pozycja), brandowane logowanie, zmiana hasła admina, pole na własny CSS
+- [x] **Chunked upload** — dzielenie dużych plików na 5 MB (równoległe, panel + `/upload` + portal), drop-in z fallbackiem multipart
+- [x] **CRM + rozliczenia** — baza klientów, strona 360°, portal klienta `/c/:token`, pozycje rozliczeniowe (CSV + PDF + wysyłka), przypomnienia o płatności (cron)
+- [x] **Wyszukiwarka globalna** — klienci / projekty / transfery (pole w nagłówku panelu)
+- [x] **Więcej wyglądu** — dodatkowe układy stron klienta, sticky header, typografia, gotowe motywy, dark mode
+- [x] **Podgląd linku** — meta OpenGraph + własny obraz OG; „klient otworzył link" w osi czasu; kod QR linku
+- [x] **Panel: miniatury + Quick Look** — podgląd obrazów w liście plików transferu (lightbox jak na Macu); osobny kolor paska nagłówka panelu
+- [ ] **Do zrobienia** — testy `node:test`; ostrzeżenie o wygasaniu transferu; (rozważane) wiadomości klient↔agencja

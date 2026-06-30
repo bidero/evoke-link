@@ -47,11 +47,13 @@ storage/                  pliki użytkowników + evoke.db (poza repo, .gitignore
 
 ## Model danych (Prisma)
 - **User** — konto agencji (w MVP logowanie z `.env`, tabela pod przyszłość).
-- **Project** — pojemnik. `clientToken` (unikalny, link panelu klienta `/p/:token`), `clientPasswordHash` (opc.), `status` active|archived.
-- **Transfer** — JEDEN model dla obu kierunków: `direction` = `outgoing` (agencja→klient, `/t/:token`) lub `incoming` (klient→agencja, `/upload/:token`). Pola: `token`, `passwordHash?`, `expiresAt?`, `maxDownloads?`, `downloadCount`, `clientVisible` (czy w panelu klienta), `projectId?`, `status` active|expired|deleted.
+- **Client** — klient agencji (CRM). Pola: `name` (pełna/wyświetlana nazwa), `firstName?`/`lastName?` (personalizacja maili — placeholdery `{imie}`/`{nazwisko}`), `email?`, `company?`, `phone?`, `nip?`, `address?`, `status` lead|active|inactive, `tags?`, `token` (portal klienta `/c/:token`), `note?`. Ma wiele projektów i pozycji rozliczeniowych.
+- **Project** — pojemnik. `clientId?` (relacja do Client) / `clientName?` (legacy etykieta), `clientToken` (unikalny, link panelu `/p/:token`), `clientPasswordHash?`, `position` (kolejność drag&drop), `status` active|archived.
+- **Charge** — pozycja rozliczeniowa, kwota w GROSZACH. Należy do `projectId?` **lub** `clientId?` (dokładnie jedno; klient pozycji = `clientId ?? project.clientId`). Pola: `label?`, `amount`, `date?`, `dueDate?` (wiekowanie należności + przypomnienia), `paidAt?`, `remindedAt?`, `note?`.
+- **Transfer** — JEDEN model dla obu kierunków: `direction` = `outgoing` (agencja→klient, `/t/:token`) lub `incoming` (klient→agencja, `/upload/:token`). Pola: `token`, `passwordHash?`, `expiresAt?`, `maxDownloads?`, `downloadCount`, `clientVisible` (czy w panelu klienta), `notifyOnDownload` (e-mail przy 1. pobraniu), `projectId?`, `status` active|expired|deleted.
 - **File** — `originalName`, `storedName`, `storedPath` (względna do storage), `size` (BigInt!), `mimeType`. onDelete Cascade.
-- **Event** — historia + powiadomienia + dane widżetów. `type` (created|downloaded|uploaded|updated|expired|error), `projectId?`, `transferId?`, `isRead`, `meta` (JSON string).
-- **Settings** — branding/customizacja (1 rekord, `id=1`). Pola: `appName`, `logoPath`, `faviconPath`, `colors` (JSON: `primary`, `adminAccent`, `adminText`, `adminSidebar`, `adminBg`), `texts` (JSON: `heroTitle`, `heroSubtitle`, `footer`), `background` (JSON: `type` gradient|custom|image|solid, `preset`, `color`, `custom` {c1,c2,c3,angle}, `imagePath`, `overlay`, `grain`, `grainStrength`), `logo` (JSON: `size`, `align`), `customCss`.
+- **Event** — historia + powiadomienia + dane widżetów. `type` (created|downloaded|uploaded|viewed|email_sent|note|updated|expired|error), `projectId?`, `transferId?`, `clientId?` (oś czasu klienta), `isRead`, `dismissed`, `meta` (JSON string). Powiadomienia (dzwonek) = tylko `NOTIFY_TYPES` (uploaded|downloaded|error); `viewed` jest w osi czasu, ale NIE dzwoni.
+- **Settings** — branding/customizacja (1 rekord, `id=1`). Kolumny: `appName`, `logoPath`, `faviconPath`, `ogImagePath` (obraz podglądu linku OG), `customCss` + JSON-y: `colors` (`primary`, `adminAccent`, `adminText`, `adminSidebar`, `adminHeader` (pasek nagłówka, puste=jak sidebar), `adminBg`, `darkBg/darkSurface/darkText`), `texts` (`heroTitle`, `heroSubtitle`, `footer`), `background` (`type` gradient|custom|image|solid, `preset`, `color`, `custom`, `imagePath`/`images[]`/`rotate`/`rotateSec`, `overlay`, `imageGradient`+`imageGrad`, `grain`/`grainType`/`grainStrength`, `scroll`), `logo` (`size`, `align`, `darkPath`), `layout` (`style`,`card`,`cardSide`,`radius`,`button`,`stickyHeader`,`font`,`hideName`,`heroOnBg`,`applyToLogin`), `emails` (loga/tematy/wstępy + przypomnienia), `pdf` (szablon + dane sprzedawcy).
 - **User** — w MVP login z `.env`, ale `auth.service.setAdminPassword` zapisuje hash admina do tej tabeli (po zmianie hasła w panelu baza ma pierwszeństwo nad `.env`).
 
 ## Konwencje i pułapki (WAŻNE)
@@ -66,7 +68,7 @@ storage/                  pliki użytkowników + evoke.db (poza repo, .gitignore
 - **BigInt**: `File.size` to BigInt — formatować przez `fmt.bytes()`, nie serializować wprost do JSON.
 - **Po zmianie klas Tailwind**: `npm run build:css`. **Po zmianie tylko widoków EJS**: wystarczy refresh (dev nie cache'uje).
 - **Customizacja (Etap 5–6)** — kluczowe miejsca:
-  - Kolory bez rebuildu: paleta `brand-*` to zmienne CSS (`--brand-*`); middleware w `app.js` wstrzykuje `brandStyleTag` (z `primary`, dla stron klienta/logowania) i `adminStyleTag` (z `adminAccent` + `--admin-bg/-text/-sidebar/-sidebar-text`, dla panelu). `utils/color.js` generuje paletę + `readableText` (auto-kontrast).
+  - Kolory bez rebuildu: paleta `brand-*` to zmienne CSS (`--brand-*`); middleware w `app.js` wstrzykuje `brandStyleTag` (z `primary`, dla stron klienta/logowania) i `adminStyleTag` (z `adminAccent` + `--admin-bg/-text/-sidebar/-sidebar-text/-header/-header-text`, dla panelu). `utils/color.js` generuje paletę + `readableText` (auto-kontrast).
   - Tło stron klienta: `utils/background.js` (`bodyStyle`/`overlayHtml`/`isDark`, presety + własny gradient `custom`, ziarno z `grainStrength`). W layoutach: `bgStyle` na `<body>`, `bgOverlay` jako nakładki (`z-0`), treść w `z-10`.
   - **Tekst na tle**: `<body>` stron klienta/logowania jest ZAWSZE ciemny (`text-slate-800`) — bo treść siedzi w białych kartach. Jasny kolor (gdy `bgDark`) dostaje tylko „chrome" na gradiencie: nagłówek (logo/nazwa) i stopka. NIE ustawiać jasnego tekstu na całym `body` (regresja: niewidoczne `h1` na kartach).
   - **x-data w `settings.ejs`**: stan wstrzykiwany przez `x-data="settingsForm(<%= JSON.stringify(formState) %>)"` — MUSI być `<%=` (HTML-escape), NIE `<%-`. Przy `<%-` cudzysłowy JSON-a urywają atrybut → Alpine pada → color-inputy czernieją (był bug „drugi zapis = czarne").
@@ -99,7 +101,14 @@ Brak frameworka — używamy doraźnych skryptów E2E: krótki `scripts/*-test.j
 - [x] Hero/podpis renderowane na stronach klienta; reset hasła z CLI (`npm run set-password`)
 - [x] Warianty układu stron klienta (klasyczny/karta-na-tle/hero+karta) + styl karty (biel/szkło/uniesiona) + rogi/przycisk + branding logowania; równoległy chunked upload (pula 3)
 - [x] Bezpieczeństwo/ops: backup automatyczny (`src/jobs/backup.job.js`), multer 2.x, rate-limit (login + hasła klienta), Alpine/Sortable lokalnie + CSP (helmet), nodemailer 9 (audit: 0 vuln)
-- [ ] Do zrobienia: rozliczenia (dueDate + przypomnienia + CSV); redesign WeTransfer + więcej opcji wyglądu; globalna wyszukiwarka; testy node:test
+- [x] Rozliczenia: `Charge` (projekt/klient, grosze, `dueDate`), kafelek przeterminowanych, CSV + PDF (pdfmake) + wysyłka mailem, przypomnienia cronem (`jobs/reminders.job.js`)
+- [x] CRM: baza klientów + strona 360° (Przegląd/Projekty/Rozliczenia/Transfery/Oś czasu), portal klienta `/c/:token`, `firstName`/`lastName` + personalizacja maili
+- [x] Globalna wyszukiwarka (`services/search.service.js`, `/admin/search`, pole w nagłówku) — klienci/projekty/transfery (też po imieniu/nazwisku)
+- [x] Więcej układów stron klienta (showcase/panel/panel-bg/sidebar/corner/hero-card/minimal/banner) + sticky header + typografia + gotowe motywy; dark mode (klasa, auto-kontrast)
+- [x] Uczciwe placeholdery e-mail per-pole (`mail.PLACEHOLDER_SUPPORT`); osobny kolor paska nagłówka panelu (`colors.adminHeader`)
+- [x] Podgląd linku OG/meta + własny obraz OG (`Settings.ogImagePath`); „klient otworzył link" (`Event(type:viewed)` na `/t` i `/p`); kod QR linku (inline SVG, `utils/qr.js`)
+- [x] Miniatury obrazów + Quick Look (lightbox) w panelu transferu (`/admin/transfers/:id/preview/:fileId`); fix migania gradientu tła za kartą „szkło" (warstwa odsłaniana po `onload`)
+- [ ] Do zrobienia: testy `node:test`; ostrzeżenie o wygasaniu transferu; dane do przelewu na stronie rozliczeń klienta; (odłożone) white-label per-klient; (rozważane) wiadomości klient↔agencja
 
 ## Workflow Git
 Nie pushować automatycznie. Bump wersji + wpis w changelogu dopiero po potwierdzeniu. W komunikatach/URL-ach redagować token dostępowy.
