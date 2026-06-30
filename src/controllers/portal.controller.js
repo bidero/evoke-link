@@ -18,6 +18,14 @@ function markUnlocked(req, token) {
   req.session.portalUnlocked[token] = true;
 }
 
+// „Otwarcie" panelu — logujemy raz na sesję (oś czasu klienta), bez zaśmiecania.
+function firstViewThisSession(req, token) {
+  req.session.viewedLinks = req.session.viewedLinks || {};
+  if (req.session.viewedLinks[token]) return false;
+  req.session.viewedLinks[token] = true;
+  return true;
+}
+
 async function loadProject(req, res) {
   const project = await projectService.getByClientToken(req.params.token);
   if (!project || project.status === 'deleted') {
@@ -52,6 +60,9 @@ async function showPortal(req, res, next) {
     const project = await loadProject(req, res);
     if (!project) return;
     if (!gate(req, res, project)) return;
+    if (firstViewThisSession(req, project.clientToken)) {
+      events.log({ type: 'viewed', message: 'Klient otworzył panel projektu', projectId: project.id, ip: req.ip });
+    }
     const { fromUs, fromClient } = visibleSets(project);
     res.render('public/portal', { title: project.name, layout: PUBLIC_LAYOUT, project, fromUs, fromClient, sent: req.query.sent === '1' });
   } catch (err) {

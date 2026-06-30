@@ -25,6 +25,14 @@ function markUnlocked(req, token) {
   req.session.unlocked[token] = true;
 }
 
+// „Otwarcie" linku — logujemy raz na sesję (oś czasu), żeby odświeżanie nie zaśmiecało.
+function firstViewThisSession(req, token) {
+  req.session.viewedLinks = req.session.viewedLinks || {};
+  if (req.session.viewedLinks[token]) return false;
+  req.session.viewedLinks[token] = true;
+  return true;
+}
+
 // Wspólne wczytanie + walidacja dostępności. Zwraca transfer albo renderuje
 // stronę "niedostępny" i zwraca null.
 async function loadAvailable(req, res) {
@@ -54,6 +62,10 @@ async function showDownloadPage(req, res, next) {
         token: transfer.token,
         error: null,
       });
+    }
+
+    if (firstViewThisSession(req, transfer.token)) {
+      events.log({ type: 'viewed', message: 'Klient otworzył link do pobrania', transferId: transfer.id, projectId: transfer.projectId, ip: req.ip });
     }
 
     res.render('public/download', {
