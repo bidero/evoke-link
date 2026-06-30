@@ -133,13 +133,13 @@
     <% } %>
 
     <!-- Quick Look (podgląd jak na Macu): Esc zamyka, ← → przewija -->
-    <div x-show="show" x-cloak
+    <div x-show="show" x-cloak x-transition.opacity.duration.200ms
          @keydown.escape.window="close()" @keydown.arrow-right.window="next()" @keydown.arrow-left.window="prev()"
          class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" @click.self="close()">
       <button type="button" @click="close()" class="absolute top-4 right-4 w-10 h-10 inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white" aria-label="Zamknij"><%- icon('x', { size: 20, cls: '' }) %></button>
       <button type="button" x-show="items.length > 1" @click.stop="prev()" class="absolute left-3 sm:left-6 w-11 h-11 inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white" aria-label="Poprzedni"><%- icon('arrowLeft', { size: 22, cls: '' }) %></button>
       <button type="button" x-show="items.length > 1" @click.stop="next()" class="absolute right-3 sm:right-6 w-11 h-11 inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white" aria-label="Następny"><%- icon('arrowRight', { size: 22, cls: '' }) %></button>
-      <div class="flex flex-col items-center gap-3 max-w-[92vw]">
+      <div x-show="show" x-transition.duration.200ms class="flex flex-col items-center gap-3 max-w-[92vw]">
         <img :src="cur.src" :alt="cur.name" class="max-w-[92vw] max-h-[80vh] rounded-lg object-contain shadow-2xl" />
         <div class="flex items-center gap-4 text-white text-sm">
           <span class="truncate max-w-[60vw]" x-text="cur.name"></span>
