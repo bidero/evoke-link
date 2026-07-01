@@ -6,6 +6,7 @@ process.chdir(path.join(__dirname, '..'));
 const app = require('../src/app');
 const prisma = require('../src/db/client');
 const reminderService = require('../src/services/reminder.service');
+const calendarService = require('../src/services/calendar.service');
 
 let base, server;
 before(async () => { await new Promise((r) => { server = app.listen(0, r); }); base = `http://localhost:${server.address().port}`; });
@@ -42,8 +43,13 @@ test('kalendarz: strona + dodanie/licznik/zrobione/usuń przypomnienia', async (
     assert.ok((await reminderService.dueCount()) >= 1, 'liczone w badge (termin dziś)');
     assert.match(await (await fetch(`${base}/admin/calendar?month=${month}`, { headers: { Cookie: cookie } })).text(), new RegExp(title));
 
-    await fetch(`${base}/admin/calendar/reminders/${id}/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookie }, body: new URLSearchParams({ month }), redirect: 'manual' });
+    const toggle = () => fetch(`${base}/admin/calendar/reminders/${id}/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookie }, body: new URLSearchParams({ month }), redirect: 'manual' });
+    await toggle();
     assert.equal((await prisma.reminder.findUnique({ where: { id } })).done, true, 'oznaczone zrobione');
+    assert.ok((await calendarService.recentDone(60)).some((x) => x.id === id), 'widoczne w „Zrobione"');
+
+    await toggle(); // przywróć
+    assert.equal((await prisma.reminder.findUnique({ where: { id } })).done, false, 'przywrócone (odznaczone)');
 
     await fetch(`${base}/admin/calendar/reminders/${id}/delete`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookie }, body: new URLSearchParams({ month }), redirect: 'manual' });
     assert.equal(await prisma.reminder.findUnique({ where: { id } }), null, 'usunięte');

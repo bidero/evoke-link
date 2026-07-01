@@ -54,4 +54,15 @@ async function upcomingEvents(days = 14) {
   return ev;
 }
 
-module.exports = { eventsInRange, upcomingEvents };
+// Ostatnio wykonane przypomnienia (do sekcji „Zrobione" — przywracanie/usuwanie).
+async function recentDone(limit = 40) {
+  const rs = await prisma.reminder.findMany({
+    where: { done: true },
+    include: { client: { select: { id: true, name: true } }, project: { select: { id: true, name: true } } },
+    orderBy: [{ doneAt: 'desc' }, { dueAt: 'desc' }],
+    take: limit,
+  });
+  return rs.map(mapReminder);
+}
+
+module.exports = { eventsInRange, upcomingEvents, recentDone };

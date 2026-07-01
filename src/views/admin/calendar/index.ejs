@@ -108,5 +108,27 @@
         </div>
       <% } %>
     </div>
+
+    <!-- zrobione (przywracanie / usuwanie) -->
+    <% if (doneReminders.length) { %>
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden" x-data="{ open: false }">
+      <button type="button" @click="open = !open" class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-slate-50 transition">
+        <span class="text-sm font-medium text-slate-700">Zrobione (<%= doneReminders.length %>)</span>
+        <span :class="open && 'rotate-180'" class="transition-transform inline-flex text-slate-400"><%- icon('chevronDown', { size: 16, cls: '' }) %></span>
+      </button>
+      <div x-show="open" x-cloak class="divide-y divide-slate-100 border-t border-slate-100">
+        <% doneReminders.forEach(function(e){ %>
+          <div class="px-4 py-2 flex items-center gap-2">
+            <div class="min-w-0 flex-1">
+              <div class="text-sm text-slate-400 line-through truncate"><%= e.title %></div>
+              <div class="text-xs text-slate-400"><%= fmt.date(e.date) %><% if (e.sub) { %> · <%= e.sub %><% } %></div>
+            </div>
+            <form method="POST" action="/admin/calendar/reminders/<%= e.id %>/toggle"><input type="hidden" name="month" value="<%= curMonth %>" /><button type="submit" class="text-xs text-brand-700 hover:underline px-1 shrink-0" title="Oznacz jako niezrobione">Przywróć</button></form>
+            <form method="POST" action="/admin/calendar/reminders/<%= e.id %>/delete" onsubmit="return confirm('Usunąć przypomnienie?');"><input type="hidden" name="month" value="<%= curMonth %>" /><button type="submit" class="text-slate-400 hover:text-red-600 p-1 shrink-0" title="Usuń"><%- icon('trash', { size: 14, cls: '' }) %></button></form>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+    <% } %>
   </div>
 </div>

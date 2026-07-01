@@ -46,6 +46,7 @@ async function index(req, res, next) {
       active: 'calendar',
       weeks,
       upcoming: await calendar.upcomingEvents(14),
+      doneReminders: await calendar.recentDone(40),
       monthLabel: `${MONTHS[m]} ${y}`,
       prevMonth: monthKey(prev.getFullYear(), prev.getMonth()),
       nextMonth: monthKey(next.getFullYear(), next.getMonth()),
