@@ -37,6 +37,7 @@ router.use(async (req, res, next) => {
 });
 
 router.get('/', showDashboard);
+router.get('/pulse', require('../controllers/pulse.controller').showPulse);
 router.get('/search', search.index);
 
 // Wiadomości od klientów (skrzynka).

@@ -119,7 +119,8 @@ storage/                  pliki użytkowników + evoke.db (poza repo, .gitignore
 - [x] Testy `node:test` (`npm test`): smoke + przepływ wiadomości + ostrzeżenie o wygasaniu (`test/*.test.js`)
 - [x] Kalendarz / menedżer zadań — siatka miesiąca + „Nadchodzące", przypomnienia (status/priorytet, powiązanie z klientem/projektem) + agregacja terminów płatności i wygasania; badge „do zrobienia" w menu (`calendar`/`reminder` service, `/admin/calendar`)
 - [x] Automatyzacja: „otworzył link" też na `/upload` i `/c`; „Przedłuż transfer" (reset ostrzeżenia + reaktywacja); dzienny digest do agencji = także maile o przypomnieniach na dziś (toggle `emails.dailyDigest`, cron `reminders`)
-- [ ] Do zrobienia: proofing (akceptacja/poprawki plików); puls agencji (analityka); kanban projektów; dane do przelewu na stronie klienta; (odłożone) white-label per-klient
+- [x] Puls agencji (`/admin/pulse`, `stats.service.pulse()`): przychód mies. + delta, do zapłaty/przeterminowane, wykres 6 mies. (inline SVG), skuteczność pobrań (30 dni), aktywni klienci, top klienci wg przychodu — bez nowego modelu
+- [ ] Do zrobienia: proofing (akceptacja/poprawki plików); kanban projektów + D&D kalendarza; dane do przelewu na stronie klienta; (odłożone) white-label per-klient
 
 ## Workflow Git
 Nie pushować automatycznie. Bump wersji + wpis w changelogu dopiero po potwierdzeniu. W komunikatach/URL-ach redagować token dostępowy.
