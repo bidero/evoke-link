@@ -295,6 +295,14 @@ async function deleteClient(req, res, next) {
 }
 
 // Publiczny portal klienta — lista jego projektów (każdy linkuje do swojego panelu /p/:token).
+// „Otwarcie" portalu klienta — raz na sesję (oś czasu klienta).
+function firstViewThisSession(req, token) {
+  req.session.viewedLinks = req.session.viewedLinks || {};
+  if (req.session.viewedLinks[token]) return false;
+  req.session.viewedLinks[token] = true;
+  return true;
+}
+
 async function showClientPortal(req, res, next) {
   try {
     const client = await clientService.getByToken(req.params.token);
@@ -312,6 +320,9 @@ async function showClientPortal(req, res, next) {
     res.locals.msgSent = req.query.msg === '1';
     res.locals.msgThread = await messageService.thread({ clientId: client.id });
     res.locals.msgHasReply = messageService.hasUnseen(res.locals.msgThread, (req.session.msgSeen || {})[client.token]);
+    if (firstViewThisSession(req, client.token)) {
+      events.log({ type: 'viewed', message: 'Klient otworzył portal', clientId: client.id, ip: req.ip });
+    }
     res.render('public/client-portal', { title: client.name, layout: PUBLIC_LAYOUT, client });
   } catch (err) {
     next(err);

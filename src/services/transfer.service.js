@@ -182,7 +182,15 @@ async function remove(transfer) {
   await prisma.transfer.delete({ where: { id: transfer.id } });
 }
 
+// Przedłuża ważność transferu (od teraz) i kasuje znacznik ostrzeżenia; reaktywuje wygasły.
+function extend(id, days) {
+  const d = Math.min(365, Math.max(1, parseInt(days, 10) || 14));
+  const expiresAt = new Date(Date.now() + d * 86400000);
+  return prisma.transfer.update({ where: { id: Number(id) }, data: { expiresAt, expiryWarnedAt: null, status: 'active' } });
+}
+
 module.exports = {
+  extend,
   createOutgoingTransfer,
   createUploadRequest,
   addFiles,

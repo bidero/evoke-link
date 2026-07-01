@@ -359,6 +359,36 @@ async function sendExpiryWarning({ transfers }) {
   return send({ to: config.admin.email, subject: `${appName} — transfery wygasają wkrótce (${transfers.length})`, html, text });
 }
 
+// Dzienne podsumowanie do agencji (zadania na dziś, nowe wiadomości, aktywność, zaległe płatności).
+async function sendDailyDigest({ reminders = [], messages = [], activity = [], overdueCharges = [] }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const appName = s.appName || 'Evoke LINK';
+  const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const url = `${config.appUrl}/admin`;
+  const now = new Date();
+  const dt = (d) => new Date(d).toLocaleString('pl-PL');
+  const money = (g) => (g / 100).toFixed(2).replace('.', ',') + ' zł';
+  const li = (t) => `<div style="padding:5px 0;border-top:1px solid #f1f5f9;font-size:14px">${t}</div>`;
+  const section = (title, items) => (items.length ? `<p style="margin:16px 0 4px;font-weight:600;font-size:14px">${esc(title)}</p>${items.join('')}` : '');
+
+  const remItems = reminders.map((r) => li(`${esc(r.title)} <span style="color:#94a3b8;font-size:12px">— ${esc(dt(r.dueAt))}${new Date(r.dueAt) < now ? ' · zaległe' : ''}${r.sub ? ' · ' + esc(r.sub) : ''}</span>`));
+  const msgItems = messages.map((m) => li(`<b>${esc(m.senderName || 'Klient')}</b>: ${esc(String(m.body || '').slice(0, 120))}`));
+  const actItems = activity.map((e) => li(`${esc(e.message || e.type)} <span style="color:#94a3b8;font-size:12px">— ${esc(dt(e.createdAt))}</span>`));
+  const chargeTotal = overdueCharges.reduce((n, c) => n + c.amount, 0);
+  const chargeItems = overdueCharges.length ? [li(`Przeterminowane płatności: <b>${overdueCharges.length}</b> na łącznie <b style="color:${esc(primary)}">${esc(money(chargeTotal))}</b>`)] : [];
+
+  const inner = `
+    <p style="margin:0 0 6px;color:#64748b">Podsumowanie na ${esc(now.toLocaleDateString('pl-PL'))}.</p>
+    ${section('Zadania na dziś / zaległe', remItems)}
+    ${section('Nowe wiadomości', msgItems)}
+    ${section('Aktywność (ostatnia doba)', actItems)}
+    ${section('Rozliczenia', chargeItems)}
+    <p style="margin:18px 0 0">${btn(url, 'Otwórz panel', primary)}</p>`;
+  const html = await wrap(inner, { heading: `Twój dzień · ${appName}` });
+  const text = [...remItems, ...msgItems, ...actItems, ...chargeItems].map((x) => x.replace(/<[^>]+>/g, '')).join('\n') || 'Brak nowości.';
+  return send({ to: config.admin.email, subject: `${appName} — podsumowanie dnia`, html, text });
+}
+
 // Testowy e-mail do weryfikacji konfiguracji SMTP.
 async function sendTest({ to }) {
   const inner = `<p style="margin:0 0 8px">To jest testowa wiadomość z Twojej instancji.</p>
@@ -367,4 +397,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendClientReply, sendExpiryWarning, sendTest };
+module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendClientReply, sendExpiryWarning, sendDailyDigest, sendTest };

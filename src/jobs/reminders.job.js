@@ -17,6 +17,7 @@ async function run() {
   if (!mail.isConfigured()) { console.log('[reminders] SMTP niewłączony — pomijam'); return; }
   await runPaymentReminders(s);
   await runExpiryWarnings(s);
+  await runDailyDigest(s);
 }
 
 // Przypomnienia o przeterminowanych płatnościach (gdy włączone w Ustawieniach → E-mail).
@@ -86,6 +87,28 @@ async function runExpiryWarnings(s) {
   }
 }
 
+// Dzienne podsumowanie (gdy włączone w Ustawieniach → E-mail). Pomijane, gdy nic się nie dzieje.
+async function runDailyDigest(s) {
+  if (!(s.emails && s.emails.dailyDigest)) { console.log('[digest] wyłączone — pomijam'); return; }
+  const now = new Date();
+  const endToday = new Date(); endToday.setHours(23, 59, 59, 999);
+  const last24 = new Date(now.getTime() - 24 * 3600000);
+  const [reminders, messages, activity, overdueCharges] = await Promise.all([
+    prisma.reminder.findMany({ where: { done: false, dueAt: { lte: endToday } }, include: { client: { select: { name: true } }, project: { select: { name: true } } }, orderBy: { dueAt: 'asc' }, take: 50 }),
+    prisma.message.findMany({ where: { direction: 'in', isRead: false }, orderBy: { createdAt: 'desc' }, take: 20 }),
+    prisma.event.findMany({ where: { type: { in: ['downloaded', 'uploaded'] }, createdAt: { gte: last24 } }, orderBy: { createdAt: 'desc' }, take: 30 }),
+    prisma.charge.findMany({ where: { paidAt: null, dueDate: { lt: now } }, take: 200 }),
+  ]);
+  reminders.forEach((r) => { r.sub = r.project ? r.project.name : (r.client ? r.client.name : null); });
+  if (!reminders.length && !messages.length && !activity.length && !overdueCharges.length) { console.log('[digest] brak nowości — nie wysyłam'); return; }
+  try {
+    await mail.sendDailyDigest({ reminders, messages, activity, overdueCharges });
+    console.log('[digest] wysłano podsumowanie dnia');
+  } catch (e) {
+    console.error('[digest] błąd:', e.message);
+  }
+}
+
 // Auto-uruchom tylko gdy plik odpalono bezpośrednio (cron), nie przy require (testy).
 if (require.main === module) {
   run()
@@ -93,4 +116,4 @@ if (require.main === module) {
     .finally(async () => { await prisma.$disconnect(); });
 }
 
-module.exports = { run, runPaymentReminders, runExpiryWarnings };
+module.exports = { run, runPaymentReminders, runExpiryWarnings, runDailyDigest };

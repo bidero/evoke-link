@@ -803,6 +803,14 @@
         </label>
         <p class="text-xs text-slate-400">Jeden zbiorczy mail do agencji. Wymaga SMTP; uruchamiane tym samym cronem co przypomnienia (<code>npm run reminders</code>).</p>
       </div>
+
+      <div class="border-t border-slate-100 pt-4 space-y-1">
+        <label class="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" name="dailyDigest" class="rounded border-slate-300" <%= settings.emails.dailyDigest ? 'checked' : '' %> />
+          Wysyłaj mi dzienne podsumowanie (zadania na dziś, nowe wiadomości, aktywność, przeterminowane płatności)
+        </label>
+        <p class="text-xs text-slate-400">Jeden poranny mail do agencji (pomijany, gdy nic się nie dzieje). Wymaga SMTP; ten sam cron co przypomnienia.</p>
+      </div>
       <script>
         (function () {
           var card = document.getElementById('emailCard');

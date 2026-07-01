@@ -14,6 +14,14 @@ function markUnlocked(req, token) {
   req.session.unlocked[token] = true;
 }
 
+// „Otwarcie" linku — raz na sesję (oś czasu), żeby odświeżanie nie zaśmiecało.
+function firstViewThisSession(req, token) {
+  req.session.viewedLinks = req.session.viewedLinks || {};
+  if (req.session.viewedLinks[token]) return false;
+  req.session.viewedLinks[token] = true;
+  return true;
+}
+
 // Wczytanie + walidacja: musi istnieć, być typu 'incoming' i dostępny.
 async function loadIncoming(req, res) {
   const transfer = await transferService.getByToken(req.params.token);
@@ -39,6 +47,9 @@ async function showUploadPage(req, res, next) {
       return res.render('public/password', { title: 'Chronione hasłem', layout: PUBLIC_LAYOUT, token: transfer.token, action: `/upload/${transfer.token}/password`, error: null });
     }
 
+    if (firstViewThisSession(req, transfer.token)) {
+      events.log({ type: 'viewed', message: 'Klient otworzył link do wgrania plików', transferId: transfer.id, projectId: transfer.projectId, ip: req.ip });
+    }
     res.render('public/upload', { title: transfer.title || 'Prześlij pliki', layout: PUBLIC_LAYOUT, transfer, sent: false });
   } catch (err) {
     next(err);

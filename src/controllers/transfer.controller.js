@@ -293,8 +293,20 @@ async function deleteTransfer(req, res, next) {
   }
 }
 
+// Przedłużenie ważności transferu (domyka pętlę ostrzeżenia o wygasaniu).
+async function extendTransfer(req, res, next) {
+  try {
+    await transferService.extend(req.params.id, req.body.days);
+    await events.log({ type: 'updated', message: 'Przedłużono ważność transferu', transferId: Number(req.params.id) });
+    res.redirect(`/admin/transfers/${req.params.id}`);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   listTransfers,
+  extendTransfer,
   showCreateForm,
   createTransfer,
   showCreateUploadForm,

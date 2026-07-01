@@ -156,3 +156,4 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Ostrzeżenie o wygasaniu** — mail do agencji o transferach wygasających w 24 h, których klient nie pobrał (cron, przełącznik w Ustawieniach)
 - [x] **Testy** — `npm test` (node:test): smoke + przepływ wiadomości + ostrzeżenie o wygasaniu
 - [x] **Kalendarz** — menedżer zadań: siatka miesiąca + nadchodzące, przypomnienia ze statusem/priorytetem, agregacja terminów płatności i wygasania transferów
+- [x] **Automatyzacja** — „otworzył link" na wszystkich stronach klienta; „Przedłuż transfer" jednym kliknięciem; opcjonalne dzienne podsumowanie mailem do agencji
