@@ -168,8 +168,9 @@ async function addCharge(req, res, next) {
     const amount = chargeService.parseAmount(req.body.amount);
     if (amount > 0) {
       const label = (req.body.label || '').trim();
-      await chargeService.create({ projectId: req.params.id, label, amount, vatRate: chargeService.parseVatRate(req.body.vatRate), note: req.body.note, date: req.body.date, dueDate: req.body.dueDate });
-      await events.log({ type: 'updated', message: `Dodano pozycję rozliczeniową${label ? ': ' + label : ''} — ${fmt.money(amount)}`, projectId: Number(req.params.id), ip: req.ip });
+      const vatRate = chargeService.parseVatRate(req.body.vatRate);
+      await chargeService.create({ projectId: req.params.id, label, amount, vatRate, note: req.body.note, date: req.body.date, dueDate: req.body.dueDate });
+      await events.log({ type: 'updated', message: `Dodano pozycję rozliczeniową${label ? ': ' + label : ''} — ${fmt.money(chargeService.grossOf({ amount, vatRate }))}`, projectId: Number(req.params.id), ip: req.ip });
     }
     res.redirect(`/admin/projects/${req.params.id}#rozliczenia`);
   } catch (err) {
@@ -184,7 +185,7 @@ async function toggleCharge(req, res, next) {
     if (charge && charge.projectId === Number(req.params.id)) {
       const willPay = !charge.paidAt;
       await chargeService.setPaid(charge.id, willPay);
-      await events.log({ type: 'updated', message: `${willPay ? 'Rozliczono' : 'Cofnięto rozliczenie'}${charge.label ? ': ' + charge.label : ''} — ${fmt.money(charge.amount)}`, projectId: Number(req.params.id), ip: req.ip });
+      await events.log({ type: 'updated', message: `${willPay ? 'Rozliczono' : 'Cofnięto rozliczenie'}${charge.label ? ': ' + charge.label : ''} — ${fmt.money(chargeService.grossOf(charge))}`, projectId: Number(req.params.id), ip: req.ip });
     }
     res.redirect(`/admin/projects/${req.params.id}#rozliczenia`);
   } catch (err) {

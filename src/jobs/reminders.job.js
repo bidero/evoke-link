@@ -9,6 +9,7 @@ const prisma = require('../db/client');
 const settingsService = require('../services/settings.service');
 const mail = require('../services/mail.service');
 const events = require('../services/event.service');
+const { grossOf } = require('../services/charge.service'); // kwoty BRUTTO (amount = netto)
 
 const EVERY_DAYS = parseInt(process.env.REMIND_EVERY_DAYS, 10) || 7;
 
@@ -53,7 +54,7 @@ async function runPaymentReminders(s) {
   for (const client of clients) {
     if (!client.email) continue;
     const list = byClient[client.id];
-    const total = list.reduce((n, c) => n + c.amount, 0);
+    const total = list.reduce((n, c) => n + grossOf(c), 0);
     try {
       await mail.sendPaymentReminder({ to: client.email, client, charges: list, total });
       await prisma.charge.updateMany({ where: { id: { in: list.map((c) => c.id) } }, data: { remindedAt: now } });

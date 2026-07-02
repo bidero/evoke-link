@@ -130,6 +130,7 @@ storage/                  pliki użytkowników + evoke.db (poza repo, .gitignore
 - [x] Zmiana daty rozliczenia po oznaczeniu: edytowalne pole daty przy pozycji (`chargeService.setPaidDate`; projekt: `POST :id/charges/:cid/paid-date`; klient: przez `updateCharge` z polem `paidAt`, auto-submit)
 - [x] Sortowanie klientów po polsku (`localeCompare('pl')` w `client.service` `list()`+`options()` — SQLite ORDER BY jest BINARY); tablica kanban 4 kolumny od `lg` (było `xl` → dwie pod sobą)
 - [x] Wybór sortowania na liście klientów: select `sort` (nazwa/firma/nazwisko × rosnąco/malejąco) w tym samym formularzu co szukajka+status (zachowują się nawzajem); `client.service.SORTS` + `sortClients` (puste wartości zawsze na końcu, remis rozstrzyga nazwa)
+- [x] Dopasowanie do brutto po VAT (v0.85.2): Puls (`stats.service` — przychód mies./wykres/top klienci/do zapłaty/przeterminowane), kalendarz (tytuł terminu płatności), maile (przypomnienie o płatności, digest), logi zdarzeń przy dodaniu/rozliczeniu pozycji, lista wyboru pozycji przy wydruku — wszystko przez `grossOf`
 - [ ] Do zrobienia: retainer/cykliczność; link onboardingowy; dane do przelewu na stronie klienta. UWAGA: white-label per-klient/projekt POZA ZAKRESEM NA STAŁE (decyzja 2026-07-02) — nie proponować.
 
 ## Workflow Git

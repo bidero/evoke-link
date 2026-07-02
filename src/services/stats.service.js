@@ -1,6 +1,7 @@
 // Puls agencji — agregacje z danych, które już zbieramy (Charge, Transfer, File, Event).
 // Bez nowego modelu; wszystko liczone na żądanie (skala jednej agencji — OK).
 const prisma = require('../db/client');
+const { grossOf } = require('./charge.service'); // kwoty BRUTTO (amount = netto od v0.85.0)
 
 const MONTHS_SHORT = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
 const monthKey = (d) => `${d.getFullYear()}-${d.getMonth()}`;
@@ -19,9 +20,9 @@ async function pulse() {
     // Opłacone od początku okna wykresu (6 mies.) — starczy na kafelki + wykres + top klientów.
     prisma.charge.findMany({
       where: { paidAt: { gte: chartStart } },
-      select: { amount: true, paidAt: true, clientId: true, project: { select: { clientId: true } } },
+      select: { amount: true, vatRate: true, paidAt: true, clientId: true, project: { select: { clientId: true } } },
     }),
-    prisma.charge.findMany({ where: { paidAt: null }, select: { amount: true, dueDate: true } }),
+    prisma.charge.findMany({ where: { paidAt: null }, select: { amount: true, vatRate: true, dueDate: true } }),
     prisma.transfer.findMany({ where: { direction: 'outgoing', createdAt: { gte: d30 } }, select: { downloadCount: true } }),
     prisma.file.count({ where: { createdAt: { gte: d30 }, transfer: { direction: 'outgoing' } } }),
     prisma.file.count({ where: { createdAt: { gte: d30 }, transfer: { direction: 'incoming' } } }),
@@ -41,11 +42,12 @@ async function pulse() {
   const byClient = {};
   for (const c of paidCharges) {
     const d = new Date(c.paidAt);
-    if (d >= mStart) paidThisMonth += c.amount;
-    else if (d >= prevStart && d < mStart) paidPrevMonth += c.amount;
-    byMonth[monthKey(d)] = (byMonth[monthKey(d)] || 0) + c.amount;
+    const g = grossOf(c);
+    if (d >= mStart) paidThisMonth += g;
+    else if (d >= prevStart && d < mStart) paidPrevMonth += g;
+    byMonth[monthKey(d)] = (byMonth[monthKey(d)] || 0) + g;
     const cid = chargeClientId(c);
-    if (cid != null) byClient[cid] = (byClient[cid] || 0) + c.amount;
+    if (cid != null) byClient[cid] = (byClient[cid] || 0) + g;
   }
   const chart = [];
   for (let i = 5; i >= 0; i--) {
@@ -56,7 +58,7 @@ async function pulse() {
   // Należności.
   let outstanding = 0;
   let overdue = 0;
-  for (const c of unpaid) { outstanding += c.amount; if (c.dueDate && new Date(c.dueDate) < now) overdue += c.amount; }
+  for (const c of unpaid) { const g = grossOf(c); outstanding += g; if (c.dueDate && new Date(c.dueDate) < now) overdue += g; }
 
   // Skuteczność dostarczeń: ile wysłanych transferów (30 dni) klient faktycznie pobrał.
   const sent30 = outgoing30.length;

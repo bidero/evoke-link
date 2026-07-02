@@ -215,10 +215,11 @@ async function addCharge(req, res, next) {
     if (amount > 0) {
       const projectId = await clientProjectId(parseProjectId(req.body.projectId), cid);
       const label = (req.body.label || '').trim();
-      await chargeService.create({ projectId, clientId: projectId ? null : cid, label, amount, vatRate: chargeService.parseVatRate(req.body.vatRate), date: req.body.date, dueDate: req.body.dueDate });
+      const vatRate = chargeService.parseVatRate(req.body.vatRate);
+      await chargeService.create({ projectId, clientId: projectId ? null : cid, label, amount, vatRate, date: req.body.date, dueDate: req.body.dueDate });
       await events.log({
         type: 'updated',
-        message: `Dodano pozycję rozliczeniową${label ? ': ' + label : ''} — ${fmt.money(amount)}`,
+        message: `Dodano pozycję rozliczeniową${label ? ': ' + label : ''} — ${fmt.money(chargeService.grossOf({ amount, vatRate }))}`,
         projectId: projectId || undefined,
         clientId: projectId ? undefined : cid,
         ip: req.ip,

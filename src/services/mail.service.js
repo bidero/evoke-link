@@ -4,6 +4,7 @@
 const nodemailer = require('nodemailer');
 const config = require('../config');
 const settingsService = require('./settings.service');
+const { grossOf } = require('./charge.service'); // kwoty BRUTTO w mailach (amount = netto)
 const { stripTags } = require('../utils/htmlEmail');
 
 let transporter = null;
@@ -282,7 +283,7 @@ async function sendPaymentReminder({ to, client, charges, total }) {
   const rows = charges.map((c) =>
     `<tr><td style="padding:6px 0;border-top:1px solid #e2e8f0">${esc(c.label || 'Pozycja')}</td>` +
     `<td style="padding:6px 0;border-top:1px solid #e2e8f0;color:#64748b">termin ${esc(date(c.dueDate))}</td>` +
-    `<td style="padding:6px 0;border-top:1px solid #e2e8f0;text-align:right">${esc(money(c.amount))}</td></tr>`
+    `<td style="padding:6px 0;border-top:1px solid #e2e8f0;text-align:right">${esc(money(grossOf(c)))}</td></tr>`
   ).join('');
   const inner = `
     <p style="margin:0 0 10px">Dzień dobry${greetName(client) ? ' ' + esc(greetName(client)) : ''},</p>
@@ -292,7 +293,7 @@ async function sendPaymentReminder({ to, client, charges, total }) {
     ${bank ? `<p style="margin:14px 0 0;color:#64748b;font-size:13px">Numer konta: ${esc(bank)}</p>` : ''}`;
   const html = await wrap(inner, { heading: 'Przypomnienie o płatności' });
   const text = `Dzień dobry${greetName(client) ? ' ' + greetName(client) : ''},\n\n${intro}\n` +
-    charges.map((c) => ` • ${c.label || 'Pozycja'} (termin ${date(c.dueDate)}): ${money(c.amount)}`).join('\n') +
+    charges.map((c) => ` • ${c.label || 'Pozycja'} (termin ${date(c.dueDate)}): ${money(grossOf(c))}`).join('\n') +
     `\n\nRazem do zapłaty: ${money(total)}` + (bank ? `\nNumer konta: ${bank}` : '');
   const subject = cleanSubject(fillTpl(em.reminderSubject, rvars)) || `${appName} — przypomnienie o płatności`;
   return send({ to, subject, html, text, replyTo: config.admin.email });
@@ -374,7 +375,7 @@ async function sendDailyDigest({ reminders = [], messages = [], activity = [], o
   const remItems = reminders.map((r) => li(`${esc(r.title)} <span style="color:#94a3b8;font-size:12px">— ${esc(dt(r.dueAt))}${new Date(r.dueAt) < now ? ' · zaległe' : ''}${r.sub ? ' · ' + esc(r.sub) : ''}</span>`));
   const msgItems = messages.map((m) => li(`<b>${esc(m.senderName || 'Klient')}</b>: ${esc(String(m.body || '').slice(0, 120))}`));
   const actItems = activity.map((e) => li(`${esc(e.message || e.type)} <span style="color:#94a3b8;font-size:12px">— ${esc(dt(e.createdAt))}</span>`));
-  const chargeTotal = overdueCharges.reduce((n, c) => n + c.amount, 0);
+  const chargeTotal = overdueCharges.reduce((n, c) => n + grossOf(c), 0);
   const chargeItems = overdueCharges.length ? [li(`Przeterminowane płatności: <b>${overdueCharges.length}</b> na łącznie <b style="color:${esc(primary)}">${esc(money(chargeTotal))}</b>`)] : [];
 
   const inner = `

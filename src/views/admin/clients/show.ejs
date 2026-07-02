@@ -277,7 +277,7 @@
                 <input type="checkbox" name="ids" value="<%= ch.id %>" checked class="rounded border-slate-300 shrink-0" />
                 <span class="text-xs text-slate-400 w-16 shrink-0"><%= fmt.dateOnly(ch.date) %></span>
                 <span class="flex-1 min-w-0 truncate text-sm <%= ch.paidAt ? 'text-slate-400 line-through' : 'text-slate-700' %>"><%= ch.label || 'Pozycja' %></span>
-                <span class="tabular-nums text-xs shrink-0 <%= ch.paidAt ? 'text-slate-400' : 'text-slate-700' %>"><%= fmt.money(ch.amount) %></span>
+                <span class="tabular-nums text-xs shrink-0 <%= ch.paidAt ? 'text-slate-400' : 'text-slate-700' %>"><%= fmt.money(ch.amount + (ch.vatRate ? Math.round(ch.amount * ch.vatRate / 100) : 0)) %></span>
               </label>
             <% }); %>
           </div>
