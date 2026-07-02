@@ -1,0 +1,70 @@
+<div class="w-full max-w-lg">
+  <% if (done) { %>
+    <div class="evoke-card p-5 sm:p-8 text-center">
+      <div class="flex justify-center mb-3"><%- icon('check', { size: 44, cls: 'text-green-600' }) %></div>
+      <h1 class="text-2xl font-semibold tracking-tight mb-1">Dziękujemy!</h1>
+      <p class="text-sm text-slate-500">Twoje dane zostały przesłane. Odezwiemy się wkrótce.</p>
+    </div>
+  <% } else { %>
+    <% const v = values || {}; const inputCls = 'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none'; %>
+    <div class="evoke-card p-5 sm:p-8">
+      <%- include('_hero_in_card') %>
+      <h1 class="text-2xl font-semibold tracking-tight mb-1">Uzupełnij swoje dane</h1>
+      <p class="text-sm text-slate-500 mb-6">Prosimy o sprawdzenie i uzupełnienie danych do współpracy i rozliczeń.</p>
+
+      <% if (error) { %>
+        <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
+      <% } %>
+
+      <form method="POST" action="/onboard/<%= onbClient.onboardingToken %>" class="space-y-5">
+        <div class="space-y-3">
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Dane firmowe</p>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 mb-1" for="onb-company">Nazwa firmy</label>
+            <input id="onb-company" name="company" type="text" maxlength="200" value="<%= v.company || '' %>" class="<%= inputCls %>" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 mb-1" for="onb-nip">NIP</label>
+            <input id="onb-nip" name="nip" type="text" inputmode="numeric" maxlength="20" value="<%= v.nip || '' %>" class="<%= inputCls %>" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 mb-1" for="onb-address">Adres (ulica, kod, miasto)</label>
+            <textarea id="onb-address" name="address" rows="2" maxlength="500" class="<%= inputCls %>"><%= v.address || '' %></textarea>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Dane kontaktowe</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-slate-600 mb-1" for="onb-firstname">Imię</label>
+              <input id="onb-firstname" name="firstName" type="text" maxlength="100" value="<%= v.firstName || '' %>" class="<%= inputCls %>" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-600 mb-1" for="onb-lastname">Nazwisko</label>
+              <input id="onb-lastname" name="lastName" type="text" maxlength="100" value="<%= v.lastName || '' %>" class="<%= inputCls %>" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 mb-1" for="onb-phone">Telefon</label>
+            <input id="onb-phone" name="phone" type="tel" maxlength="50" value="<%= v.phone || '' %>" class="<%= inputCls %>" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-600 mb-1" for="onb-email">E-mail</label>
+            <% if (onbClient.email) { %>
+              <input id="onb-email" type="email" value="<%= onbClient.email %>" readonly class="<%= inputCls %> bg-slate-50 text-slate-500" />
+              <p class="text-xs text-slate-400 mt-1">Ten adres jest już przypisany — aby go zmienić, skontaktuj się z nami.</p>
+            <% } else { %>
+              <input id="onb-email" name="email" type="email" maxlength="200" value="<%= v.email || '' %>" class="<%= inputCls %>" />
+            <% } %>
+          </div>
+        </div>
+
+        <button type="submit" class="evoke-btn w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium py-3 transition">
+          Wyślij dane
+        </button>
+        <p class="text-xs text-slate-400 text-center">Link jest jednorazowy — po wysłaniu formularza wygaśnie.</p>
+      </form>
+    </div>
+  <% } %>
+</div>

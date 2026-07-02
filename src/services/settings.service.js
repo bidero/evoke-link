@@ -24,6 +24,7 @@ const DEFAULTS = {
     logoPath: null,
     linkSubject: '', linkIntro: '',
     panelSubject: '', panelIntro: '',
+    onboardSubject: '', onboardIntro: '',
     uploadSubject: '', downloadSubject: '',
     clientConfirm: false, clientConfirmSubject: '', clientConfirmBody: '',
     reminders: false, reminderSubject: '', reminderIntro: '',

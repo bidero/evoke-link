@@ -166,6 +166,8 @@ async function updateSettings(req, res, next) {
         linkIntro: sanitizeEmailHtml(b.linkIntro || ''),
         panelSubject: (b.panelSubject || '').trim(),
         panelIntro: sanitizeEmailHtml(b.panelIntro || ''),
+        onboardSubject: (b.onboardSubject || '').trim(),
+        onboardIntro: (b.onboardIntro || '').trim(),
         uploadSubject: (b.uploadSubject || '').trim(),
         downloadSubject: (b.downloadSubject || '').trim(),
         clientConfirm: b.clientConfirm === 'on',

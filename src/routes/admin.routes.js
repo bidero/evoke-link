@@ -7,6 +7,7 @@ const { showDashboard } = require('../controllers/dashboard.controller');
 const transfers = require('../controllers/transfer.controller');
 const projects = require('../controllers/project.controller');
 const clients = require('../controllers/client.controller');
+const onboarding = require('../controllers/onboarding.controller');
 const notifications = require('../controllers/notification.controller');
 const settings = require('../controllers/settings.controller');
 const search = require('../controllers/search.controller');
@@ -100,6 +101,8 @@ router.get('/clients', clients.listClients);
 router.get('/clients/new', clients.showCreateForm);
 router.post('/clients', clients.createClient);
 router.post('/clients/:id/send-panel', clients.sendPanel);
+router.post('/clients/:id/onboarding', onboarding.generateLink);        // generuj/wymień link onboardingowy
+router.post('/clients/:id/onboarding/send', onboarding.sendLink);       // wyślij link mailem
 router.get('/clients/:id/edit', clients.showEditForm);
 router.post('/clients/:id/note', clients.addNote);
 router.get('/clients/:id/rozliczenie.pdf', clients.clientStatementPdf);

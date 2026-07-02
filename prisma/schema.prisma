@@ -40,6 +40,9 @@ model Client {
   tags      String?                       // wolny tekst, oddzielone przecinkami
   token     String    @unique
   note      String?
+  onboardingToken       String?   @unique  // jednorazowy link /onboard/:token (regeneracja wymienia)
+  onboardingExpiresAt   DateTime?          // ważny 7 dni od wygenerowania
+  onboardingCompletedAt DateTime?          // kiedy klient wypełnił formularz (null = jeszcze nie)
   createdAt DateTime  @default(now())
   projects  Project[]
   events    Event[]
@@ -166,7 +169,7 @@ model Event {
   transferId Int?
   client     Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
   clientId   Int?      // oś czasu klienta; SetNull — usunięcie klienta nie kasuje historii
-  type       String    // created | downloaded | uploaded | email_sent | expired | error | note
+  type       String    // created | downloaded | uploaded | email_sent | expired | error | note | onboarded
   message    String?
   meta       String?   // dodatkowe dane jako JSON (string)
   isRead     Boolean   @default(false) // dla powiadomień w panelu

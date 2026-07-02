@@ -190,6 +190,51 @@ function update(id, { name, firstName, lastName, email, note, company, phone, ni
   });
 }
 
+// ---- Onboarding — jednorazowy link, przez który klient sam uzupełnia dane CRM ----
+
+const ONBOARDING_DAYS = 7;
+
+// Generuje (lub wymienia) link onboardingowy. Stary token przestaje działać.
+function generateOnboarding(id) {
+  return prisma.client.update({
+    where: { id: Number(id) },
+    data: {
+      onboardingToken: makeToken(),
+      onboardingExpiresAt: new Date(Date.now() + ONBOARDING_DAYS * 86400000),
+      onboardingCompletedAt: null,
+    },
+  });
+}
+
+function getByOnboardingToken(token) {
+  return prisma.client.findUnique({ where: { onboardingToken: token } });
+}
+
+// Stan linku do widoku 360°: 'none' | 'active' | 'expired' | 'completed'.
+function onboardingState(client) {
+  if (!client.onboardingToken) return 'none';
+  if (client.onboardingCompletedAt) return 'completed';
+  if (client.onboardingExpiresAt && new Date(client.onboardingExpiresAt) < new Date()) return 'expired';
+  return 'active';
+}
+
+// Zapis danych z formularza onboardingowego. E-mail nadpisywany TYLKO gdy w kartotece pusty.
+// Puste pole = null (klient świadomie wyczyścił). Pole `name` poza formularzem (etykieta agencji).
+function completeOnboarding(client, { company, nip, address, firstName, lastName, phone, email }) {
+  const cap = (v, n) => (clean(v) ? clean(v).slice(0, n) : null);
+  const data = {
+    company: cap(company, 200),
+    nip: cap(nip && nip.replace(/[\s-]/g, ''), 20), // miękka normalizacja, bez walidacji sumy kontrolnej
+    address: cap(address, 500),
+    firstName: cap(firstName, 100),
+    lastName: cap(lastName, 100),
+    phone: cap(phone, 50),
+    onboardingCompletedAt: new Date(),
+  };
+  if (!client.email && clean(email)) data.email = clean(email).slice(0, 200);
+  return prisma.client.update({ where: { id: client.id }, data });
+}
+
 // Usuwa klienta. Projekty zostają, tracą tylko przypisanie (clientId → null).
 async function remove(id) {
   await prisma.project.updateMany({ where: { clientId: Number(id) }, data: { clientId: null } });
@@ -197,4 +242,7 @@ async function remove(id) {
   return prisma.client.delete({ where: { id: Number(id) } });
 }
 
-module.exports = { list, getById, overview, getByToken, options, tagCloud, create, update, remove, SORTS };
+module.exports = {
+  list, getById, overview, getByToken, options, tagCloud, create, update, remove, SORTS,
+  generateOnboarding, getByOnboardingToken, onboardingState, completeOnboarding,
+};

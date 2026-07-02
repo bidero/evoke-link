@@ -5,6 +5,7 @@ const download = require('../controllers/download.controller');
 const receive = require('../controllers/receive.controller');
 const portal = require('../controllers/portal.controller');
 const clientCtrl = require('../controllers/client.controller');
+const onboarding = require('../controllers/onboarding.controller');
 const { chunkParser, receiveChunk, receiveUpload } = require('../middleware/chunkUpload');
 const { passwordLimiter, messageLimiter } = require('../middleware/rateLimit');
 
@@ -46,5 +47,9 @@ router.post('/p/:token/messages/seen', portal.markSeen);
 router.get('/c/:token', clientCtrl.showClientPortal);
 router.post('/c/:token/message', messageLimiter, clientCtrl.submitClientMessage);
 router.post('/c/:token/messages/seen', clientCtrl.markSeen);
+
+// Onboarding — jednorazowy formularz uzupełnienia danych przez klienta.
+router.get('/onboard/:token', onboarding.showForm);
+router.post('/onboard/:token', messageLimiter, onboarding.submitForm);
 
 module.exports = router;

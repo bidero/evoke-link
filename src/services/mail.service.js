@@ -47,6 +47,8 @@ const PLACEHOLDER_SUPPORT = {
   downloadSubject: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{tytul}', '{link}'],
   panelSubject: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{klient}', '{imie}', '{nazwisko}', '{link}'],
   panelIntro: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{klient}', '{imie}', '{nazwisko}', '{link}', '{przycisk}'],
+  onboardSubject: ['{nazwa-aplikacji}', '{klient}', '{imie}', '{nazwisko}', '{link}'],
+  onboardIntro: ['{nazwa-aplikacji}', '{klient}', '{imie}', '{nazwisko}', '{link}', '{przycisk}'],
   clientConfirmSubject: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{tytul}'],
   clientConfirmBody: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{tytul}'],
   reminderSubject: ['{nazwa-aplikacji}', '{klient}', '{imie}', '{nazwisko}'],
@@ -231,6 +233,52 @@ async function sendPanelLink({ to, url, projectName, clientName, client }) {
     <p style="margin:0;color:#64748b;font-size:13px">Lub skopiuj adres:<br><a href="${esc(url)}" style="color:${esc(primary)}">${esc(url)}</a></p>`;
   const html = await wrap(inner, { heading });
   return send({ to, subject, html, text: `${stripTags(ib.html)}\n\nOtwórz panel: ${url}`, replyTo: config.admin.email });
+}
+
+// Wysyłka linku onboardingowego (jednorazowy formularz uzupełnienia danych) do klienta.
+async function sendOnboardingLink({ to, url, client, expiresAt }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const appName = s.appName || 'Evoke LINK';
+  const em = s.emails || {};
+  const vars = { ...baseVars(appName), ...clientVars(client), link: url };
+  const expiresStr = expiresAt ? new Date(expiresAt).toLocaleString('pl-PL') : '';
+
+  const subject = cleanSubject(fillTpl(em.onboardSubject, vars)) || `${appName} — prośba o uzupełnienie danych`;
+  const introSrc = em.onboardIntro || 'Prosimy o uzupełnienie danych potrzebnych do współpracy i rozliczeń. Zajmie to około 2 minut.';
+
+  const ib = introBlock(introSrc, vars, btn(url, 'Uzupełnij dane', primary));
+  const inner = `
+    ${ib.html}
+    ${ib.hasButton ? '' : `<p style="margin:0 0 20px">${btn(url, 'Uzupełnij dane', primary)}</p>`}
+    <p style="margin:0;color:#64748b;font-size:13px">Lub skopiuj adres:<br><a href="${esc(url)}" style="color:${esc(primary)}">${esc(url)}</a></p>
+    ${expiresStr ? `<p style="margin:16px 0 0;color:#94a3b8;font-size:12px">Link jest ważny do: ${expiresStr}</p>` : ''}`;
+  const html = await wrap(inner, { heading: 'Uzupełnij swoje dane' });
+  const text = `${stripTags(ib.html)}\n\nUzupełnij dane: ${url}` + (expiresStr ? `\nLink jest ważny do: ${expiresStr}` : '');
+  return send({ to, subject, html, text, replyTo: config.admin.email });
+}
+
+// Powiadomienie do agencji: klient wypełnił formularz onboardingowy.
+async function sendOnboardingCompleted({ client }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const appName = s.appName || 'Evoke LINK';
+  const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const adminUrl = `${config.appUrl}/admin/clients/${client.id}`;
+  const fields = [
+    ['Firma', client.company],
+    ['NIP', client.nip],
+    ['Adres', client.address],
+    ['Imię i nazwisko', [client.firstName, client.lastName].filter(Boolean).join(' ')],
+    ['Telefon', client.phone],
+    ['E-mail', client.email],
+  ].filter(([, v]) => v);
+  const inner = `
+    <p style="margin:0 0 12px">Klient <b>${esc(client.name)}</b> uzupełnił swoje dane przez link onboardingowy.</p>
+    <ul style="margin:0 0 18px;padding-left:18px">${fields.map(([k, v]) => `<li style="margin:2px 0"><span style="color:#64748b">${esc(k)}:</span> ${esc(v)}</li>`).join('')}</ul>
+    ${btn(adminUrl, 'Zobacz kartę klienta', primary)}`;
+  const html = await wrap(inner, { heading: 'Klient uzupełnił dane' });
+  const text = `Klient uzupełnił dane: ${client.name}\n` + fields.map(([k, v]) => ` • ${k}: ${v}`).join('\n') + `\n\n${adminUrl}`;
+  return send({ to: config.admin.email, subject: `${appName} — klient uzupełnił dane: ${client.name}`, html, text });
 }
 
 // Potwierdzenie do KLIENTA po przesłaniu plików (jeśli włączone i klient podał e-mail).
@@ -419,4 +467,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendClientReply, sendExpiryWarning, sendDailyDigest, sendProofingDecision, sendTest };
+module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendOnboardingLink, sendOnboardingCompleted, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendClientReply, sendExpiryWarning, sendDailyDigest, sendProofingDecision, sendTest };

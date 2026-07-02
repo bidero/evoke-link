@@ -32,6 +32,7 @@ const PATHS = {
   archive: '<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>',
   fileText: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>',
   sheet: '<rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="3" x2="21" y1="15" y2="15"/><line x1="9" x2="9" y1="9" y2="21"/><line x1="15" x2="15" y1="9" y2="21"/>',
+  userCheck: '<path d="M2 21a8 8 0 0 1 13.292-6"/><circle cx="10" cy="8" r="5"/><path d="m16 19 2 2 4-4"/>',
   arrowLeft: '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
   arrowRight: '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
   chevronDown: '<path d="m6 9 6 6 6-6"/>',
@@ -59,12 +60,14 @@ const EVENT_ICON = {
   email_sent: 'mail',
   expired: 'clock',
   error: 'alert',
+  onboarded: 'userCheck',
 };
 
 function eventIcon(type, opts = {}) {
   const cls = type === 'error' ? 'text-red-500'
     : type === 'changes' ? 'text-amber-500'
     : type === 'approved' ? 'text-green-600'
+    : type === 'onboarded' ? 'text-green-600'
     : opts.cls || 'text-brand-600';
   return icon(EVENT_ICON[type] || 'file', { ...opts, cls });
 }

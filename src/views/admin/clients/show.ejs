@@ -20,6 +20,18 @@
   <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie udało się wysłać rozliczenia. Sprawdź ustawienia SMTP.</div>
 <% } else if (sent === 'has-charges') { %>
   <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie można usunąć klienta — ma pozycje rozliczeniowe „bez projektu". Usuń je najpierw (zakładka „Rozliczenia").</div>
+<% } else if (sent === 'onb-new') { %>
+  <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Utworzono link onboardingowy.</div>
+<% } else if (sent === 'onb-ok') { %>
+  <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Wysłano link onboardingowy.</div>
+<% } else if (sent === 'onb-dev') { %>
+  <div class="mb-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-3 py-2">SMTP niewłączony — link onboardingowy trafił do logów serwera (tryb deweloperski).</div>
+<% } else if (sent === 'onb-nolink') { %>
+  <div class="mb-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-3 py-2">Najpierw wygeneruj link onboardingowy.</div>
+<% } else if (sent === 'onb-invalid') { %>
+  <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Klient nie ma poprawnego adresu e-mail.</div>
+<% } else if (sent === 'onb-error') { %>
+  <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie udało się wysłać. Sprawdź ustawienia SMTP.</div>
 <% } %>
 
 <!-- Nagłówek klienta (stały nad zakładkami) -->
@@ -61,6 +73,59 @@
         <input type="hidden" name="redirect" value="show" />
         <button type="submit" title="Wyślij link panelu na <%= client.email %>" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-sm font-medium px-4 py-2 transition"><%- icon('mail', { size: 15 }) %> Wyślij</button>
       </form>
+    <% } %>
+  </div>
+
+  <!-- Onboarding — jednorazowy link, przez który klient sam uzupełnia dane -->
+  <div class="mt-3 pt-3 border-t border-slate-100" x-data="{ copied: false, qr: false }">
+    <% const _btnCls = 'inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-sm font-medium px-4 py-2 transition'; %>
+    <% if (onboarding === 'none') { %>
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div class="text-sm flex-1"><span class="text-slate-500">Onboarding:</span> <span class="text-slate-400">klient może sam uzupełnić swoje dane (firma, NIP, adres, kontakt).</span></div>
+        <form method="POST" action="/admin/clients/<%= client.id %>/onboarding" class="shrink-0 sm:ml-auto">
+          <button type="submit" class="<%= _btnCls %>"><%- icon('userCheck', { size: 15 }) %> Utwórz link onboardingowy</button>
+        </form>
+      </div>
+    <% } else { %>
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div class="text-sm min-w-0 flex-1">
+          <span class="text-slate-500">Onboarding:</span>
+          <% if (onboarding === 'active') { %>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700">aktywny do <%= fmt.dateOnly(client.onboardingExpiresAt) %></span>
+            <a href="<%= onboardUrl %>" target="_blank" class="text-brand-700 hover:underline break-all ml-1"><%= onboardUrl %></a>
+          <% } else if (onboarding === 'expired') { %>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">wygasł <%= fmt.dateOnly(client.onboardingExpiresAt) %></span>
+          <% } else { %>
+            <span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700"><%- icon('check', { size: 13, cls: 'text-green-600' }) %> wypełniony <%= fmt.dateOnly(client.onboardingCompletedAt) %></span>
+          <% } %>
+        </div>
+        <div class="flex flex-wrap gap-2 shrink-0 sm:ml-auto">
+          <% if (onboarding === 'active') { %>
+            <input type="hidden" x-ref="ourl" value="<%= onboardUrl %>" />
+            <button type="button" @click="navigator.clipboard.writeText($refs.ourl.value); copied = true; setTimeout(()=>copied=false,1500)" class="<%= _btnCls %>">
+              <span x-show="!copied"><%- icon('copy', { size: 15 }) %> Kopiuj</span><span x-show="copied" x-cloak>Skopiowano ✓</span>
+            </button>
+            <button type="button" @click="qr = !qr" class="<%= _btnCls %>" x-text="qr ? 'Ukryj QR' : 'Kod QR'"></button>
+            <% if (client.email) { %>
+              <form method="POST" action="/admin/clients/<%= client.id %>/onboarding/send">
+                <button type="submit" title="Wyślij link onboardingowy na <%= client.email %>" class="<%= _btnCls %>"><%- icon('mail', { size: 15 }) %> Wyślij mailem</button>
+              </form>
+            <% } %>
+            <form method="POST" action="/admin/clients/<%= client.id %>/onboarding" onsubmit="return confirm('Wygenerować nowy link? Obecny przestanie działać.')">
+              <button type="submit" class="<%= _btnCls %>">Wygeneruj nowy</button>
+            </form>
+          <% } else { %>
+            <form method="POST" action="/admin/clients/<%= client.id %>/onboarding" <% if (onboarding === 'completed') { %>onsubmit="return confirm('Klient wypełnił już formularz. Wygenerować nowy link?')"<% } %>>
+              <button type="submit" class="<%= _btnCls %>">Wygeneruj nowy</button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+      <% if (onboarding === 'active') { %>
+        <div x-show="qr" x-cloak class="mt-2">
+          <span class="inline-block rounded-xl border border-slate-200 bg-white p-2 shadow-sm"><%- qrSvg(onboardUrl, { cell: 3 }) %></span>
+        </div>
+      <% } %>
     <% } %>
   </div>
 </div>

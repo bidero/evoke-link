@@ -853,6 +853,21 @@
       </div>
 
       <div class="border-t border-slate-100 pt-4 space-y-3">
+        <p class="text-sm text-slate-700">Link onboardingowy (uzupełnienie danych przez klienta)</p>
+        <p class="text-xs text-slate-400 -mt-1">Wysyłany przyciskiem „Wyślij mailem" na stronie klienta. Link jest jednorazowy i ważny 7 dni.</p>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Temat: link onboardingowy</label>
+          <input name="onboardSubject" data-phfield="onboardSubject" type="text" value="<%= settings.emails.onboardSubject %>" placeholder="domyślny"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Wstęp w mailu z linkiem onboardingowym</label>
+          <textarea name="onboardIntro" data-phfield="onboardIntro" rows="2" placeholder="Wstęp wiadomości (domyślny)"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= settings.emails.onboardIntro %></textarea>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-100 pt-4 space-y-3">
         <label class="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" name="clientConfirm" class="rounded border-slate-300" <%= settings.emails.clientConfirm ? 'checked' : '' %> />
           Wyślij klientowi potwierdzenie po przesłaniu plików (gdy podał e-mail)

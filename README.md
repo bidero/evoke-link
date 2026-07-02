@@ -13,6 +13,7 @@ Stos: **Node.js + Express**, **SQLite** (przez Prisma), szablony **EJS + Tailwin
 - 📥 **Uploady przychodzące** — link `/upload/:token`, klient wgrywa pliki, agencja dostaje e-mail i powiadomienie.
 - 📁 **Projekty** — grupują transfery (wysłane i odebrane) oraz pełną historię zdarzeń.
 - 👤 **Panel klienta** — link `/p/:token` z plikami widocznymi dla klienta (pobieranie + upload), opcjonalne hasło.
+- 📝 **Link onboardingowy** — jednorazowy formularz `/onboard/:token` (ważny 7 dni), przez który nowy klient sam uzupełnia dane do współpracy i rozliczeń (firma, NIP, adres, kontakt); agencja dostaje powiadomienie i e-mail.
 - 🔔 **Dashboard i powiadomienia** — aktywne transfery, miejsce na dysku, dzwonek z licznikiem nieprzeczytanych.
 - 🎨 **Customizacja** — z panelu, bez kodu: logo (rozmiar + pozycja, bezpieczny upload SVG), favicon, nazwa, kolor przewodni, osobne kolory panelu (akcent / sidebar / tło / czcionka), tło stron klienta (presety, **własny gradient**, obraz, **ziarno z regulacją mocy**), treści i stopka. Strona logowania brandowana jak strony klienta. Pole na **własny CSS** dla zmian ponad dostępne opcje.
 - 🔑 **Konto** — zmiana hasła administratora z panelu (zapis do bazy, fallback do `.env`).
@@ -161,4 +162,4 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Kanban + drag&drop** — tablica projektów (Lead → Aktywny → Dostarczony → Zapłacony) i przeciąganie terminów przypomnień w kalendarzu
 - [x] **Proofing** — akceptacja plików przez klienta: Zatwierdzam / Zgłaszam poprawki (+komentarz) na stronie pobierania i w panelu projektu; status w panelu agencji + powiadomienie i mail
 - [x] **Lista braków** — checklista materiałów od klienta (np. logo, teksty, zdjęcia); klient widzi ją w panelu, a wysyłając pliki wskazuje punkt, który odhacza się sam
-- [x] **Puls agencji** — analityka: przychód miesięczny z wykresem, należności, skuteczność pobrań, aktywni i top klienci
+- [x] **Link onboardingowy** — jednorazowy formularz, przez który nowy klient sam uzupełnia dane do współpracy i rozliczeń
