@@ -14,7 +14,26 @@ const normStatus = (s) => (STATUSES.includes(s) ? s : 'active');
 // SQLite ORDER BY używa kolacji BINARY — porządkuje po ASCII, więc sortujemy w JS.
 const byNamePl = (a, b) => (a.name || '').localeCompare(b.name || '', 'pl', { sensitivity: 'base' });
 
-async function list({ q, status } = {}) {
+// Sortowanie listy klientów: pole (nazwa/firma/nazwisko) × kierunek (rosnąco/malejąco).
+// Puste wartości zawsze na końcu; remis rozstrzyga nazwa wyświetlana.
+const SORT_FIELDS = { name: 'name', company: 'company', lastname: 'lastName' };
+const SORTS = ['name_asc', 'name_desc', 'company_asc', 'company_desc', 'lastname_asc', 'lastname_desc'];
+function sortClients(clients, sort) {
+  const [f, dir] = String(SORTS.includes(sort) ? sort : 'name_asc').split('_');
+  const field = SORT_FIELDS[f] || 'name';
+  const mul = dir === 'desc' ? -1 : 1;
+  return clients.sort((a, b) => {
+    const av = (a[field] || '').trim();
+    const bv = (b[field] || '').trim();
+    if (!av && !bv) return byNamePl(a, b);
+    if (!av) return 1;   // puste na końcu, niezależnie od kierunku
+    if (!bv) return -1;
+    const cmp = av.localeCompare(bv, 'pl', { sensitivity: 'base' }) || byNamePl(a, b);
+    return cmp * mul;
+  });
+}
+
+async function list({ q, status, sort } = {}) {
   const where = {};
   if (q && q.trim()) {
     const s = q.trim();
@@ -53,7 +72,7 @@ async function list({ q, status } = {}) {
     charges.forEach((c) => { const k = c.clientId != null ? c.clientId : (c.project ? c.project.clientId : null); if (k != null) map[k] = (map[k] || 0) + chargeService.grossOf(c); });
     clients.forEach((c) => { c.outstanding = map[c.id] || 0; });
   }
-  return clients.sort(byNamePl);
+  return sortClients(clients, sort);
 }
 
 function getById(id) {
@@ -178,4 +197,4 @@ async function remove(id) {
   return prisma.client.delete({ where: { id: Number(id) } });
 }
 
-module.exports = { list, getById, overview, getByToken, options, tagCloud, create, update, remove };
+module.exports = { list, getById, overview, getByToken, options, tagCloud, create, update, remove, SORTS };

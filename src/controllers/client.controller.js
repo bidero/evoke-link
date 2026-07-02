@@ -25,8 +25,9 @@ async function listClients(req, res, next) {
   try {
     const q = req.query.q || '';
     const status = ['lead', 'active', 'inactive'].includes(req.query.status) ? req.query.status : '';
-    const clients = await clientService.list({ q, status });
-    res.render('admin/clients/index', { title: 'Klienci', active: 'clients', clients, appUrl: config.appUrl, q, status, mailReady: mail.isConfigured(), sent: req.query.sent || null });
+    const sort = clientService.SORTS.includes(req.query.sort) ? req.query.sort : 'name_asc';
+    const clients = await clientService.list({ q, status, sort });
+    res.render('admin/clients/index', { title: 'Klienci', active: 'clients', clients, appUrl: config.appUrl, q, status, sort, mailReady: mail.isConfigured(), sent: req.query.sent || null });
   } catch (err) {
     next(err);
   }
