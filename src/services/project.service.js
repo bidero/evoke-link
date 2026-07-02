@@ -55,6 +55,7 @@ function getById(id) {
       client: true,
       transfers: { include: { files: true }, orderBy: { createdAt: 'desc' } },
       charges: { orderBy: { createdAt: 'asc' } },
+      fileRequests: { orderBy: { id: 'asc' } },
     },
   });
 }
@@ -97,7 +98,7 @@ async function update(id, { name, clientName, description, status, clientId, new
 function getByClientToken(token) {
   return prisma.project.findUnique({
     where: { clientToken: token },
-    include: { client: true, transfers: { include: { files: true }, orderBy: { createdAt: 'desc' } } },
+    include: { client: true, transfers: { include: { files: true }, orderBy: { createdAt: 'desc' } }, fileRequests: { orderBy: { id: 'asc' } } },
   });
 }
 

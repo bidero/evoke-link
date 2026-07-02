@@ -242,4 +242,26 @@ async function setStage(req, res, next) {
   }
 }
 
-module.exports = { listProjects, showCreateForm, createProject, showProject, sendPanel, showEditForm, updateProject, reorderProjects, showBoard, setStage, addCharge, toggleCharge, deleteCharge, deleteProject };
+// --- Lista braków (checklist materiałów od klienta) ---
+const fileRequestService = require('../services/fileRequest.service');
+
+async function addFileRequest(req, res, next) {
+  try {
+    await fileRequestService.create(req.params.id, { label: req.body.label, note: req.body.note });
+    res.redirect(`/admin/projects/${req.params.id}`);
+  } catch (err) { next(err); }
+}
+async function toggleFileRequest(req, res, next) {
+  try {
+    await fileRequestService.toggle(req.params.rid, req.params.id);
+    res.redirect(`/admin/projects/${req.params.id}`);
+  } catch (err) { next(err); }
+}
+async function deleteFileRequest(req, res, next) {
+  try {
+    await fileRequestService.remove(req.params.rid, req.params.id);
+    res.redirect(`/admin/projects/${req.params.id}`);
+  } catch (err) { next(err); }
+}
+
+module.exports = { listProjects, showCreateForm, createProject, showProject, sendPanel, showEditForm, updateProject, reorderProjects, showBoard, setStage, addCharge, toggleCharge, deleteCharge, addFileRequest, toggleFileRequest, deleteFileRequest, deleteProject };

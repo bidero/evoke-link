@@ -50,10 +50,40 @@
       <% } %>
     </div>
 
+    <!-- Lista braków: czego jeszcze potrzebujemy od klienta -->
+    <% const fileRequests = project.fileRequests || []; const openRequests = fileRequests.filter((r) => !r.done); %>
+    <% if (fileRequests.length) { %>
+      <div class="mt-8 pt-6 border-t border-slate-100">
+        <h2 class="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-3"><%- icon('check', { size: 16 }) %> Potrzebujemy od Ciebie</h2>
+        <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+          <% fileRequests.forEach(function(r){ %>
+            <div class="flex items-start gap-2.5 px-4 py-2.5 text-sm <%= r.done ? 'bg-green-50/40' : '' %>">
+              <% if (r.done) { %>
+                <%- icon('check', { size: 16, cls: 'text-green-600 mt-0.5 shrink-0' }) %>
+              <% } else { %>
+                <span class="w-4 h-4 rounded-full border-2 border-slate-300 mt-0.5 shrink-0"></span>
+              <% } %>
+              <div class="min-w-0">
+                <div class="<%= r.done ? 'text-slate-400 line-through' : 'text-slate-700' %>"><%= r.label %></div>
+                <% if (r.note && !r.done) { %><div class="text-xs text-slate-400 mt-0.5"><%= r.note %></div><% } %>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+        <% if (openRequests.length) { %><p class="text-xs text-slate-400 mt-2">Prześlij brakujące materiały poniżej — możesz wskazać, czego dotyczą pliki.</p><% } %>
+      </div>
+    <% } %>
+
     <!-- Upload od klienta -->
     <div class="mt-8 pt-6 border-t border-slate-100" x-data="uploader()">
       <h2 class="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-3"><%- icon('upload', { size: 16 }) %> Prześlij nam pliki</h2>
       <form @submit.prevent="submit" class="space-y-4">
+        <% if (typeof openRequests !== 'undefined' && openRequests.length) { %>
+          <select name="fileRequestId" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+            <option value="">Czego dotyczą te pliki? (opcjonalnie)</option>
+            <% openRequests.forEach(function(r){ %><option value="<%= r.id %>"><%= r.label %></option><% }); %>
+          </select>
+        <% } %>
         <div @dragover.prevent="dragging = true" @dragleave.prevent="dragging = false" @drop.prevent="onDrop($event)"
              :class="dragging ? 'border-brand-500 bg-brand-50' : 'border-slate-300'"
              class="rounded-2xl border-2 border-dashed p-6 text-center transition cursor-pointer" @click="$refs.input.click()">
@@ -114,7 +144,11 @@ function uploader() {
     chunkUrl: function () { return window.location.pathname.replace(/\/$/, '') + '/chunk'; },
     finalize: async function (uploadId) {
       const path = window.location.pathname.replace(/\/$/, '');
-      const res = await fetch(path + '/upload', { method: 'POST', body: new URLSearchParams({ uploadId: uploadId }) });
+      const body = new URLSearchParams({ uploadId: uploadId });
+      // GOTCHA XHR: pola formularza trzeba dokleić ręcznie (jak projectId/clientVisible w new.ejs).
+      const fr = document.querySelector('select[name=fileRequestId]');
+      if (fr && fr.value) body.append('fileRequestId', fr.value);
+      const res = await fetch(path + '/upload', { method: 'POST', body: body });
       if (!res.ok) throw new Error('Błąd wysyłania (' + res.status + ').');
       window.location = res.url || (window.location.pathname + '?sent=1');
     },

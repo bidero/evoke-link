@@ -160,4 +160,5 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Puls agencji** — analityka: przychód (wykres 6 mies.), należności, skuteczność pobrań, aktywni i top klienci
 - [x] **Kanban + drag&drop** — tablica projektów (Lead → Aktywny → Dostarczony → Zapłacony) i przeciąganie terminów przypomnień w kalendarzu
 - [x] **Proofing** — akceptacja plików przez klienta: Zatwierdzam / Zgłaszam poprawki (+komentarz) na stronie pobierania i w panelu projektu; status w panelu agencji + powiadomienie i mail
+- [x] **Lista braków** — checklista materiałów od klienta (np. logo, teksty, zdjęcia); klient widzi ją w panelu, a wysyłając pliki wskazuje punkt, który odhacza się sam
 - [x] **Puls agencji** — analityka: przychód miesięczny z wykresem, należności, skuteczność pobrań, aktywni i top klienci

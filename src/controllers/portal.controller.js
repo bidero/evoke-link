@@ -7,6 +7,7 @@ const zip = require('../services/zip.service');
 const mail = require('../services/mail.service');
 const events = require('../services/event.service');
 const messageService = require('../services/message.service');
+const fileRequestService = require('../services/fileRequest.service');
 const { isRaster } = require('../utils/fileIcon');
 
 const PUBLIC_LAYOUT = 'layouts/public';
@@ -133,12 +134,18 @@ async function submitUpload(req, res, next) {
     });
     const updated = await transferService.addFiles(t, files);
 
+    // Lista braków: upload wskazany na punkt checklisty odhacza go automatycznie.
+    let fulfilled = null;
+    if (req.body.fileRequestId) {
+      fulfilled = await fileRequestService.fulfill(req.body.fileRequestId, project.id, t.id).catch(() => null);
+    }
+
     await events.log({
       type: 'uploaded',
-      message: `Klient przesłał ${files.length} plik(ów) z panelu` + (name ? ` (${name})` : ''),
+      message: `Klient przesłał ${files.length} plik(ów) z panelu` + (name ? ` (${name})` : '') + (fulfilled ? ` — dot.: ${fulfilled.label}` : ''),
       transferId: t.id,
       projectId: project.id,
-      meta: { name: name || null, email: email || null },
+      meta: { name: name || null, email: email || null, fileRequestId: fulfilled ? fulfilled.id : null },
       ip: req.ip,
     });
     mail

@@ -67,6 +67,7 @@ model Project {
   charges            Charge[]
   messages           Message[]
   reminders          Reminder[]
+  fileRequests       FileRequest[]
 }
 
 // Pozycja rozliczeniowa (kwota). „Czasami po kilka" → osobne wiersze.
@@ -122,6 +123,24 @@ model Transfer {
   files         File[]
   events        Event[]
   messages      Message[]
+  fileRequests  FileRequest[]
+}
+
+// Lista braków — punkt checklisty materiałów, o które prosimy klienta (portal /p).
+// Odhaczany ręcznie przez agencję lub automatycznie przy uploadzie wskazanym na punkt.
+model FileRequest {
+  id         Int       @id @default(autoincrement())
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId  Int
+  label      String
+  note       String?
+  done       Boolean   @default(false)
+  doneAt     DateTime?
+  transfer   Transfer? @relation(fields: [transferId], references: [id], onDelete: SetNull) // upload, który domknął punkt
+  transferId Int?
+  createdAt  DateTime  @default(now())
+
+  @@index([projectId])
 }
 
 // Pojedynczy plik należący do transferu.
