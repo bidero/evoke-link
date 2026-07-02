@@ -80,11 +80,13 @@ router.get('/projects/new', projects.showCreateForm);
 router.post('/projects/reorder', projects.reorderProjects); // przed :id!
 router.get('/projects/board', projects.showBoard); // przed :id!
 router.post('/projects/:id/stage', projects.setStage);
+router.post('/projects/:id/archive', projects.archiveProject);
 router.post('/projects', projects.createProject);
 router.get('/projects/:id', projects.showProject);
 router.post('/projects/:id/send-panel', projects.sendPanel);
 router.post('/projects/:id/charges', projects.addCharge);
 router.post('/projects/:id/charges/:chargeId/toggle', projects.toggleCharge);
+router.post('/projects/:id/charges/:chargeId/paid-date', projects.setChargePaidDate);
 router.post('/projects/:id/charges/:chargeId/delete', projects.deleteCharge);
 router.post('/projects/:id/requests', projects.addFileRequest);
 router.post('/projects/:id/requests/:rid/toggle', projects.toggleFileRequest);

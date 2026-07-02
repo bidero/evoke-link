@@ -178,9 +178,15 @@
       <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <div class="px-5 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           <h2 class="text-sm font-medium text-slate-700">Pozycje rozliczeniowe</h2>
-          <% if (billing.total > 0) { %>
+          <% if (billing.gross > 0) { %>
             <div class="text-xs text-slate-400">
-              Wartość <span class="text-slate-600 font-medium"><%= fmt.money(billing.total) %></span> ·
+              <% if (billing.vat > 0) { %>
+                Netto <span class="text-slate-600 font-medium"><%= fmt.money(billing.net) %></span> ·
+                VAT <span class="text-slate-600 font-medium"><%= fmt.money(billing.vat) %></span> ·
+                Brutto <span class="text-slate-600 font-medium"><%= fmt.money(billing.gross) %></span> ·
+              <% } else { %>
+                Wartość <span class="text-slate-600 font-medium"><%= fmt.money(billing.gross) %></span> ·
+              <% } %>
               Rozliczono <span class="text-slate-600 font-medium"><%= fmt.money(billing.paid) %></span> ·
               Pozostało <span class="font-semibold <%= billing.outstanding > 0 ? 'text-amber-600' : 'text-green-600' %>"><%= fmt.money(billing.outstanding) %></span>
             </div>
@@ -190,13 +196,13 @@
         <% if (charges.length) { %>
           <div class="divide-y divide-slate-100">
             <% let _gp = undefined; %>
-            <% charges.forEach(function(ch){ const _pn = (ch.project && ch.project.name) || 'Bez projektu'; %>
+            <% charges.forEach(function(ch){ const _pn = (ch.project && ch.project.name) || 'Bez projektu'; const _vat = ch.vatRate ? Math.round(ch.amount * ch.vatRate / 100) : 0; const _gross = ch.amount + _vat; %>
               <% if (_pn !== _gp) { _gp = _pn; %>
                 <div class="px-5 py-1.5 bg-slate-50 text-xs font-medium text-slate-500"><%= _pn %></div>
               <% } %>
               <form method="POST" action="/admin/clients/<%= client.id %>/charges/<%= ch.id %>" class="flex flex-col sm:flex-row sm:items-center gap-2 px-5 py-2.5">
                 <button type="submit" formaction="/admin/clients/<%= client.id %>/charges/<%= ch.id %>/toggle" title="<%= ch.paidAt ? 'Oznacz jako nierozliczone' : 'Oznacz jako rozliczone' %>" class="shrink-0 w-5 h-5 rounded border flex items-center justify-center transition <%= ch.paidAt ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 text-transparent hover:border-brand-400' %>"><%- icon('check', { size: 13, cls: '' }) %></button>
-                <select name="projectId" title="Przypisanie do projektu" class="shrink-0 sm:w-44 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none">
+                <select name="projectId" title="Przypisanie do projektu" class="shrink-0 sm:w-40 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none">
                   <option value="">— bez projektu —</option>
                   <% client.projects.forEach(function(p){ %>
                     <option value="<%= p.id %>" <%= ch.projectId === p.id ? 'selected' : '' %>><%= p.name %></option>
@@ -206,7 +212,15 @@
                 <input name="date" type="date" value="<%= ch.date ? new Date(ch.date).toISOString().slice(0,10) : '' %>" title="Data pozycji" class="shrink-0 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none" />
                 <% const _od = ch.dueDate && !ch.paidAt && new Date(ch.dueDate) < new Date(); %>
                 <input name="dueDate" type="date" value="<%= ch.dueDate ? new Date(ch.dueDate).toISOString().slice(0,10) : '' %>" title="Termin płatności<%= _od ? ' — po terminie!' : '' %>" class="shrink-0 rounded-lg border px-2 py-1.5 text-sm outline-none <%= _od ? 'border-red-400 text-red-600' : 'border-slate-300 focus:border-brand-500' %>" />
-                <input name="amount" type="text" inputmode="decimal" value="<%= (ch.amount/100).toFixed(2) %>" title="Kwota (zł)" class="shrink-0 w-24 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-right tabular-nums focus:border-brand-500 outline-none" />
+                <% if (ch.paidAt) { %>
+                  <input name="paidAt" type="date" value="<%= new Date(ch.paidAt).toISOString().slice(0,10) %>" onchange="this.form.submit()" title="Data rozliczenia" class="shrink-0 rounded-lg border border-green-300 text-green-700 bg-green-50 px-2 py-1.5 text-sm focus:border-green-500 outline-none" />
+                <% } %>
+                <input name="amount" type="text" inputmode="decimal" value="<%= (ch.amount/100).toFixed(2) %>" title="Kwota netto (zł)" class="shrink-0 w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-right tabular-nums focus:border-brand-500 outline-none" />
+                <select name="vatRate" title="Stawka VAT" class="shrink-0 w-[4.5rem] rounded-lg border border-slate-300 px-1.5 py-1.5 text-sm focus:border-brand-500 outline-none">
+                  <option value="" <%= ch.vatRate == null ? 'selected' : '' %>>bez</option>
+                  <% [23,8,5,0].forEach(function(r){ %><option value="<%= r %>" <%= ch.vatRate === r ? 'selected' : '' %>><%= r %>%</option><% }); %>
+                </select>
+                <span class="shrink-0 w-24 text-right text-xs tabular-nums <%= ch.vatRate != null ? 'text-slate-500' : 'text-transparent' %>" title="Brutto"><%= ch.vatRate != null ? 'brutto ' + fmt.money(_gross) : '' %></span>
                 <button type="submit" title="Zapisz zmiany" class="shrink-0 rounded-lg border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 px-3 py-1.5 text-sm font-medium transition">Zapisz</button>
                 <button type="submit" formaction="/admin/clients/<%= client.id %>/charges/<%= ch.id %>/delete" onclick="return confirm('Usunąć pozycję rozliczeniową?')" title="Usuń pozycję" class="shrink-0 p-1.5 text-slate-300 hover:text-red-600 transition"><%- icon('trash', { size: 16 }) %></button>
               </form>
@@ -227,7 +241,11 @@
           <input name="label" type="text" placeholder="Nazwa (np. Sesja, Zaliczka)" class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
           <input name="date" type="date" value="<%= new Date().toISOString().slice(0,10) %>" title="Data pozycji" class="shrink-0 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-brand-500 outline-none" />
           <input name="dueDate" type="date" title="Termin płatności (opcjonalnie)" class="shrink-0 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-brand-500 outline-none" />
-          <input name="amount" type="text" inputmode="decimal" required placeholder="Kwota zł" class="shrink-0 w-24 rounded-lg border border-slate-300 px-3 py-2 text-sm text-right focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <input name="amount" type="text" inputmode="decimal" required placeholder="Netto zł" title="Kwota netto (zł)" class="shrink-0 w-20 rounded-lg border border-slate-300 px-2 py-2 text-sm text-right focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <select name="vatRate" title="Stawka VAT" class="shrink-0 w-[4.5rem] rounded-lg border border-slate-300 px-1.5 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+            <option value="">bez</option>
+            <% [23,8,5,0].forEach(function(r){ %><option value="<%= r %>"><%= r %>%</option><% }); %>
+          </select>
           <button type="submit" class="shrink-0 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">Dodaj</button>
         </form>
       </div>

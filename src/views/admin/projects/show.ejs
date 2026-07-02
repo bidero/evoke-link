@@ -21,6 +21,10 @@
 <div class="mt-4 flex flex-wrap items-center gap-2">
   <a href="/admin/transfers/new?project=<%= project.id %>" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">+ Wyślij pliki klientowi</a>
   <a href="/admin/transfers/new-upload?project=<%= project.id %>" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">+ Link uploadu</a>
+  <form method="POST" action="/admin/projects/<%= project.id %>/archive" class="ml-auto">
+    <% const _arch = project.status === 'archived'; %>
+    <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition"><%- icon(_arch ? 'arrowLeft' : 'archive', { size: 15, cls: '' }) %> <%= _arch ? 'Przywróć z archiwum' : 'Archiwizuj' %></button>
+  </form>
 </div>
 
 <!-- Panel klienta -->
@@ -132,9 +136,15 @@
     <div id="rozliczenia" class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
       <div class="px-5 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <h2 class="text-sm font-medium text-slate-700">Rozliczenia</h2>
-        <% if (chargeTotals.total > 0) { %>
+        <% if (chargeTotals.gross > 0) { %>
           <div class="text-xs text-slate-400">
-            Wartość <span class="text-slate-600 font-medium"><%= fmt.money(chargeTotals.total) %></span> ·
+            <% if (chargeTotals.vat > 0) { %>
+              Netto <span class="text-slate-600 font-medium"><%= fmt.money(chargeTotals.net) %></span> ·
+              VAT <span class="text-slate-600 font-medium"><%= fmt.money(chargeTotals.vat) %></span> ·
+              Brutto <span class="text-slate-600 font-medium"><%= fmt.money(chargeTotals.gross) %></span> ·
+            <% } else { %>
+              Wartość <span class="text-slate-600 font-medium"><%= fmt.money(chargeTotals.gross) %></span> ·
+            <% } %>
             Rozliczono <span class="text-slate-600 font-medium"><%= fmt.money(chargeTotals.paid) %></span> ·
             Pozostało <span class="font-semibold <%= chargeTotals.outstanding > 0 ? 'text-amber-600' : 'text-green-600' %>"><%= fmt.money(chargeTotals.outstanding) %></span>
           </div>
@@ -143,7 +153,7 @@
 
       <% if (project.charges.length) { %>
         <ul class="divide-y divide-slate-100">
-          <% project.charges.forEach(function(ch){ %>
+          <% project.charges.forEach(function(ch){ const _vat = ch.vatRate ? Math.round(ch.amount * ch.vatRate / 100) : 0; const _gross = ch.amount + _vat; %>
             <li class="flex items-center gap-3 px-5 py-3">
               <form method="POST" action="/admin/projects/<%= project.id %>/charges/<%= ch.id %>/toggle" class="shrink-0">
                 <button type="submit" title="<%= ch.paidAt ? 'Oznacz jako nierozliczone' : 'Oznacz jako rozliczone' %>" class="w-5 h-5 rounded border flex items-center justify-center transition <%= ch.paidAt ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 text-transparent hover:border-brand-400' %>"><%- icon('check', { size: 13, cls: '' }) %></button>
@@ -152,9 +162,17 @@
                 <span class="block text-sm <%= ch.paidAt ? 'line-through text-slate-400' : 'text-slate-800' %>"><%= ch.label || 'Pozycja' %><% if (ch.date) { %> <span class="text-xs font-normal text-slate-400">· <%= fmt.dateOnly(ch.date) %></span><% } %></span>
                 <% if (ch.note) { %><span class="block text-xs text-slate-400"><%= ch.note %></span><% } %>
                 <% if (ch.dueDate && !ch.paidAt) { const _od = new Date(ch.dueDate) < new Date(); %><span class="block text-xs <%= _od ? 'text-red-600' : 'text-slate-400' %>">termin: <%= fmt.dateOnly(ch.dueDate) %><%= _od ? ' — po terminie' : '' %></span><% } %>
-                <% if (ch.paidAt) { %><span class="block text-xs text-green-600">rozliczono <%= fmt.date(ch.paidAt) %></span><% } %>
+                <% if (ch.paidAt) { %>
+                  <form method="POST" action="/admin/projects/<%= project.id %>/charges/<%= ch.id %>/paid-date" class="flex items-center gap-1">
+                    <span class="text-xs text-green-600">rozliczono</span>
+                    <input type="date" name="paidAt" value="<%= new Date(ch.paidAt).toISOString().slice(0,10) %>" onchange="this.form.submit()" title="Zmień datę rozliczenia" class="text-xs text-green-700 bg-transparent border border-transparent hover:border-green-300 focus:border-green-400 rounded px-1 py-0.5 outline-none cursor-pointer" />
+                  </form>
+                <% } %>
               </span>
-              <span class="shrink-0 text-sm font-medium tabular-nums <%= ch.paidAt ? 'text-slate-400' : 'text-slate-800' %>"><%= fmt.money(ch.amount) %></span>
+              <span class="shrink-0 text-right">
+                <span class="block text-sm font-medium tabular-nums <%= ch.paidAt ? 'text-slate-400' : 'text-slate-800' %>"><%= fmt.money(_gross) %></span>
+                <% if (ch.vatRate != null) { %><span class="block text-[11px] text-slate-400 tabular-nums"><%= fmt.money(ch.amount) %> netto + <%= ch.vatRate %>% VAT</span><% } %>
+              </span>
               <form method="POST" action="/admin/projects/<%= project.id %>/charges/<%= ch.id %>/delete" class="shrink-0" onsubmit="return confirm('Usunąć pozycję rozliczeniową?')">
                 <button type="submit" title="Usuń pozycję" class="p-1 text-slate-300 hover:text-red-600 transition"><%- icon('trash', { size: 15 }) %></button>
               </form>
@@ -170,8 +188,17 @@
           <label class="flex-1 min-w-[150px] text-[11px] text-slate-500">Nazwa
             <input name="label" type="text" placeholder="np. Sesja, Zaliczka" class="mt-0.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
           </label>
-          <label class="text-[11px] text-slate-500">Kwota zł
+          <label class="text-[11px] text-slate-500">Netto zł
             <input name="amount" type="text" inputmode="decimal" required placeholder="0,00" class="mt-0.5 w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          </label>
+          <label class="text-[11px] text-slate-500">VAT
+            <select name="vatRate" class="mt-0.5 w-24 rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+              <option value="">bez</option>
+              <option value="23">23%</option>
+              <option value="8">8%</option>
+              <option value="5">5%</option>
+              <option value="0">0%</option>
+            </select>
           </label>
         </div>
         <div class="flex flex-wrap items-end gap-2">

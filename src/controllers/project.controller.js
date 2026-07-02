@@ -168,7 +168,7 @@ async function addCharge(req, res, next) {
     const amount = chargeService.parseAmount(req.body.amount);
     if (amount > 0) {
       const label = (req.body.label || '').trim();
-      await chargeService.create({ projectId: req.params.id, label, amount, note: req.body.note, date: req.body.date, dueDate: req.body.dueDate });
+      await chargeService.create({ projectId: req.params.id, label, amount, vatRate: chargeService.parseVatRate(req.body.vatRate), note: req.body.note, date: req.body.date, dueDate: req.body.dueDate });
       await events.log({ type: 'updated', message: `Dodano pozycję rozliczeniową${label ? ': ' + label : ''} — ${fmt.money(amount)}`, projectId: Number(req.params.id), ip: req.ip });
     }
     res.redirect(`/admin/projects/${req.params.id}#rozliczenia`);
@@ -185,6 +185,19 @@ async function toggleCharge(req, res, next) {
       const willPay = !charge.paidAt;
       await chargeService.setPaid(charge.id, willPay);
       await events.log({ type: 'updated', message: `${willPay ? 'Rozliczono' : 'Cofnięto rozliczenie'}${charge.label ? ': ' + charge.label : ''} — ${fmt.money(charge.amount)}`, projectId: Number(req.params.id), ip: req.ip });
+    }
+    res.redirect(`/admin/projects/${req.params.id}#rozliczenia`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Zmiana daty rozliczenia pozycji (po oznaczeniu jako rozliczone — edycja daty).
+async function setChargePaidDate(req, res, next) {
+  try {
+    const charge = await chargeService.getById(req.params.chargeId);
+    if (charge && charge.projectId === Number(req.params.id)) {
+      await chargeService.setPaidDate(charge.id, req.body.paidAt);
     }
     res.redirect(`/admin/projects/${req.params.id}#rozliczenia`);
   } catch (err) {
@@ -217,6 +230,26 @@ async function deleteProject(req, res, next) {
   try {
     await projectService.remove(req.params.id);
     res.redirect('/admin/projects');
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Archiwizacja / przywrócenie jednym kliknięciem. redirect=list → wróć na listę.
+async function archiveProject(req, res, next) {
+  try {
+    const project = await projectService.getById(req.params.id);
+    if (project) {
+      const target = project.status === 'archived' ? 'active' : 'archived';
+      await projectService.setStatus(project.id, target);
+      await events.log({
+        type: 'updated',
+        message: target === 'archived' ? 'Zarchiwizowano projekt' : 'Przywrócono projekt z archiwum',
+        projectId: project.id,
+        ip: req.ip,
+      });
+    }
+    res.redirect(req.body.redirect === 'list' ? '/admin/projects' : `/admin/projects/${req.params.id}`);
   } catch (err) {
     next(err);
   }
@@ -264,4 +297,4 @@ async function deleteFileRequest(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { listProjects, showCreateForm, createProject, showProject, sendPanel, showEditForm, updateProject, reorderProjects, showBoard, setStage, addCharge, toggleCharge, deleteCharge, addFileRequest, toggleFileRequest, deleteFileRequest, deleteProject };
+module.exports = { listProjects, showCreateForm, createProject, showProject, sendPanel, showEditForm, updateProject, reorderProjects, showBoard, setStage, archiveProject, addCharge, toggleCharge, setChargePaidDate, deleteCharge, addFileRequest, toggleFileRequest, deleteFileRequest, deleteProject };

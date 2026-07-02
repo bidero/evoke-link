@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const prisma = require('../db/client');
 const events = require('./event.service');
+const charges = require('./charge.service');
 
 function makeToken() {
   return crypto.randomBytes(9).toString('base64url');
@@ -139,6 +140,12 @@ function setStage(id, stage) {
   return prisma.project.update({ where: { id: Number(id) }, data: { stage } });
 }
 
+// Archiwizacja / przywrócenie — jednym kliknięciem (status active ↔ archived).
+function setStatus(id, status) {
+  if (!['active', 'archived'].includes(status)) return null;
+  return prisma.project.update({ where: { id: Number(id) }, data: { status } });
+}
+
 // Tablica kanban: projekty (bez usuniętych/zarchiwizowanych) pogrupowane po etapie,
 // z klientem, licznikiem transferów i sumą nierozliczonych pozycji.
 async function board() {
@@ -148,13 +155,12 @@ async function board() {
     orderBy: [{ position: 'asc' }, { updatedAt: 'desc' }],
   });
   if (projects.length) {
-    const grouped = await prisma.charge.groupBy({
-      by: ['projectId'],
+    const rows = await prisma.charge.findMany({
       where: { paidAt: null, projectId: { in: projects.map((p) => p.id) } },
-      _sum: { amount: true },
+      select: { projectId: true, amount: true, vatRate: true },
     });
     const map = {};
-    grouped.forEach((g) => { map[g.projectId] = g._sum.amount || 0; });
+    rows.forEach((c) => { map[c.projectId] = (map[c.projectId] || 0) + charges.grossOf(c); }); // brutto (z VAT)
     projects.forEach((p) => { p.outstanding = map[p.id] || 0; });
   }
   const cols = STAGES.map((s) => ({ stage: s, label: STAGE_LABELS[s], projects: projects.filter((p) => (STAGES.includes(p.stage) ? p.stage : 'active') === s) }));
@@ -166,6 +172,7 @@ module.exports = {
   STAGES,
   STAGE_LABELS,
   setStage,
+  setStatus,
   board,
   reorder,
   getById,

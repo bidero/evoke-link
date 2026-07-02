@@ -7,6 +7,7 @@ const vfsRaw = require('pdfmake/build/vfs_fonts.js');
 const vfs = vfsRaw.pdfMake && vfsRaw.pdfMake.vfs ? vfsRaw.pdfMake.vfs : vfsRaw;
 const fmt = require('../utils/format');
 const { safeHex } = require('../utils/color');
+const chargeCalc = require('./charge.service');
 
 const fonts = {
   Roboto: {
@@ -41,8 +42,16 @@ function slug(s) {
 }
 
 // Tabele pozycji grupowane po projekcie. style: 'light' | 'bordered'.
-function projectTables(charges, brand, style) {
-  const header = () => [
+// hasVat → dodatkowe kolumny Netto/VAT/Brutto zamiast pojedynczej „Kwota".
+function projectTables(charges, brand, style, hasVat) {
+  const header = () => hasVat ? [
+    { text: 'Data', bold: true, color: MUTED, fontSize: 9 },
+    { text: 'Pozycja', bold: true, color: MUTED, fontSize: 9 },
+    { text: 'Status', bold: true, color: MUTED, fontSize: 9 },
+    { text: 'Netto', bold: true, color: MUTED, fontSize: 9, alignment: 'right' },
+    { text: 'VAT', bold: true, color: MUTED, fontSize: 9, alignment: 'right' },
+    { text: 'Brutto', bold: true, color: MUTED, fontSize: 9, alignment: 'right' },
+  ] : [
     { text: 'Data', bold: true, color: MUTED, fontSize: 9 },
     { text: 'Pozycja', bold: true, color: MUTED, fontSize: 9 },
     { text: 'Status', bold: true, color: MUTED, fontSize: 9 },
@@ -67,23 +76,33 @@ function projectTables(charges, brand, style) {
   const out = [];
   let cur = null;
   let rows = null;
+  const widths = hasVat ? ['auto', '*', 'auto', 'auto', 'auto', 'auto'] : ['auto', '*', 'auto', 'auto'];
   const flush = () => {
     if (cur === null) return;
     out.push({ text: cur, bold: true, color: brand, fontSize: 11, margin: [0, 14, 0, 5] });
     out.push({
-      table: { headerRows: 1, widths: ['auto', '*', 'auto', 'auto'], body: [header(), ...rows] },
+      table: { headerRows: 1, widths, body: [header(), ...rows] },
       layout: style === 'bordered' ? borderedLayout : lightLayout,
     });
   };
   charges.forEach((c) => {
     const name = (c.project && c.project.name) || 'Bez projektu';
     if (name !== cur) { flush(); cur = name; rows = []; }
-    rows.push([
+    const base = [
       { text: fmt.dateOnly(c.date), fontSize: 10 },
       { text: c.label || 'Pozycja', fontSize: 10 },
       { text: c.paidAt ? 'Rozliczono' : 'Do zapłaty', fontSize: 9, color: c.paidAt ? '#16a34a' : '#d97706' },
-      { text: fmt.money(c.amount), fontSize: 10, alignment: 'right' },
-    ]);
+    ];
+    if (hasVat) {
+      base.push(
+        { text: fmt.money(c.amount), fontSize: 10, alignment: 'right' },
+        { text: c.vatRate != null ? c.vatRate + '%' : '—', fontSize: 9, color: MUTED, alignment: 'right' },
+        { text: fmt.money(chargeCalc.grossOf(c)), fontSize: 10, alignment: 'right' },
+      );
+    } else {
+      base.push({ text: fmt.money(c.amount), fontSize: 10, alignment: 'right' });
+    }
+    rows.push(base);
   });
   flush();
   return out;
@@ -135,23 +154,33 @@ function tintHex(hex, t) {
 
 // Podsumowanie. variant: 'line' (kreska — domyślne), 'card' (miękka karta),
 // 'band' (pełny pasek brandowy z białą sumą), 'minimal' (cienka kreska, lekkie).
-function totalsBlock(total, paid, brand, seller, variant) {
+// t = { net, vat, gross, paid, outstanding }. hasVat → dodatkowe wiersze Netto/VAT/Brutto.
+function totalsBlock(t, brand, seller, variant, hasVat) {
+  const total = t.gross;
+  const paid = t.paid;
   const outstanding = total - paid;
   const bank = outstanding > 0 && seller.bank
     ? { text: `Do zapłaty na konto: ${seller.bank}`, color: MUTED, fontSize: 9, alignment: 'right', margin: [0, 8, 0, 0] }
     : null;
 
+  // Wiersze nad „Do zapłaty": [etykieta, grosze, kolorWartości|null].
+  const small = hasVat
+    ? [['Netto', t.net, null], ['VAT', t.vat, null], ['Brutto', t.gross, null], ['Rozliczono', paid, '#16a34a']]
+    : [['Wartość', t.gross, null], ['Rozliczono', paid, '#16a34a']];
+  const lastLine = small.length; // indeks krawędzi nad wierszem „Do zapłaty"
+
   if (variant === 'card') {
+    const body = small.map(([l, v, c]) => [
+      { text: l, color: MUTED, fontSize: 10 },
+      { text: fmt.money(v), alignment: 'right', fontSize: 10, color: c || undefined },
+    ]);
+    body.push([{ text: 'Do zapłaty', bold: true, fontSize: 15 }, { text: fmt.money(outstanding), bold: true, fontSize: 15, color: brand, alignment: 'right' }]);
     const card = {
-      table: { widths: ['*', 'auto'], body: [
-        [{ text: 'Wartość', color: MUTED, fontSize: 10 }, { text: fmt.money(total), alignment: 'right', fontSize: 10 }],
-        [{ text: 'Rozliczono', color: MUTED, fontSize: 10 }, { text: fmt.money(paid), alignment: 'right', color: '#16a34a', fontSize: 10 }],
-        [{ text: 'Do zapłaty', bold: true, fontSize: 15 }, { text: fmt.money(outstanding), bold: true, fontSize: 15, color: brand, alignment: 'right' }],
-      ] },
+      table: { widths: ['*', 'auto'], body },
       layout: {
         hLineWidth: () => 0, vLineWidth: () => 0, fillColor: () => tintHex(brand, 0.88),
         paddingLeft: () => 12, paddingRight: () => 12,
-        paddingTop: (i) => (i === 0 ? 10 : i === 2 ? 8 : 3),
+        paddingTop: (i) => (i === 0 ? 10 : i === lastLine ? 8 : 3),
         paddingBottom: (i, node) => (i === node.table.body.length - 1 ? 11 : 3),
       },
     };
@@ -162,10 +191,7 @@ function totalsBlock(total, paid, brand, seller, variant) {
   if (variant === 'band') {
     const band = {
       table: { widths: ['*', 'auto'], body: [[
-        { stack: [
-          { text: `Wartość ${fmt.money(total)}`, color: '#ffffff', fontSize: 9 },
-          { text: `Rozliczono ${fmt.money(paid)}`, color: '#ffffff', fontSize: 9, margin: [0, 2, 0, 0] },
-        ], margin: [16, 12, 0, 12] },
+        { stack: small.map(([l, v]) => ({ text: `${l} ${fmt.money(v)}`, color: '#ffffff', fontSize: 9, margin: [0, 1, 0, 0] })), margin: [16, 12, 0, 12] },
         { stack: [
           { text: 'DO ZAPŁATY', color: '#ffffff', fontSize: 8, alignment: 'right', characterSpacing: 1 },
           { text: fmt.money(outstanding), color: '#ffffff', bold: true, fontSize: 17, alignment: 'right' },
@@ -178,26 +204,28 @@ function totalsBlock(total, paid, brand, seller, variant) {
   }
 
   if (variant === 'minimal') {
+    const body = small.map(([l, v, c]) => [
+      { text: l, color: MUTED, alignment: 'right', fontSize: 10 },
+      { text: fmt.money(v), alignment: 'right', fontSize: 10, color: c || undefined },
+    ]);
+    body.push([{ text: 'Do zapłaty', bold: true, fontSize: 13, alignment: 'right', margin: [0, 7, 0, 0] }, { text: fmt.money(outstanding), bold: true, fontSize: 13, color: brand, alignment: 'right', margin: [0, 7, 0, 0] }]);
     const rows = {
-      table: { widths: ['*', 'auto'], body: [
-        [{ text: 'Wartość', color: MUTED, alignment: 'right', fontSize: 10 }, { text: fmt.money(total), alignment: 'right', fontSize: 10 }],
-        [{ text: 'Rozliczono', color: MUTED, alignment: 'right', fontSize: 10 }, { text: fmt.money(paid), alignment: 'right', color: '#16a34a', fontSize: 10 }],
-        [{ text: 'Do zapłaty', bold: true, fontSize: 13, alignment: 'right', margin: [0, 7, 0, 0] }, { text: fmt.money(outstanding), bold: true, fontSize: 13, color: brand, alignment: 'right', margin: [0, 7, 0, 0] }],
-      ] },
-      layout: { hLineWidth: (i) => (i === 2 ? 0.8 : 0), vLineWidth: () => 0, hLineColor: () => '#cbd5e1', paddingTop: () => 3, paddingBottom: () => 3 },
+      table: { widths: ['*', 'auto'], body },
+      layout: { hLineWidth: (i) => (i === lastLine ? 0.8 : 0), vLineWidth: () => 0, hLineColor: () => '#cbd5e1', paddingTop: () => 3, paddingBottom: () => 3 },
     };
     const stack = [rows]; if (bank) stack.push(bank);
     return { margin: [0, 34, 0, 0], columns: [{ width: '*', text: '' }, { width: '48%', stack }] };
   }
 
   // 'line' — istniejące: gruba brandowa kreska nad „Do zapłaty".
+  const body = small.map(([l, v, c]) => [
+    { text: l, color: MUTED, alignment: 'right' },
+    { text: fmt.money(v), alignment: 'right', color: c || undefined },
+  ]);
+  body.push([{ text: 'Do zapłaty', bold: true, fontSize: 16, alignment: 'right', margin: [0, 7, 0, 0] }, { text: fmt.money(outstanding), bold: true, fontSize: 16, color: brand, alignment: 'right', margin: [0, 7, 0, 0] }]);
   const box = {
-    table: { widths: ['*', 'auto'], body: [
-      [{ text: 'Wartość', color: MUTED, alignment: 'right' }, { text: fmt.money(total), alignment: 'right' }],
-      [{ text: 'Rozliczono', color: MUTED, alignment: 'right' }, { text: fmt.money(paid), alignment: 'right', color: '#16a34a' }],
-      [{ text: 'Do zapłaty', bold: true, fontSize: 16, alignment: 'right', margin: [0, 7, 0, 0] }, { text: fmt.money(outstanding), bold: true, fontSize: 16, color: brand, alignment: 'right', margin: [0, 7, 0, 0] }],
-    ] },
-    layout: { hLineWidth: (i) => (i === 2 ? 3 : 0), vLineWidth: () => 0, hLineColor: () => brand, paddingLeft: () => 6, paddingRight: () => 6, paddingTop: () => 5, paddingBottom: () => 5 },
+    table: { widths: ['*', 'auto'], body },
+    layout: { hLineWidth: (i) => (i === lastLine ? 3 : 0), vLineWidth: () => 0, hLineColor: () => brand, paddingLeft: () => 6, paddingRight: () => 6, paddingTop: () => 5, paddingBottom: () => 5 },
   };
   const stack = [box]; if (bank) stack.push(bank);
   return { margin: [0, 36, 0, 0], columns: [{ width: '*', text: '' }, { width: '50%', stack }] };
@@ -226,13 +254,14 @@ function buildDoc({ client, charges, filters = {}, settings }) {
   const docNr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${client.id}`;
   const meta = `Nr ${docNr} · wystawiono ${today}`;
 
-  let total = 0;
-  let paid = 0;
-  charges.forEach((c) => { total += c.amount; if (c.paidAt) paid += c.amount; });
+  const t = chargeCalc.totals(charges);
+  const hasVat = charges.some((c) => c.vatRate != null);
+  const total = t.gross; // brutto
+  const paid = t.paid;
 
   const logo = logoNode(settings, logoH);
   const sections = charges.length
-    ? projectTables(charges, brand, tpl === 'proforma' ? 'bordered' : 'light')
+    ? projectTables(charges, brand, tpl === 'proforma' ? 'bordered' : 'light', hasVat)
     : [{ text: 'Brak pozycji dla wybranych kryteriów.', color: MUTED, italics: true, margin: [0, 18, 0, 0] }];
   const fLine = filterLine(filters);
 
@@ -330,7 +359,7 @@ function buildDoc({ client, charges, filters = {}, settings }) {
   if (fLine) docDef.content.push(fLine);
   sections.forEach((s) => docDef.content.push(s));
   const totalsVariant = tpl === 'accent-card' ? 'card' : tpl === 'accent-band' ? 'band' : (tpl === 'accent-min' || tpl === 'clean') ? 'minimal' : 'line';
-  docDef.content.push(totalsBlock(total, paid, brand, seller, totalsVariant));
+  docDef.content.push(totalsBlock(t, brand, seller, totalsVariant, hasVat));
 
   return docDef;
 }

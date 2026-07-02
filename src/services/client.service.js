@@ -1,6 +1,7 @@
 // Baza klientów — klient może mieć wiele projektów. Dostęp przez token (/c/:token).
 const crypto = require('crypto');
 const prisma = require('../db/client');
+const chargeService = require('./charge.service');
 
 function makeToken() {
   return crypto.randomBytes(9).toString('base64url');
@@ -8,6 +9,10 @@ function makeToken() {
 
 const STATUSES = ['lead', 'active', 'inactive'];
 const normStatus = (s) => (STATUSES.includes(s) ? s : 'active');
+
+// Sortowanie po polsku (ą, ć, ł… we właściwych miejscach, bez rozróżniania wielkości).
+// SQLite ORDER BY używa kolacji BINARY — porządkuje po ASCII, więc sortujemy w JS.
+const byNamePl = (a, b) => (a.name || '').localeCompare(b.name || '', 'pl', { sensitivity: 'base' });
 
 async function list({ q, status } = {}) {
   const where = {};
@@ -42,13 +47,13 @@ async function list({ q, status } = {}) {
           { project: { clientId: { in: ids }, status: { not: 'deleted' } } },
         ],
       },
-      select: { amount: true, clientId: true, project: { select: { clientId: true } } },
+      select: { amount: true, vatRate: true, clientId: true, project: { select: { clientId: true } } },
     });
     const map = {};
-    charges.forEach((c) => { const k = c.clientId != null ? c.clientId : (c.project ? c.project.clientId : null); if (k != null) map[k] = (map[k] || 0) + c.amount; });
+    charges.forEach((c) => { const k = c.clientId != null ? c.clientId : (c.project ? c.project.clientId : null); if (k != null) map[k] = (map[k] || 0) + chargeService.grossOf(c); });
     clients.forEach((c) => { c.outstanding = map[c.id] || 0; });
   }
-  return clients;
+  return clients.sort(byNamePl);
 }
 
 function getById(id) {
@@ -93,10 +98,7 @@ async function overview(id) {
       orderBy: [{ project: { name: 'asc' } }, { date: 'desc' }, { createdAt: 'desc' }],
     }),
   ]);
-  let total = 0;
-  let paid = 0;
-  charges.forEach((c) => { total += c.amount; if (c.paidAt) paid += c.amount; });
-  const billing = { total, paid, outstanding: total - paid };
+  const billing = chargeService.totals(charges);
   return { client, transfers, events, billing, charges };
 }
 
@@ -109,8 +111,9 @@ function getByToken(token) {
 }
 
 // Lista do dropdownów (przypisanie projektu).
-function options() {
-  return prisma.client.findMany({ orderBy: { name: 'asc' } });
+async function options() {
+  const clients = await prisma.client.findMany({ orderBy: { name: 'asc' } });
+  return clients.sort(byNamePl);
 }
 
 // Chmurka najczęściej używanych tagów (do podpowiadania spójnych tagów w formularzu).

@@ -81,7 +81,8 @@ model Charge {
   client    Client?   @relation(fields: [clientId], references: [id], onDelete: Restrict)
   clientId  Int?
   label     String?
-  amount    Int       @default(0) // w groszach
+  amount    Int       @default(0) // kwota NETTO w groszach (gdy vatRate=null: netto = brutto)
+  vatRate   Int?      // stawka VAT w % (23/8/5/0); null = bez VAT. Brutto = amount + round(amount*vatRate/100)
   date      DateTime? // data pozycji (do filtrowania zakresem i na wydruku)
   dueDate   DateTime? // termin płatności (wiekowanie należności + przypomnienia)
   paidAt    DateTime?

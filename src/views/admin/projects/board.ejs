@@ -4,7 +4,7 @@
 </div>
 
 <% const COL_ACCENT = { lead: 'border-t-sky-400', active: 'border-t-brand-500', delivered: 'border-t-amber-400', paid: 'border-t-green-500' }; %>
-<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
   <% columns.forEach(function(col){ %>
     <div class="bg-slate-50/80 rounded-2xl border border-slate-200 border-t-4 <%= COL_ACCENT[col.stage] %> flex flex-col min-h-[200px]">
       <div class="px-4 py-3 flex items-center justify-between">

@@ -158,11 +158,12 @@ async function clientChargesCsv(req, res, next) {
     const cell = (v) => { const s = String(v == null ? '' : v); return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
     const money = (g) => (g / 100).toFixed(2).replace('.', ',');
     const date = (d) => (d ? fmt.dateOnly(d) : '');
-    const rows = [['Data', 'Termin', 'Projekt', 'Pozycja', 'Kwota', 'Status', 'Rozliczono']];
+    const rows = [['Data', 'Termin', 'Projekt', 'Pozycja', 'Netto', 'VAT %', 'Brutto', 'Status', 'Rozliczono']];
     charges.forEach((c) => rows.push([
       date(c.date), date(c.dueDate),
       (c.project && c.project.name) || 'Bez projektu',
-      c.label || 'Pozycja', money(c.amount),
+      c.label || 'Pozycja',
+      money(c.amount), c.vatRate != null ? String(c.vatRate) : '', money(chargeService.grossOf(c)),
       c.paidAt ? 'Rozliczone' : 'Do zapłaty', date(c.paidAt),
     ]));
     const csv = '﻿' + rows.map((r) => r.map(cell).join(SEP)).join('\r\n') + '\r\n'; // BOM dla Excela
@@ -213,7 +214,7 @@ async function addCharge(req, res, next) {
     if (amount > 0) {
       const projectId = await clientProjectId(parseProjectId(req.body.projectId), cid);
       const label = (req.body.label || '').trim();
-      await chargeService.create({ projectId, clientId: projectId ? null : cid, label, amount, date: req.body.date, dueDate: req.body.dueDate });
+      await chargeService.create({ projectId, clientId: projectId ? null : cid, label, amount, vatRate: chargeService.parseVatRate(req.body.vatRate), date: req.body.date, dueDate: req.body.dueDate });
       await events.log({
         type: 'updated',
         message: `Dodano pozycję rozliczeniową${label ? ': ' + label : ''} — ${fmt.money(amount)}`,
@@ -237,7 +238,7 @@ async function updateCharge(req, res, next) {
       const amount = chargeService.parseAmount(req.body.amount);
       if (amount > 0) {
         const projectId = await clientProjectId(parseProjectId(req.body.projectId), cid);
-        await chargeService.update(charge.id, { label: req.body.label, amount, date: req.body.date, dueDate: req.body.dueDate, projectId }, cid);
+        await chargeService.update(charge.id, { label: req.body.label, amount, vatRate: chargeService.parseVatRate(req.body.vatRate), date: req.body.date, dueDate: req.body.dueDate, paidAt: req.body.paidAt, projectId }, cid);
       }
     }
     res.redirect(`/admin/clients/${cid}?tab=rozliczenia`);
