@@ -224,4 +224,37 @@ async function downloadAllZip(req, res, next) {
   }
 }
 
-module.exports = { showPortal, submitMessage, markSeen, submitPassword, submitUpload, downloadFile, previewFile, downloadAllZip };
+// Proofing z panelu projektu: decyzja dla transferu wychodzącego widocznego w tym panelu.
+async function submitDecision(req, res, next) {
+  try {
+    const project = await loadProject(req, res);
+    if (!project) return;
+    if (projectService.requiresClientPassword(project) && !isUnlocked(req, project.clientToken)) {
+      return res.redirect(`/p/${project.clientToken}`);
+    }
+    const transfer = project.transfers.find((t) => String(t.id) === String(req.params.transferId)
+      && t.direction === 'outgoing' && t.clientVisible && t.status !== 'deleted' && t.proofing);
+    if (transfer) {
+      const { decision, comment, name } = req.body;
+      const updated = await transferService.setDecision(transfer.id, { decision, comment, name });
+      if (updated) {
+        const approved = decision === 'approved';
+        events.log({
+          type: approved ? 'approved' : 'changes',
+          message: (approved ? 'Klient zatwierdził pliki' : 'Klient zgłosił poprawki') + (name && name.trim() ? ` (${name.trim()})` : '') + (comment && comment.trim() ? `: ${comment.trim().slice(0, 300)}` : ''),
+          transferId: transfer.id,
+          projectId: project.id,
+          ip: req.ip,
+        });
+        mail
+          .sendProofingDecision({ transfer, decision, comment, name, projectName: project.name })
+          .catch((e) => console.error('[mail] proofing:', e.message));
+      }
+    }
+    res.redirect(`/p/${project.clientToken}?decided=1`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { showPortal, submitMessage, submitDecision, markSeen, submitPassword, submitUpload, downloadFile, previewFile, downloadAllZip };

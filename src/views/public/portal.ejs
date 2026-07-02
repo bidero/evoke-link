@@ -28,12 +28,22 @@
         <div class="space-y-4">
           <% fromUs.forEach(function(t){ %>
             <div class="rounded-xl border border-slate-200 overflow-hidden">
-              <div class="px-4 py-2 bg-slate-50 text-xs text-slate-500"><%= t.title || 'Pliki' %> · <%= fmt.date(t.createdAt) %></div>
+              <div class="px-4 py-2 bg-slate-50 text-xs text-slate-500 flex items-center justify-between gap-2">
+                <span><%= t.title || 'Pliki' %> · <%= fmt.date(t.createdAt) %></span>
+                <% if (t.proofing && t.approvalStatus) { %>
+                  <span class="px-1.5 py-0.5 rounded-full font-medium <%= t.approvalStatus === 'approved' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700' %>"><%= t.approvalStatus === 'approved' ? 'Zatwierdzone ✓' : 'Poprawki' %></span>
+                <% } %>
+              </div>
               <div class="divide-y divide-slate-100">
                 <% t.files.forEach(function(f){ %>
                   <%- include('_file_row', { f: f, downloadHref: '/p/' + project.clientToken + '/file/' + f.id, previewHref: '/p/' + project.clientToken + '/preview/' + f.id }) %>
                 <% }); %>
               </div>
+              <% if (t.proofing) { %>
+                <div class="px-3 pb-3">
+                  <%- include('_proofing', { t: t, action: '/p/' + project.clientToken + '/decision/' + t.id }) %>
+                </div>
+              <% } %>
             </div>
           <% }); %>
         </div>

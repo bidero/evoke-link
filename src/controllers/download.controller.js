@@ -137,6 +137,33 @@ async function guard(req, res) {
   return transfer;
 }
 
+// Proofing: decyzja klienta (zatwierdzenie / poprawki) ze strony pobierania.
+async function submitDecision(req, res, next) {
+  try {
+    const transfer = await guard(req, res);
+    if (!transfer) return;
+    if (!transfer.proofing || transfer.direction !== 'outgoing') return res.redirect(`/t/${transfer.token}`);
+    const { decision, comment, name } = req.body;
+    const updated = await transferService.setDecision(transfer.id, { decision, comment, name });
+    if (updated) {
+      const approved = decision === 'approved';
+      events.log({
+        type: approved ? 'approved' : 'changes',
+        message: (approved ? 'Klient zatwierdził pliki' : 'Klient zgłosił poprawki') + (name && name.trim() ? ` (${name.trim()})` : '') + (comment && comment.trim() ? `: ${comment.trim().slice(0, 300)}` : ''),
+        transferId: transfer.id,
+        projectId: transfer.projectId,
+        ip: req.ip,
+      });
+      mail
+        .sendProofingDecision({ transfer, decision, comment, name, projectName: transfer.project ? transfer.project.name : null })
+        .catch((e) => console.error('[mail] proofing:', e.message));
+    }
+    res.redirect(`/t/${transfer.token}?decided=1`);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Pobranie pojedynczego pliku.
 async function downloadFile(req, res, next) {
   try {
@@ -192,4 +219,4 @@ async function downloadZip(req, res, next) {
   }
 }
 
-module.exports = { showDownloadPage, submitMessage, markSeen, submitPassword, downloadFile, previewFile, downloadZip };
+module.exports = { showDownloadPage, submitMessage, submitDecision, markSeen, submitPassword, downloadFile, previewFile, downloadZip };

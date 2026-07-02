@@ -121,7 +121,8 @@ storage/                  pliki użytkowników + evoke.db (poza repo, .gitignore
 - [x] Automatyzacja: „otworzył link" też na `/upload` i `/c`; „Przedłuż transfer" (reset ostrzeżenia + reaktywacja); dzienny digest do agencji = także maile o przypomnieniach na dziś (toggle `emails.dailyDigest`, cron `reminders`)
 - [x] Puls agencji (`/admin/pulse`, `stats.service.pulse()`): przychód mies. + delta, do zapłaty/przeterminowane, wykres 6 mies. (inline SVG), skuteczność pobrań (30 dni), aktywni klienci, top klienci wg przychodu — bez nowego modelu
 - [x] Fala 3 (drag&drop): kanban projektów `/admin/projects/board` (`Project.stage` lead|active|delivered|paid — niezależny od `status`; przeciąganie kart = POST `:id/stage`) + D&D w kalendarzu (przeciągnięcie przypomnienia na inny dzień = `reminders/:id/move`, godzina zostaje)
-- [ ] Do zrobienia: proofing (akceptacja/poprawki plików); dane do przelewu na stronie klienta; (odłożone) white-label per-klient
+- [x] Proofing: akceptacja/poprawki plików per transfer wychodzący (opt-in checkbox `Transfer.proofing`; klient na `/t` i w portalu `/p` klika Zatwierdzam / Poprawki+komentarz → `approvalStatus/Comment/By/At`, event `approved|changes` w NOTIFY_TYPES + mail do agencji; status w panelu transferu i chip w portalu)
+- [ ] Do zrobienia: lista braków (file requests); retainer/cykliczność; link onboardingowy; dane do przelewu na stronie klienta. UWAGA: white-label per-klient/projekt POZA ZAKRESEM NA STAŁE (decyzja 2026-07-02) — nie proponować.
 
 ## Workflow Git
 Nie pushować automatycznie. Bump wersji + wpis w changelogu dopiero po potwierdzeniu. W komunikatach/URL-ach redagować token dostępowy.

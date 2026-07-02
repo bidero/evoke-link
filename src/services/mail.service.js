@@ -389,6 +389,27 @@ async function sendDailyDigest({ reminders = [], messages = [], activity = [], o
   return send({ to: config.admin.email, subject: `${appName} — podsumowanie dnia`, html, text });
 }
 
+// Proofing: decyzja klienta (zatwierdzenie / prośba o poprawki) → mail do agencji.
+async function sendProofingDecision({ transfer, decision, comment, name, projectName }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const appName = s.appName || 'Evoke LINK';
+  const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const approved = decision === 'approved';
+  const title = transfer.title || `Transfer ${transfer.token}`;
+  const adminUrl = `${config.appUrl}/admin/transfers/${transfer.id}`;
+  const heading = approved ? 'Pliki zatwierdzone ✓' : 'Klient prosi o poprawki';
+  const inner = `
+    <p style="margin:0 0 10px">${approved ? 'Klient zatwierdził pliki w:' : 'Klient zgłosił poprawki do:'} <b>${esc(title)}</b></p>
+    ${projectName ? `<p style="margin:2px 0;color:#64748b;font-size:13px">Projekt: ${esc(projectName)}</p>` : ''}
+    ${name ? `<p style="margin:2px 0;color:#64748b;font-size:13px">Od: ${esc(name)}</p>` : ''}
+    ${comment ? `<div style="margin:12px 0;padding:10px 14px;background:#f8fafc;border-left:3px solid ${esc(approved ? '#16a34a' : '#d97706')};white-space:pre-wrap">${esc(comment)}</div>` : ''}
+    <p style="margin:14px 0 0">${btn(adminUrl, 'Zobacz w panelu', primary)}</p>`;
+  const html = await wrap(inner, { heading });
+  const text = `${heading}: ${title}\n${projectName ? 'Projekt: ' + projectName + '\n' : ''}${name ? 'Od: ' + name + '\n' : ''}${comment ? '\n' + comment + '\n' : ''}\n${adminUrl}`;
+  const subject = `${appName} — ${approved ? 'zatwierdzono' : 'poprawki'}: ${title}`;
+  return send({ to: config.admin.email, subject, html, text });
+}
+
 // Testowy e-mail do weryfikacji konfiguracji SMTP.
 async function sendTest({ to }) {
   const inner = `<p style="margin:0 0 8px">To jest testowa wiadomość z Twojej instancji.</p>
@@ -397,4 +418,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendClientReply, sendExpiryWarning, sendDailyDigest, sendTest };
+module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendClientReply, sendExpiryWarning, sendDailyDigest, sendProofingDecision, sendTest };

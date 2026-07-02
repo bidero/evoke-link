@@ -73,6 +73,7 @@ async function createTransfer(req, res, next) {
       projectId: parseProjectId(projectId),
       clientVisible: req.body.clientVisible === 'on',
       notifyOnDownload: req.body.notifyOnDownload === 'on',
+      proofing: req.body.proofing === 'on',
       uploadedFiles: files,
     });
 
@@ -214,6 +215,7 @@ async function updateTransfer(req, res, next) {
       projectId: parseProjectId(projectId),
       clientVisible: req.body.clientVisible === 'on',
       notifyOnDownload: req.body.notifyOnDownload === 'on',
+      proofing: req.body.proofing === 'on',
     });
     if (!updated) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
     await events.log({ type: 'updated', message: `Zmieniono ustawienia transferu`, transferId: updated.id, projectId: updated.projectId, ip: req.ip });

@@ -110,6 +110,11 @@ model Transfer {
   downloadCount Int       @default(0)
   clientVisible Boolean   @default(false)         // czy pokazać w panelu klienta /p/:token
   notifyOnDownload Boolean @default(false)         // e-mail do agencji przy pierwszym pobraniu
+  proofing      Boolean   @default(false)          // proofing: poproś klienta o akceptację plików
+  approvalStatus String?                           // null = oczekuje | approved | changes
+  approvalComment String?                          // komentarz klienta (wymagany przy poprawkach)
+  approvalBy    String?                            // kto zdecydował (imię wpisane przez klienta, opc.)
+  approvalAt    DateTime?                          // kiedy podjęto decyzję
   status        String    @default("active")     // active | expired | deleted
   createdBy     User?     @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdById   Int?

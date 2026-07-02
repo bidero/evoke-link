@@ -27,6 +27,10 @@
       <% }); %>
     </div>
 
+    <% if (transfer.proofing && transfer.direction === 'outgoing') { %>
+      <%- include('_proofing', { t: transfer, action: '/t/' + transfer.token + '/decision' }) %>
+    <% } %>
+
     <% if (transfer.expiresAt) { %>
       <p class="text-xs text-slate-400 text-center mt-5">Link wygasa: <%= fmt.date(transfer.expiresAt) %></p>
     <% } %>

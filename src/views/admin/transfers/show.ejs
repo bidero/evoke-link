@@ -74,6 +74,28 @@
     <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-3 py-1.5 transition">Przedłuż<%= transfer.status === 'expired' ? ' i reaktywuj' : '' %></button>
   </form>
 
+  <% if (transfer.proofing && !incoming) { %>
+    <div class="mt-3 rounded-xl border p-4 <%= transfer.approvalStatus === 'approved' ? 'border-green-200 bg-green-50/60' : (transfer.approvalStatus === 'changes' ? 'border-amber-200 bg-amber-50/60' : 'border-slate-200 bg-white') %>">
+      <div class="flex items-center gap-2 text-sm">
+        <% if (transfer.approvalStatus === 'approved') { %>
+          <%- icon('check', { size: 16, cls: 'text-green-600' }) %>
+          <span class="font-medium text-green-800">Klient zatwierdził pliki</span>
+          <span class="text-xs text-green-700/70"><%= transfer.approvalBy ? transfer.approvalBy + ' · ' : '' %><%= fmt.date(transfer.approvalAt) %></span>
+        <% } else if (transfer.approvalStatus === 'changes') { %>
+          <%- icon('alert', { size: 16, cls: 'text-amber-600' }) %>
+          <span class="font-medium text-amber-800">Klient zgłosił poprawki</span>
+          <span class="text-xs text-amber-700/70"><%= transfer.approvalBy ? transfer.approvalBy + ' · ' : '' %><%= fmt.date(transfer.approvalAt) %></span>
+        <% } else { %>
+          <%- icon('clock', { size: 16, cls: 'text-slate-400' }) %>
+          <span class="text-slate-600">Oczekuje na akceptację klienta</span>
+        <% } %>
+      </div>
+      <% if (transfer.approvalComment) { %>
+        <div class="mt-2 text-sm text-slate-700 whitespace-pre-wrap border-l-2 <%= transfer.approvalStatus === 'approved' ? 'border-green-300' : 'border-amber-300' %> pl-3"><%= transfer.approvalComment %></div>
+      <% } %>
+    </div>
+  <% } %>
+
   <div class="mt-3">
     <a href="/admin/transfers/<%= transfer.id %>/edit" class="inline-block rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">
       Edytuj ustawienia

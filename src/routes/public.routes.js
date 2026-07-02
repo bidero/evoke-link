@@ -18,6 +18,7 @@ router.get('/', (req, res) => res.redirect('/admin'));
 router.get('/t/:token', download.showDownloadPage);
 router.post('/t/:token', passwordLimiter, download.submitPassword);
 router.get('/t/:token/zip', download.downloadZip);
+router.post('/t/:token/decision', messageLimiter, download.submitDecision);
 router.get('/t/:token/preview/:fileId', download.previewFile);
 router.get('/t/:token/file/:fileId', download.downloadFile);
 router.post('/t/:token/message', messageLimiter, download.submitMessage);
@@ -37,6 +38,7 @@ router.get('/p/:token/preview/:fileId', portal.previewFile);
 router.get('/p/:token/file/:fileId', portal.downloadFile);
 router.post('/p/:token/chunk', chunkParser, receiveChunk);
 router.post('/p/:token/upload', receiveUpload('files'), portal.submitUpload);
+router.post('/p/:token/decision/:transferId', messageLimiter, portal.submitDecision);
 router.post('/p/:token/message', messageLimiter, portal.submitMessage);
 router.post('/p/:token/messages/seen', portal.markSeen);
 

@@ -52,6 +52,8 @@ const EVENT_ICON = {
   downloaded: 'download',
   uploaded: 'upload',
   viewed: 'eye',
+  approved: 'check',
+  changes: 'alert',
   updated: 'pencil',
   note: 'pencil',
   email_sent: 'mail',
@@ -60,7 +62,10 @@ const EVENT_ICON = {
 };
 
 function eventIcon(type, opts = {}) {
-  const cls = type === 'error' ? 'text-red-500' : opts.cls || 'text-brand-600';
+  const cls = type === 'error' ? 'text-red-500'
+    : type === 'changes' ? 'text-amber-500'
+    : type === 'approved' ? 'text-green-600'
+    : opts.cls || 'text-brand-600';
   return icon(EVENT_ICON[type] || 'file', { ...opts, cls });
 }
 

@@ -159,4 +159,5 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Automatyzacja** — „otworzył link" na wszystkich stronach klienta; „Przedłuż transfer" jednym kliknięciem; opcjonalne dzienne podsumowanie mailem do agencji
 - [x] **Puls agencji** — analityka: przychód (wykres 6 mies.), należności, skuteczność pobrań, aktywni i top klienci
 - [x] **Kanban + drag&drop** — tablica projektów (Lead → Aktywny → Dostarczony → Zapłacony) i przeciąganie terminów przypomnień w kalendarzu
+- [x] **Proofing** — akceptacja plików przez klienta: Zatwierdzam / Zgłaszam poprawki (+komentarz) na stronie pobierania i w panelu projektu; status w panelu agencji + powiadomienie i mail
 - [x] **Puls agencji** — analityka: przychód miesięczny z wykresem, należności, skuteczność pobrań, aktywni i top klienci

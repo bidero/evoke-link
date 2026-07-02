@@ -78,6 +78,10 @@
           <input type="checkbox" name="notifyOnDownload" class="rounded border-slate-300" <%= transfer.notifyOnDownload ? 'checked' : '' %> />
           Powiadom mnie e-mailem przy pierwszym pobraniu
         </label>
+        <label class="flex items-center gap-2 mt-3 text-sm text-slate-700">
+          <input type="checkbox" name="proofing" class="rounded border-slate-300" <%= transfer.proofing ? 'checked' : '' %> />
+          Poproś klienta o akceptację plików (Zatwierdź / Poprawki)
+        </label>
       <% } %>
     </div>
 

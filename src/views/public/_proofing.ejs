@@ -1,0 +1,48 @@
+<%# Proofing: akceptacja/poprawki dostarczonych plików. Wymaga: t (transfer), action (URL POST). %>
+<div class="mt-5 rounded-xl border <%= t.approvalStatus === 'approved' ? 'border-green-200 bg-green-50/60' : (t.approvalStatus === 'changes' ? 'border-amber-200 bg-amber-50/60' : 'border-slate-200 bg-slate-50/60') %> p-4"
+     x-data="{ open: <%= t.approvalStatus ? 'false' : 'true' %>, changes: false }">
+
+  <% if (t.approvalStatus === 'approved') { %>
+    <div class="flex items-start gap-2">
+      <%- icon('check', { size: 18, cls: 'text-green-600 mt-0.5' }) %>
+      <div class="flex-1 text-sm">
+        <div class="font-medium text-green-800">Pliki zatwierdzone</div>
+        <div class="text-xs text-green-700/70 mt-0.5"><%= t.approvalBy ? t.approvalBy + ' · ' : '' %><%= fmt.date(t.approvalAt) %></div>
+        <% if (t.approvalComment) { %><div class="text-xs text-slate-600 mt-1 whitespace-pre-wrap"><%= t.approvalComment %></div><% } %>
+      </div>
+      <button type="button" x-show="!open" @click="open = true" class="text-xs text-slate-500 hover:text-slate-700 underline shrink-0">Zmień decyzję</button>
+    </div>
+  <% } else if (t.approvalStatus === 'changes') { %>
+    <div class="flex items-start gap-2">
+      <%- icon('alert', { size: 18, cls: 'text-amber-600 mt-0.5' }) %>
+      <div class="flex-1 text-sm">
+        <div class="font-medium text-amber-800">Zgłoszono poprawki</div>
+        <div class="text-xs text-amber-700/70 mt-0.5"><%= t.approvalBy ? t.approvalBy + ' · ' : '' %><%= fmt.date(t.approvalAt) %></div>
+        <% if (t.approvalComment) { %><div class="text-xs text-slate-700 mt-1 whitespace-pre-wrap"><%= t.approvalComment %></div><% } %>
+      </div>
+      <button type="button" x-show="!open" @click="open = true" class="text-xs text-slate-500 hover:text-slate-700 underline shrink-0">Zmień decyzję</button>
+    </div>
+  <% } else { %>
+    <div class="text-sm font-medium text-slate-700">Czy akceptujesz te pliki?</div>
+  <% } %>
+
+  <div x-show="open" x-cloak class="<%= t.approvalStatus ? 'mt-3 pt-3 border-t border-slate-200/70' : 'mt-3' %>">
+    <div x-show="!changes" class="flex flex-col sm:flex-row gap-2">
+      <form method="POST" action="<%= action %>" class="flex-1">
+        <input type="hidden" name="decision" value="approved" />
+        <button type="submit" class="w-full rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2 transition inline-flex items-center justify-center gap-1.5"><%- icon('check', { size: 15, cls: '' }) %> Zatwierdzam</button>
+      </form>
+      <button type="button" @click="changes = true" class="flex-1 rounded-lg border border-slate-300 text-slate-700 hover:bg-white text-sm font-medium py-2 transition">Zgłaszam poprawki…</button>
+    </div>
+    <form x-show="changes" x-cloak method="POST" action="<%= action %>" class="space-y-2">
+      <input type="hidden" name="decision" value="changes" />
+      <textarea name="comment" required rows="3" maxlength="4000" placeholder="Opisz, co poprawić…"
+                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+      <div class="flex flex-col sm:flex-row gap-2">
+        <input name="name" type="text" maxlength="120" placeholder="Twoje imię (opcjonalnie)" class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <button type="submit" class="rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 transition">Wyślij poprawki</button>
+        <button type="button" @click="changes = false" class="text-sm text-slate-500 hover:text-slate-700 px-2">Wróć</button>
+      </div>
+    </form>
+  </div>
+</div>
