@@ -32,6 +32,17 @@ async function toggleDone(id) {
 }
 
 function remove(id) { return prisma.reminder.deleteMany({ where: { id: Number(id) } }); }
+
+// Przeniesienie na inny dzień (drag & drop w kalendarzu) — zachowuje godzinę.
+async function moveToDay(id, day) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day || '');
+  if (!m) return null;
+  const r = await prisma.reminder.findUnique({ where: { id: Number(id) } });
+  if (!r) return null;
+  const cur = new Date(r.dueAt);
+  const next = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), cur.getHours(), cur.getMinutes());
+  return prisma.reminder.update({ where: { id: r.id }, data: { dueAt: next } });
+}
 function getById(id) { return prisma.reminder.findUnique({ where: { id: Number(id) } }); }
 
 // Przypomnienia w zakresie dat (do siatki miesiąca).
@@ -49,4 +60,4 @@ function dueCount() {
   return prisma.reminder.count({ where: { done: false, dueAt: { lte: end } } });
 }
 
-module.exports = { create, update, toggleDone, remove, getById, inRange, dueCount, PRIORITIES };
+module.exports = { create, update, toggleDone, remove, moveToDay, getById, inRange, dueCount, PRIORITIES };

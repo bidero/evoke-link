@@ -45,10 +45,10 @@
               <div class="flex justify-end">
                 <span @click.stop="openDay('<%= day.key %>')" class="text-[11px] inline-flex items-center justify-center w-5 h-5 rounded-full cursor-pointer <%= day.isToday ? 'bg-brand-600 text-white font-semibold' : (day.inMonth ? 'text-slate-500 hover:bg-slate-100' : 'text-slate-300') %>"><%= day.day %></span>
               </div>
-              <div class="mt-0.5 space-y-0.5">
+              <div class="mt-0.5 space-y-0.5 cal-events min-h-[44px]" data-day="<%= day.key %>">
                 <% day.events.slice(0, 3).forEach(function(e){ %>
                   <% if (e.kind === 'reminder') { %>
-                    <button type="button" title="<%= e.title %>" @click.stop="openEdit(REM[<%= e.id %>])" @contextmenu.prevent.stop="openMenu($event, { type: 'reminder', id: <%= e.id %> })" class="block w-full text-left truncate rounded px-1 py-0.5 text-[10px] leading-tight <%= chipCls(e) %>"><%= e.title %></button>
+                    <button type="button" title="<%= e.title %>" data-remid="<%= e.id %>" @click.stop="openEdit(REM[<%= e.id %>])" @contextmenu.prevent.stop="openMenu($event, { type: 'reminder', id: <%= e.id %> })" class="block w-full text-left truncate rounded px-1 py-0.5 text-[10px] leading-tight cursor-grab <%= chipCls(e) %>"><%= e.title %></button>
                   <% } else { %>
                     <a href="<%= e.href %>" title="<%= e.title %>" @click.stop @contextmenu.prevent.stop="openMenu($event, { type: '<%= e.kind %>', id: <%= e.id %>, href: '<%= e.href %>' })" class="block truncate rounded px-1 py-0.5 text-[10px] leading-tight <%= chipCls(e) %>"><%= e.title %></a>
                   <% } %>
@@ -65,7 +65,7 @@
       <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-brand-400"></span> Przypomnienie</span>
       <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Płatność</span>
       <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span> Wygasa transfer</span>
-      <span class="hidden sm:inline text-slate-300">· klik dnia = dodaj · prawy‑klik = menu</span>
+      <span class="hidden sm:inline text-slate-300">· klik dnia = dodaj · prawy‑klik = menu · przeciągnij przypomnienie = zmiana terminu</span>
     </div>
   </div>
 
@@ -243,4 +243,28 @@
       dotCls(e) { if (e.done) return 'bg-slate-300'; return e.kind === 'reminder' ? (e.priority === 'high' ? 'bg-red-500' : 'bg-brand-500') : (e.kind === 'charge' ? 'bg-amber-400' : 'bg-sky-400'); },
     };
   }
+</script>
+<script src="/js/sortable.min.js"></script>
+<script>
+  // Drag & drop: przeciągnięcie przypomnienia do innego dnia = zmiana terminu (godzina zostaje).
+  (function () {
+    if (!window.Sortable) return;
+    document.querySelectorAll('.cal-events').forEach(function (col) {
+      Sortable.create(col, {
+        group: 'cal',
+        draggable: '[data-remid]', // tylko przypomnienia (płatności/transfery nie)
+        animation: 150,
+        ghostClass: 'opacity-50',
+        onAdd: function (evt) {
+          var id = evt.item.getAttribute('data-remid');
+          var day = evt.to.getAttribute('data-day');
+          fetch('/admin/calendar/reminders/' + id + '/move', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ day: day }),
+          }).then(function () { location.reload(); }).catch(function () { location.reload(); });
+        },
+      });
+    });
+  })();
 </script>

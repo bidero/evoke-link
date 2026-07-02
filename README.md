@@ -157,4 +157,6 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Testy** — `npm test` (node:test): smoke + przepływ wiadomości + ostrzeżenie o wygasaniu
 - [x] **Kalendarz** — menedżer zadań: siatka miesiąca + nadchodzące, przypomnienia ze statusem/priorytetem, agregacja terminów płatności i wygasania transferów
 - [x] **Automatyzacja** — „otworzył link" na wszystkich stronach klienta; „Przedłuż transfer" jednym kliknięciem; opcjonalne dzienne podsumowanie mailem do agencji
+- [x] **Puls agencji** — analityka: przychód (wykres 6 mies.), należności, skuteczność pobrań, aktywni i top klienci
+- [x] **Kanban + drag&drop** — tablica projektów (Lead → Aktywny → Dostarczony → Zapłacony) i przeciąganie terminów przypomnień w kalendarzu
 - [x] **Puls agencji** — analityka: przychód miesięczny z wykresem, należności, skuteczność pobrań, aktywni i top klienci

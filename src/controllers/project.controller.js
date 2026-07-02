@@ -222,4 +222,24 @@ async function deleteProject(req, res, next) {
   }
 }
 
-module.exports = { listProjects, showCreateForm, createProject, showProject, sendPanel, showEditForm, updateProject, reorderProjects, addCharge, toggleCharge, deleteCharge, deleteProject };
+// Tablica kanban (pipeline: Lead → Aktywny → Dostarczony → Zapłacony).
+async function showBoard(req, res, next) {
+  try {
+    res.render('admin/projects/board', { title: 'Tablica projektów', active: 'projects', columns: await projectService.board() });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Zmiana etapu (drag & drop na tablicy; fetch JSON).
+async function setStage(req, res, next) {
+  try {
+    const updated = await projectService.setStage(req.params.id, (req.body && req.body.stage) || '');
+    if (updated) await events.log({ type: 'updated', message: `Etap projektu: ${projectService.STAGE_LABELS[updated.stage] || updated.stage}`, projectId: updated.id, ip: req.ip });
+    res.json({ ok: !!updated });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { listProjects, showCreateForm, createProject, showProject, sendPanel, showEditForm, updateProject, reorderProjects, showBoard, setStage, addCharge, toggleCharge, deleteCharge, deleteProject };

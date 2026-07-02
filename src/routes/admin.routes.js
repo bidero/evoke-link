@@ -46,6 +46,7 @@ router.get('/calendar', calendar.index);
 router.post('/calendar/reminders', calendar.createReminder);
 router.post('/calendar/reminders/:id', calendar.updateReminder);
 router.post('/calendar/reminders/:id/toggle', calendar.toggleReminder);
+router.post('/calendar/reminders/:id/move', calendar.moveReminder);
 router.post('/calendar/reminders/:id/delete', calendar.deleteReminder);
 
 router.get('/messages', messages.listMessages);
@@ -77,6 +78,8 @@ router.post('/transfers/:id/delete', transfers.deleteTransfer);
 router.get('/projects', projects.listProjects);
 router.get('/projects/new', projects.showCreateForm);
 router.post('/projects/reorder', projects.reorderProjects); // przed :id!
+router.get('/projects/board', projects.showBoard); // przed :id!
+router.post('/projects/:id/stage', projects.setStage);
 router.post('/projects', projects.createProject);
 router.get('/projects/:id', projects.showProject);
 router.post('/projects/:id/send-panel', projects.sendPanel);

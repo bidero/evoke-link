@@ -129,8 +129,43 @@ function remove(id) {
   return prisma.project.delete({ where: { id: Number(id) } });
 }
 
+// --- Pipeline (kanban) ---
+const STAGES = ['lead', 'active', 'delivered', 'paid'];
+const STAGE_LABELS = { lead: 'Lead', active: 'Aktywny', delivered: 'Dostarczony', paid: 'Zapłacony' };
+
+function setStage(id, stage) {
+  if (!STAGES.includes(stage)) return null;
+  return prisma.project.update({ where: { id: Number(id) }, data: { stage } });
+}
+
+// Tablica kanban: projekty (bez usuniętych/zarchiwizowanych) pogrupowane po etapie,
+// z klientem, licznikiem transferów i sumą nierozliczonych pozycji.
+async function board() {
+  const projects = await prisma.project.findMany({
+    where: { status: { notIn: ['deleted', 'archived'] } },
+    include: { client: { select: { id: true, name: true } }, _count: { select: { transfers: true } } },
+    orderBy: [{ position: 'asc' }, { updatedAt: 'desc' }],
+  });
+  if (projects.length) {
+    const grouped = await prisma.charge.groupBy({
+      by: ['projectId'],
+      where: { paidAt: null, projectId: { in: projects.map((p) => p.id) } },
+      _sum: { amount: true },
+    });
+    const map = {};
+    grouped.forEach((g) => { map[g.projectId] = g._sum.amount || 0; });
+    projects.forEach((p) => { p.outstanding = map[p.id] || 0; });
+  }
+  const cols = STAGES.map((s) => ({ stage: s, label: STAGE_LABELS[s], projects: projects.filter((p) => (STAGES.includes(p.stage) ? p.stage : 'active') === s) }));
+  return cols;
+}
+
 module.exports = {
   list,
+  STAGES,
+  STAGE_LABELS,
+  setStage,
+  board,
   reorder,
   getById,
   getHistory,

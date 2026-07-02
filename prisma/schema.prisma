@@ -56,6 +56,7 @@ model Project {
   clientId           Int?
   description        String?
   status             String     @default("active") // active | archived
+  stage              String     @default("active") // pipeline (kanban): lead | active | delivered | paid
   position           Int        @default(0)         // ręczna kolejność (drag & drop) na liście projektów
   clientToken        String?    @unique             // publiczny link do panelu klienta /p/:token
   clientPasswordHash String?                         // opcjonalne hasło do panelu klienta

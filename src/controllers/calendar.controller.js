@@ -69,6 +69,16 @@ async function createReminder(req, res, next) {
 async function updateReminder(req, res, next) {
   try { await reminderService.update(req.params.id, req.body); res.redirect(back(req)); } catch (err) { next(err); }
 }
+// Drag & drop: przeniesienie przypomnienia na inny dzień (fetch JSON).
+async function moveReminder(req, res, next) {
+  try {
+    const updated = await reminderService.moveToDay(req.params.id, (req.body && req.body.day) || '');
+    res.json({ ok: !!updated });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function toggleReminder(req, res, next) {
   try { await reminderService.toggleDone(req.params.id); res.redirect(back(req)); } catch (err) { next(err); }
 }
@@ -76,4 +86,4 @@ async function deleteReminder(req, res, next) {
   try { await reminderService.remove(req.params.id); res.redirect(back(req)); } catch (err) { next(err); }
 }
 
-module.exports = { index, createReminder, updateReminder, toggleReminder, deleteReminder };
+module.exports = { index, createReminder, updateReminder, toggleReminder, moveReminder, deleteReminder };

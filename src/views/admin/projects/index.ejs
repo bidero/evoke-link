@@ -7,7 +7,10 @@
            class="px-3 py-1.5 rounded-lg <%= isActive ? 'bg-brand-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' %>"><%= t.label %></a>
       <% }); %>
     </div>
-    <a href="/admin/projects/new" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition shrink-0">+ Nowy projekt</a>
+    <div class="flex items-center gap-2 shrink-0">
+      <a href="/admin/projects/board" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">Tablica</a>
+      <a href="/admin/projects/new" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">+ Nowy projekt</a>
+    </div>
   </div>
   <form method="GET" action="/admin/projects" class="flex flex-col gap-2 sm:flex-row sm:items-center">
     <% if (filter.status) { %><input type="hidden" name="status" value="<%= filter.status %>" /><% } %>

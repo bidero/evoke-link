@@ -1,0 +1,53 @@
+<div class="flex items-center justify-between mb-5 gap-3">
+  <p class="text-sm text-slate-500">Przeciągnij projekt między kolumnami, aby zmienić etap — zapisuje się automatycznie.</p>
+  <a href="/admin/projects" class="text-sm text-brand-700 hover:underline whitespace-nowrap">Widok listy →</a>
+</div>
+
+<% const COL_ACCENT = { lead: 'border-t-sky-400', active: 'border-t-brand-500', delivered: 'border-t-amber-400', paid: 'border-t-green-500' }; %>
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+  <% columns.forEach(function(col){ %>
+    <div class="bg-slate-50/80 rounded-2xl border border-slate-200 border-t-4 <%= COL_ACCENT[col.stage] %> flex flex-col min-h-[200px]">
+      <div class="px-4 py-3 flex items-center justify-between">
+        <span class="text-sm font-semibold text-slate-700"><%= col.label %></span>
+        <span class="text-xs text-slate-400"><%= col.projects.length %></span>
+      </div>
+      <div class="board-col flex-1 px-3 pb-3 space-y-2" data-stage="<%= col.stage %>">
+        <% col.projects.forEach(function(p){ %>
+          <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-sm cursor-grab" data-id="<%= p.id %>">
+            <a href="/admin/projects/<%= p.id %>" class="block text-sm font-medium text-slate-800 hover:text-brand-700 truncate" draggable="false"><%= p.name %></a>
+            <div class="mt-1 flex items-center justify-between gap-2 text-xs text-slate-400">
+              <span class="truncate"><%= p.client ? p.client.name : (p.clientName || '—') %></span>
+              <span class="shrink-0"><%= p._count.transfers %> transf.</span>
+            </div>
+            <% if (p.outstanding > 0) { %>
+              <div class="mt-1.5 text-xs font-medium <%= col.stage === 'paid' ? 'text-amber-600' : 'text-slate-600' %>">do zapłaty: <%= fmt.money(p.outstanding) %></div>
+            <% } %>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+  <% }); %>
+</div>
+
+<script src="/js/sortable.min.js"></script>
+<script>
+  (function () {
+    if (!window.Sortable) return;
+    document.querySelectorAll('.board-col').forEach(function (col) {
+      Sortable.create(col, {
+        group: 'board',
+        animation: 150,
+        ghostClass: 'opacity-50',
+        onAdd: function (evt) {
+          var id = evt.item.getAttribute('data-id');
+          var stage = evt.to.getAttribute('data-stage');
+          fetch('/admin/projects/' + id + '/stage', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ stage: stage }),
+          }).then(function (r) { if (!r.ok) location.reload(); }).catch(function () { location.reload(); });
+        },
+      });
+    });
+  })();
+</script>
