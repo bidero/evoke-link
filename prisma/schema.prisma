@@ -184,6 +184,7 @@ model Settings {
   colors       String?  // JSON: { primary, adminAccent, adminText, adminSidebar, adminBg }
   texts        String?  // JSON: { heroTitle, heroSubtitle, footer, messages }
   background   String?  // JSON: { type, preset, color, custom, imagePath, overlay, grain, grainStrength } — tło stron klienta
+  loginBackground String? // JSON (kształt jak background) — własne tło logowania; null = dziedziczy tło stron klienta
   logo         String?  // JSON: { size, align } — prezentacja logo (wysokość px, wyrównanie)
   layout       String?  // JSON: { style, card, heroOnBg, applyToLogin, radius, button } — układ stron klienta
   customCss    String?  // dowolny CSS wstrzykiwany do stron (escape hatch dla admina)

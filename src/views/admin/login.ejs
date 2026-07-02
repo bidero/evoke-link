@@ -1,6 +1,6 @@
 <%
   const appName = (typeof settings !== 'undefined' && settings) ? settings.appName : 'Evoke LINK';
-  const dark = (typeof bgDark !== 'undefined' && bgDark);
+  const dark = (typeof loginBgDark !== 'undefined') ? loginBgDark : (typeof bgDark !== 'undefined' && bgDark);
   const logoCfg = (typeof settings !== 'undefined' && settings && settings.logo) ? settings.logo : { size: 36, align: 'left' };
   const justify = { left: 'justify-start', center: 'justify-center', right: 'justify-end' }[logoCfg.align] || 'justify-start';
   const useLayout = (typeof uiLayout !== 'undefined' && uiLayout && uiLayout.applyToLogin);

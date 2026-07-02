@@ -108,6 +108,7 @@ function normalize(row) {
     colors: { ...DEFAULTS.colors, ...colors },
     texts: { ...DEFAULTS.texts, ...texts },
     background: background.normalize(bg),
+    loginBackground: (() => { try { return row.loginBackground ? background.normalize(JSON.parse(row.loginBackground)) : null; } catch (_) { return null; } })(),
     logo: normLogo(logo),
     layout: normLayout(layout),
     customCss: row.customCss || '',
@@ -139,6 +140,7 @@ async function update(data) {
   if (data.colors !== undefined) patch.colors = JSON.stringify(data.colors);
   if (data.texts !== undefined) patch.texts = JSON.stringify(data.texts);
   if (data.background !== undefined) patch.background = JSON.stringify(data.background);
+  if (data.loginBackground !== undefined) patch.loginBackground = data.loginBackground ? JSON.stringify(data.loginBackground) : null;
   if (data.logo !== undefined) patch.logo = JSON.stringify(data.logo);
   if (data.layout !== undefined) patch.layout = JSON.stringify(data.layout);
   if (data.customCss !== undefined) patch.customCss = data.customCss;

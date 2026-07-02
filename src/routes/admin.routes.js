@@ -136,6 +136,7 @@ router.post(
     { name: 'favicon', maxCount: 1 },
     { name: 'ogImage', maxCount: 1 },
     { name: 'bg', maxCount: 6 },
+    { name: 'loginBgImage', maxCount: 1 },
     { name: 'mailLogo', maxCount: 1 },
   ]),
   settings.updateSettings

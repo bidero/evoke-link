@@ -169,6 +169,13 @@ app.use(async (req, res, next) => {
     res.locals.bgSlideshow = bg.slideshowHtml(s.background);
     res.locals.bgDark = bg.isDark(s.background);
 
+    // Tło strony logowania — własne (Settings.loginBackground) albo dziedziczone z klienta.
+    const lb = s.loginBackground;
+    res.locals.loginBgStyle = lb ? bg.bodyStyle(lb) : res.locals.bgStyle;
+    res.locals.loginBgOverlay = lb ? bg.overlayHtml(lb) : res.locals.bgOverlay;
+    res.locals.loginBgSlideshow = lb ? bg.slideshowHtml(lb) : res.locals.bgSlideshow;
+    res.locals.loginBgDark = lb ? bg.isDark(lb) : res.locals.bgDark;
+
     // Układ stron klienta + zmienne karty/rogów/przycisku (.evoke-card / .evoke-btn).
     // UWAGA: nazwa `uiLayout`, NIE `layout` — `layout` koliduje z express-ejs-layouts
     // (tam `layout` to nazwa pliku układu przekazywana przez kontrolery).
@@ -187,6 +194,10 @@ app.use(async (req, res, next) => {
     res.locals.bgOverlay = '';
     res.locals.bgSlideshow = '';
     res.locals.bgDark = false;
+    res.locals.loginBgStyle = res.locals.bgStyle;
+    res.locals.loginBgOverlay = '';
+    res.locals.loginBgSlideshow = '';
+    res.locals.loginBgDark = false;
     res.locals.uiLayout = settingsService.DEFAULTS.layout;
     res.locals.surfaceStyleTag = '';
     res.locals.typographyStyleTag = '';

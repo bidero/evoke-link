@@ -218,6 +218,29 @@ async function updateSettings(req, res, next) {
     background.images = bgImages;
     background.imagePath = bgImages[0] || null; // pierwszy = tło statyczne / zgodność wstecz
 
+    // --- Tło strony logowania (opcjonalne; null = dziedziczy tło stron klienta) ---
+    let loginBackground = null;
+    if (b.loginBgMode === 'custom') {
+      const curLb = current.loginBackground || {};
+      loginBackground = {
+        type: ['gradient', 'custom', 'image', 'solid'].includes(b.lbType) ? b.lbType : 'gradient',
+        preset: b.lbPreset || 'brand-soft',
+        color: safeHex(b.lbColor, '#f4f6fb'),
+        custom: {
+          c1: safeHex(b.lbC1, '#6e00a5'),
+          c2: safeHex(b.lbC2, '#a31fde'),
+          c3: '',
+          angle: clampInt(b.lbAngle, 0, 360, 135),
+        },
+        imagePath: curLb.imagePath || null,
+        overlay: clampInt(b.lbOverlay, 0, 80, 0),
+      };
+      const lbImg = uploadedFile(req, 'loginBgImage');
+      if (lbImg) { sanitizeIfSvg(lbImg); loginBackground.imagePath = `/branding/${lbImg.filename}`; }
+      else if (b.removeLoginBgImage === 'on') loginBackground.imagePath = null;
+    }
+    data.loginBackground = loginBackground;
+
     // --- Plik: osobne logo w mailach ---
     const mailLogo = uploadedFile(req, 'mailLogo');
     if (mailLogo) { sanitizeIfSvg(mailLogo); data.emails.logoPath = `/branding/${mailLogo.filename}`; }

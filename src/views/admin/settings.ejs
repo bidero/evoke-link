@@ -716,6 +716,69 @@
       </div>
     </div>
 
+    <!-- Strona logowania: własne tło (null = dziedziczy tło stron klienta) -->
+    <% const LB = settings.loginBackground; %>
+    <div x-show="tab==='wyglad'" x-cloak class="bg-white rounded-2xl border border-slate-200 p-6 space-y-4"
+         x-data="{ lbMode: '<%= LB ? 'custom' : 'inherit' %>', lbType: '<%= LB ? LB.type : 'gradient' %>' }">
+      <h2 class="text-sm font-semibold text-slate-700">Strona logowania — tło <span class="text-slate-400 font-normal">(opcjonalne)</span></h2>
+      <p class="text-xs text-slate-400 -mt-2">Domyślnie logowanie wygląda jak strony klienta. Tu możesz dać mu własne tło; osobne logo logowania ustawisz w Brandingu.</p>
+
+      <div class="grid grid-cols-2 gap-2 text-sm max-w-md">
+        <% [['inherit','Jak strony klienta'],['custom','Własne tło']].forEach(function(o){ %>
+          <label class="cursor-pointer">
+            <input type="radio" name="loginBgMode" value="<%= o[0] %>" <%= (LB ? 'custom' : 'inherit') === o[0] ? 'checked' : '' %> @change="lbMode=$event.target.value" class="peer sr-only" />
+            <span class="block text-center rounded-lg border border-slate-300 px-2 py-2 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
+          </label>
+        <% }); %>
+      </div>
+
+      <div x-show="lbMode==='custom'" x-cloak class="space-y-4 border-t border-slate-100 pt-4">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+          <% [['gradient','Preset'],['custom','Własny gradient'],['solid','Kolor'],['image','Obraz']].forEach(function(o){ %>
+            <label class="cursor-pointer">
+              <input type="radio" name="lbType" value="<%= o[0] %>" <%= (LB ? LB.type : 'gradient') === o[0] ? 'checked' : '' %> @change="lbType=$event.target.value" class="peer sr-only" />
+              <span class="block text-center rounded-lg border border-slate-300 px-2 py-2 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
+            </label>
+          <% }); %>
+        </div>
+
+        <div x-show="lbType==='gradient'" x-cloak>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Preset</label>
+          <select name="lbPreset" class="w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+            <% Object.entries(presets).forEach(function(pr){ %><option value="<%= pr[0] %>" <%= LB && LB.preset === pr[0] ? 'selected' : '' %>><%= pr[1].label %></option><% }); %>
+          </select>
+        </div>
+
+        <div x-show="lbType==='custom'" x-cloak class="flex items-center gap-3 flex-wrap">
+          <label class="text-xs font-medium text-slate-600">Kolory:</label>
+          <input type="color" name="lbC1" value="<%= LB ? LB.custom.c1 : '#6e00a5' %>" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
+          <input type="color" name="lbC2" value="<%= LB ? LB.custom.c2 : '#a31fde' %>" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
+          <label class="text-xs font-medium text-slate-600 ml-2">Kąt:</label>
+          <input type="number" name="lbAngle" min="0" max="360" value="<%= LB ? LB.custom.angle : 135 %>" class="w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-sm" />
+        </div>
+
+        <div x-show="lbType==='solid'" x-cloak class="flex items-center gap-3">
+          <label class="text-xs font-medium text-slate-600">Kolor tła:</label>
+          <input type="color" name="lbColor" value="<%= LB ? LB.color : '#f4f6fb' %>" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
+        </div>
+
+        <div x-show="lbType==='image'" x-cloak class="space-y-2">
+          <% if (LB && LB.imagePath) { %>
+            <div class="flex items-center gap-3">
+              <img src="<%= LB.imagePath %>" alt="" class="h-16 rounded-lg object-cover border border-slate-200" />
+              <label class="inline-flex items-center gap-1.5 text-xs text-slate-500"><input type="checkbox" name="removeLoginBgImage" class="rounded border-slate-300" /> usuń</label>
+            </div>
+          <% } %>
+          <input name="loginBgImage" type="file" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm" />
+          <div class="max-w-xs">
+            <label class="block text-xs font-medium text-slate-600 mb-1">Przyciemnienie: <span id="lbOverlayOut"><%= LB ? LB.overlay : 0 %></span>%</label>
+            <input type="range" name="lbOverlay" min="0" max="80" step="5" value="<%= LB ? LB.overlay : 0 %>"
+                   oninput="var e=document.getElementById('lbOverlayOut'); if(e){e.textContent=this.value;}" class="w-full accent-brand-600" />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- E-mail: wygląd i treści -->
     <div id="emailCard" x-show="tab==='email'" x-cloak class="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
       <h2 class="text-sm font-semibold text-slate-700">E-mail — wygląd i treści</h2>
