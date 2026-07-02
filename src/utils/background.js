@@ -219,7 +219,8 @@ function overlayHtml(bg) {
     let inner = '';
     if (b.imageGradient) inner += `<div style="position:absolute;inset:0;background:${imageGradientCss(b.imageGrad)};"></div>`;
     if (b.overlay > 0) inner += `<div style="position:absolute;inset:0;background:rgba(15,23,42,${(b.overlay / 100).toFixed(2)});"></div>`;
-    html += `<div aria-hidden="true" style="position:${pos};inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .45s ease;">${inner}</div>`;
+    // klasa bg-img-layer → w dark mode łapie brightness(0.5), spójnie ze ścieżką pojedynczego obrazu
+    html += `<div aria-hidden="true" class="bg-img-layer" style="position:${pos};inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .45s ease;">${inner}</div>`;
     html += preloader();
   }
   if (b.grain && b.grainStrength > 0) {

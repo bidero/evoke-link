@@ -121,7 +121,8 @@ html.dark body.client-bg::before {
 }
 /* Obraz tła to teraz pozycjonowana warstwa (maluje się NAD ::before) — w dark mode
    przyciemniamy go filtrem, by zachować dotychczasowy, ciemniejszy wygląd. */
-html.dark .bg-img-layer { filter: brightness(0.5); }
+html.dark .bg-img-layer,
+html.dark .bg-slide { filter: brightness(0.5); } /* .bg-slide = warstwy slideshow (rotacja) */
 
 /* Nadpisanie najczęstszych klas powierzchni/tekstu pod .dark. */
 html.dark .bg-white { background-color: var(--dk-surface) !important; }
