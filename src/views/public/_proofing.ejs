@@ -38,11 +38,9 @@
       <input type="hidden" name="decision" value="changes" />
       <textarea name="comment" required rows="3" maxlength="4000" placeholder="Opisz, co poprawić…"
                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
-      <div class="flex flex-col sm:flex-row gap-2">
-        <input name="name" type="text" maxlength="120" placeholder="Twoje imię (opcjonalnie)" class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-        <button type="submit" class="rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 transition">Wyślij poprawki</button>
-        <button type="button" @click="changes = false" class="text-sm text-slate-500 hover:text-slate-700 px-2">Wróć</button>
-      </div>
+      <input name="name" type="text" maxlength="120" placeholder="Twoje imię (opcjonalnie)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      <button type="submit" class="w-full rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2.5 transition inline-flex items-center justify-center">Wyślij poprawki</button>
+      <button type="button" @click="changes = false" class="w-full text-sm text-slate-500 hover:text-slate-700 py-1 text-center">Wróć</button>
     </form>
   </div>
 </div>
