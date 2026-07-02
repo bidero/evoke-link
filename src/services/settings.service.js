@@ -58,7 +58,12 @@ function normLogo(l) {
   const x = l && typeof l === 'object' ? l : {};
   const size = Math.min(120, Math.max(16, parseInt(x.size, 10) || DEFAULTS.logo.size));
   const align = ALIGNS.includes(x.align) ? x.align : DEFAULTS.logo.align;
-  return { size, align, darkPath: x.darkPath || null };
+  return {
+    size, align, darkPath: x.darkPath || null,
+    // osobne logo per powierzchnia (puste = dziedziczy bazowe logoPath/darkPath)
+    adminPath: x.adminPath || null, adminDarkPath: x.adminDarkPath || null,
+    loginPath: x.loginPath || null, loginDarkPath: x.loginDarkPath || null,
+  };
 }
 
 function normLayout(l) {

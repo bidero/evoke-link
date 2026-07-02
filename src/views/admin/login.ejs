@@ -8,8 +8,8 @@
 <div class="w-full max-w-sm">
   <div class="<%= useLayout ? 'evoke-card' : 'bg-white rounded-2xl shadow-xl shadow-slate-900/10' %> p-8">
     <div class="flex items-center gap-2 mb-6 <%= justify %>">
-      <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
-        <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
+      <% if (typeof settings !== 'undefined' && settings && hasLogo(settings, 'login')) { %>
+        <%- logoTag(settings, { appName, surface: 'login', imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
       <% } else { %>
         <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
         <span class="font-semibold text-lg tracking-tight"><%= appName %></span>

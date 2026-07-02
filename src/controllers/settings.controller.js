@@ -116,7 +116,12 @@ async function updateSettings(req, res, next) {
     const logoCfg = {
       size: Math.min(120, Math.max(16, parseInt(b.logoSize, 10) || 36)),
       align: ['left', 'center', 'right'].includes(b.logoAlign) ? b.logoAlign : 'left',
-      darkPath: current.logo.darkPath || null, // zachowaj; nadpisywane niżej przy uploadzie/usuwaniu
+      // zachowaj obecne ścieżki; nadpisywane niżej przy uploadzie/usuwaniu
+      darkPath: current.logo.darkPath || null,
+      adminPath: current.logo.adminPath || null,
+      adminDarkPath: current.logo.adminDarkPath || null,
+      loginPath: current.logo.loginPath || null,
+      loginDarkPath: current.logo.loginDarkPath || null,
     };
 
     // --- Układ stron klienta ---
@@ -182,6 +187,15 @@ async function updateSettings(req, res, next) {
     const logoDark = uploadedFile(req, 'logoDark');
     if (logoDark) { sanitizeIfSvg(logoDark); data.logo.darkPath = `/branding/${logoDark.filename}`; }
     else if (b.removeLogoDark === 'on') data.logo.darkPath = null;
+
+    // Osobne logo per powierzchnia (panel admina / logowanie), jasne + ciemne.
+    [['logoAdmin', 'adminPath', 'removeLogoAdmin'], ['logoAdminDark', 'adminDarkPath', 'removeLogoAdminDark'],
+     ['logoLogin', 'loginPath', 'removeLogoLogin'], ['logoLoginDark', 'loginDarkPath', 'removeLogoLoginDark']]
+      .forEach(([field, key, removeFlag]) => {
+        const f = uploadedFile(req, field);
+        if (f) { sanitizeIfSvg(f); data.logo[key] = `/branding/${f.filename}`; }
+        else if (b[removeFlag] === 'on') data.logo[key] = null;
+      });
 
     const fav = uploadedFile(req, 'favicon');
     if (fav) { sanitizeIfSvg(fav); data.faviconPath = `/branding/${fav.filename}`; }

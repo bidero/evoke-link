@@ -137,6 +137,31 @@
         <input name="ogImage" type="file" accept="image/png,image/jpeg,image/webp" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm" />
       </div>
 
+      <!-- Osobne logo: panel admina / logowanie (opcjonalne, jasne+ciemne) -->
+      <div class="border-t border-slate-100 pt-5">
+        <h3 class="text-xs font-semibold text-slate-600 mb-1">Osobne logo: panel admina i logowanie <span class="text-slate-400 font-normal">(opcjonalne)</span></h3>
+        <p class="text-xs text-slate-400 mb-3">Puste pola dziedziczą logo powyżej. Gdy ustawisz jasne logo dla powierzchni, jej tryb ciemny używa pary tej powierzchni (bez mieszania z globalnym ciemnym).</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <% [
+            ['logoAdmin', 'adminPath', 'Panel admina — jasne', 'removeLogoAdmin'],
+            ['logoAdminDark', 'adminDarkPath', 'Panel admina — ciemne', 'removeLogoAdminDark'],
+            ['logoLogin', 'loginPath', 'Logowanie — jasne', 'removeLogoLogin'],
+            ['logoLoginDark', 'loginDarkPath', 'Logowanie — ciemne', 'removeLogoLoginDark'],
+          ].forEach(function(cfg){ const cur = settings.logo[cfg[1]]; %>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1"><%= cfg[2] %></label>
+              <% if (cur) { %>
+                <div class="flex items-center gap-3 mb-2">
+                  <img src="<%= cur %>" alt="" class="h-8 rounded <%= /ciemne/.test(cfg[2]) ? 'bg-slate-800' : 'bg-slate-50' %> border border-slate-200 p-1" />
+                  <label class="inline-flex items-center gap-1.5 text-xs text-slate-500"><input type="checkbox" name="<%= cfg[3] %>" class="rounded border-slate-300" /> usuń</label>
+                </div>
+              <% } %>
+              <input name="<%= cfg[0] %>" type="file" accept="image/*,.svg" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm" />
+            </div>
+          <% }); %>
+        </div>
+      </div>
+
       <!-- Prezentacja logo: rozmiar + pozycja -->
       <div class="border-t border-slate-100 pt-5">
         <h3 class="text-xs font-semibold text-slate-600 mb-3">Wyświetlanie logo (strona klienta / logowanie)</h3>

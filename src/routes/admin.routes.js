@@ -129,6 +129,10 @@ router.post(
   brandingUpload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'logoDark', maxCount: 1 },
+    { name: 'logoAdmin', maxCount: 1 },
+    { name: 'logoAdminDark', maxCount: 1 },
+    { name: 'logoLogin', maxCount: 1 },
+    { name: 'logoLoginDark', maxCount: 1 },
     { name: 'favicon', maxCount: 1 },
     { name: 'ogImage', maxCount: 1 },
     { name: 'bg', maxCount: 6 },

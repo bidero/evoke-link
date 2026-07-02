@@ -23,8 +23,8 @@
     <aside class="fixed inset-y-0 left-0 z-40 w-60 shrink-0 bg-[var(--admin-sidebar)] border-r border-slate-200/60 flex flex-col transition-transform -translate-x-full md:static md:translate-x-0"
            :class="nav && '!translate-x-0'" style="color: var(--admin-sidebar-text)">
       <div class="h-16 flex items-center gap-2 px-6 border-b border-black/5">
-        <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
-          <%- logoTag(settings, { appName, imgClass: 'h-8 max-w-[140px] object-contain' }) %>
+        <% if (typeof settings !== 'undefined' && settings && hasLogo(settings, 'admin')) { %>
+          <%- logoTag(settings, { appName, surface: 'admin', imgClass: 'h-8 max-w-[140px] object-contain' }) %>
         <% } else { %>
           <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
           <span class="font-semibold tracking-tight"><%= appName %></span>
