@@ -205,12 +205,22 @@ function overlayHtml(bg) {
   // zdjęcie — przez chwilę widać sam gradient nad ciemną bazą, najbardziej za kartą „szkło"
   // (backdrop-blur). Preloader <img onload> odsłania całość, gdy zdjęcie jest gotowe.
   // Slideshow ma własne warstwy (rotacja).
+  const preloader = () => `<img src="${img}" alt="" aria-hidden="true" decoding="async" style="position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1;" onload="var l=this.previousElementSibling;if(l)l.style.opacity=1;" onerror="var l=this.previousElementSibling;if(l)l.style.opacity=1;" />`;
   if (b.type === 'image' && img && !slideshowActive) {
     let inner = `<div style="position:absolute;inset:0;background:#0f172a url('${img}') center/cover no-repeat;"></div>`;
     if (b.imageGradient) inner += `<div style="position:absolute;inset:0;background:${imageGradientCss(b.imageGrad)};"></div>`;
     if (b.overlay > 0) inner += `<div style="position:absolute;inset:0;background:rgba(15,23,42,${(b.overlay / 100).toFixed(2)});"></div>`;
     html += `<div aria-hidden="true" class="bg-img-layer" style="position:${pos};inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .45s ease;">${inner}</div>`;
-    html += `<img src="${img}" alt="" aria-hidden="true" decoding="async" style="position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1;" onload="var l=this.previousElementSibling;if(l)l.style.opacity=1;" onerror="var l=this.previousElementSibling;if(l)l.style.opacity=1;" />`;
+    html += preloader();
+  }
+  // Slideshow: warstwy obrazów renderuje slideshowHtml, ale gradient/przyciemnienie muszą być TU
+  // (nad slajdami, pod ziarnem) — bramkowane na załadowanie 1. slajdu (ta sama ochrona przed miganiem).
+  if (b.type === 'image' && img && slideshowActive && (b.imageGradient || b.overlay > 0)) {
+    let inner = '';
+    if (b.imageGradient) inner += `<div style="position:absolute;inset:0;background:${imageGradientCss(b.imageGrad)};"></div>`;
+    if (b.overlay > 0) inner += `<div style="position:absolute;inset:0;background:rgba(15,23,42,${(b.overlay / 100).toFixed(2)});"></div>`;
+    html += `<div aria-hidden="true" style="position:${pos};inset:0;z-index:0;pointer-events:none;opacity:0;transition:opacity .45s ease;">${inner}</div>`;
+    html += preloader();
   }
   if (b.grain && b.grainStrength > 0) {
     const g = GRAIN[b.grainType] || GRAIN.fine;
