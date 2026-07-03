@@ -1,10 +1,10 @@
-<div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+<div class="h-full flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden">
   <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
     <h2 class="text-sm font-medium text-slate-700">Nieprzeczytane wiadomości</h2>
     <a href="/admin/messages" class="text-xs text-brand-700 hover:underline">Skrzynka →</a>
   </div>
   <% if (!msgThreads.length) { %>
-    <div class="px-5 py-8 text-center text-sm text-slate-400">Wszystko przeczytane.</div>
+    <div class="flex-1 flex items-center justify-center px-5 py-8 text-center text-sm text-slate-400">Wszystko przeczytane.</div>
   <% } else { %>
     <ul class="divide-y divide-slate-100">
       <% msgThreads.forEach(function(t){ %>

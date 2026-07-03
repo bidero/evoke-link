@@ -1,11 +1,12 @@
+<%# h-full + justify-center: kafelek wyrównuje się do wysokości rzędu, treść centrowana w pionie %>
 <% if (tile.href) { %>
-  <a href="<%= tile.href %>" class="block bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-sm transition">
+  <a href="<%= tile.href %>" class="h-full flex flex-col justify-center bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-sm transition">
     <div class="text-sm text-slate-500"><%= tile.label %></div>
     <div class="mt-2 text-3xl font-semibold tracking-tight <%= tile.valueCls || '' %>"><%= tile.value %></div>
     <div class="mt-1 text-xs text-slate-400"><%= tile.hint %></div>
   </a>
 <% } else { %>
-  <div class="bg-white rounded-2xl border border-slate-200 p-5">
+  <div class="h-full flex flex-col justify-center bg-white rounded-2xl border border-slate-200 p-5">
     <div class="text-sm text-slate-500"><%= tile.label %></div>
     <div class="mt-2 text-3xl font-semibold tracking-tight <%= tile.valueCls || '' %>"><%= tile.value %></div>
     <div class="mt-1 text-xs text-slate-400"><%= tile.hint %></div>
