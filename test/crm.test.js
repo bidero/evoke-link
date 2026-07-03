@@ -37,11 +37,14 @@ test('staleClients: dawny kontakt na liście, świeży i nieaktywni poza nią', 
   }
 });
 
-test('QR: payload ZBP zachowuje polskie znaki, generator koduje UTF-8', () => {
+test('QR: payload ZBP zachowuje polskie znaki i pełną nazwę odbiorcy (do 40 znaków)', () => {
   const payment = require('../src/utils/payment');
   const qr = require('../src/utils/qr');
   const payload = payment.zbpPayload({ nip: '526-030-02-91', account: '6'.repeat(26), amountGr: 12345, name: 'Żółć Studió Sp. z o.o. i Wspólnicy', title: 'Rozliczenie — Łukasz' });
-  assert.match(payload, /^5260300291\|PL\|6{26}\|012345\|Żółć Studió Sp\. z o\.\|Rozliczenie — Łukasz\|\|\|$/, 'NIP bez kresek, kwota 6 cyfr, odbiorca ucięty do 20 znaków z diakrytykami');
+  assert.match(payload, /^5260300291\|PL\|6{26}\|012345\|Żółć Studió Sp\. z o\.o\. i Wspólnicy\|Rozliczenie — Łukasz\|\|\|$/, 'NIP bez kresek, kwota 6 cyfr, PEŁNA nazwa odbiorcy z diakrytykami (34 znaki < 40)');
+  const long = payment.zbpPayload({ account: '6'.repeat(26), amountGr: 1, name: 'X'.repeat(50), title: 't' });
+  assert.match(long, /\|X{40}\|/, 'powyżej 40 znaków nazwa jest ucinana');
+  assert.ok(long.length <= 160, 'całość payloadu w limicie ZBP (160)');
   const svg = qr.svg(payload, { cell: 2 });
   assert.ok(svg.startsWith('<svg'), 'QR z polskimi znakami renderuje się bez błędu');
 });
