@@ -185,6 +185,16 @@ async function sumGross(where) {
   return rows.reduce((s, c) => s + grossOf(c), 0);
 }
 
+// Nierozliczone pozycje klienta (wprost + z jego projektów) — sekcja „Do zapłaty" w portalu /c.
+function unpaidForClient(clientId) {
+  const cid = Number(clientId);
+  return prisma.charge.findMany({
+    where: { paidAt: null, OR: [{ clientId: cid }, { project: { clientId: cid, status: { not: 'deleted' } } }] },
+    include: { project: { select: { name: true } } },
+    orderBy: [{ dueDate: 'asc' }, { createdAt: 'asc' }],
+  });
+}
+
 // Łączna kwota do rozliczenia (pozycje bezprojektowe + projekty poza usuniętymi) — kafelek pulpitu.
 function totalOutstanding() {
   return sumGross({
@@ -205,4 +215,4 @@ function overdueTotal() {
   });
 }
 
-module.exports = { parseAmount, parseVatRate, VAT_RATES, vatOf, grossOf, totals, getById, getByIdWithProject, ownerClientId, directCount, listByProject, create, update, setPaid, setPaidDate, remove, clientTotals, outstandingByClients, totalOutstanding, overdueTotal, forStatement };
+module.exports = { parseAmount, parseVatRate, VAT_RATES, vatOf, grossOf, totals, getById, getByIdWithProject, ownerClientId, directCount, listByProject, create, update, setPaid, setPaidDate, remove, clientTotals, outstandingByClients, unpaidForClient, totalOutstanding, overdueTotal, forStatement };

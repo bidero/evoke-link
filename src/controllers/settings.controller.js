@@ -145,6 +145,7 @@ async function updateSettings(req, res, next) {
       template: ['standard', 'band', 'accent', 'proforma', 'accent-card', 'accent-band', 'accent-min', 'clean'].includes(b.pdfTemplate) ? b.pdfTemplate : 'standard',
       docType: ['rozliczenie', 'proforma'].includes(b.pdfDocType) ? b.pdfDocType : 'rozliczenie',
       logoHeight: Math.min(90, Math.max(20, parseInt(b.pdfLogoHeight, 10) || 48)),
+      portalBilling: b.portalBilling === 'on',
       seller: {
         name: (b.sellerName || '').trim(),
         address: (b.sellerAddress || '').trim(),

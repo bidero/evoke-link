@@ -190,6 +190,46 @@ function update(id, { name, firstName, lastName, email, note, company, phone, ni
   });
 }
 
+// ---- „Do odezwania się" — klienci bez żadnej aktywności od `days` dni ----
+// Ostatni kontakt = najnowsze zdarzenie (Event) lub wiadomość (Message) klienta,
+// wprost (clientId) albo przez jego projekty; brak czegokolwiek = data założenia kartoteki.
+// Pomijamy klientów ze statusem 'inactive' (celowo uśpieni).
+async function staleClients({ days = 30, limit = 6 } = {}) {
+  const [clients, evByClient, msgByClient, projects, openReminders] = await Promise.all([
+    prisma.client.findMany({ where: { status: { not: 'inactive' } }, select: { id: true, name: true, createdAt: true } }),
+    prisma.event.groupBy({ by: ['clientId'], where: { clientId: { not: null } }, _max: { createdAt: true } }),
+    prisma.message.groupBy({ by: ['clientId'], where: { clientId: { not: null } }, _max: { createdAt: true } }),
+    prisma.project.findMany({
+      where: { clientId: { not: null }, status: { not: 'deleted' } },
+      select: {
+        clientId: true,
+        events: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true } },
+        messages: { orderBy: { createdAt: 'desc' }, take: 1, select: { createdAt: true } },
+      },
+    }),
+    // otwarte przypomnienia — „Przypomnij" nie dubluje zadań (chip „zaplanowane")
+    prisma.reminder.findMany({ where: { done: false, clientId: { not: null } }, select: { clientId: true }, distinct: ['clientId'] }),
+  ]);
+  const last = {};
+  const bump = (cid, d) => { if (cid != null && d && (!last[cid] || d > last[cid])) last[cid] = new Date(d); };
+  evByClient.forEach((g) => bump(g.clientId, g._max.createdAt));
+  msgByClient.forEach((g) => bump(g.clientId, g._max.createdAt));
+  projects.forEach((p) => {
+    if (p.events[0]) bump(p.clientId, p.events[0].createdAt);
+    if (p.messages[0]) bump(p.clientId, p.messages[0].createdAt);
+  });
+  const planned = new Set(openReminders.map((r) => r.clientId));
+  const now = Date.now();
+  return clients
+    .map((c) => {
+      const lastAt = last[c.id] || c.createdAt;
+      return { id: c.id, name: c.name, lastAt, days: Math.floor((now - new Date(lastAt).getTime()) / 86400000), planned: planned.has(c.id) };
+    })
+    .filter((c) => c.days >= days)
+    .sort((a, b) => b.days - a.days)
+    .slice(0, limit);
+}
+
 // ---- Onboarding — jednorazowy link, przez który klient sam uzupełnia dane CRM ----
 
 const ONBOARDING_DAYS = 7;
@@ -244,5 +284,6 @@ async function remove(id) {
 
 module.exports = {
   list, getById, overview, getByToken, options, tagCloud, create, update, remove, SORTS,
+  staleClients,
   generateOnboarding, getByOnboardingToken, onboardingState, completeOnboarding,
 };

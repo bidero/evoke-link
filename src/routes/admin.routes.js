@@ -113,6 +113,7 @@ router.post('/clients', clients.createClient);
 router.post('/clients/:id/send-panel', clients.sendPanel);
 router.post('/clients/:id/onboarding', onboarding.generateLink);        // generuj/wymień link onboardingowy
 router.post('/clients/:id/onboarding/send', onboarding.sendLink);       // wyślij link mailem
+router.post('/clients/:id/followup', clients.createFollowup);           // „Przypomnij" z widżetu „Do odezwania się"
 router.get('/clients/:id/edit', clients.showEditForm);
 router.post('/clients/:id/note', clients.addNote);
 router.get('/clients/:id/rozliczenie.pdf', clients.clientStatementPdf);

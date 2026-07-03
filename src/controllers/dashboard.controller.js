@@ -9,6 +9,7 @@ const settingsService = require('../services/settings.service');
 const calendarService = require('../services/calendar.service');
 const statsService = require('../services/stats.service');
 const messageService = require('../services/message.service');
+const clientService = require('../services/client.service');
 const panelUi = require('../utils/panelUi');
 
 async function showDashboard(req, res, next) {
@@ -27,8 +28,9 @@ async function showDashboard(req, res, next) {
     let upcoming = [];
     let pulse = null;
     let msgThreads = [];
+    let stale = [];
     try {
-      const [transfers, projects, pendingUploads, outstanding, overdue, recentEvents, upcomingEvents, pulseData, threads] = await Promise.all([
+      const [transfers, projects, pendingUploads, outstanding, overdue, recentEvents, upcomingEvents, pulseData, threads, staleData] = await Promise.all([
         prisma.transfer.count({ where: { status: 'active' } }),
         prisma.project.count({ where: { status: 'active' } }),
         prisma.transfer.count({ where: { direction: 'incoming', status: 'active' } }),
@@ -38,12 +40,14 @@ async function showDashboard(req, res, next) {
         visible.has('tasks') ? calendarService.upcomingEvents(14) : [],
         visible.has('revenue') ? statsService.pulse() : null,
         visible.has('messages') ? messageService.listThreads(50) : [],
+        visible.has('followup') ? clientService.staleClients({ days: 30, limit: 6 }) : [],
       ]);
       stats = { transfers, projects, pendingUploads, storageBytes: storage.totalUsedBytes(), outstanding, overdue };
       recent = recentEvents;
       upcoming = upcomingEvents.slice(0, 7);
       pulse = pulseData;
       msgThreads = threads.filter((t) => t.unread > 0).slice(0, 5);
+      stale = staleData;
     } catch (_) {
       // baza nie jest jeszcze gotowa — zostają zera
     }
@@ -59,6 +63,7 @@ async function showDashboard(req, res, next) {
       upcoming,
       pulse,
       msgThreads,
+      stale,
     });
   } catch (err) {
     next(err);

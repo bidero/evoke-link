@@ -33,7 +33,8 @@ const DEFAULTS = {
     dailyDigest: false,
   },
   // Wydruk PDF rozliczenia: szablon + wysokość logo (px) + dane sprzedawcy na dokument.
-  pdf: { template: 'standard', docType: 'rozliczenie', logoHeight: 48, seller: { name: '', address: '', nip: '', bank: '' } },
+  // portalBilling: sekcja „Do zapłaty" (pozycje + dane do przelewu + QR) w portalu klienta /c.
+  pdf: { template: 'standard', docType: 'rozliczenie', logoHeight: 48, portalBilling: true, seller: { name: '', address: '', nip: '', bank: '' } },
   // Układ panelu admina: kolejność/ukrywanie pozycji menu i widżetów pulpitu (delty, puste = domyślnie).
   panel: { menu: [], dashboard: [] },
 };
@@ -54,6 +55,7 @@ function normPdf(p) {
     template: PDF_TEMPLATES.includes(x.template) ? x.template : DEFAULTS.pdf.template,
     docType: PDF_DOCTYPES.includes(x.docType) ? x.docType : DEFAULTS.pdf.docType,
     logoHeight: Math.min(90, Math.max(20, Number.isFinite(h) ? h : DEFAULTS.pdf.logoHeight)),
+    portalBilling: x.portalBilling === undefined ? DEFAULTS.pdf.portalBilling : !!x.portalBilling,
     seller: { name: str(s.name), address: str(s.address), nip: str(s.nip), bank: str(s.bank) },
   };
 }

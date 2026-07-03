@@ -7,6 +7,8 @@ const pdfService = require('../services/pdf.service');
 const events = require('../services/event.service');
 const mail = require('../services/mail.service');
 const messageService = require('../services/message.service');
+const reminderService = require('../services/reminder.service');
+const payment = require('../utils/payment');
 const config = require('../config');
 const fmt = require('../utils/format');
 
@@ -84,6 +86,21 @@ async function showEditForm(req, res, next) {
     const client = await clientService.getById(req.params.id);
     if (!client) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
     res.render('admin/clients/edit', { title: client.name, active: 'clients', client, error: null, portalUrl: `${config.appUrl}/c/${client.token}`, panel: req.query.panel || null, mailReady: mail.isConfigured(), tagCloud: await clientService.tagCloud() });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// „Przypomnij" z widżetu „Do odezwania się" — zadanie „Odezwij się do X" na jutro 9:00.
+async function createFollowup(req, res, next) {
+  try {
+    const client = await clientService.getById(req.params.id);
+    if (!client) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
+    const due = new Date();
+    due.setDate(due.getDate() + 1);
+    due.setHours(9, 0, 0, 0);
+    await reminderService.create({ title: `Odezwij się: ${client.name}`, dueAt: due, priority: 'normal', clientId: client.id });
+    res.redirect(req.get('referer') || '/admin');
   } catch (err) {
     next(err);
   }
@@ -328,7 +345,24 @@ async function showClientPortal(req, res, next) {
     if (firstViewThisSession(req, client.token)) {
       events.log({ type: 'viewed', message: 'Klient otworzył portal', clientId: client.id, ip: req.ip });
     }
-    res.render('public/client-portal', { title: client.name, layout: PUBLIC_LAYOUT, client });
+
+    // Sekcja „Do zapłaty": nierozliczone pozycje + dane do przelewu (+ QR wg ZBP, gdy konto = 26 cyfr).
+    // Wyłączana przełącznikiem w Ustawienia → Rozliczenia (PDF) (`pdf.portalBilling`).
+    const pdfCfg = (await settingsService.get()).pdf || {};
+    const rows = pdfCfg.portalBilling ? await chargeService.unpaidForClient(client.id) : [];
+    const unpaid = rows.map((c) => ({ ...c, gross: chargeService.grossOf(c) }));
+    const unpaidTotal = unpaid.reduce((s, c) => s + c.gross, 0);
+    const seller = pdfCfg.seller || {};
+    const account = payment.bankDigits(seller.bank);
+    const transferTitle = `Rozliczenie — ${client.name}`.slice(0, 32);
+    const paymentQr = account && unpaidTotal > 0
+      ? payment.zbpPayload({ nip: seller.nip, account, amountGr: unpaidTotal, name: seller.name, title: transferTitle })
+      : null;
+
+    res.render('public/client-portal', {
+      title: client.name, layout: PUBLIC_LAYOUT, client,
+      unpaid, unpaidTotal, seller, transferTitle, paymentQr,
+    });
   } catch (err) {
     next(err);
   }
@@ -355,4 +389,4 @@ async function submitClientMessage(req, res, next) {
   }
 }
 
-module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, showClientPortal, submitClientMessage, markSeen };
+module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, createFollowup, showClientPortal, submitClientMessage, markSeen };

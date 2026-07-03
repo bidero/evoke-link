@@ -1,0 +1,27 @@
+<div class="h-full flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden">
+  <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+    <h2 class="text-sm font-medium text-slate-700">Do odezwania się</h2>
+    <span class="text-xs text-slate-400">30+ dni bez kontaktu</span>
+  </div>
+  <% if (!stale.length) { %>
+    <div class="flex-1 flex items-center justify-center px-5 py-8 text-center text-sm text-slate-400">Ze wszystkimi klientami jest świeży kontakt.</div>
+  <% } else { %>
+    <ul class="divide-y divide-slate-100">
+      <% stale.forEach(function(c){ %>
+        <li class="px-5 py-2.5 flex items-center gap-3">
+          <span class="min-w-0 flex-1">
+            <a href="/admin/clients/<%= c.id %>" class="block text-sm font-medium text-slate-700 hover:text-brand-700 truncate"><%= c.name %></a>
+            <span class="block text-xs mt-0.5 <%= c.days >= 60 ? 'text-red-600' : 'text-slate-400' %>"><%= c.days %> dni bez kontaktu</span>
+          </span>
+          <% if (c.planned) { %>
+            <a href="/admin/calendar" class="shrink-0 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition" title="Jest otwarte przypomnienie — zobacz kalendarz">zaplanowane</a>
+          <% } else { %>
+            <form method="POST" action="/admin/clients/<%= c.id %>/followup" class="shrink-0">
+              <button type="submit" class="text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition" title="Utwórz przypomnienie „Odezwij się" na jutro 9:00">Przypomnij</button>
+            </form>
+          <% } %>
+        </li>
+      <% }); %>
+    </ul>
+  <% } %>
+</div>

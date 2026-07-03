@@ -33,6 +33,7 @@ const WIDGETS = [
   { key: 'tasks', label: 'Nadchodzące zadania', span: 4 },
   { key: 'revenue', label: 'Przychód i top klienci', span: 4 },
   { key: 'messages', label: 'Nieprzeczytane wiadomości', span: 4 },
+  { key: 'followup', label: 'Do odezwania się', span: 4 },
 ];
 
 const MENU_KEYS = MENU.map((m) => m.key);

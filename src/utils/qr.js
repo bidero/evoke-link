@@ -2,6 +2,11 @@
 // Lekki, czysto-JS qrcode-generator (zero zależności natywnych — „shared-hosting-safe").
 const qrcode = require('qrcode-generator');
 
+// GOTCHA: domyślny stringToBytes OBCINA znaki do jednego bajtu (charCode & 0xFF) —
+// polskie znaki w payloadzie (np. nazwa odbiorcy w QR przelewu ZBP) wychodziły zmielone.
+// Rekomendacja ZBP wymaga UTF-8; dla ASCII (URL-e) bajty są identyczne, więc zmiana jest bezpieczna.
+qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+
 // text → string z <svg>. cell = rozmiar modułu (px), margin = „quiet zone" w modułach.
 // color/bg: QR musi mieć wysoki kontrast (ciemny na jasnym), żeby się dobrze skanował.
 function svg(text, { cell = 4, margin = 2, color = '#0f172a', bg = '#ffffff' } = {}) {

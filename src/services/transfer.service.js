@@ -61,10 +61,11 @@ function getByToken(token) {
 }
 
 // Pobiera transfer po id (panel) wraz z plikami i projektem.
+// client: e-mail klienta projektu podstawiany w polu „Wyślij link e-mailem".
 function getById(id) {
   return prisma.transfer.findUnique({
     where: { id: Number(id) },
-    include: { files: true, project: true },
+    include: { files: true, project: { include: { client: { select: { id: true, name: true, email: true } } } } },
   });
 }
 

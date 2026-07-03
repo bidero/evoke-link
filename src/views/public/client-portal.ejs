@@ -18,5 +18,47 @@
         <% }); %>
       </div>
     <% } %>
+
+    <% if (typeof unpaid !== 'undefined' && unpaid.length) { %>
+      <!-- Do zapłaty: nierozliczone pozycje + dane do przelewu (+ QR wg ZBP) -->
+      <div class="mt-6 pt-6 border-t border-slate-100" x-data="{ qr: false }">
+        <h2 class="text-sm font-semibold text-slate-700 mb-3">Do zapłaty</h2>
+        <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden text-sm">
+          <% const now = new Date(); unpaid.forEach(function(c){ const overdue = c.dueDate && new Date(c.dueDate) < now; %>
+            <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+              <span class="min-w-0">
+                <span class="block text-slate-700 truncate"><%= c.label || 'Pozycja' %></span>
+                <span class="block text-xs mt-0.5 <%= overdue ? 'text-red-600 font-medium' : 'text-slate-400' %>">
+                  <%= c.project ? c.project.name : '' %><%= c.project && c.dueDate ? ' · ' : '' %><%= c.dueDate ? 'termin ' + fmt.dateOnly(c.dueDate) : '' %><%= overdue ? ' · po terminie' : '' %>
+                </span>
+              </span>
+              <span class="shrink-0 font-medium text-slate-800"><%= fmt.money(c.gross) %></span>
+            </div>
+          <% }); %>
+          <div class="flex items-center justify-between gap-3 px-4 py-2.5 bg-slate-50">
+            <span class="text-slate-600 font-medium">Razem do zapłaty</span>
+            <span class="shrink-0 font-semibold text-brand-700"><%= fmt.money(unpaidTotal) %></span>
+          </div>
+        </div>
+
+        <% if (seller && seller.bank) { %>
+          <div class="mt-3 rounded-xl bg-slate-50 border border-slate-100 px-4 py-3 text-sm space-y-1">
+            <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1.5">Dane do przelewu</p>
+            <% if (seller.name) { %><p><span class="text-slate-500">Odbiorca:</span> <span class="text-slate-700"><%= seller.name %></span></p><% } %>
+            <p><span class="text-slate-500">Konto:</span> <span class="text-slate-700 break-all"><%= seller.bank %></span></p>
+            <p><span class="text-slate-500">Tytuł:</span> <span class="text-slate-700"><%= transferTitle %></span></p>
+            <% if (paymentQr) { %>
+              <div class="pt-1.5">
+                <button type="button" @click="qr = !qr" class="text-xs font-medium text-brand-700 hover:text-brand-800" x-text="qr ? 'Ukryj kod QR' : 'Zapłać telefonem — pokaż kod QR'"></button>
+                <div x-show="qr" x-cloak class="mt-2">
+                  <span class="inline-block rounded-xl border border-slate-200 bg-white p-2"><%- qrSvg(paymentQr, { cell: 3 }) %></span>
+                  <p class="text-xs text-slate-400 mt-1.5">Zeskanuj w aplikacji banku — dane przelewu uzupełnią się same.</p>
+                </div>
+              </div>
+            <% } %>
+          </div>
+        <% } %>
+      </div>
+    <% } %>
   </div>
 </div>
