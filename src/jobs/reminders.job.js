@@ -10,15 +10,28 @@ const settingsService = require('../services/settings.service');
 const mail = require('../services/mail.service');
 const events = require('../services/event.service');
 const { grossOf } = require('../services/charge.service'); // kwoty BRUTTO (amount = netto)
+const retainerService = require('../services/retainer.service');
 
 const EVERY_DAYS = parseInt(process.env.REMIND_EVERY_DAYS, 10) || 7;
 
 async function run() {
+  // Retainery generujemy ZAWSZE (nie wymagają SMTP) — dopiero maile mają bramkę niżej.
+  await runRetainers();
   const s = await settingsService.get();
-  if (!mail.isConfigured()) { console.log('[reminders] SMTP niewłączony — pomijam'); return; }
+  if (!mail.isConfigured()) { console.log('[reminders] SMTP niewłączony — pomijam maile'); return; }
   await runPaymentReminders(s);
   await runExpiryWarnings(s);
   await runDailyDigest(s);
+}
+
+// Cykliczne pozycje rozliczeniowe: aktywne retainery po dniu generowania → nowe Charge.
+async function runRetainers() {
+  try {
+    const n = await retainerService.generateDue(new Date());
+    console.log(`[retainers] wygenerowano pozycji cyklicznych: ${n}`);
+  } catch (e) {
+    console.error('[retainers] błąd:', e.message);
+  }
 }
 
 // Przypomnienia o przeterminowanych płatnościach (gdy włączone w Ustawieniach → E-mail).
@@ -117,4 +130,4 @@ if (require.main === module) {
     .finally(async () => { await prisma.$disconnect(); });
 }
 
-module.exports = { run, runPaymentReminders, runExpiryWarnings, runDailyDigest };
+module.exports = { run, runRetainers, runPaymentReminders, runExpiryWarnings, runDailyDigest };

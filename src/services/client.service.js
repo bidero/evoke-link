@@ -96,7 +96,7 @@ async function overview(id) {
     },
   });
   if (!client) return null;
-  const [transfers, events, charges] = await Promise.all([
+  const [transfers, events, charges, retainers] = await Promise.all([
     prisma.transfer.findMany({
       where: { project: { clientId: cid } },
       include: { files: true, project: true },
@@ -116,9 +116,10 @@ async function overview(id) {
       include: { project: { select: { id: true, name: true } } },
       orderBy: [{ project: { name: 'asc' } }, { date: 'desc' }, { createdAt: 'desc' }],
     }),
+    prisma.retainer.findMany({ where: { clientId: cid }, orderBy: { createdAt: 'asc' } }),
   ]);
   const billing = chargeService.totals(charges);
-  return { client, transfers, events, billing, charges };
+  return { client, transfers, events, billing, charges, retainers };
 }
 
 // Publiczny portal klienta — jego aktywne/zarchiwizowane projekty (bez usuniętych).

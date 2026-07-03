@@ -12,6 +12,9 @@
       <div class="mt-1 text-xs <%= delta === null ? 'text-slate-400' : (delta >= 0 ? 'text-green-600' : 'text-red-600') %>">
         <%= delta === null ? 'poprzedni miesiąc: ' + fmt.money(m.paidPrevMonth) : (delta >= 0 ? '▲ +' : '▼ ') + delta + '% vs poprzedni miesiąc' %>
       </div>
+      <% if (pulse.retainers && pulse.retainers.mrr > 0) { %>
+        <div class="mt-1 text-xs text-slate-400">stały przychód (MRR): <span class="text-slate-600 font-medium"><%= fmt.money(pulse.retainers.mrr) %>/mc</span></div>
+      <% } %>
       <% if (pulse.clients.top.length) { %>
         <div class="mt-4 pt-3 border-t border-slate-100">
           <div class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Top klienci (6 mies.)</div>

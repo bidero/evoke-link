@@ -49,6 +49,27 @@ model Client {
   charges   Charge[]                      // pozycje rozliczeniowe „bez projektu" (wprost na kliencie)
   messages  Message[]                     // wiadomości od klienta (z portalu /c)
   reminders Reminder[]                    // zadania/przypomnienia powiązane z klientem
+  retainers Retainer[]                    // cykliczne pozycje rozliczeniowe (abonamenty)
+}
+
+// Retainer — cykliczna pozycja rozliczeniowa klienta (np. miesięczny abonament).
+// Cron (reminders.job) raz dziennie tworzy z aktywnych retainerów zwykłe pozycje Charge
+// (netto + VAT, termin płatności +dueDays) — dalej działają przypomnienia, sumy i PDF.
+model Retainer {
+  id         Int      @id @default(autoincrement())
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId   Int
+  label      String                 // np. „Abonament — obsługa www"
+  amount     Int                    // kwota NETTO w groszach (jak Charge.amount)
+  vatRate    Int?                   // % VAT (23/8/5/0); null = bez VAT
+  dayOfMonth Int      @default(1)   // dzień miesiąca generowania (1–28, żeby uniknąć krótkich miesięcy)
+  dueDays    Int      @default(7)   // termin płatności: +X dni od wygenerowania
+  active     Boolean  @default(true) // wstrzymany retainer nie generuje pozycji
+  lastPeriod String?                // 'YYYY-MM' ostatnio wygenerowanego okresu (anty-duplikat)
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([clientId])
 }
 
 model Project {

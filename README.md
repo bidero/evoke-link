@@ -16,6 +16,7 @@ Stos: **Node.js + Express**, **SQLite** (przez Prisma), szablony **EJS + Tailwin
 - 📝 **Link onboardingowy** — jednorazowy formularz `/onboard/:token` (ważny 7 dni), przez który nowy klient sam uzupełnia dane do współpracy i rozliczeń (firma, NIP, adres, kontakt); agencja dostaje powiadomienie i e-mail.
 - 💳 **Dane do przelewu w portalu klienta** — sekcja „Do zapłaty": nierozliczone pozycje brutto, terminy (zaległe na czerwono), suma oraz odbiorca/konto/tytuł przelewu i **kod QR wg standardu ZBP** do zeskanowania w aplikacji banku.
 - 📞 **„Do odezwania się"** — widżet pulpitu z klientami bez kontaktu od 30+ dni; jedno kliknięcie tworzy przypomnienie „Odezwij się" na jutro.
+- 🔁 **Retainery** — cykliczne pozycje rozliczeniowe (abonamenty): co miesiąc cron sam tworzy pozycję z terminem płatności, a Puls pokazuje **MRR** (stały przychód miesięczny) z listą retainerów.
 - 🔔 **Dashboard i powiadomienia** — aktywne transfery, miejsce na dysku, dzwonek z licznikiem nieprzeczytanych.
 - 🧱 **Konfigurowalny panel** — widżety pulpitu przestawiane drag&drop bezpośrednio na pulpicie (statystyki, zadania z kalendarza, przychód + top klienci, nieprzeczytane wiadomości) z regulowaną szerokością (¼/⅓/½/⅔/pełna) i ukrywaniem; menu boczne z ikonami: własna kolejność, ukrywanie i nazwy pozycji.
 - 🎨 **Customizacja** — z panelu, bez kodu: logo (rozmiar + pozycja, bezpieczny upload SVG), favicon, nazwa, kolor przewodni, osobne kolory panelu (akcent / sidebar / tło / czcionka), tło stron klienta (presety, **własny gradient**, obraz, **ziarno z regulacją mocy**), treści i stopka. Strona logowania brandowana jak strony klienta. Pole na **własny CSS** dla zmian ponad dostępne opcje.
@@ -169,3 +170,4 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Konfigurowalny panel** — pulpit z widżetami (drag&drop, ukrywanie, nowe widżety: zadania / przychód / wiadomości) i edytowalne menu boczne z ikonami
 - [x] **Dane do przelewu** — sekcja „Do zapłaty" w portalu klienta z kwotami brutto, danymi przelewu i kodem QR (standard ZBP)
 - [x] **„Do odezwania się"** — widżet pulpitu pilnujący klientów bez kontaktu (30+ dni) z szybkim przypomnieniem
+- [x] **Retainery** — cykliczne pozycje rozliczeniowe generowane cronem + MRR w Pulsie

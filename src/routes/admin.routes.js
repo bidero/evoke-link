@@ -8,6 +8,7 @@ const transfers = require('../controllers/transfer.controller');
 const projects = require('../controllers/project.controller');
 const clients = require('../controllers/client.controller');
 const onboarding = require('../controllers/onboarding.controller');
+const retainers = require('../controllers/retainer.controller');
 const notifications = require('../controllers/notification.controller');
 const settings = require('../controllers/settings.controller');
 const search = require('../controllers/search.controller');
@@ -114,6 +115,10 @@ router.post('/clients/:id/send-panel', clients.sendPanel);
 router.post('/clients/:id/onboarding', onboarding.generateLink);        // generuj/wymień link onboardingowy
 router.post('/clients/:id/onboarding/send', onboarding.sendLink);       // wyślij link mailem
 router.post('/clients/:id/followup', clients.createFollowup);           // „Przypomnij" z widżetu „Do odezwania się"
+router.post('/clients/:id/retainers', retainers.createRetainer);        // cykliczna pozycja (retainer)
+router.post('/clients/:id/retainers/:rid/toggle', retainers.toggleRetainer);
+router.post('/clients/:id/retainers/:rid/generate', retainers.generateRetainer);
+router.post('/clients/:id/retainers/:rid/delete', retainers.deleteRetainer);
 router.get('/clients/:id/edit', clients.showEditForm);
 router.post('/clients/:id/note', clients.addNote);
 router.get('/clients/:id/rozliczenie.pdf', clients.clientStatementPdf);

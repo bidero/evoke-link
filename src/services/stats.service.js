@@ -2,6 +2,7 @@
 // Bez nowego modelu; wszystko liczone na żądanie (skala jednej agencji — OK).
 const prisma = require('../db/client');
 const { grossOf } = require('./charge.service'); // kwoty BRUTTO (amount = netto od v0.85.0)
+const retainerService = require('./retainer.service'); // MRR z aktywnych retainerów
 
 const MONTHS_SHORT = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
 const monthKey = (d) => `${d.getFullYear()}-${d.getMonth()}`;
@@ -78,11 +79,13 @@ async function pulse() {
     : [];
 
   const totalClients = await prisma.client.count();
+  const retainers = await retainerService.mrrActive();
 
   return {
     money: { paidThisMonth, paidPrevMonth, outstanding, overdue, chart },
     delivery: { sent30, pickedUp, pickupRate, filesOut30, filesIn30, downloads30, views30 },
     clients: { active30: activeSet.size, total: totalClients, top: topClients },
+    retainers, // { mrr, count, items: [{label, gross, client...}] } — stały przychód miesięczny
   };
 }
 

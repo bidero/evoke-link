@@ -1,5 +1,5 @@
 <%
-  const M = pulse.money, D = pulse.delivery, C = pulse.clients;
+  const M = pulse.money, D = pulse.delivery, C = pulse.clients, R = pulse.retainers;
   const zl = (g) => fmt.money(g);
   const zlShort = (g) => (g >= 100000 ? Math.round(g / 100).toLocaleString('pl-PL') + ' zł' : (g / 100).toFixed(0) + ' zł');
   // Delta miesiąc/miesiąc (procent) — tylko gdy był poprzedni miesiąc.
@@ -12,7 +12,7 @@
 
 <!-- FINANSE -->
 <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Finanse</h2>
-<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
   <div class="bg-white rounded-2xl border border-slate-200 p-5">
     <div class="text-sm text-slate-500">Przychód w tym miesiącu</div>
     <div class="mt-1 flex items-baseline gap-2 flex-wrap">
@@ -33,6 +33,11 @@
     <div class="mt-1 text-2xl font-bold <%= M.overdue > 0 ? 'text-red-600' : 'text-slate-800' %>"><%= zl(M.overdue) %></div>
     <div class="text-xs text-slate-400 mt-1">po terminie płatności</div>
   </div>
+  <div class="bg-white rounded-2xl border border-slate-200 p-5">
+    <div class="text-sm text-slate-500">Stały przychód (MRR)</div>
+    <div class="mt-1 text-2xl font-bold text-slate-800"><%= zl(R.mrr) %><span class="text-sm font-medium text-slate-400">/mc</span></div>
+    <div class="text-xs text-slate-400 mt-1"><%= R.count %> aktywnych retainerów</div>
+  </div>
 </div>
 
 <!-- WYKRES: przychód 6 miesięcy -->
@@ -51,6 +56,27 @@
     <% }); %>
   </svg>
 </div>
+
+<% if (R.count > 0) { %>
+<!-- RETAINERY: skład stałego przychodu miesięcznego -->
+<div class="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-6">
+  <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+    <div class="text-sm font-medium text-slate-700">Retainery — stały przychód miesięczny</div>
+    <div class="text-xs text-slate-400">razem <span class="text-slate-600 font-medium"><%= zl(R.mrr) %></span>/mc</div>
+  </div>
+  <div class="divide-y divide-slate-100">
+    <% R.items.forEach(function(r){ %>
+      <div class="flex items-center justify-between gap-3 px-5 py-2.5 text-sm">
+        <span class="min-w-0">
+          <a href="/admin/clients/<%= r.client.id %>?tab=rozliczenia" class="text-slate-700 hover:text-brand-700 font-medium"><%= r.client.name %></a>
+          <span class="text-slate-400"> · <%= r.label %></span>
+        </span>
+        <span class="shrink-0 font-medium text-slate-800"><%= zl(r.gross) %><span class="text-xs text-slate-400">/mc</span></span>
+      </div>
+    <% }); %>
+  </div>
+</div>
+<% } %>
 
 <!-- DOSTARCZANIE (30 dni) -->
 <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Dostarczanie · ostatnie 30 dni</h2>
