@@ -1,0 +1,30 @@
+<div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+  <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+    <h2 class="text-sm font-medium text-slate-700">Przychód w tym miesiącu</h2>
+    <a href="/admin/pulse" class="text-xs text-brand-700 hover:underline">Puls →</a>
+  </div>
+  <div class="p-5">
+    <% if (!pulse) { %>
+      <div class="py-4 text-center text-sm text-slate-400">Brak danych.</div>
+    <% } else { %>
+      <% const m = pulse.money; const delta = m.paidPrevMonth > 0 ? Math.round(((m.paidThisMonth - m.paidPrevMonth) / m.paidPrevMonth) * 100) : null; %>
+      <div class="text-3xl font-semibold tracking-tight"><%= fmt.money(m.paidThisMonth) %></div>
+      <div class="mt-1 text-xs <%= delta === null ? 'text-slate-400' : (delta >= 0 ? 'text-green-600' : 'text-red-600') %>">
+        <%= delta === null ? 'poprzedni miesiąc: ' + fmt.money(m.paidPrevMonth) : (delta >= 0 ? '▲ +' : '▼ ') + delta + '% vs poprzedni miesiąc' %>
+      </div>
+      <% if (pulse.clients.top.length) { %>
+        <div class="mt-4 pt-3 border-t border-slate-100">
+          <div class="text-xs font-medium text-slate-400 uppercase tracking-wide mb-2">Top klienci (6 mies.)</div>
+          <ul class="space-y-1.5">
+            <% pulse.clients.top.slice(0, 3).forEach(function(c){ %>
+              <li class="flex items-center justify-between gap-2 text-sm">
+                <a href="/admin/clients/<%= c.id %>" class="text-slate-700 hover:text-brand-700 truncate"><%= c.name %></a>
+                <span class="text-slate-500 shrink-0"><%= fmt.money(c.paid) %></span>
+              </li>
+            <% }); %>
+          </ul>
+        </div>
+      <% } %>
+    <% } %>
+  </div>
+</div>

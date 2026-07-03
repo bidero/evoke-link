@@ -3,6 +3,7 @@
 const prisma = require('../db/client');
 const background = require('../utils/background');
 const fonts = require('../utils/fonts');
+const panelUi = require('../utils/panelUi');
 
 const DEFAULTS = {
   appName: 'Evoke LINK',
@@ -33,6 +34,8 @@ const DEFAULTS = {
   },
   // Wydruk PDF rozliczenia: szablon + wysokość logo (px) + dane sprzedawcy na dokument.
   pdf: { template: 'standard', docType: 'rozliczenie', logoHeight: 48, seller: { name: '', address: '', nip: '', bank: '' } },
+  // Układ panelu admina: kolejność/ukrywanie pozycji menu i widżetów pulpitu (delty, puste = domyślnie).
+  panel: { menu: [], dashboard: [] },
 };
 
 const ALIGNS = ['left', 'center', 'right'];
@@ -101,6 +104,8 @@ function normalize(row) {
   try { emails = row.emails ? JSON.parse(row.emails) : {}; } catch (_) {}
   let pdf = {};
   try { pdf = row.pdf ? JSON.parse(row.pdf) : {}; } catch (_) {}
+  let panel = {};
+  try { panel = row.panel ? JSON.parse(row.panel) : {}; } catch (_) {}
   return {
     appName: row.appName || DEFAULTS.appName,
     logoPath: row.logoPath || null,
@@ -115,6 +120,7 @@ function normalize(row) {
     customCss: row.customCss || '',
     emails: { ...DEFAULTS.emails, ...emails },
     pdf: normPdf(pdf),
+    panel: { menu: panelUi.sanitizeMenu(panel.menu), dashboard: panelUi.sanitizeWidgets(panel.dashboard) },
   };
 }
 
@@ -147,6 +153,7 @@ async function update(data) {
   if (data.customCss !== undefined) patch.customCss = data.customCss;
   if (data.emails !== undefined) patch.emails = JSON.stringify(data.emails);
   if (data.pdf !== undefined) patch.pdf = JSON.stringify(data.pdf);
+  if (data.panel !== undefined) patch.panel = JSON.stringify({ menu: panelUi.sanitizeMenu(data.panel.menu), dashboard: panelUi.sanitizeWidgets(data.panel.dashboard) });
 
   const row = await prisma.settings.upsert({
     where: { id: 1 },

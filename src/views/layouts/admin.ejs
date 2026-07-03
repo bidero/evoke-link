@@ -31,17 +31,10 @@
         <% } %>
       </div>
       <nav class="flex-1 px-3 py-4 space-y-1 text-sm">
-        <% const items = [
-          { key: 'dashboard', label: 'Pulpit', href: '/admin' },
-          { key: 'pulse', label: 'Puls agencji', href: '/admin/pulse' },
-          { key: 'calendar', label: 'Kalendarz', href: '/admin/calendar' },
-          { key: 'projects', label: 'Projekty', href: '/admin/projects' },
-          { key: 'clients', label: 'Klienci', href: '/admin/clients' },
-          { key: 'transfers', label: 'Transfery', href: '/admin/transfers' },
-          { key: 'messages', label: 'Wiadomości', href: '/admin/messages' },
-          { key: 'notifications', label: 'Powiadomienia', href: '/admin/notifications' },
-          { key: 'settings', label: 'Ustawienia', href: '/admin/settings' }
-        ]; %>
+        <%
+          // Menu z konfiguracji (Settings.panel.menu) — scala middleware w admin.routes (res.locals.panelMenu).
+          const items = ((typeof panelMenu !== 'undefined' && panelMenu) || []).filter(function(it){ return !it.hidden; });
+        %>
         <% const unread = (typeof unreadCount !== 'undefined') ? unreadCount : 0; %>
         <% const unreadM = (typeof unreadMessages !== 'undefined') ? unreadMessages : 0; %>
         <% const calDue = (typeof calendarDue !== 'undefined') ? calendarDue : 0; %>
@@ -49,7 +42,7 @@
           <% const badge = it.key === 'notifications' ? unread : (it.key === 'messages' ? unreadM : (it.key === 'calendar' ? calDue : 0)); %>
           <a href="<%= it.href %>"
              class="flex items-center justify-between px-3 py-2 rounded-lg transition <%= (typeof active !== 'undefined' && active === it.key) ? 'bg-brand-50 text-brand-700 font-medium' : 'opacity-70 hover:opacity-100 hover:bg-black/5' %>">
-            <span><%= it.label %></span>
+            <span class="inline-flex items-center gap-2.5"><%- icon(it.icon, { size: 16, cls: (typeof active !== 'undefined' && active === it.key) ? 'text-brand-600' : 'opacity-60' }) %><%= it.label %></span>
             <% if (badge > 0) { %>
               <span class="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-brand-600 text-white text-xs font-semibold"><%= badge %></span>
             <% } %>
@@ -75,6 +68,11 @@
         <div class="flex items-center gap-3 min-w-0">
           <button type="button" class="md:hidden opacity-70 hover:opacity-100" @click="nav = true" aria-label="Otwórz menu"><%- icon('menu', { size: 22, cls: '' }) %></button>
           <h1 class="text-lg font-semibold truncate"><%= typeof title !== 'undefined' ? title : '' %></h1>
+          <% if (typeof active !== 'undefined' && active === 'dashboard') { %>
+            <!-- Dostosuj pulpit — mała ikonka przy tytule; widok pulpitu łapie zdarzenie (dash-edit) -->
+            <button type="button" onclick="window.dispatchEvent(new CustomEvent('dash-edit'))" title="Dostosuj pulpit" aria-label="Dostosuj pulpit"
+                    class="shrink-0 opacity-40 hover:opacity-100 transition"><%- icon('pencil', { size: 15, cls: '' }) %></button>
+          <% } %>
         </div>
         <form method="GET" action="/admin/search" class="hidden sm:block flex-1 max-w-xs mx-4">
           <div class="relative">

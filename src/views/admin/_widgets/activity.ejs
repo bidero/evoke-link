@@ -1,0 +1,24 @@
+<div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+  <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+    <h2 class="text-sm font-medium text-slate-700">Ostatnia aktywność</h2>
+    <a href="/admin/notifications" class="text-xs text-brand-700 hover:underline">Powiadomienia →</a>
+  </div>
+  <% if (!recent.length) { %>
+    <div class="px-5 py-8 text-center text-sm text-slate-400">Brak aktywności. Utwórz pierwszy transfer.</div>
+  <% } else { %>
+    <ul class="divide-y divide-slate-100">
+      <% recent.forEach(function(e){ %>
+        <li class="px-5 py-3 flex gap-3 items-start">
+          <span class="mt-0.5"><%- eventIcon(e.type) %></span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-sm text-slate-700"><%= e.message || e.type %></span>
+            <span class="block text-xs text-slate-400 mt-0.5">
+              <%= fmt.date(e.createdAt) %><%= e.project ? ' · ' + e.project.name : '' %>
+            </span>
+          </span>
+          <% if (e.transferId) { %><a href="/admin/transfers/<%= e.transferId %>" class="text-xs text-brand-700 hover:underline shrink-0">otwórz</a><% } %>
+        </li>
+      <% }); %>
+    </ul>
+  <% } %>
+</div>

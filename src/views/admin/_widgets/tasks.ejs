@@ -1,0 +1,22 @@
+<div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+  <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+    <h2 class="text-sm font-medium text-slate-700">Nadchodzące zadania</h2>
+    <a href="/admin/calendar" class="text-xs text-brand-700 hover:underline">Kalendarz →</a>
+  </div>
+  <% if (!upcoming.length) { %>
+    <div class="px-5 py-8 text-center text-sm text-slate-400">Nic pilnego — czysto na 14 dni.</div>
+  <% } else { %>
+    <ul class="divide-y divide-slate-100">
+      <% upcoming.forEach(function(e){ %>
+        <li class="px-5 py-2.5">
+          <% if (e.href) { %><a href="<%= e.href %>" class="block group"><% } else { %><span class="block"><% } %>
+            <span class="block text-sm text-slate-700 truncate <%= e.href ? 'group-hover:text-brand-700' : '' %>"><%= e.title %></span>
+            <span class="block text-xs mt-0.5 <%= e.overdue ? 'text-red-600 font-medium' : 'text-slate-400' %>">
+              <%= fmt.dateOnly(e.date) %><%= e.overdue ? ' · zaległe' : '' %><%= e.sub ? ' · ' + e.sub : '' %>
+            </span>
+          <% if (e.href) { %></a><% } else { %></span><% } %>
+        </li>
+      <% }); %>
+    </ul>
+  <% } %>
+</div>

@@ -3,7 +3,7 @@
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
 const { chunkParser, receiveChunk, receiveUpload } = require('../middleware/chunkUpload');
-const { showDashboard } = require('../controllers/dashboard.controller');
+const { showDashboard, saveDashboardLayout } = require('../controllers/dashboard.controller');
 const transfers = require('../controllers/transfer.controller');
 const projects = require('../controllers/project.controller');
 const clients = require('../controllers/client.controller');
@@ -18,12 +18,15 @@ const messages = require('../controllers/message.controller');
 const messageService = require('../services/message.service');
 const calendar = require('../controllers/calendar.controller');
 const reminderService = require('../services/reminder.service');
+const settingsService = require('../services/settings.service');
+const panelUi = require('../utils/panelUi');
 
 const router = express.Router();
 
 router.use(requireAuth);
 
-// Licznik nieprzeczytanych powiadomień — dostępny w każdym widoku panelu (dzwonek).
+// Licznik nieprzeczytanych powiadomień — dostępny w każdym widoku panelu (dzwonek)
+// + scalone menu boczne (kolejność/ukrycia/etykiety z Settings.panel.menu).
 router.use(async (req, res, next) => {
   try {
     res.locals.unreadCount = await events.unreadCount();
@@ -34,10 +37,17 @@ router.use(async (req, res, next) => {
     res.locals.unreadMessages = 0;
     res.locals.calendarDue = 0;
   }
+  try {
+    const s = await settingsService.get();
+    res.locals.panelMenu = panelUi.mergeMenu(s.panel.menu);
+  } catch (_) {
+    res.locals.panelMenu = panelUi.mergeMenu([]);
+  }
   next();
 });
 
 router.get('/', showDashboard);
+router.post('/dashboard/layout', saveDashboardLayout); // zapis układu widżetów (tryb „Dostosuj")
 router.get('/pulse', require('../controllers/pulse.controller').showPulse);
 router.get('/search', search.index);
 

@@ -194,6 +194,7 @@ model Settings {
   customCss    String?  // dowolny CSS wstrzykiwany do stron (escape hatch dla admina)
   emails       String?  // JSON: { logoPath, linkSubject, linkIntro, uploadSubject, downloadSubject, clientConfirm, clientConfirmSubject, clientConfirmBody }
   pdf          String?  // JSON: { template, logoHeight } — wygląd wydruku PDF rozliczenia
+  panel        String?  // JSON: { menu: [{key,hidden,label}], dashboard: [{key,hidden}] } — układ panelu admina
   updatedAt    DateTime @updatedAt
 }
 

@@ -12,6 +12,7 @@ const background = require('../utils/background');
 const fonts = require('../utils/fonts');
 const backup = require('../services/backup.service');
 const { THEMES } = require('../utils/themes');
+const panelUi = require('../utils/panelUi');
 
 // parseInt z zakresem i domyślną wartością. Ważne: ZACHOWUJE 0
 // (wzorzec `parseInt(x) || dflt` mylił 0 z brakiem wartości — przez to kąt 0° nie zapisywał się).
@@ -35,6 +36,7 @@ async function showSettings(req, res, next) {
       adminEmail: config.admin.email,
       placeholders: mail.PLACEHOLDERS,
       placeholderSupport: mail.PLACEHOLDER_SUPPORT,
+      panelMenuFull: panelUi.mergeMenu(settings.panel.menu), // edytor menu (też ukryte pozycje)
       test: req.query.test || null, // sent | dev | error
     });
   } catch (err) {
@@ -151,6 +153,18 @@ async function updateSettings(req, res, next) {
       },
     };
 
+    // --- Panel: menu boczne (kolejność z Sortable + widoczność + własne nazwy) ---
+    const menuOrder = String(b.menuOrder || '').split(',').filter(Boolean);
+    const menuKeys = menuOrder.length ? menuOrder : panelUi.MENU.map((m) => m.key);
+    const panel = {
+      menu: menuKeys.map((key) => ({
+        key,
+        hidden: b['menuShow_' + key] !== 'on',
+        label: (b['menuLabel_' + key] || '').trim(),
+      })),
+      dashboard: current.panel.dashboard, // układ pulpitu zapisywany osobno (z pulpitu)
+    };
+
     const data = {
       appName: b.appName && b.appName.trim() ? b.appName.trim() : null,
       colors,
@@ -159,6 +173,7 @@ async function updateSettings(req, res, next) {
       logo: logoCfg,
       layout,
       pdf,
+      panel,
       customCss: sanitizeCss(b.customCss || ''),
       emails: {
         logoPath: current.emails.logoPath || null,

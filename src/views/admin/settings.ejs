@@ -54,7 +54,7 @@
   <% } %>
 
   <div class="flex flex-wrap gap-1 border-b border-slate-200 mb-6">
-    <% [['branding','Branding'],['wyglad','Wygląd stron klienta'],['pdf','Rozliczenia (PDF)'],['email','E-mail'],['advanced','Zaawansowane']].forEach(function(t){ %>
+    <% [['branding','Branding'],['wyglad','Wygląd stron klienta'],['panel','Panel'],['pdf','Rozliczenia (PDF)'],['email','E-mail'],['advanced','Zaawansowane']].forEach(function(t){ %>
       <button type="button" @click="tab='<%= t[0] %>'" class="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition" :class="tab==='<%= t[0] %>' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'"><%= t[1] %></button>
     <% }); %>
   </div>
@@ -984,6 +984,31 @@
       </script>
     </div>
 
+    <!-- Panel: menu boczne (kolejność / widoczność / własne nazwy) -->
+    <div x-show="tab==='panel'" x-cloak class="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+      <div>
+        <h2 class="text-sm font-semibold text-slate-700">Menu boczne</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Przeciągnij, aby zmienić kolejność. Odznacz, aby ukryć pozycję. Własna nazwa — puste pole przywraca domyślną. „Ustawienia" są zawsze widoczne.</p>
+      </div>
+      <input type="hidden" name="menuOrder" id="menuOrder" value="" />
+      <div id="menuEditor" class="rounded-xl border border-slate-200 divide-y divide-slate-100">
+        <% panelMenuFull.forEach(function(it){ %>
+          <div class="flex items-center gap-3 px-3 py-2.5 bg-white" data-key="<%= it.key %>">
+            <span class="menu-drag cursor-grab text-slate-300 hover:text-slate-500 shrink-0" title="Przeciągnij"><%- icon('grip', { size: 16, cls: '' }) %></span>
+            <span class="shrink-0"><%- icon(it.icon, { size: 16, cls: 'text-slate-400' }) %></span>
+            <label class="flex items-center gap-2 shrink-0 text-sm text-slate-600 w-40">
+              <input type="checkbox" name="menuShow_<%= it.key %>" class="rounded border-slate-300" <%= it.hidden ? '' : 'checked' %> <%= it.key === 'settings' ? 'disabled' : '' %> />
+              <%= it.defaultLabel %>
+            </label>
+            <% if (it.key === 'settings') { %><input type="hidden" name="menuShow_settings" value="on" /><% } %>
+            <input type="text" name="menuLabel_<%= it.key %>" value="<%= it.label !== it.defaultLabel ? it.label : '' %>" maxlength="30" placeholder="<%= it.defaultLabel %>"
+                   class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          </div>
+        <% }); %>
+      </div>
+      <p class="text-xs text-slate-400">Układ widżetów pulpitu zmienisz na samym pulpicie — ikonka ołówka obok tytułu „Pulpit" (kolejność, szerokość ¼/⅓/½/⅔/pełna, ukrywanie).</p>
+    </div>
+
     <!-- Własny CSS (zaawansowane) -->
     <div x-show="tab==='advanced'" x-cloak class="bg-white rounded-2xl border border-slate-200 p-6 space-y-3">
       <h2 class="text-sm font-semibold text-slate-700">Własny CSS <span class="text-slate-400 font-normal">(zaawansowane)</span></h2>
@@ -1118,4 +1143,21 @@ function settingsForm(init) {
     btnRadius(){ return this.layoutButton==='pill' ? '9999px' : '8px'; },
   };
 }
+</script>
+
+<!-- Edytor menu bocznego: drag&drop kolejności (SortableJS, jak kanban/kalendarz) -->
+<script src="/js/sortable.min.js"></script>
+<script>
+  (function () {
+    var editor = document.getElementById('menuEditor');
+    var orderInput = document.getElementById('menuOrder');
+    if (!editor || !orderInput) return;
+    function syncOrder() {
+      orderInput.value = Array.prototype.map.call(editor.children, function (row) { return row.dataset.key; }).join(',');
+    }
+    syncOrder();
+    if (window.Sortable) {
+      Sortable.create(editor, { handle: '.menu-drag', animation: 150, onSort: syncOrder });
+    }
+  })();
 </script>
