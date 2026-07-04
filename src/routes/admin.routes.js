@@ -9,6 +9,7 @@ const projects = require('../controllers/project.controller');
 const clients = require('../controllers/client.controller');
 const onboarding = require('../controllers/onboarding.controller');
 const retainers = require('../controllers/retainer.controller');
+const offers = require('../controllers/offer.controller');
 const notifications = require('../controllers/notification.controller');
 const settings = require('../controllers/settings.controller');
 const search = require('../controllers/search.controller');
@@ -122,6 +123,9 @@ router.post('/clients/:id/retainers', retainers.createRetainer);        // cykli
 router.post('/clients/:id/retainers/:rid/toggle', retainers.toggleRetainer);
 router.post('/clients/:id/retainers/:rid/generate', retainers.generateRetainer);
 router.post('/clients/:id/retainers/:rid/delete', retainers.deleteRetainer);
+router.post('/clients/:id/offers', offers.createOffer);                  // oferta/wycena do akceptacji
+router.post('/clients/:id/offers/:oid/send', offers.sendOffer);
+router.post('/clients/:id/offers/:oid/delete', offers.deleteOffer);
 router.get('/clients/:id/edit', clients.showEditForm);
 router.post('/clients/:id/note', clients.addNote);
 router.get('/clients/:id/rozliczenie.pdf', clients.clientStatementPdf);

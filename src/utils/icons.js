@@ -73,6 +73,8 @@ const EVENT_ICON = {
   error: 'alert',
   onboarded: 'userCheck',
   paid_declared: 'banknote',
+  offer_accepted: 'check',
+  offer_rejected: 'x',
 };
 
 function eventIcon(type, opts = {}) {
@@ -81,6 +83,8 @@ function eventIcon(type, opts = {}) {
     : type === 'approved' ? 'text-green-600'
     : type === 'onboarded' ? 'text-green-600'
     : type === 'paid_declared' ? 'text-amber-500'
+    : type === 'offer_accepted' ? 'text-green-600'
+    : type === 'offer_rejected' ? 'text-amber-500'
     : opts.cls || 'text-brand-600';
   return icon(EVENT_ICON[type] || 'file', { ...opts, cls });
 }

@@ -9,6 +9,7 @@ const events = require('../services/event.service');
 const mail = require('../services/mail.service');
 const messageService = require('../services/message.service');
 const reminderService = require('../services/reminder.service');
+const offerService = require('../services/offer.service');
 const payment = require('../utils/payment');
 const config = require('../config');
 const fmt = require('../utils/format');
@@ -49,7 +50,7 @@ async function showClient(req, res, next) {
   try {
     const data = await clientService.overview(req.params.id);
     if (!data) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
-    const TABS = ['przeglad', 'projekty', 'rozliczenia', 'transfery', 'historia'];
+    const TABS = ['przeglad', 'projekty', 'rozliczenia', 'oferty', 'transfery', 'historia'];
     res.render('admin/clients/show', {
       title: data.client.name,
       active: 'clients',
@@ -59,6 +60,8 @@ async function showClient(req, res, next) {
       billing: data.billing,
       charges: data.charges,
       retainers: data.retainers,
+      offers: data.offers.map((o) => ({ ...o, gross: offerService.totals(o.items).gross, st: offerService.state(o) })),
+      offerBaseUrl: config.appUrl,
       metrics: data.metrics,
       portalUrl: `${config.appUrl}/c/${data.client.token}`,
       onboardUrl: data.client.onboardingToken ? `${config.appUrl}/onboard/${data.client.onboardingToken}` : null,
@@ -387,10 +390,17 @@ async function showClientPortal(req, res, next) {
     const paidDeclaredAt = lastDeclared && (Date.now() - new Date(lastDeclared.createdAt).getTime()) < 7 * 86400000
       ? lastDeclared.createdAt : null;
 
+    // Oferty klienta do wglądu/akceptacji (oczekujące na górze).
+    const offerRows = await offerService.list(client.id);
+    const offers = offerRows
+      .map((o) => ({ title: o.title, token: o.token, gross: offerService.totals(o.items).gross, st: offerService.state(o), validUntil: o.validUntil }))
+      .filter((o) => o.st !== 'expired'); // wygasłe chowamy przed klientem
+
     res.render('public/client-portal', {
       title: client.name, layout: PUBLIC_LAYOUT, client,
       unpaid, unpaidTotal, seller, transferTitle, paymentQr,
       paidDeclaredAt, paidFlash: req.query.paid === '1',
+      offers,
     });
   } catch (err) {
     next(err);

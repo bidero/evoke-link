@@ -509,6 +509,47 @@ async function sendProofingDecision({ transfer, decision, comment, name, project
   return send({ to: config.admin.email, subject, html, text });
 }
 
+// Wysyłka linku do oferty na e-mail klienta (z panelu).
+async function sendOfferLink({ to, url, offer, client, total }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const appName = s.appName || 'Evoke LINK';
+  const money = (g) => (g / 100).toFixed(2).replace('.', ',') + ' zł';
+  const validStr = offer.validUntil ? new Date(offer.validUntil).toLocaleDateString('pl-PL') : '';
+  const inner = `
+    <p style="margin:0 0 12px">Przygotowaliśmy dla Ciebie ofertę: <b>${esc(offer.title)}</b>.</p>
+    <div style="margin:0 0 16px;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">
+      <p style="margin:0;font-size:15px">Wartość: <b style="color:${esc(primary)}">${esc(money(total))}</b> brutto</p>
+      ${validStr ? `<p style="margin:6px 0 0;color:#64748b;font-size:13px">Ważna do: ${esc(validStr)}</p>` : ''}
+    </div>
+    <p style="margin:0 0 18px">${btn(url, 'Zobacz i zatwierdź ofertę', primary)}</p>
+    <p style="margin:0;color:#64748b;font-size:13px">Lub skopiuj adres:<br><a href="${esc(url)}" style="color:${esc(primary)}">${esc(url)}</a></p>`;
+  const html = await wrap(inner, { heading: 'Oferta dla Ciebie' });
+  const text = `Oferta: ${offer.title}\nWartość: ${money(total)} brutto${validStr ? `\nWażna do: ${validStr}` : ''}\n\nZobacz i zatwierdź: ${url}`;
+  return send({ to, subject: `${appName} — oferta: ${offer.title}`, html, text, replyTo: config.admin.email });
+}
+
+// Decyzja klienta o ofercie (akceptacja / odrzucenie z komentarzem) → mail do agencji.
+async function sendOfferDecision({ offer, decision, comment, name, total }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const appName = s.appName || 'Evoke LINK';
+  const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const accepted = decision === 'accepted';
+  const money = (g) => (g / 100).toFixed(2).replace('.', ',') + ' zł';
+  const adminUrl = `${config.appUrl}/admin/clients/${offer.clientId}?tab=oferty`;
+  const heading = accepted ? 'Oferta zaakceptowana ✓' : 'Oferta odrzucona';
+  const inner = `
+    <p style="margin:0 0 10px">${accepted ? 'Klient zaakceptował ofertę:' : 'Klient odrzucił ofertę:'} <b>${esc(offer.title)}</b></p>
+    <p style="margin:2px 0;color:#64748b;font-size:13px">Wartość: ${esc(money(total))} brutto${offer.project ? ' · projekt: ' + esc(offer.project.name) : ''}</p>
+    ${name ? `<p style="margin:2px 0;color:#64748b;font-size:13px">Od: ${esc(name)}</p>` : ''}
+    ${comment ? `<div style="margin:12px 0;padding:10px 14px;background:#f8fafc;border-left:3px solid ${esc(accepted ? '#16a34a' : '#d97706')};white-space:pre-wrap">${esc(comment)}</div>` : ''}
+    ${accepted ? '<p style="margin:10px 0;color:#64748b;font-size:13px">Pozycje z oferty trafiły do rozliczeń klienta.</p>' : ''}
+    <p style="margin:14px 0 0">${btn(adminUrl, 'Zobacz w panelu', primary)}</p>`;
+  const html = await wrap(inner, { heading });
+  const text = `${heading}: ${offer.title}\nWartość: ${money(total)} brutto\n${name ? 'Od: ' + name + '\n' : ''}${comment ? '\n' + comment + '\n' : ''}\n${adminUrl}`;
+  return send({ to: config.admin.email, subject: `${appName} — ${accepted ? 'zaakceptowano' : 'odrzucono'} ofertę: ${offer.title}`, html, text });
+}
+
 // Testowy e-mail do weryfikacji konfiguracji SMTP.
 async function sendTest({ to }) {
   const inner = `<p style="margin:0 0 8px">To jest testowa wiadomość z Twojej instancji.</p>
@@ -517,4 +558,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendOnboardingLink, sendOnboardingCompleted, sendRetainerCharge, sendPaymentDeclared, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendClientReply, sendExpiryWarning, sendDailyDigest, sendProofingDecision, sendTest };
+module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendOnboardingLink, sendOnboardingCompleted, sendRetainerCharge, sendPaymentDeclared, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendClientReply, sendExpiryWarning, sendDailyDigest, sendProofingDecision, sendOfferLink, sendOfferDecision, sendTest };

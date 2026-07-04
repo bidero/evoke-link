@@ -96,7 +96,7 @@ async function overview(id) {
     },
   });
   if (!client) return null;
-  const [transfers, events, charges, retainers] = await Promise.all([
+  const [transfers, events, charges, retainers, offers] = await Promise.all([
     prisma.transfer.findMany({
       where: { project: { clientId: cid } },
       include: { files: true, project: true },
@@ -117,9 +117,10 @@ async function overview(id) {
       orderBy: [{ project: { name: 'asc' } }, { date: 'desc' }, { createdAt: 'desc' }],
     }),
     prisma.retainer.findMany({ where: { clientId: cid }, orderBy: { createdAt: 'asc' } }),
+    prisma.offer.findMany({ where: { clientId: cid }, include: { items: true, project: { select: { id: true, name: true } } }, orderBy: { createdAt: 'desc' } }),
   ]);
   const billing = chargeService.totals(charges);
-  return { client, transfers, events, billing, charges, retainers, metrics: clientMetrics(charges) };
+  return { client, transfers, events, billing, charges, retainers, offers, metrics: clientMetrics(charges) };
 }
 
 // Wskaźniki klienta liczone z jego pozycji (bez dodatkowych zapytań).

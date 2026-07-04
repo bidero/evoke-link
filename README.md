@@ -16,6 +16,7 @@ Stos: **Node.js + Express**, **SQLite** (przez Prisma), szablony **EJS + Tailwin
 - 📝 **Link onboardingowy** — jednorazowy formularz `/onboard/:token` (ważny 7 dni), przez który nowy klient sam uzupełnia dane do współpracy i rozliczeń (firma, NIP, adres, kontakt); agencja dostaje powiadomienie i e-mail.
 - 💳 **Dane do przelewu w portalu klienta** — sekcja „Do zapłaty": nierozliczone pozycje brutto, terminy (zaległe na czerwono), suma oraz odbiorca/konto/tytuł przelewu i **kod QR wg standardu ZBP** do zeskanowania w aplikacji banku.
 - 📞 **„Do odezwania się"** — widżet pulpitu z klientami bez kontaktu od 30+ dni; jedno kliknięcie tworzy przypomnienie „Odezwij się" na jutro.
+- 📄 **Oferty / wyceny** — wysyłasz klientowi wycenę pozycjami pod linkiem `/o/:token`; klient akceptuje lub odrzuca z komentarzem. Po akceptacji pozycje trafiają do rozliczeń, a powiązany projekt rusza na kanbanie (Lead → Aktywny).
 - 🔁 **Retainery** — cykliczne pozycje rozliczeniowe (abonamenty): co miesiąc cron sam tworzy pozycję z terminem płatności (opcjonalnie z mailem do klienta: kwota, dane przelewu, link do portalu), a Puls pokazuje **MRR** (stały przychód miesięczny) z listą retainerów.
 - ✅ **Zgłoszenie wpłaty** — klient w portalu klika „Zgłoś wykonanie przelewu": agencja dostaje powiadomienie i mail, a po sprawdzeniu konta oznacza pozycje jako rozliczone.
 - 🧩 **Szablony projektów** — powtarzalne projekty (www, branding…) startują z gotową listą braków i przypomnieniami; szablon wybierasz przy tworzeniu projektu.
@@ -176,3 +177,4 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Retainery** — cykliczne pozycje rozliczeniowe generowane cronem + MRR w Pulsie
 - [x] **Szablony projektów + interakcje 360°** — projekty startujące z checklistą i przypomnieniami; notatki z typem i follow-upem; ikony widżetów pulpitu
 - [x] **Wskaźniki klienta na 360°** — LTV, średni czas płatności i wykres przychodu z 12 miesięcy
+- [x] **Oferty z akceptacją w portalu** — wyceny `/o/:token`; po akceptacji pozycje trafiają do rozliczeń, a projekt rusza na kanbanie

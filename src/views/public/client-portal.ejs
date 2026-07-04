@@ -19,6 +19,28 @@
       </div>
     <% } %>
 
+    <% if (typeof offers !== 'undefined' && offers.length) { %>
+      <!-- Oferty do wglądu / akceptacji -->
+      <div class="mt-6 pt-6 border-t border-slate-100">
+        <h2 class="text-sm font-semibold text-slate-700 mb-3">Oferty</h2>
+        <% const _oc = { open: ['do akceptacji', 'bg-amber-50 text-amber-700'], accepted: ['zaakceptowana', 'bg-green-50 text-green-700'], rejected: ['odrzucona', 'bg-slate-100 text-slate-500'] }; %>
+        <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+          <% offers.forEach(function(o){ const _c = _oc[o.st] || _oc.open; %>
+            <a href="/o/<%= o.token %>" class="flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-50 transition group">
+              <span class="min-w-0">
+                <span class="block text-sm font-medium text-slate-800 truncate"><%= o.title %></span>
+                <span class="inline-flex items-center gap-1.5 mt-0.5">
+                  <span class="text-xs px-2 py-0.5 rounded-full <%= _c[1] %>"><%= _c[0] %></span>
+                  <span class="text-xs text-slate-400"><%= fmt.money(o.gross) %> brutto</span>
+                </span>
+              </span>
+              <span class="text-brand-600 opacity-0 group-hover:opacity-100 transition shrink-0"><%- icon('arrowRight', { size: 16 }) %></span>
+            </a>
+          <% }); %>
+        </div>
+      </div>
+    <% } %>
+
     <% if (typeof unpaid !== 'undefined' && unpaid.length) { %>
       <!-- Do zapłaty: nierozliczone pozycje + dane do przelewu (+ QR wg ZBP) -->
       <div class="mt-6 pt-6 border-t border-slate-100" x-data="{ qr: false }">

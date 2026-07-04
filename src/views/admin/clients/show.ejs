@@ -42,6 +42,20 @@
   <div class="mb-4 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">Usunięto cykliczną pozycję (wygenerowane wcześniej pozycje zostały).</div>
 <% } else if (sent === 'ret-invalid') { %>
   <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Podaj nazwę i kwotę cyklicznej pozycji.</div>
+<% } else if (sent === 'off-new') { %>
+  <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Utworzono ofertę. Wyślij ją klientowi (link/mail).</div>
+<% } else if (sent === 'off-ok') { %>
+  <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Wysłano ofertę mailem.</div>
+<% } else if (sent === 'off-dev') { %>
+  <div class="mb-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-3 py-2">SMTP niewłączony — oferta trafiła do logów serwera (tryb deweloperski).</div>
+<% } else if (sent === 'off-noemail') { %>
+  <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Klient nie ma adresu e-mail — uzupełnij go albo wyślij link ręcznie.</div>
+<% } else if (sent === 'off-del') { %>
+  <div class="mb-4 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">Usunięto ofertę.</div>
+<% } else if (sent === 'off-invalid') { %>
+  <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Podaj tytuł oferty i co najmniej jedną pozycję.</div>
+<% } else if (sent === 'off-error') { %>
+  <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie udało się wysłać oferty. Sprawdź ustawienia SMTP.</div>
 <% } %>
 
 <!-- Nagłówek klienta (stały nad zakładkami) -->
@@ -143,7 +157,7 @@
 <!-- Zakładki -->
 <div x-data="{ tab: '<%= activeTab %>' }" x-init="$watch('tab', function(v){ history.replaceState(null, '', '?tab=' + v); })" x-cloak>
   <div class="border-b border-slate-200 flex flex-wrap">
-    <% [['przeglad','Przegląd'],['projekty','Projekty'],['rozliczenia','Rozliczenia'],['transfery','Transfery'],['historia','Oś czasu']].forEach(function(t){ %>
+    <% [['przeglad','Przegląd'],['projekty','Projekty'],['rozliczenia','Rozliczenia'],['oferty','Oferty'],['transfery','Transfery'],['historia','Oś czasu']].forEach(function(t){ %>
       <button type="button" @click="tab='<%= t[0] %>'" class="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition" :class="tab==='<%= t[0] %>' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'"><%= t[1] %></button>
     <% }); %>
   </div>
@@ -465,6 +479,88 @@
         </form>
       </div>
       <% } %>
+    </div>
+
+    <!-- ===== Oferty ===== -->
+    <div x-show="tab==='oferty'" id="oferty" class="space-y-5">
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100">
+          <h2 class="text-sm font-medium text-slate-700">Oferty / wyceny</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Wyślij klientowi wycenę do akceptacji. Po „Akceptuję" pozycje trafiają do rozliczeń, a projekt (jeśli powiązany) rusza na kanbanie.</p>
+        </div>
+        <% if (offers.length) { %>
+          <% const _offSt = { open: ['Oczekuje', 'bg-amber-50 text-amber-700'], accepted: ['Zaakceptowana', 'bg-green-50 text-green-700'], rejected: ['Odrzucona', 'bg-red-50 text-red-700'], expired: ['Wygasła', 'bg-slate-100 text-slate-500'] }; %>
+          <div class="divide-y divide-slate-100">
+            <% offers.forEach(function(o){ const _s = _offSt[o.st] || _offSt.open; const _url = offerBaseUrl + '/o/' + o.token; %>
+              <div class="px-5 py-3" x-data="{ copied: false }">
+                <div class="flex flex-wrap items-start justify-between gap-2">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <span class="text-sm font-medium text-slate-800"><%= o.title %></span>
+                      <span class="text-xs px-2 py-0.5 rounded-full <%= _s[1] %>"><%= _s[0] %></span>
+                    </div>
+                    <div class="text-xs text-slate-400 mt-0.5">
+                      <%= o.items.length %> poz. · <span class="text-slate-600 font-medium"><%= fmt.money(o.gross) %></span> brutto<%= o.project ? ' · ' + o.project.name : '' %><%= o.validUntil ? ' · ważna do ' + fmt.dateOnly(o.validUntil) : '' %>
+                    </div>
+                    <% if (o.st === 'rejected' && o.decisionComment) { %><div class="text-xs text-amber-700 mt-1">Powód: <%= o.decisionComment %></div><% } %>
+                    <% if (o.decidedAt) { %><div class="text-xs text-slate-400 mt-0.5"><%= o.st === 'accepted' ? 'Zaakceptowano' : 'Odrzucono' %> <%= fmt.date(o.decidedAt) %><%= o.decisionName ? ' · ' + o.decisionName : '' %></div><% } %>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+                    <input type="hidden" x-ref="ou<%= o.id %>" value="<%= _url %>" />
+                    <button type="button" @click="navigator.clipboard.writeText($refs.ou<%= o.id %>.value); copied = true; setTimeout(()=>copied=false,1500)" class="text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition">
+                      <span x-show="!copied">Kopiuj link</span><span x-show="copied" x-cloak>Skopiowano ✓</span>
+                    </button>
+                    <a href="<%= _url %>" target="_blank" class="text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50 transition">Otwórz</a>
+                    <% if (o.st === 'open' && client.email) { %>
+                      <form method="POST" action="/admin/clients/<%= client.id %>/offers/<%= o.id %>/send">
+                        <button type="submit" class="text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition">Wyślij mailem</button>
+                      </form>
+                    <% } %>
+                    <form method="POST" action="/admin/clients/<%= client.id %>/offers/<%= o.id %>/delete" onsubmit="return confirm('Usunąć ofertę?<%= o.st === 'accepted' ? ' Utworzone z niej pozycje rozliczeniowe zostaną.' : '' %>')">
+                      <button type="submit" class="text-slate-400 hover:text-red-600 transition" title="Usuń"><%- icon('trash', { size: 15, cls: '' }) %></button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <div class="px-5 py-6 text-center text-sm text-slate-400">Brak ofert. Utwórz pierwszą poniżej.</div>
+        <% } %>
+      </div>
+
+      <!-- Nowa oferta -->
+      <form method="POST" action="/admin/clients/<%= client.id %>/offers" class="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+        <h2 class="text-sm font-medium text-slate-700">Nowa oferta</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Tytuł *</label>
+            <input name="title" type="text" required placeholder="np. Projekt strony www" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Projekt (opcjonalnie)</label>
+            <select name="projectId" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 outline-none">
+              <option value="">— bez projektu —</option>
+              <% client.projects.forEach(function(p){ %><option value="<%= p.id %>"><%= p.name %></option><% }); %>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Wstęp / opis (opcjonalnie)</label>
+          <textarea name="intro" rows="2" placeholder="Kilka zdań wprowadzenia dla klienta" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Pozycje — jedna na linię</label>
+          <textarea name="itemsText" rows="4" spellcheck="false" required placeholder="Projekt graficzny | 3000 | 23&#10;Wdrożenie | 2500 | 23&#10;Sesja zdjęciowa | 800 | 23 | 2"
+                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+          <p class="text-xs text-slate-400 mt-1">Format: <code>Etykieta | netto | VAT% | ilość</code> (VAT i ilość opcjonalne; netto w zł).</p>
+        </div>
+        <div class="max-w-xs">
+          <label class="block text-xs font-medium text-slate-600 mb-1">Ważna do (opcjonalnie)</label>
+          <input name="validUntil" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 outline-none" />
+        </div>
+        <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 transition">Utwórz ofertę</button>
+      </form>
     </div>
 
     <!-- ===== Transfery ===== -->

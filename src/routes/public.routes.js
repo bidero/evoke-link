@@ -49,6 +49,11 @@ router.post('/c/:token/message', messageLimiter, clientCtrl.submitClientMessage)
 router.post('/c/:token/messages/seen', clientCtrl.markSeen);
 router.post('/c/:token/paid', messageLimiter, clientCtrl.submitPaidDeclaration); // „Zgłoś wpłatę"
 
+// Oferty — publiczna strona z akceptacją/odrzuceniem (/o/:token).
+const offerCtrl = require('../controllers/offer.controller');
+router.get('/o/:token', offerCtrl.showOffer);
+router.post('/o/:token/decision', messageLimiter, offerCtrl.submitDecision);
+
 // Onboarding — jednorazowy formularz uzupełnienia danych przez klienta.
 router.get('/onboard/:token', onboarding.showForm);
 router.post('/onboard/:token', messageLimiter, onboarding.submitForm);

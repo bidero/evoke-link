@@ -50,6 +50,7 @@ model Client {
   messages  Message[]                     // wiadomości od klienta (z portalu /c)
   reminders Reminder[]                    // zadania/przypomnienia powiązane z klientem
   retainers Retainer[]                    // cykliczne pozycje rozliczeniowe (abonamenty)
+  offers    Offer[]                       // oferty/wyceny do akceptacji przez klienta
 }
 
 // Retainer — cykliczna pozycja rozliczeniowa klienta (np. miesięczny abonament).
@@ -92,6 +93,44 @@ model Project {
   messages           Message[]
   reminders          Reminder[]
   fileRequests       FileRequest[]
+  offers             Offer[]
+}
+
+// Oferta/wycena wysyłana klientowi do akceptacji (/o/:token). Po akceptacji pozycje
+// (OfferItem) stają się zwykłymi pozycjami rozliczeniowymi (Charge), a projekt (jeśli
+// powiązany i w fazie „lead") przechodzi na kanbanie do „active". Odrzucenie z komentarzem.
+model Offer {
+  id              Int         @id @default(autoincrement())
+  client          Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId        Int
+  project         Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectId       Int?
+  token           String      @unique                 // publiczny link /o/:token
+  title           String
+  intro           String?                              // opis/wstęp oferty (widoczny dla klienta)
+  status          String      @default("open")         // open | accepted | rejected
+  validUntil      DateTime?                            // ważna do (po terminie = 'expired' w widoku)
+  decidedAt       DateTime?                            // moment akceptacji/odrzucenia
+  decisionName    String?                              // imię osoby decydującej (opcjonalne)
+  decisionComment String?                              // komentarz przy decyzji
+  createdAt       DateTime    @default(now())
+  items           OfferItem[]
+
+  @@index([clientId])
+}
+
+// Pozycja oferty — kwota NETTO za sztukę (grosze) + ilość. Suma pozycji = amount*qty (+VAT).
+model OfferItem {
+  id       Int    @id @default(autoincrement())
+  offer    Offer  @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  offerId  Int
+  label    String
+  amount   Int                        // netto za sztukę (grosze), jak Charge.amount
+  vatRate  Int?                       // % VAT (23/8/5/0); null = bez VAT
+  qty      Int    @default(1)
+  position Int    @default(0)
+
+  @@index([offerId])
 }
 
 // Pozycja rozliczeniowa (kwota). „Czasami po kilka" → osobne wiersze.
