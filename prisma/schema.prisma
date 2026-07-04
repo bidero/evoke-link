@@ -51,6 +51,24 @@ model Client {
   reminders Reminder[]                    // zadania/przypomnienia powiązane z klientem
   retainers Retainer[]                    // cykliczne pozycje rozliczeniowe (abonamenty)
   offers    Offer[]                       // oferty/wyceny do akceptacji przez klienta
+  documents Document[]                    // dokumenty klienta (umowy, NDA, briefy)
+}
+
+// Dokument klienta (umowa, NDA, brief…) — plik trzymany w storage/transfers/_documents/.
+// Opcjonalnie widoczny dla klienta w portalu /c (visibleToClient).
+model Document {
+  id              Int      @id @default(autoincrement())
+  client          Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId        Int
+  storedPath      String                 // względna do STORAGE_DIR (_documents/…)
+  name            String                 // oryginalna nazwa pliku
+  label           String?                // opcjonalny opis (np. „Umowa 2026")
+  size            Int?
+  mime            String?
+  visibleToClient Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@index([clientId])
 }
 
 // Retainer — cykliczna pozycja rozliczeniowa klienta (np. miesięczny abonament).

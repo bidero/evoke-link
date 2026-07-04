@@ -56,6 +56,14 @@
   <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Podaj tytuł oferty i co najmniej jedną pozycję.</div>
 <% } else if (sent === 'off-error') { %>
   <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie udało się wysłać oferty. Sprawdź ustawienia SMTP.</div>
+<% } else if (sent === 'doc-new') { %>
+  <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Dodano dokument.</div>
+<% } else if (sent === 'doc-del') { %>
+  <div class="mb-4 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">Usunięto dokument.</div>
+<% } else if (sent === 'doc-vis') { %>
+  <div class="mb-4 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">Zmieniono widoczność dokumentu dla klienta.</div>
+<% } else if (sent === 'doc-nofile') { %>
+  <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Wybierz plik do wgrania.</div>
 <% } %>
 
 <!-- Nagłówek klienta (stały nad zakładkami) -->
@@ -157,7 +165,7 @@
 <!-- Zakładki -->
 <div x-data="{ tab: '<%= activeTab %>' }" x-init="$watch('tab', function(v){ history.replaceState(null, '', '?tab=' + v); })" x-cloak>
   <div class="border-b border-slate-200 flex flex-wrap">
-    <% [['przeglad','Przegląd'],['projekty','Projekty'],['rozliczenia','Rozliczenia'],['oferty','Oferty'],['transfery','Transfery'],['historia','Oś czasu']].forEach(function(t){ %>
+    <% [['przeglad','Przegląd'],['projekty','Projekty'],['rozliczenia','Rozliczenia'],['oferty','Oferty'],['dokumenty','Dokumenty'],['transfery','Transfery'],['historia','Oś czasu']].forEach(function(t){ %>
       <button type="button" @click="tab='<%= t[0] %>'" class="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition" :class="tab==='<%= t[0] %>' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'"><%= t[1] %></button>
     <% }); %>
   </div>
@@ -561,6 +569,52 @@
         </div>
         <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 transition">Utwórz ofertę</button>
       </form>
+    </div>
+
+    <!-- ===== Dokumenty ===== -->
+    <div x-show="tab==='dokumenty'" id="dokumenty" class="space-y-5">
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+        <div class="px-5 py-3 border-b border-slate-100">
+          <h2 class="text-sm font-medium text-slate-700">Dokumenty</h2>
+          <p class="text-xs text-slate-400 mt-0.5">Umowy, NDA, briefy. Oznaczone „widoczny dla klienta" pojawią się w portalu klienta (<code>/c</code>).</p>
+        </div>
+        <% if (documents.length) { %>
+          <div class="divide-y divide-slate-100">
+            <% documents.forEach(function(d){ %>
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3">
+                <span class="shrink-0"><%- icon('fileText', { size: 18, cls: 'text-slate-400' }) %></span>
+                <div class="min-w-0 flex-1">
+                  <a href="/admin/clients/<%= client.id %>/documents/<%= d.id %>" class="text-sm font-medium text-slate-800 hover:text-brand-700 truncate block"><%= d.label || d.name %></a>
+                  <div class="text-xs text-slate-400 mt-0.5"><% if (d.label) { %><%= d.name %> · <% } %><% if (d.size) { %><%= fmt.bytes(d.size) %> · <% } %><%= fmt.date(d.createdAt) %></div>
+                </div>
+                <% if (d.visibleToClient) { %><span class="shrink-0 text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700">widoczny dla klienta</span><% } %>
+                <div class="shrink-0 flex items-center gap-1.5">
+                  <form method="POST" action="/admin/clients/<%= client.id %>/documents/<%= d.id %>/toggle">
+                    <button type="submit" class="text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50 transition"><%= d.visibleToClient ? 'Ukryj przed klientem' : 'Pokaż klientowi' %></button>
+                  </form>
+                  <a href="/admin/clients/<%= client.id %>/documents/<%= d.id %>" class="text-slate-400 hover:text-brand-700 transition" title="Pobierz"><%- icon('download', { size: 16, cls: '' }) %></a>
+                  <form method="POST" action="/admin/clients/<%= client.id %>/documents/<%= d.id %>/delete" onsubmit="return confirm('Usunąć dokument? Plik zniknie z dysku.')">
+                    <button type="submit" class="text-slate-400 hover:text-red-600 transition" title="Usuń"><%- icon('trash', { size: 15, cls: '' }) %></button>
+                  </form>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <div class="px-5 py-6 text-center text-sm text-slate-400">Brak dokumentów. Wgraj pierwszy poniżej.</div>
+        <% } %>
+        <form method="POST" action="/admin/clients/<%= client.id %>/documents" enctype="multipart/form-data" class="flex flex-col sm:flex-row sm:items-center gap-2 px-5 py-3 border-t border-slate-100 bg-slate-50" x-data="{ fileName: '' }">
+          <label class="inline-flex items-center gap-1.5 shrink-0 text-sm text-slate-600 cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2 hover:bg-slate-50 transition">
+            <%- icon('cloudUpload', { size: 15, cls: '' }) %> <span x-text="fileName || 'Wybierz plik'"></span>
+            <input type="file" name="document" required class="hidden" @change="fileName = $event.target.files.length ? $event.target.files[0].name : ''" />
+          </label>
+          <input name="label" type="text" placeholder="Opis (opcjonalnie, np. Umowa 2026)" class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <label class="shrink-0 inline-flex items-center gap-1.5 text-xs text-slate-500" title="Pokaż ten dokument klientowi w portalu">
+            <input type="checkbox" name="visibleToClient" class="rounded border-slate-300" /> widoczny dla klienta
+          </label>
+          <button type="submit" class="shrink-0 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">Wgraj</button>
+        </form>
+      </div>
     </div>
 
     <!-- ===== Transfery ===== -->

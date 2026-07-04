@@ -49,6 +49,7 @@ router.get('/c/:token', clientCtrl.showClientPortal);
 router.post('/c/:token/message', messageLimiter, messageUpload, clientCtrl.submitClientMessage);
 router.post('/c/:token/messages/seen', clientCtrl.markSeen);
 router.post('/c/:token/paid', messageLimiter, clientCtrl.submitPaidDeclaration); // „Zgłoś wpłatę"
+router.get('/c/:token/documents/:docId', require('../controllers/document.controller').downloadClientDocument); // dokument widoczny dla klienta
 
 // Oferty — publiczna strona z akceptacją/odrzuceniem (/o/:token).
 const offerCtrl = require('../controllers/offer.controller');

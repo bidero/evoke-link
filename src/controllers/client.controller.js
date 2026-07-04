@@ -10,6 +10,7 @@ const mail = require('../services/mail.service');
 const messageService = require('../services/message.service');
 const reminderService = require('../services/reminder.service');
 const offerService = require('../services/offer.service');
+const documentService = require('../services/document.service');
 const payment = require('../utils/payment');
 const config = require('../config');
 const fmt = require('../utils/format');
@@ -50,7 +51,7 @@ async function showClient(req, res, next) {
   try {
     const data = await clientService.overview(req.params.id);
     if (!data) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
-    const TABS = ['przeglad', 'projekty', 'rozliczenia', 'oferty', 'transfery', 'historia'];
+    const TABS = ['przeglad', 'projekty', 'rozliczenia', 'oferty', 'dokumenty', 'transfery', 'historia'];
     res.render('admin/clients/show', {
       title: data.client.name,
       active: 'clients',
@@ -62,6 +63,7 @@ async function showClient(req, res, next) {
       retainers: data.retainers,
       offers: data.offers.map((o) => ({ ...o, gross: offerService.totals(o.items).gross, st: offerService.state(o) })),
       offerBaseUrl: config.appUrl,
+      documents: data.documents,
       metrics: data.metrics,
       portalUrl: `${config.appUrl}/c/${data.client.token}`,
       onboardUrl: data.client.onboardingToken ? `${config.appUrl}/onboard/${data.client.onboardingToken}` : null,
@@ -401,6 +403,7 @@ async function showClientPortal(req, res, next) {
       unpaid, unpaidTotal, seller, transferTitle, paymentQr,
       paidDeclaredAt, paidFlash: req.query.paid === '1',
       offers,
+      documents: await documentService.listVisible(client.id),
     });
   } catch (err) {
     next(err);

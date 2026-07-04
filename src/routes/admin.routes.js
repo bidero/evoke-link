@@ -10,6 +10,8 @@ const clients = require('../controllers/client.controller');
 const onboarding = require('../controllers/onboarding.controller');
 const retainers = require('../controllers/retainer.controller');
 const offers = require('../controllers/offer.controller');
+const documents = require('../controllers/document.controller');
+const documentUpload = require('../middleware/documentUpload');
 const notifications = require('../controllers/notification.controller');
 const settings = require('../controllers/settings.controller');
 const search = require('../controllers/search.controller');
@@ -128,6 +130,10 @@ router.post('/clients/:id/retainers/:rid/delete', retainers.deleteRetainer);
 router.post('/clients/:id/offers', offers.createOffer);                  // oferta/wycena do akceptacji
 router.post('/clients/:id/offers/:oid/send', offers.sendOffer);
 router.post('/clients/:id/offers/:oid/delete', offers.deleteOffer);
+router.post('/clients/:id/documents', documentUpload, documents.uploadDocument);   // dokument klienta (umowa/NDA/brief)
+router.get('/clients/:id/documents/:docId', documents.downloadDocument);
+router.post('/clients/:id/documents/:docId/toggle', documents.toggleDocument);     // widoczny dla klienta ↔
+router.post('/clients/:id/documents/:docId/delete', documents.deleteDocument);
 router.get('/clients/:id/edit', clients.showEditForm);
 router.post('/clients/:id/note', clients.addNote);
 router.get('/clients/:id/rozliczenie.pdf', clients.clientStatementPdf);

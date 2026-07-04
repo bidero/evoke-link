@@ -71,6 +71,14 @@ function saveMessageFile(tmpPath, storedName) {
   return path.join('_messages', storedName);
 }
 
+// Dokumenty klienta: przenosi z tmp do storage/transfers/_documents/. Zwraca ścieżkę WZGLĘDNĄ.
+function saveDocumentFile(tmpPath, storedName) {
+  const destDir = ensureDir(path.join(STORAGE_DIR, '_documents'));
+  const destPath = path.join(destDir, storedName);
+  fs.renameSync(tmpPath, destPath);
+  return path.join('_documents', storedName);
+}
+
 // Usuwa pojedynczy plik po ścieżce względnej (np. przy kasowaniu wiadomości z załącznikiem).
 function removeStored(storedPath) {
   try { fs.rmSync(absolutePath(storedPath), { force: true }); } catch (_) { /* ignorujemy */ }
@@ -114,6 +122,7 @@ module.exports = {
   removeTransfer,
   removeTmp,
   saveMessageFile,
+  saveDocumentFile,
   removeStored,
   totalUsedBytes,
 };

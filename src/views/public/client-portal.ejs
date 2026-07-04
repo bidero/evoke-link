@@ -41,6 +41,25 @@
       </div>
     <% } %>
 
+    <% if (typeof documents !== 'undefined' && documents.length) { %>
+      <!-- Dokumenty udostępnione klientowi -->
+      <div class="mt-6 pt-6 border-t border-slate-100">
+        <h2 class="text-sm font-semibold text-slate-700 mb-3">Dokumenty</h2>
+        <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+          <% documents.forEach(function(d){ %>
+            <a href="/c/<%= client.token %>/documents/<%= d.id %>" class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition group">
+              <span class="shrink-0"><%- icon('fileText', { size: 18, cls: 'text-slate-400' }) %></span>
+              <span class="min-w-0 flex-1">
+                <span class="block text-sm font-medium text-slate-800 truncate"><%= d.label || d.name %></span>
+                <span class="block text-xs text-slate-400"><% if (d.size) { %><%= fmt.bytes(d.size) %> · <% } %><%= fmt.dateOnly(d.createdAt) %></span>
+              </span>
+              <span class="text-brand-600 opacity-0 group-hover:opacity-100 transition shrink-0"><%- icon('download', { size: 16 }) %></span>
+            </a>
+          <% }); %>
+        </div>
+      </div>
+    <% } %>
+
     <% if (typeof unpaid !== 'undefined' && unpaid.length) { %>
       <!-- Do zapłaty: nierozliczone pozycje + dane do przelewu (+ QR wg ZBP) -->
       <div class="mt-6 pt-6 border-t border-slate-100" x-data="{ qr: false }">
