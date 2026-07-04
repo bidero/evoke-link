@@ -442,7 +442,7 @@ async function submitClientMessage(req, res, next) {
     const client = await clientService.getByToken(req.params.token);
     if (!client) return res.status(404).render('public/unavailable', { title: 'Nie znaleziono', layout: PUBLIC_LAYOUT, reason: 'not_found' });
     const { body, senderName, senderEmail } = req.body;
-    const msg = await messageService.create({ body, senderName, senderEmail, clientId: client.id, ip: req.ip });
+    const msg = await messageService.create({ body, senderName, senderEmail, clientId: client.id, ip: req.ip, file: req.file });
     if (msg) mail.sendNewMessageNotification({ message: msg, client }).catch((e) => console.error('[mail] wiadomość:', e.message));
     res.redirect(`/c/${client.token}?msg=1`);
   } catch (err) {

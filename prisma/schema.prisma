@@ -285,6 +285,11 @@ model Message {
   isRead      Boolean   @default(false)
   ip          String?
   createdAt   DateTime  @default(now())
+  // Opcjonalny załącznik (jeden plik na wiadomość). storedPath względny do STORAGE_DIR (_messages/…).
+  attachmentPath String?
+  attachmentName String?
+  attachmentSize Int?
+  attachmentMime String?
 
   @@index([clientId])
   @@index([projectId])

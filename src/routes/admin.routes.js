@@ -65,6 +65,7 @@ router.post('/calendar/reminders/:id/delete', calendar.deleteReminder);
 router.get('/messages', messages.listMessages);
 router.post('/messages/read-all', messages.markAllRead);
 router.post('/messages/:id/reply', messages.replyMessage);
+router.get('/messages/:id/attachment', messages.downloadAttachment);
 router.post('/messages/:id/read', messages.markRead);
 router.post('/messages/:id/delete', messages.deleteMessage);
 

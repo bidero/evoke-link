@@ -52,6 +52,11 @@
               <div class="flex <%= out ? 'justify-end' : 'justify-start' %>">
                 <div class="max-w-[80%]">
                   <div class="rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words <%= out ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-800' %>"><%= m.body %></div>
+                  <% if (m.attachmentName) { %>
+                    <a href="/admin/messages/<%= m.id %>/attachment" class="mt-1 inline-flex items-center gap-1.5 text-xs text-brand-700 hover:text-brand-800 hover:underline">
+                      <%- icon('file', { size: 13, cls: '' }) %> <%= m.attachmentName %><% if (m.attachmentSize) { %> <span class="text-slate-400">(<%= fmt.bytes(m.attachmentSize) %>)</span><% } %>
+                    </a>
+                  <% } %>
                   <div class="text-[11px] text-slate-400 mt-0.5 <%= out ? 'text-right' : '' %>"><%= out ? 'Ty' : (m.senderName || 'Klient') %><% if (!out && m.senderEmail) { %> · <%= m.senderEmail %><% } %> · <%= fmt.date(m.createdAt) %></div>
                 </div>
               </div>

@@ -1,5 +1,6 @@
 // Panel: skrzynka wiadomości od klientów (Faza A — jednokierunkowo).
 const messageService = require('../services/message.service');
+const storage = require('../services/storage.service');
 const mail = require('../services/mail.service');
 const config = require('../config');
 
@@ -64,4 +65,17 @@ async function replyMessage(req, res, next) {
   }
 }
 
-module.exports = { listMessages, replyMessage, markRead, markAllRead, deleteMessage };
+// Pobranie załącznika wiadomości (panel, wymaga logowania). Wymuszamy download (nie inline).
+async function downloadAttachment(req, res, next) {
+  try {
+    const att = await messageService.attachment(req.params.id);
+    if (!att) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
+    res.setHeader('Content-Type', att.mime);
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.name)}"`);
+    storage.readStream(att.path).on('error', () => res.status(404).end()).pipe(res);
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { listMessages, replyMessage, markRead, markAllRead, deleteMessage, downloadAttachment };

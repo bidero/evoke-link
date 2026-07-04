@@ -89,7 +89,7 @@ async function submitMessage(req, res, next) {
     const project = await loadProject(req, res);
     if (!project) return;
     const { body, senderName, senderEmail } = req.body;
-    const msg = await messageService.create({ body, senderName, senderEmail, projectId: project.id, clientId: project.clientId, ip: req.ip });
+    const msg = await messageService.create({ body, senderName, senderEmail, projectId: project.id, clientId: project.clientId, ip: req.ip, file: req.file });
     if (msg) mail.sendNewMessageNotification({ message: msg, client: project.client, project }).catch((e) => console.error('[mail] wiadomość:', e.message));
     res.redirect(`/p/${project.clientToken}?msg=1`);
   } catch (err) {

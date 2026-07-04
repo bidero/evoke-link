@@ -409,6 +409,7 @@ async function sendNewMessageNotification({ message, client, project, transfer }
     transfer ? `Transfer: ${transfer.title || transfer.token}` : null,
     message.senderName ? `Od: ${message.senderName}` : null,
     message.senderEmail ? `E-mail: ${message.senderEmail}` : null,
+    message.attachmentName ? `Załącznik: ${message.attachmentName}` : null,
   ].filter(Boolean);
   const inner = `
     ${ctx.map((l) => `<p style="margin:2px 0;color:#64748b;font-size:13px">${esc(l)}</p>`).join('')}

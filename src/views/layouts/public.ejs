@@ -82,17 +82,30 @@
           <div class="mb-3 max-h-56 overflow-y-auto space-y-2 pr-1">
             <% msgThread.forEach(function(mm){ var out = mm.direction === 'out'; %>
               <div class="flex <%= out ? 'justify-start' : 'justify-end' %>">
-                <div class="max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words <%= out ? 'bg-slate-100 text-slate-800' : 'bg-brand-600 text-white' %>"><%= mm.body %></div>
+                <div class="max-w-[85%]">
+                  <div class="rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words <%= out ? 'bg-slate-100 text-slate-800' : 'bg-brand-600 text-white' %>"><%= mm.body %></div>
+                  <% if (mm.attachmentName) { %>
+                    <div class="mt-1 inline-flex items-center gap-1.5 text-xs <%= out ? 'text-slate-500' : 'text-brand-700' %>"><%- icon('file', { size: 12, cls: '' }) %><%= mm.attachmentName %></div>
+                  <% } %>
+                </div>
               </div>
             <% }); %>
           </div>
         <% } %>
-        <form method="POST" action="<%= msgContext.action %>" class="space-y-2">
+        <form method="POST" action="<%= msgContext.action %>" enctype="multipart/form-data" class="space-y-2"
+              x-data="{ fileName: '' }">
           <textarea name="body" required rows="4" maxlength="4000" placeholder="Twoja wiadomość…"
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
           <div class="grid grid-cols-2 gap-2">
             <input name="senderName" type="text" placeholder="Imię (opc.)" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
             <input name="senderEmail" type="email" placeholder="E-mail (opc.)" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="inline-flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer hover:text-brand-700 transition">
+              <%- icon('cloudUpload', { size: 15, cls: '' }) %> Dołącz plik
+              <input type="file" name="attachment" class="hidden" @change="fileName = $event.target.files.length ? $event.target.files[0].name : ''" />
+            </label>
+            <span class="text-xs text-slate-400 truncate" x-show="fileName" x-text="fileName" x-cloak></span>
           </div>
           <button type="submit" class="w-full rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium py-2 transition">Wyślij</button>
         </form>

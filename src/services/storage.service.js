@@ -62,6 +62,20 @@ function removeTmp(tmpPath) {
   }
 }
 
+// Załączniki wiadomości: przenosi z tmp do storage/transfers/_messages/ (podkatalog
+// z podkreśleniem, żeby nie kolidował z tokenami transferów). Zwraca ścieżkę WZGLĘDNĄ.
+function saveMessageFile(tmpPath, storedName) {
+  const destDir = ensureDir(path.join(STORAGE_DIR, '_messages'));
+  const destPath = path.join(destDir, storedName);
+  fs.renameSync(tmpPath, destPath);
+  return path.join('_messages', storedName);
+}
+
+// Usuwa pojedynczy plik po ścieżce względnej (np. przy kasowaniu wiadomości z załącznikiem).
+function removeStored(storedPath) {
+  try { fs.rmSync(absolutePath(storedPath), { force: true }); } catch (_) { /* ignorujemy */ }
+}
+
 // Suma rozmiarów wszystkich plików w storage (dla widżetu "wykorzystane miejsce").
 function totalUsedBytes() {
   let total = 0;
@@ -99,5 +113,7 @@ module.exports = {
   readStream,
   removeTransfer,
   removeTmp,
+  saveMessageFile,
+  removeStored,
   totalUsedBytes,
 };

@@ -1,14 +1,21 @@
 // Wiadomości od klientów (Faza A: jednokierunkowo klient → agencja).
 // Przypięte do kontekstu wysyłki: projekt (/p), transfer (/t) lub klient (/c).
 const prisma = require('../db/client');
+const storage = require('./storage.service');
 
 const MAX = 4000; // twardy limit długości treści
 const clean = (v) => { const s = (v == null ? '' : String(v)).trim(); return s || null; };
 
-// Tworzy wiadomość. Zwraca null, gdy treść pusta (po trim).
-async function create({ body, senderName, senderEmail, clientId, projectId, transferId, ip }) {
+// Tworzy wiadomość. Zwraca null, gdy treść pusta (po trim). `file` = multer req.file (opcjonalny załącznik).
+async function create({ body, senderName, senderEmail, clientId, projectId, transferId, ip, file }) {
   const text = (body == null ? '' : String(body)).trim().slice(0, MAX);
-  if (!text) return null;
+  if (!text) { if (file) storage.removeTmp(file.path); return null; } // pusta treść → nie trzymaj osieroconego pliku
+
+  let att = {};
+  if (file) {
+    const stored = storage.saveMessageFile(file.path, storage.makeStoredName(file.originalname));
+    att = { attachmentPath: stored, attachmentName: (file.originalname || 'plik').slice(0, 255), attachmentSize: file.size, attachmentMime: file.mimetype };
+  }
   return prisma.message.create({
     data: {
       body: text,
@@ -18,6 +25,7 @@ async function create({ body, senderName, senderEmail, clientId, projectId, tran
       projectId: projectId || null,
       transferId: transferId || null,
       ip: ip || null,
+      ...att,
     },
   });
 }
@@ -125,8 +133,18 @@ function scopeOf(m) {
 function markThreadRead(m) {
   return prisma.message.updateMany({ where: { ...scopeOf(m), direction: 'in' }, data: { isRead: true } });
 }
-function deleteThread(m) {
-  return prisma.message.deleteMany({ where: scopeOf(m) });
+async function deleteThread(m) {
+  const scope = scopeOf(m);
+  // Usuń pliki załączników z dysku przed skasowaniem wierszy.
+  const withFiles = await prisma.message.findMany({ where: { ...scope, attachmentPath: { not: null } }, select: { attachmentPath: true } });
+  withFiles.forEach((r) => storage.removeStored(r.attachmentPath));
+  return prisma.message.deleteMany({ where: scope });
+}
+
+// Załącznik wiadomości do pobrania (panel) — zwraca { path, name, mime } lub null.
+async function attachment(id) {
+  const m = await prisma.message.findUnique({ where: { id: Number(id) }, select: { attachmentPath: true, attachmentName: true, attachmentMime: true } });
+  return m && m.attachmentPath ? { path: m.attachmentPath, name: m.attachmentName || 'zalacznik', mime: m.attachmentMime || 'application/octet-stream' } : null;
 }
 
 // Czy w wątku jest odpowiedź agencji (out) nowsza niż ostatnio „obejrzane" przez klienta (ts).
@@ -135,4 +153,4 @@ function hasUnseen(thread, lastSeen) {
   return (thread || []).some((m) => m.direction === 'out' && new Date(m.createdAt).getTime() > ts);
 }
 
-module.exports = { create, listInbox, listThreads, unreadCount, getById, thread, reply, markThreadRead, deleteThread, hasUnseen, markRead, markAllRead, remove };
+module.exports = { create, listInbox, listThreads, unreadCount, getById, thread, reply, markThreadRead, deleteThread, attachment, hasUnseen, markRead, markAllRead, remove };
