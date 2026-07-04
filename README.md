@@ -175,3 +175,4 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **„Do odezwania się"** — widżet pulpitu pilnujący klientów bez kontaktu (30+ dni) z szybkim przypomnieniem
 - [x] **Retainery** — cykliczne pozycje rozliczeniowe generowane cronem + MRR w Pulsie
 - [x] **Szablony projektów + interakcje 360°** — projekty startujące z checklistą i przypomnieniami; notatki z typem i follow-upem; ikony widżetów pulpitu
+- [x] **Wskaźniki klienta na 360°** — LTV, średni czas płatności i wykres przychodu z 12 miesięcy

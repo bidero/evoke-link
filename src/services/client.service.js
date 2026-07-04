@@ -119,7 +119,39 @@ async function overview(id) {
     prisma.retainer.findMany({ where: { clientId: cid }, orderBy: { createdAt: 'asc' } }),
   ]);
   const billing = chargeService.totals(charges);
-  return { client, transfers, events, billing, charges, retainers };
+  return { client, transfers, events, billing, charges, retainers, metrics: clientMetrics(charges) };
+}
+
+// Wskaźniki klienta liczone z jego pozycji (bez dodatkowych zapytań).
+// LTV = suma zapłaconego BRUTTO; śr. czas płatności = dni od daty pozycji do zapłaty;
+// chart = zapłacone brutto per miesiąc (ostatnie 12 mies., najstarszy → bieżący).
+const MONTHS_SHORT = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
+function clientMetrics(charges, now = new Date()) {
+  const paid = charges.filter((c) => c.paidAt);
+  const ltv = paid.reduce((s, c) => s + chargeService.grossOf(c), 0);
+
+  const times = paid
+    .map((c) => {
+      const from = c.date || c.createdAt;
+      if (!from) return null;
+      const days = (new Date(c.paidAt) - new Date(from)) / 86400000;
+      return days >= 0 ? days : null;
+    })
+    .filter((v) => v !== null);
+  const avgPayDays = times.length ? Math.round(times.reduce((a, b) => a + b, 0) / times.length) : null;
+
+  const byMonth = {};
+  for (const c of paid) {
+    const d = new Date(c.paidAt);
+    const k = `${d.getFullYear()}-${d.getMonth()}`;
+    byMonth[k] = (byMonth[k] || 0) + chargeService.grossOf(c);
+  }
+  const chart = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    chart.push({ label: MONTHS_SHORT[d.getMonth()], value: byMonth[`${d.getFullYear()}-${d.getMonth()}`] || 0, current: i === 0 });
+  }
+  return { ltv, avgPayDays, paidCount: paid.length, chart, chartMax: Math.max(1, ...chart.map((c) => c.value)) };
 }
 
 // Publiczny portal klienta — jego aktywne/zarchiwizowane projekty (bez usuniętych).
@@ -285,6 +317,6 @@ async function remove(id) {
 
 module.exports = {
   list, getById, overview, getByToken, options, tagCloud, create, update, remove, SORTS,
-  staleClients,
+  staleClients, clientMetrics,
   generateOnboarding, getByOnboardingToken, onboardingState, completeOnboarding,
 };

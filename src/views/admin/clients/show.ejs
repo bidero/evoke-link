@@ -171,6 +171,39 @@
         </div>
       </div>
 
+      <!-- Statystyki klienta: LTV, śr. czas płatności, wykres przychodu 12 mies. -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div class="text-xs text-slate-400 inline-flex items-center gap-1.5"><%- icon('trendingUp', { size: 14, cls: 'text-slate-400' }) %> Wartość klienta (LTV)</div>
+            <div class="text-2xl font-semibold text-slate-800 mt-1"><%= fmt.money(metrics.ltv) %></div>
+            <div class="text-xs text-slate-400 mt-0.5">zapłacone brutto · <%= metrics.paidCount %> poz.</div>
+          </div>
+          <div>
+            <div class="text-xs text-slate-400 inline-flex items-center gap-1.5"><%- icon('clock', { size: 14, cls: 'text-slate-400' }) %> Śr. czas płatności</div>
+            <div class="text-2xl font-semibold text-slate-800 mt-1"><%= metrics.avgPayDays === null ? '—' : metrics.avgPayDays + ' dni' %></div>
+            <div class="text-xs text-slate-400 mt-0.5">od wystawienia do zapłaty</div>
+          </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-slate-100">
+          <div class="text-xs font-medium text-slate-500 mb-2">Przychód (zapłacone) — 12 miesięcy</div>
+          <% if (metrics.ltv === 0) { %>
+            <div class="py-4 text-center text-xs text-slate-400">Brak zapłaconych pozycji — wykres pojawi się po pierwszej wpłacie.</div>
+          <% } else { %>
+            <% const CW = 480, CH = 80, N = 12, GAP = 6, BW = (CW - (N - 1) * GAP) / N, TOP = 16; %>
+            <svg viewBox="0 0 <%= CW %> <%= TOP + CH + 20 %>" class="w-full" role="img" aria-label="Wykres przychodu klienta z 12 miesięcy">
+              <% metrics.chart.forEach(function(c, i){
+                   const h = c.value > 0 ? Math.max(3, Math.round((c.value / metrics.chartMax) * CH)) : 0;
+                   const x = i * (BW + GAP);
+                   const y = TOP + (CH - h); %>
+                <% if (h > 0) { %><rect x="<%= x %>" y="<%= y %>" width="<%= BW %>" height="<%= h %>" rx="3" class="<%= c.current ? 'fill-brand-600' : 'fill-brand-200' %>" /><% } %>
+                <text x="<%= x + BW / 2 %>" y="<%= TOP + CH + 14 %>" text-anchor="middle" class="<%= c.current ? 'fill-brand-700' : 'fill-slate-400' %>" font-size="9" font-weight="<%= c.current ? '600' : '400' %>"><%= c.label %></text>
+              <% }); %>
+            </svg>
+          <% } %>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
           <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">

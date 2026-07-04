@@ -59,6 +59,7 @@ async function showClient(req, res, next) {
       billing: data.billing,
       charges: data.charges,
       retainers: data.retainers,
+      metrics: data.metrics,
       portalUrl: `${config.appUrl}/c/${data.client.token}`,
       onboardUrl: data.client.onboardingToken ? `${config.appUrl}/onboard/${data.client.onboardingToken}` : null,
       onboarding: clientService.onboardingState(data.client),

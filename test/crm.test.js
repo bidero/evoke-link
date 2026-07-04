@@ -37,6 +37,30 @@ test('staleClients: dawny kontakt na liście, świeży i nieaktywni poza nią', 
   }
 });
 
+test('wskaźniki 360°: LTV, śr. czas płatności, seria 12 miesięcy', () => {
+  const now = new Date(2026, 5, 15); // czerwiec 2026
+  const charges = [
+    { amount: 10000, vatRate: 23, date: new Date(2026, 5, 1), paidAt: new Date(2026, 5, 8) },   // brutto 12300, 7 dni (czerwiec)
+    { amount: 20000, vatRate: null, date: new Date(2026, 4, 1), paidAt: new Date(2026, 4, 11) }, // brutto 20000, 10 dni (maj)
+    { amount: 5000, vatRate: 0, date: new Date(2026, 5, 1), paidAt: null },                      // nieopłacona — pomijana
+  ];
+  const m = clientService.clientMetrics(charges, now);
+  assert.equal(m.ltv, 32300, 'LTV = suma zapłaconego brutto');
+  assert.equal(m.paidCount, 2);
+  assert.equal(m.avgPayDays, 9, 'średnia (7+10)/2 zaokrąglona');
+  assert.equal(m.chart.length, 12);
+  assert.equal(m.chart[11].current, true);
+  assert.equal(m.chart[11].label, 'cze');
+  assert.equal(m.chart[11].value, 12300, 'bieżący miesiąc = czerwcowa wpłata');
+  assert.equal(m.chart[10].value, 20000, 'poprzedni miesiąc = majowa wpłata');
+  assert.equal(m.chartMax, 20000);
+
+  // bez zapłaconych pozycji: zera, brak średniej
+  const empty = clientService.clientMetrics([{ amount: 5000, paidAt: null }], now);
+  assert.equal(empty.ltv, 0);
+  assert.equal(empty.avgPayDays, null);
+});
+
 test('QR: payload ZBP zachowuje polskie znaki i pełną nazwę odbiorcy (do 40 znaków)', () => {
   const payment = require('../src/utils/payment');
   const qr = require('../src/utils/qr');
