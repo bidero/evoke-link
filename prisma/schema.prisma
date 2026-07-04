@@ -153,6 +153,16 @@ model Transfer {
 
 // Lista braków — punkt checklisty materiałów, o które prosimy klienta (portal /p).
 // Odhaczany ręcznie przez agencję lub automatycznie przy uploadzie wskazanym na punkt.
+// Szablon projektu — startowy zestaw dla powtarzalnych projektów (www, branding, sesja):
+// lista braków (FileRequest) + przypomnienia (Reminder, termin liczony od utworzenia projektu).
+model ProjectTemplate {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  items       String?  // JSON: { fileRequests: [{label,note}], reminders: [{title, offsetDays, priority}] }
+  createdAt   DateTime @default(now())
+}
+
 model FileRequest {
   id         Int       @id @default(autoincrement())
   project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)

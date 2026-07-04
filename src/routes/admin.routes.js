@@ -91,6 +91,9 @@ router.get('/projects', projects.listProjects);
 router.get('/projects/new', projects.showCreateForm);
 router.post('/projects/reorder', projects.reorderProjects); // przed :id!
 router.get('/projects/board', projects.showBoard); // przed :id!
+router.get('/projects/templates', projects.listTemplates);              // szablony projektów (przed :id!)
+router.post('/projects/templates', projects.createTemplate);
+router.post('/projects/templates/:tid/delete', projects.deleteTemplate);
 router.post('/projects/:id/stage', projects.setStage);
 router.post('/projects/:id/archive', projects.archiveProject);
 router.post('/projects', projects.createProject);

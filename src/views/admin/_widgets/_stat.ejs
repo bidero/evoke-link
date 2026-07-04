@@ -1,13 +1,20 @@
 <%# h-full + justify-center: kafelek wyrównuje się do wysokości rzędu, treść centrowana w pionie %>
+<% const _ic = typeof wicon !== 'undefined' && wicon ? wicon : null; %>
 <% if (tile.href) { %>
-  <a href="<%= tile.href %>" class="h-full flex flex-col justify-center bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-sm transition">
-    <div class="text-sm text-slate-500"><%= tile.label %></div>
+  <a href="<%= tile.href %>" class="h-full flex flex-col justify-center bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-sm transition group">
+    <div class="flex items-center justify-between gap-2">
+      <span class="text-sm text-slate-500"><%= tile.label %></span>
+      <% if (_ic) { %><span class="shrink-0 text-slate-300 group-hover:text-brand-400 transition"><%- icon(_ic, { size: 18, cls: '' }) %></span><% } %>
+    </div>
     <div class="mt-2 text-3xl font-semibold tracking-tight <%= tile.valueCls || '' %>"><%= tile.value %></div>
     <div class="mt-1 text-xs text-slate-400"><%= tile.hint %></div>
   </a>
 <% } else { %>
   <div class="h-full flex flex-col justify-center bg-white rounded-2xl border border-slate-200 p-5">
-    <div class="text-sm text-slate-500"><%= tile.label %></div>
+    <div class="flex items-center justify-between gap-2">
+      <span class="text-sm text-slate-500"><%= tile.label %></span>
+      <% if (_ic) { %><span class="shrink-0 text-slate-300"><%- icon(_ic, { size: 18, cls: '' }) %></span><% } %>
+    </div>
     <div class="mt-2 text-3xl font-semibold tracking-tight <%= tile.valueCls || '' %>"><%= tile.value %></div>
     <div class="mt-1 text-xs text-slate-400"><%= tile.hint %></div>
   </div>

@@ -295,10 +295,28 @@ async function deleteCharge(req, res, next) {
 }
 
 // Dodanie ręcznej notatki do klienta (trafia na jego oś czasu jako zdarzenie typu 'note').
+// Interakcja z osi czasu 360°: typ (notatka/telefon/spotkanie/e-mail) w prefiksie
+// + opcjonalny follow-up (Reminder „Follow-up: {klient}" za X dni, 9:00).
+const NOTE_KINDS = { note: null, call: 'Telefon', meeting: 'Spotkanie', email: 'E-mail' };
+
 async function addNote(req, res, next) {
   try {
     const text = (req.body.note || '').trim();
-    if (text) await events.log({ type: 'note', message: text, clientId: Number(req.params.id), ip: req.ip });
+    const kind = Object.prototype.hasOwnProperty.call(NOTE_KINDS, req.body.kind) ? req.body.kind : 'note';
+    if (text) {
+      const label = NOTE_KINDS[kind];
+      await events.log({ type: 'note', message: label ? `${label}: ${text}` : text, clientId: Number(req.params.id), meta: { kind }, ip: req.ip });
+      const days = parseInt(req.body.followupDays, 10);
+      if (Number.isFinite(days) && days >= 1 && days <= 365) {
+        const client = await clientService.getById(req.params.id);
+        if (client) {
+          const due = new Date();
+          due.setDate(due.getDate() + days);
+          due.setHours(9, 0, 0, 0);
+          await reminderService.create({ title: `Follow-up: ${client.name}`, note: text.slice(0, 300), dueAt: due, priority: 'normal', clientId: client.id });
+        }
+      }
+    }
     res.redirect(`/admin/clients/${req.params.id}?tab=historia`);
   } catch (err) {
     next(err);

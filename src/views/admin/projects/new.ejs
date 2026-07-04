@@ -26,6 +26,16 @@
       <textarea name="description" rows="3"
                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
     </div>
+    <% if (typeof templates !== 'undefined' && templates.length) { %>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Szablon (opcjonalnie)</label>
+        <select name="templateId" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+          <option value="">— bez szablonu —</option>
+          <% templates.forEach(function(t){ %><option value="<%= t.id %>"><%= t.name %><%= t.description ? ' — ' + t.description : '' %></option><% }); %>
+        </select>
+        <p class="text-xs text-slate-400 mt-1">Rozstawi listę braków i przypomnienia z szablonu. <a href="/admin/projects/templates" class="text-brand-700 hover:underline">Zarządzaj szablonami</a></p>
+      </div>
+    <% } %>
     <div class="flex items-center gap-3">
       <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Utwórz projekt</button>
       <a href="/admin/projects" class="text-sm text-slate-500 hover:text-slate-700">Anuluj</a>

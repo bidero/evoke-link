@@ -42,13 +42,13 @@
         <% if (w.hidden) { %>
           <!-- placeholder ukrytego widżetu (dane nie są pobierane) -->
           <div class="h-full min-h-[90px] rounded-2xl border border-dashed border-slate-300 bg-white/60 p-5 flex flex-col items-center justify-center text-center">
-            <div class="text-sm text-slate-500"><%= w.label %></div>
+            <div class="text-sm text-slate-500 inline-flex items-center gap-1.5 justify-center"><%- icon(w.icon, { size: 14, cls: 'text-slate-300' }) %><%= w.label %></div>
             <div class="text-xs text-slate-400 mt-1">ukryty — dane po włączeniu i zapisaniu</div>
           </div>
         <% } else if (TILES[w.key]) { %>
-          <%- include('_widgets/_stat', { tile: TILES[w.key] }) %>
+          <%- include('_widgets/_stat', { tile: TILES[w.key], wicon: w.icon }) %>
         <% } else { %>
-          <%- include('_widgets/' + w.key) %>
+          <%- include('_widgets/' + w.key, { wicon: w.icon }) %>
         <% } %>
       </div>
     <% }); %>

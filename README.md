@@ -18,6 +18,8 @@ Stos: **Node.js + Express**, **SQLite** (przez Prisma), szablony **EJS + Tailwin
 - 📞 **„Do odezwania się"** — widżet pulpitu z klientami bez kontaktu od 30+ dni; jedno kliknięcie tworzy przypomnienie „Odezwij się" na jutro.
 - 🔁 **Retainery** — cykliczne pozycje rozliczeniowe (abonamenty): co miesiąc cron sam tworzy pozycję z terminem płatności (opcjonalnie z mailem do klienta: kwota, dane przelewu, link do portalu), a Puls pokazuje **MRR** (stały przychód miesięczny) z listą retainerów.
 - ✅ **Zgłoszenie wpłaty** — klient w portalu klika „Zgłoś wykonanie przelewu": agencja dostaje powiadomienie i mail, a po sprawdzeniu konta oznacza pozycje jako rozliczone.
+- 🧩 **Szablony projektów** — powtarzalne projekty (www, branding…) startują z gotową listą braków i przypomnieniami; szablon wybierasz przy tworzeniu projektu.
+- 🗒️ **Interakcje na osi czasu** — notatki z typem (telefon / spotkanie / e-mail) i „follow-up za X dni" tworzącym przypomnienie w kalendarzu.
 - 🔔 **Dashboard i powiadomienia** — aktywne transfery, miejsce na dysku, dzwonek z licznikiem nieprzeczytanych.
 - 🧱 **Konfigurowalny panel** — widżety pulpitu przestawiane drag&drop bezpośrednio na pulpicie (statystyki, zadania z kalendarza, przychód + top klienci, nieprzeczytane wiadomości) z regulowaną szerokością (¼/⅓/½/⅔/pełna) i ukrywaniem; menu boczne z ikonami: własna kolejność, ukrywanie i nazwy pozycji.
 - 🎨 **Customizacja** — z panelu, bez kodu: logo (rozmiar + pozycja, bezpieczny upload SVG), favicon, nazwa, kolor przewodni, osobne kolory panelu (akcent / sidebar / tło / czcionka), tło stron klienta (presety, **własny gradient**, obraz, **ziarno z regulacją mocy**), treści i stopka. Strona logowania brandowana jak strony klienta. Pole na **własny CSS** dla zmian ponad dostępne opcje.
@@ -172,3 +174,4 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Dane do przelewu** — sekcja „Do zapłaty" w portalu klienta z kwotami brutto, danymi przelewu i kodem QR (standard ZBP)
 - [x] **„Do odezwania się"** — widżet pulpitu pilnujący klientów bez kontaktu (30+ dni) z szybkim przypomnieniem
 - [x] **Retainery** — cykliczne pozycje rozliczeniowe generowane cronem + MRR w Pulsie
+- [x] **Szablony projektów + interakcje 360°** — projekty startujące z checklistą i przypomnieniami; notatki z typem i follow-upem; ikony widżetów pulpitu

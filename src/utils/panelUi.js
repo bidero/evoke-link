@@ -22,18 +22,18 @@ const MENU = [
 // Renderery: views/admin/_widgets/<key>.ejs.
 const SPANS = [3, 4, 6, 8, 12];
 const WIDGETS = [
-  { key: 'stat-transfers', label: 'Aktywne transfery', span: 4 },
-  { key: 'stat-projects', label: 'Aktywne projekty', span: 4 },
-  { key: 'stat-uploads', label: 'Oczekujące uploady', span: 4 },
-  { key: 'stat-outstanding', label: 'Do rozliczenia', span: 4 },
-  { key: 'stat-overdue', label: 'Przeterminowane', span: 4 },
-  { key: 'stat-storage', label: 'Wykorzystane miejsce', span: 4 },
-  { key: 'actions', label: 'Szybkie akcje', span: 4 },
-  { key: 'activity', label: 'Ostatnia aktywność', span: 8 },
-  { key: 'tasks', label: 'Nadchodzące zadania', span: 4 },
-  { key: 'revenue', label: 'Przychód i top klienci', span: 4 },
-  { key: 'messages', label: 'Nieprzeczytane wiadomości', span: 4 },
-  { key: 'followup', label: 'Do odezwania się', span: 4 },
+  { key: 'stat-transfers', label: 'Aktywne transfery', span: 4, icon: 'send' },
+  { key: 'stat-projects', label: 'Aktywne projekty', span: 4, icon: 'folder' },
+  { key: 'stat-uploads', label: 'Oczekujące uploady', span: 4, icon: 'cloudUpload' },
+  { key: 'stat-outstanding', label: 'Do rozliczenia', span: 4, icon: 'banknote' },
+  { key: 'stat-overdue', label: 'Przeterminowane', span: 4, icon: 'clock' },
+  { key: 'stat-storage', label: 'Wykorzystane miejsce', span: 4, icon: 'archive' },
+  { key: 'actions', label: 'Szybkie akcje', span: 4, icon: 'plus' },
+  { key: 'activity', label: 'Ostatnia aktywność', span: 8, icon: 'activity' },
+  { key: 'tasks', label: 'Nadchodzące zadania', span: 4, icon: 'calendarDays' },
+  { key: 'revenue', label: 'Przychód i top klienci', span: 4, icon: 'trendingUp' },
+  { key: 'messages', label: 'Nieprzeczytane wiadomości', span: 4, icon: 'mail' },
+  { key: 'followup', label: 'Do odezwania się', span: 4, icon: 'phone' },
 ];
 
 const MENU_KEYS = MENU.map((m) => m.key);

@@ -1,6 +1,7 @@
 // Panel: zarządzanie projektami.
 const projectService = require('../services/project.service');
 const clientService = require('../services/client.service');
+const templateService = require('../services/template.service');
 const chargeService = require('../services/charge.service');
 const events = require('../services/event.service');
 const mail = require('../services/mail.service');
@@ -50,7 +51,8 @@ async function listProjects(req, res, next) {
 async function showCreateForm(req, res, next) {
   try {
     const clients = await clientService.options();
-    res.render('admin/projects/new', { title: 'Nowy projekt', active: 'projects', error: null, clients, selectedClientId: req.query.client ? parseInt(req.query.client, 10) : null });
+    const templates = await templateService.list();
+    res.render('admin/projects/new', { title: 'Nowy projekt', active: 'projects', error: null, clients, templates, selectedClientId: req.query.client ? parseInt(req.query.client, 10) : null });
   } catch (err) {
     next(err);
   }
@@ -61,11 +63,49 @@ async function createProject(req, res, next) {
     const { name, clientName, description } = req.body;
     if (!name || !name.trim()) {
       const clients = await clientService.options();
-      return res.status(400).render('admin/projects/new', { title: 'Nowy projekt', active: 'projects', error: 'Podaj nazwę projektu.', clients, selectedClientId: parseClientId(req.body.clientId) });
+      const templates = await templateService.list();
+      return res.status(400).render('admin/projects/new', { title: 'Nowy projekt', active: 'projects', error: 'Podaj nazwę projektu.', clients, templates, selectedClientId: parseClientId(req.body.clientId) });
     }
     const project = await projectService.create({ name, clientName, description, clientId: parseClientId(req.body.clientId) });
     await events.log({ type: 'created', message: `Utworzono projekt: ${project.name}`, projectId: project.id, ip: req.ip });
+    // Szablon: rozstaw listę braków i przypomnienia (opcjonalny select w formularzu).
+    if (req.body.templateId) {
+      const applied = await templateService.applyToProject(req.body.templateId, project);
+      if (applied.fileRequests || applied.reminders) {
+        await events.log({ type: 'created', message: `Zastosowano szablon (${applied.fileRequests} brak(ów), ${applied.reminders} przypomnień)`, projectId: project.id });
+      }
+    }
     res.redirect(`/admin/projects/${project.id}`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// ---- Szablony projektów (lista + dodawanie + usuwanie) ----
+
+async function listTemplates(req, res, next) {
+  try {
+    const templates = (await templateService.list()).map((t) => ({ ...t, parsed: templateService.itemsOf(t) }));
+    res.render('admin/projects/templates', { title: 'Szablony projektów', active: 'projects', templates, saved: req.query.saved || null });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function createTemplate(req, res, next) {
+  try {
+    const { name, description, fileRequestsText, remindersText } = req.body;
+    const created = await templateService.create({ name, description, fileRequestsText, remindersText });
+    res.redirect(`/admin/projects/templates?saved=${created ? '1' : 'invalid'}`);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function deleteTemplate(req, res, next) {
+  try {
+    await templateService.remove(req.params.tid);
+    res.redirect('/admin/projects/templates?saved=del');
   } catch (err) {
     next(err);
   }
@@ -298,4 +338,4 @@ async function deleteFileRequest(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { listProjects, showCreateForm, createProject, showProject, sendPanel, showEditForm, updateProject, reorderProjects, showBoard, setStage, archiveProject, addCharge, toggleCharge, setChargePaidDate, deleteCharge, addFileRequest, toggleFileRequest, deleteFileRequest, deleteProject };
+module.exports = { listProjects, showCreateForm, createProject, showProject, sendPanel, showEditForm, updateProject, reorderProjects, showBoard, setStage, archiveProject, addCharge, toggleCharge, setChargePaidDate, deleteCharge, addFileRequest, toggleFileRequest, deleteFileRequest, deleteProject, listTemplates, createTemplate, deleteTemplate };

@@ -467,9 +467,22 @@
           <h2 class="text-sm font-medium text-slate-700">Oś czasu</h2>
         </div>
         <form method="POST" action="/admin/clients/<%= client.id %>/note" class="px-5 py-3 border-b border-slate-100">
-          <textarea name="note" rows="2" required placeholder="Dodaj notatkę…" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
-          <div class="mt-2 text-right">
-            <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium px-3 py-1.5 transition"><%- icon('pencil', { size: 13, cls: '' }) %> Dodaj notatkę</button>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <select name="kind" title="Rodzaj interakcji" class="shrink-0 sm:w-36 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-brand-500 outline-none">
+              <option value="note">Notatka</option>
+              <option value="call">Telefon</option>
+              <option value="meeting">Spotkanie</option>
+              <option value="email">E-mail</option>
+            </select>
+            <textarea name="note" rows="2" required placeholder="Co ustaliliście?…" class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+          </div>
+          <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
+            <label class="inline-flex items-center gap-1.5 text-xs text-slate-500" title="Utworzy przypomnienie „Follow-up" w kalendarzu (puste = bez przypomnienia)">
+              follow-up za
+              <input name="followupDays" type="number" min="1" max="365" placeholder="—" class="w-16 rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-right focus:border-brand-500 outline-none" />
+              dni
+            </label>
+            <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium px-3 py-1.5 transition"><%- icon('pencil', { size: 13, cls: '' }) %> Dodaj</button>
           </div>
         </form>
         <% if (!events.length) { %>

@@ -1,6 +1,6 @@
 <div class="h-full flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden">
   <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
-    <h2 class="text-sm font-medium text-slate-700">Nieprzeczytane wiadomości</h2>
+    <h2 class="text-sm font-medium text-slate-700 inline-flex items-center gap-1.5"><%- icon(typeof wicon !== 'undefined' ? wicon : 'mail', { size: 15, cls: 'text-slate-400' }) %> Nieprzeczytane wiadomości</h2>
     <a href="/admin/messages" class="text-xs text-brand-700 hover:underline">Skrzynka →</a>
   </div>
   <% if (!msgThreads.length) { %>
