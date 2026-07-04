@@ -49,6 +49,8 @@ const PLACEHOLDER_SUPPORT = {
   panelIntro: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{klient}', '{imie}', '{nazwisko}', '{link}', '{przycisk}'],
   onboardSubject: ['{nazwa-aplikacji}', '{klient}', '{imie}', '{nazwisko}', '{link}'],
   onboardIntro: ['{nazwa-aplikacji}', '{klient}', '{imie}', '{nazwisko}', '{link}', '{przycisk}'],
+  retainerSubject: ['{nazwa-aplikacji}', '{klient}', '{imie}', '{nazwisko}', '{tytul}'],
+  retainerIntro: ['{nazwa-aplikacji}', '{klient}', '{imie}', '{nazwisko}', '{tytul}', '{link}', '{przycisk}'],
   clientConfirmSubject: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{tytul}'],
   clientConfirmBody: ['{nazwa-aplikacji}', '{nazwa-projektu}', '{tytul}'],
   reminderSubject: ['{nazwa-aplikacji}', '{klient}', '{imie}', '{nazwisko}'],
@@ -347,6 +349,54 @@ async function sendPaymentReminder({ to, client, charges, total }) {
   return send({ to, subject, html, text, replyTo: config.admin.email });
 }
 
+// Mail do KLIENTA o nowej pozycji cyklicznej (retainer) — kwota, termin, dane przelewu, link do portalu.
+async function sendRetainerCharge({ to, client, charge, seller, portalUrl }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const em = s.emails || {};
+  const appName = s.appName || 'Evoke LINK';
+  const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const money = (g) => (g / 100).toFixed(2).replace('.', ',') + ' zł';
+  const gross = grossOf(charge);
+  const dueStr = charge.dueDate ? new Date(charge.dueDate).toLocaleDateString('pl-PL') : '';
+  const vars = { ...baseVars(appName), ...clientVars(client), tytul: charge.label, link: portalUrl };
+
+  const subject = cleanSubject(fillTpl(em.retainerSubject, vars)) || `${appName} — nowa pozycja rozliczeniowa: ${charge.label}`;
+  const introSrc = em.retainerIntro || 'Wystawiliśmy nową pozycję rozliczeniową:';
+  const bank = (seller && seller.bank) || '';
+  const title = `Rozliczenie — ${(client && client.name) || ''}`.slice(0, 32);
+
+  const ib = introBlock(introSrc, vars, btn(portalUrl, 'Zobacz szczegóły', primary));
+  const inner = `
+    ${ib.html}
+    <div style="margin:0 0 16px;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">
+      <p style="margin:0"><b>${esc(charge.label)}</b></p>
+      <p style="margin:6px 0 0;font-size:15px">Do zapłaty: <b style="color:${esc(primary)}">${esc(money(gross))}</b>${dueStr ? ` <span style="color:#64748b;font-size:13px">· termin ${esc(dueStr)}</span>` : ''}</p>
+    </div>
+    ${bank ? `<p style="margin:0 0 4px;color:#64748b;font-size:13px">${seller.name ? `Odbiorca: ${esc(seller.name)}<br>` : ''}Konto: ${esc(bank)}<br>Tytuł: ${esc(title)}</p>` : ''}
+    ${ib.hasButton ? '' : `<p style="margin:16px 0 0">${btn(portalUrl, 'Zobacz szczegóły', primary)}</p>`}`;
+  const html = await wrap(inner, { heading: 'Nowa pozycja rozliczeniowa' });
+  const text = `${stripTags(ib.html)}\n\n${charge.label}\nDo zapłaty: ${money(gross)}${dueStr ? ` (termin ${dueStr})` : ''}\n` +
+    (bank ? `${seller.name ? 'Odbiorca: ' + seller.name + '\n' : ''}Konto: ${bank}\nTytuł: ${title}\n` : '') + `\nSzczegóły: ${portalUrl}`;
+  return send({ to, subject, html, text, replyTo: config.admin.email });
+}
+
+// Powiadomienie do agencji: klient zgłosił wykonanie przelewu w portalu (do potwierdzenia).
+async function sendPaymentDeclared({ client, total, count }) {
+  let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const appName = s.appName || 'Evoke LINK';
+  const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const money = (g) => (g / 100).toFixed(2).replace('.', ',') + ' zł';
+  const adminUrl = `${config.appUrl}/admin/clients/${client.id}?tab=rozliczenia`;
+  const inner = `
+    <p style="margin:0 0 10px">Klient <b>${esc(client.name)}</b> zgłosił wykonanie przelewu za nierozliczone pozycje.</p>
+    <p style="margin:0 0 14px;color:#64748b;font-size:13px">Pozycji: ${count} · razem <b style="color:${esc(primary)}">${esc(money(total))}</b></p>
+    <p style="margin:0 0 14px;color:#64748b;font-size:13px">Sprawdź wpłatę na koncie i oznacz pozycje jako rozliczone.</p>
+    ${btn(adminUrl, 'Zobacz rozliczenia klienta', primary)}`;
+  const html = await wrap(inner, { heading: 'Klient zgłosił wpłatę' });
+  const text = `Klient zgłosił wpłatę: ${client.name}\nPozycji: ${count}, razem ${money(total)}\n\n${adminUrl}`;
+  return send({ to: config.admin.email, subject: `${appName} — klient zgłosił wpłatę: ${client.name}`, html, text });
+}
+
 // Powiadomienie do agencji o nowej wiadomości od klienta (z portalu /p, /t, /c).
 async function sendNewMessageNotification({ message, client, project, transfer }) {
   let s; try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
@@ -467,4 +517,4 @@ async function sendTest({ to }) {
   return send({ to, subject: 'Test e-mail — działa', html, text: 'Test e-mail — jeśli to widzisz, wysyłka działa.' });
 }
 
-module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendOnboardingLink, sendOnboardingCompleted, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendClientReply, sendExpiryWarning, sendDailyDigest, sendProofingDecision, sendTest };
+module.exports = { send, isConfigured, PLACEHOLDERS, PLACEHOLDER_SUPPORT, sendUploadNotification, sendTransferLink, sendPanelLink, sendOnboardingLink, sendOnboardingCompleted, sendRetainerCharge, sendPaymentDeclared, sendDownloadNotification, sendUploadConfirmation, sendClientStatement, sendPaymentReminder, sendNewMessageNotification, sendClientReply, sendExpiryWarning, sendDailyDigest, sendProofingDecision, sendTest };

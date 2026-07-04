@@ -30,7 +30,7 @@ async function log({ type, message, projectId, transferId, clientId, meta, ip })
 
 // Typy zdarzeń traktowane jako POWIADOMIENIA (akcje klienta + błędy).
 // 'created'/'updated' to akcje agencji — są w historii projektu, ale nie zaśmiecają powiadomień.
-const NOTIFY_TYPES = ['uploaded', 'downloaded', 'error', 'approved', 'changes', 'onboarded'];
+const NOTIFY_TYPES = ['uploaded', 'downloaded', 'error', 'approved', 'changes', 'onboarded', 'paid_declared'];
 
 // Ostatnia aktywność (do dashboardu) — wszystkie typy.
 function recent(limit = 8) {

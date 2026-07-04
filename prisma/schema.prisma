@@ -190,7 +190,7 @@ model Event {
   transferId Int?
   client     Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
   clientId   Int?      // oś czasu klienta; SetNull — usunięcie klienta nie kasuje historii
-  type       String    // created | downloaded | uploaded | email_sent | expired | error | note | onboarded
+  type       String    // created | downloaded | uploaded | email_sent | expired | error | note | onboarded | paid_declared
   message    String?
   meta       String?   // dodatkowe dane jako JSON (string)
   isRead     Boolean   @default(false) // dla powiadomień w panelu

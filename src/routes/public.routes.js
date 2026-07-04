@@ -47,6 +47,7 @@ router.post('/p/:token/messages/seen', portal.markSeen);
 router.get('/c/:token', clientCtrl.showClientPortal);
 router.post('/c/:token/message', messageLimiter, clientCtrl.submitClientMessage);
 router.post('/c/:token/messages/seen', clientCtrl.markSeen);
+router.post('/c/:token/paid', messageLimiter, clientCtrl.submitPaidDeclaration); // „Zgłoś wpłatę"
 
 // Onboarding — jednorazowy formularz uzupełnienia danych przez klienta.
 router.get('/onboard/:token', onboarding.showForm);

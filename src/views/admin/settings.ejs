@@ -876,6 +876,18 @@
 
       <div class="border-t border-slate-100 pt-4 space-y-3">
         <label class="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" name="retainerNotify" class="rounded border-slate-300" <%= settings.emails.retainerNotify ? 'checked' : '' %> />
+          Wysyłaj klientowi mail o nowej pozycji cyklicznej (retainer)
+        </label>
+        <p class="text-xs text-slate-400 -mt-1">Gdy cron (lub „Generuj teraz") utworzy pozycję z retainera: kwota brutto, termin, dane do przelewu i link do portalu klienta. Wymaga e-maila w kartotece.</p>
+        <input name="retainerSubject" data-phfield="retainerSubject" type="text" value="<%= settings.emails.retainerSubject %>" placeholder="Temat wiadomości (domyślny)"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <textarea name="retainerIntro" data-phfield="retainerIntro" rows="2" placeholder="Wstęp wiadomości (domyślny)"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= settings.emails.retainerIntro %></textarea>
+      </div>
+
+      <div class="border-t border-slate-100 pt-4 space-y-3">
+        <label class="flex items-center gap-2 text-sm text-slate-700">
           <input type="checkbox" name="clientConfirm" class="rounded border-slate-300" <%= settings.emails.clientConfirm ? 'checked' : '' %> />
           Wyślij klientowi potwierdzenie po przesłaniu plików (gdy podał e-mail)
         </label>

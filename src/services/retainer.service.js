@@ -6,6 +6,9 @@
 const prisma = require('../db/client');
 const chargeService = require('./charge.service');
 const events = require('./event.service');
+const settingsService = require('./settings.service');
+const mail = require('./mail.service');
+const config = require('../config');
 const fmt = require('../utils/format');
 
 const MONTHS_PL = ['styczeń', 'luty', 'marzec', 'kwiecień', 'maj', 'czerwiec', 'lipiec', 'sierpień', 'wrzesień', 'październik', 'listopad', 'grudzień'];
@@ -61,7 +64,31 @@ async function generateFrom(r, now = new Date()) {
   });
   await prisma.retainer.update({ where: { id: r.id }, data: { lastPeriod: period } });
   await events.log({ type: 'created', message: `Pozycja cykliczna: ${label} (${fmt.money(chargeService.grossOf(charge))})`, clientId: r.clientId });
+  await notifyClient(r.clientId, charge); // mail do klienta (gdy włączone i ma e-mail)
   return charge;
+}
+
+// Mail do klienta o nowej pozycji (toggle emails.retainerNotify). Błąd wysyłki nie blokuje generacji.
+async function notifyClient(clientId, charge) {
+  try {
+    const s = await settingsService.get();
+    if (!(s.emails && s.emails.retainerNotify)) return;
+    const client = await prisma.client.findUnique({
+      where: { id: clientId },
+      select: { id: true, name: true, firstName: true, lastName: true, email: true, token: true },
+    });
+    if (!client || !client.email) return;
+    await mail.sendRetainerCharge({
+      to: client.email,
+      client,
+      charge,
+      seller: (s.pdf && s.pdf.seller) || {},
+      portalUrl: `${config.appUrl}/c/${client.token}`,
+    });
+    await events.log({ type: 'email_sent', message: `Wysłano mail o nowej pozycji: ${charge.label}`, clientId });
+  } catch (e) {
+    console.error('[retainers] mail do klienta:', e.message);
+  }
 }
 
 // Cron: generuje pozycje z aktywnych retainerów, którym w tym miesiącu minął dzień generowania.

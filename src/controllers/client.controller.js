@@ -1,4 +1,5 @@
 // Panel: baza klientów + publiczny portal klienta (/c/:token) z jego projektami.
+const prisma = require('../db/client');
 const clientService = require('../services/client.service');
 const projectService = require('../services/project.service');
 const chargeService = require('../services/charge.service');
@@ -360,10 +361,40 @@ async function showClientPortal(req, res, next) {
       ? payment.zbpPayload({ nip: seller.nip, account, amountGr: unpaidTotal, name: seller.name, title: transferTitle })
       : null;
 
+    // Chip „Zgłoszono wpłatę" — ostatnia deklaracja z 7 dni (do potwierdzenia przez agencję).
+    const lastDeclared = unpaid.length
+      ? await prisma.event.findFirst({ where: { clientId: client.id, type: 'paid_declared' }, orderBy: { createdAt: 'desc' } })
+      : null;
+    const paidDeclaredAt = lastDeclared && (Date.now() - new Date(lastDeclared.createdAt).getTime()) < 7 * 86400000
+      ? lastDeclared.createdAt : null;
+
     res.render('public/client-portal', {
       title: client.name, layout: PUBLIC_LAYOUT, client,
       unpaid, unpaidTotal, seller, transferTitle, paymentQr,
+      paidDeclaredAt, paidFlash: req.query.paid === '1',
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Klient zgłasza wykonanie przelewu (portal /c) → dzwonek + mail do agencji, do potwierdzenia.
+// Anty-spam: jedna deklaracja na 7 dni; sekcja musi być włączona (pdf.portalBilling).
+async function submitPaidDeclaration(req, res, next) {
+  try {
+    const client = await clientService.getByToken(req.params.token);
+    if (!client) return res.status(404).render('public/unavailable', { title: 'Nie znaleziono', layout: PUBLIC_LAYOUT, reason: 'not_found' });
+    const s = await settingsService.get();
+    if (!(s.pdf && s.pdf.portalBilling)) return res.redirect(`/c/${client.token}`);
+
+    const rows = await chargeService.unpaidForClient(client.id);
+    const total = rows.reduce((sum, c) => sum + chargeService.grossOf(c), 0);
+    const recent = await prisma.event.findFirst({ where: { clientId: client.id, type: 'paid_declared', createdAt: { gte: new Date(Date.now() - 7 * 86400000) } } });
+    if (!rows.length || recent) return res.redirect(`/c/${client.token}?paid=1`); // idempotentnie
+
+    await events.log({ type: 'paid_declared', message: `Klient zgłosił wpłatę (${rows.length} poz., ${fmt.money(total)})`, clientId: client.id, ip: req.ip });
+    mail.sendPaymentDeclared({ client, total, count: rows.length }).catch((e) => console.error('[mail] wpłata:', e.message));
+    res.redirect(`/c/${client.token}?paid=1`);
   } catch (err) {
     next(err);
   }
@@ -390,4 +421,4 @@ async function submitClientMessage(req, res, next) {
   }
 }
 
-module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, createFollowup, showClientPortal, submitClientMessage, markSeen };
+module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, createFollowup, showClientPortal, submitClientMessage, submitPaidDeclaration, markSeen };

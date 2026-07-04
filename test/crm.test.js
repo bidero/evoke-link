@@ -49,6 +49,43 @@ test('QR: payload ZBP zachowuje polskie znaki i pełną nazwę odbiorcy (do 40 z
   assert.ok(svg.startsWith('<svg'), 'QR z polskimi znakami renderuje się bez błędu');
 });
 
+test('portal /c: „Zgłoś wpłatę" — event + anty-duplikat + przełącznik sekcji', async () => {
+  const snap = await prisma.settings.findUnique({ where: { id: 1 }, select: { pdf: true } });
+  const cl = await prisma.client.create({ data: { name: 'CRM Declare', token: 'crmd_' + Date.now() } });
+  try {
+    const cur = (await settingsService.get()).pdf;
+    await settingsService.update({ pdf: { ...cur, portalBilling: true } });
+    await prisma.charge.create({ data: { clientId: cl.id, label: 'Poz. do wpłaty', amount: 10000 } });
+
+    let html = await (await fetch(`${base}/c/${cl.token}`)).text();
+    assert.match(html, /Zgłoś wykonanie przelewu/, 'przycisk widoczny przy zaległościach');
+
+    // zgłoszenie → redirect ?paid=1, event paid_declared
+    const r = await fetch(`${base}/c/${cl.token}/paid`, { method: 'POST', redirect: 'manual' });
+    assert.equal(r.status, 302);
+    assert.ok(r.headers.get('location').includes('paid=1'));
+    assert.equal(await prisma.event.count({ where: { clientId: cl.id, type: 'paid_declared' } }), 1);
+
+    // chip zamiast przycisku + anty-duplikat (7 dni)
+    html = await (await fetch(`${base}/c/${cl.token}`)).text();
+    assert.match(html, /Zgłoszono wpłatę/, 'chip po zgłoszeniu');
+    assert.doesNotMatch(html, /Zgłoś wykonanie przelewu/, 'przycisk schowany');
+    await fetch(`${base}/c/${cl.token}/paid`, { method: 'POST', redirect: 'manual' });
+    assert.equal(await prisma.event.count({ where: { clientId: cl.id, type: 'paid_declared' } }), 1, 'bez duplikatu');
+
+    // wyłączona sekcja → POST nie tworzy zdarzenia
+    await prisma.event.deleteMany({ where: { clientId: cl.id, type: 'paid_declared' } });
+    await settingsService.update({ pdf: { ...cur, portalBilling: false } });
+    await fetch(`${base}/c/${cl.token}/paid`, { method: 'POST', redirect: 'manual' });
+    assert.equal(await prisma.event.count({ where: { clientId: cl.id, type: 'paid_declared' } }), 0, 'sekcja wyłączona = brak zgłoszeń');
+  } finally {
+    await prisma.charge.deleteMany({ where: { clientId: cl.id } });
+    await prisma.event.deleteMany({ where: { clientId: cl.id } });
+    await prisma.client.delete({ where: { id: cl.id } });
+    await prisma.settings.update({ where: { id: 1 }, data: { pdf: snap ? snap.pdf : null } });
+  }
+});
+
 test('portal /c: „Do zapłaty" — pozycje brutto, suma, dane do przelewu i QR', async () => {
   const snap = await prisma.settings.findUnique({ where: { id: 1 }, select: { pdf: true } });
   const cl = await prisma.client.create({ data: { name: 'CRM Pay', token: 'crmp_' + Date.now() } });

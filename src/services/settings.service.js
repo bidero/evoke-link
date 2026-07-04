@@ -29,6 +29,7 @@ const DEFAULTS = {
     uploadSubject: '', downloadSubject: '',
     clientConfirm: false, clientConfirmSubject: '', clientConfirmBody: '',
     reminders: false, reminderSubject: '', reminderIntro: '',
+    retainerNotify: false, retainerSubject: '', retainerIntro: '', // mail do klienta o nowej pozycji cyklicznej
     expiryWarn: false,
     dailyDigest: false,
   },

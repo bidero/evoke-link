@@ -7,8 +7,35 @@ process.chdir(path.join(__dirname, '..'));
 const app = require('../src/app'); // spójność z resztą testów (i tak nie startujemy tras)
 const prisma = require('../src/db/client');
 const retainerService = require('../src/services/retainer.service');
+const settingsService = require('../src/services/settings.service');
 
 after(async () => { await prisma.$disconnect(); });
+
+test('retainer: mail do klienta o nowej pozycji — tylko przy włączonym toggle (snapshot+restore Settings)', async () => {
+  const snap = await prisma.settings.findUnique({ where: { id: 1 }, select: { emails: true } });
+  const cl = await prisma.client.create({ data: { name: 'RetMail', token: 'retm_' + Date.now(), email: 'retmail@example.com', firstName: 'Ola' } });
+  try {
+    const cur = (await settingsService.get()).emails;
+
+    // toggle WYŁĄCZONY → generacja bez maila (brak eventu email_sent)
+    await settingsService.update({ emails: { ...cur, retainerNotify: false } });
+    const r = await retainerService.create(cl.id, { label: 'Abonament SEO', amount: '500', vatRate: '23', dayOfMonth: '1', dueDays: '7' });
+    await retainerService.generateNow(r.id, new Date(2026, 4, 10)); // maj
+    assert.equal(await prisma.event.count({ where: { clientId: cl.id, type: 'email_sent' } }), 0, 'toggle off = bez maila');
+
+    // toggle WŁĄCZONY → mail (dev-mode) + event email_sent
+    await settingsService.update({ emails: { ...cur, retainerNotify: true } });
+    await retainerService.generateNow(r.id, new Date(2026, 5, 10)); // czerwiec
+    const ev = await prisma.event.findFirst({ where: { clientId: cl.id, type: 'email_sent' } });
+    assert.ok(ev && /nowej pozycji/.test(ev.message), 'mail wysłany przy włączonym toggle');
+  } finally {
+    await prisma.charge.deleteMany({ where: { clientId: cl.id } });
+    await prisma.retainer.deleteMany({ where: { clientId: cl.id } });
+    await prisma.event.deleteMany({ where: { clientId: cl.id } });
+    await prisma.client.delete({ where: { id: cl.id } });
+    await prisma.settings.update({ where: { id: 1 }, data: { emails: snap ? snap.emails : null } });
+  }
+});
 
 test('retainer: pełny cykl — generacja, anty-duplikat, kolejny miesiąc, dzień, pauza, MRR', async () => {
   const cl = await prisma.client.create({ data: { name: 'RetTest', token: 'ret_' + Date.now() } });
