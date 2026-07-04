@@ -110,4 +110,38 @@ async function decide(offer, { decision, name, comment }) {
   return { ok: true, offer: updated };
 }
 
-module.exports = { list, getById, getByToken, totals, state, create, remove, decide, parseItems };
+// Lejek sprzedaży — agregacja ofert ponad klientem (widok „Sprzedaż").
+// open: oczekujące (posortowane po najbliższym terminie ważności) + wartość lejka;
+// expired: otwarte po terminie (do odświeżenia/zamknięcia); stats: skuteczność (win rate).
+async function pipeline(now = new Date()) {
+  const all = await prisma.offer.findMany({ include: INCLUDE, orderBy: { createdAt: 'desc' } });
+  const withTotals = all.map((o) => ({ ...o, gross: totals(o.items).gross, st: state(o) }));
+
+  const soon = new Date(now.getTime() + 7 * 86400000);
+  const open = withTotals.filter((o) => o.st === 'open')
+    .sort((a, b) => {
+      if (a.validUntil && b.validUntil) return new Date(a.validUntil) - new Date(b.validUntil);
+      return (a.validUntil ? 0 : 1) - (b.validUntil ? 0 : 1); // bez terminu na końcu
+    });
+  const expired = withTotals.filter((o) => o.st === 'expired').sort((a, b) => new Date(b.validUntil) - new Date(a.validUntil));
+
+  const accepted = withTotals.filter((o) => o.st === 'accepted');
+  const rejected = withTotals.filter((o) => o.st === 'rejected');
+  const decidedCount = accepted.length + rejected.length;
+
+  return {
+    open,
+    openValue: open.reduce((s, o) => s + o.gross, 0),
+    expiringCount: open.filter((o) => o.validUntil && new Date(o.validUntil) <= soon).length,
+    expired,
+    expiredValue: expired.reduce((s, o) => s + o.gross, 0),
+    stats: {
+      acceptedCount: accepted.length,
+      acceptedValue: accepted.reduce((s, o) => s + o.gross, 0),
+      rejectedCount: rejected.length,
+      winRate: decidedCount ? Math.round((accepted.length / decidedCount) * 100) : null,
+    },
+  };
+}
+
+module.exports = { list, getById, getByToken, totals, state, create, remove, decide, parseItems, pipeline };

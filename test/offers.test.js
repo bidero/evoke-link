@@ -76,6 +76,40 @@ test('oferty: akceptacja tworzy Charge + rusza projekt lead→active + event', a
   }
 });
 
+test('lejek: pipeline agreguje wartość, sortuje po terminie, liczy skuteczność', async () => {
+  const cl = await prisma.client.create({ data: { name: 'Lejek ' + Date.now(), token: 'plc_' + Date.now() } });
+  const mk = (title, status, validUntil, amount, vat) => prisma.offer.create({
+    data: { clientId: cl.id, token: 'plt_' + Math.random().toString(36).slice(2), title, status, validUntil, items: { create: [{ label: 'poz', amount, vatRate: vat, qty: 1, position: 0 }] } },
+  });
+  try {
+    await mk('A open', 'open', null, 100000, 23);                              // brutto 123000, bez terminu
+    await mk('B soon', 'open', new Date(Date.now() + 3 * 86400000), 200000, null); // brutto 200000, wygasa za 3 dni
+    await mk('C acc', 'accepted', null, 50000, null);
+    await mk('D rej', 'rejected', null, 10000, null);
+    await mk('E exp', 'open', new Date(Date.now() - 86400000), 70000, null);   // otwarta po terminie → expired
+
+    const pl = await offerService.pipeline();
+    const mine = (arr) => arr.filter((o) => o.clientId === cl.id);
+
+    const myOpen = mine(pl.open);
+    assert.equal(myOpen.length, 2, 'dwie otwarte (bez wygasłej)');
+    assert.equal(myOpen[0].title, 'B soon', 'sortowanie: najbliższy termin pierwszy');
+    assert.equal(myOpen.reduce((s, o) => s + o.gross, 0), 123000 + 200000);
+
+    const myExp = mine(pl.expired);
+    assert.equal(myExp.length, 1);
+    assert.equal(myExp[0].title, 'E exp');
+
+    assert.ok(pl.expiringCount >= 1, 'B liczy się do wygasających w 7 dni');
+    assert.ok(pl.openValue >= 323000, 'wartość lejka obejmuje moje otwarte');
+    assert.ok(typeof pl.stats.winRate === 'number', 'skuteczność policzona (są rozstrzygnięte)');
+  } finally {
+    await prisma.offerItem.deleteMany({ where: { offer: { clientId: cl.id } } });
+    await prisma.offer.deleteMany({ where: { clientId: cl.id } });
+    await prisma.client.delete({ where: { id: cl.id } });
+  }
+});
+
 test('oferty: odrzucenie z komentarzem + wygasła oferta', async () => {
   const cl = await prisma.client.create({ data: { name: 'Oferta RJ ' + Date.now(), token: 'offr_' + Date.now() } });
   try {

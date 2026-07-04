@@ -51,6 +51,7 @@ router.use(async (req, res, next) => {
 router.get('/', showDashboard);
 router.post('/dashboard/layout', saveDashboardLayout); // zapis układu widżetów (tryb „Dostosuj")
 router.get('/pulse', require('../controllers/pulse.controller').showPulse);
+router.get('/sales', offers.showPipeline); // lejek sprzedaży (oferty ponad klientem)
 router.get('/search', search.index);
 
 // Wiadomości od klientów (skrzynka).

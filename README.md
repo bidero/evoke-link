@@ -18,6 +18,7 @@ Stos: **Node.js + Express**, **SQLite** (przez Prisma), szablony **EJS + Tailwin
 - 📞 **„Do odezwania się"** — widżet pulpitu z klientami bez kontaktu od 30+ dni; jedno kliknięcie tworzy przypomnienie „Odezwij się" na jutro.
 - 📄 **Oferty / wyceny** — wysyłasz klientowi wycenę pozycjami pod linkiem `/o/:token`; klient akceptuje lub odrzuca z komentarzem. Po akceptacji pozycje trafiają do rozliczeń, a powiązany projekt rusza na kanbanie (Lead → Aktywny).
 - 📎 **Załączniki w wiadomościach** — klient może dołączyć plik (umowa, logo, brief) do wiadomości w portalu; agencja pobiera go ze skrzynki. Kopie plików obejmuje backup.
+- 🫙 **Lejek sprzedaży** — widok „Sprzedaż" zbiera wszystkie otwarte oferty ponad klientem: wartość lejka, oferty wygasające w 7 dni, skuteczność (win rate) i wartość wygranych, z szybkim ponagleniem klienta.
 - 🔁 **Retainery** — cykliczne pozycje rozliczeniowe (abonamenty): co miesiąc cron sam tworzy pozycję z terminem płatności (opcjonalnie z mailem do klienta: kwota, dane przelewu, link do portalu), a Puls pokazuje **MRR** (stały przychód miesięczny) z listą retainerów.
 - ✅ **Zgłoszenie wpłaty** — klient w portalu klika „Zgłoś wykonanie przelewu": agencja dostaje powiadomienie i mail, a po sprawdzeniu konta oznacza pozycje jako rozliczone.
 - 🧩 **Szablony projektów** — powtarzalne projekty (www, branding…) startują z gotową listą braków i przypomnieniami; szablon wybierasz przy tworzeniu projektu.
@@ -180,3 +181,4 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Wskaźniki klienta na 360°** — LTV, średni czas płatności i wykres przychodu z 12 miesięcy
 - [x] **Oferty z akceptacją w portalu** — wyceny `/o/:token`; po akceptacji pozycje trafiają do rozliczeń, a projekt rusza na kanbanie
 - [x] **Załączniki w wiadomościach** — klient dołącza plik do wątku (portale `/p`, `/t`, `/c`), agencja pobiera go ze skrzynki
+- [x] **Lejek sprzedaży** — widok „Sprzedaż": wszystkie otwarte oferty, wartość lejka, wygasające, skuteczność i szybkie ponaglenie

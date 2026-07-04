@@ -12,6 +12,16 @@ const back = (clientId, status) => `/admin/clients/${clientId}?tab=oferty&sent=$
 
 // --- Admin ---
 
+// Lejek sprzedaży — wszystkie oferty ponad klientem: wartość lejka + skuteczność + follow-up.
+async function showPipeline(req, res, next) {
+  try {
+    const data = await offerService.pipeline();
+    res.render('admin/sales', { title: 'Sprzedaż', active: 'sales', ...data });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function createOffer(req, res, next) {
   try {
     const client = await clientService.getById(req.params.id);
@@ -121,4 +131,4 @@ async function submitDecision(req, res, next) {
   }
 }
 
-module.exports = { createOffer, deleteOffer, sendOffer, showOffer, submitDecision };
+module.exports = { showPipeline, createOffer, deleteOffer, sendOffer, showOffer, submitDecision };

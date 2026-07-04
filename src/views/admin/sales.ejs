@@ -1,0 +1,87 @@
+<p class="text-sm text-slate-500 mb-5">Oferty ponad klientem — ile pieniędzy „wisi" w lejku i co dowieźć.</p>
+
+<!-- Kafelki -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  <div class="bg-white rounded-2xl border border-slate-200 p-5">
+    <div class="text-sm text-slate-500">Wartość lejka</div>
+    <div class="mt-1 text-2xl font-bold text-slate-800"><%= fmt.money(openValue) %></div>
+    <div class="text-xs text-slate-400 mt-1"><%= open.length %> oczekujących ofert</div>
+  </div>
+  <div class="bg-white rounded-2xl border <%= expiringCount > 0 ? 'border-amber-200' : 'border-slate-200' %> p-5">
+    <div class="text-sm text-slate-500">Wygasają w 7 dni</div>
+    <div class="mt-1 text-2xl font-bold <%= expiringCount > 0 ? 'text-amber-600' : 'text-slate-800' %>"><%= expiringCount %></div>
+    <div class="text-xs text-slate-400 mt-1">ponaglij, zanim wygasną</div>
+  </div>
+  <div class="bg-white rounded-2xl border border-slate-200 p-5">
+    <div class="text-sm text-slate-500">Skuteczność</div>
+    <div class="mt-1 text-2xl font-bold text-slate-800"><%= stats.winRate === null ? '—' : stats.winRate + '%' %></div>
+    <div class="text-xs text-slate-400 mt-1"><%= stats.acceptedCount %> przyjętych · <%= stats.rejectedCount %> odrzuconych</div>
+  </div>
+  <div class="bg-white rounded-2xl border border-slate-200 p-5">
+    <div class="text-sm text-slate-500">Zaakceptowane</div>
+    <div class="mt-1 text-2xl font-bold text-green-600"><%= fmt.money(stats.acceptedValue) %></div>
+    <div class="text-xs text-slate-400 mt-1">łączna wartość wygranych</div>
+  </div>
+</div>
+
+<!-- Oczekujące oferty -->
+<div class="bg-white rounded-2xl border border-slate-200 overflow-hidden mb-6">
+  <div class="px-5 py-3 border-b border-slate-100">
+    <h2 class="text-sm font-medium text-slate-700">Oczekujące na decyzję</h2>
+  </div>
+  <% if (!open.length) { %>
+    <div class="px-5 py-10 text-center text-sm text-slate-400">Brak otwartych ofert. Utwórz ofertę na stronie klienta (zakładka „Oferty").</div>
+  <% } else { %>
+    <% const now = new Date(); const soon = new Date(now.getTime() + 7 * 86400000); %>
+    <div class="divide-y divide-slate-100">
+      <% open.forEach(function(o){ const expSoon = o.validUntil && new Date(o.validUntil) <= soon; %>
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3">
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <a href="/o/<%= o.token %>" target="_blank" class="text-sm font-medium text-slate-800 hover:text-brand-700 truncate"><%= o.title %></a>
+              <% if (expSoon) { %><span class="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">wygasa <%= fmt.dateOnly(o.validUntil) %></span><% } %>
+            </div>
+            <div class="text-xs text-slate-400 mt-0.5">
+              <a href="/admin/clients/<%= o.clientId %>?tab=oferty" class="hover:text-brand-700"><%= o.client.name %></a><%= o.project ? ' · ' + o.project.name : '' %><%= o.validUntil && !expSoon ? ' · ważna do ' + fmt.dateOnly(o.validUntil) : '' %>
+            </div>
+          </div>
+          <div class="shrink-0 text-right">
+            <span class="text-sm font-semibold text-slate-800"><%= fmt.money(o.gross) %></span>
+          </div>
+          <div class="shrink-0 flex items-center gap-1.5">
+            <% if (o.client.email) { %>
+              <form method="POST" action="/admin/clients/<%= o.clientId %>/offers/<%= o.id %>/send" title="Wyślij ofertę ponownie na <%= o.client.email %>">
+                <button type="submit" class="text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition">Ponaglij</button>
+              </form>
+            <% } %>
+            <a href="/admin/clients/<%= o.clientId %>?tab=oferty" class="text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50 transition">Otwórz</a>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  <% } %>
+</div>
+
+<!-- Wygasłe (do odświeżenia / zamknięcia) -->
+<% if (expired.length) { %>
+<div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+  <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+    <h2 class="text-sm font-medium text-slate-700">Wygasłe — do odświeżenia lub zamknięcia</h2>
+    <span class="text-xs text-slate-400"><%= fmt.money(expiredValue) %> potencjału</span>
+  </div>
+  <div class="divide-y divide-slate-100">
+    <% expired.forEach(function(o){ %>
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-2.5">
+        <div class="min-w-0 flex-1">
+          <a href="/o/<%= o.token %>" target="_blank" class="text-sm text-slate-600 hover:text-brand-700 truncate"><%= o.title %></a>
+          <div class="text-xs text-slate-400 mt-0.5">
+            <a href="/admin/clients/<%= o.clientId %>?tab=oferty" class="hover:text-brand-700"><%= o.client.name %></a> · wygasła <%= fmt.dateOnly(o.validUntil) %>
+          </div>
+        </div>
+        <span class="shrink-0 text-sm text-slate-500"><%= fmt.money(o.gross) %></span>
+        <a href="/admin/clients/<%= o.clientId %>?tab=oferty" class="shrink-0 text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50 transition">Otwórz</a>
+      </div>
+    <% }); %>
+  </div>
+</div>
+<% } %>

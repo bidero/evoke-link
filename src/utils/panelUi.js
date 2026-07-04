@@ -8,6 +8,7 @@
 const MENU = [
   { key: 'dashboard', label: 'Pulpit', href: '/admin', icon: 'home' },
   { key: 'pulse', label: 'Puls agencji', href: '/admin/pulse', icon: 'activity' },
+  { key: 'sales', label: 'Sprzedaż', href: '/admin/sales', icon: 'funnel' },
   { key: 'calendar', label: 'Kalendarz', href: '/admin/calendar', icon: 'calendarDays' },
   { key: 'projects', label: 'Projekty', href: '/admin/projects', icon: 'folder' },
   { key: 'clients', label: 'Klienci', href: '/admin/clients', icon: 'users' },
