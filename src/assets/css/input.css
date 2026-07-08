@@ -27,23 +27,21 @@
      Domyślne wartości odwzorowują dotychczasowy wygląd (biała karta, miękki cień). */
   --card-bg: #ffffff;
   --card-radius: 24px;
-  /* CAŁA wartość backdrop-filter w zmiennej (nie blur(var(...))): Safari NIE rozwiązuje
-     var() zagnieżdżonego w blur() → glass był płaski. `none` = brak rozmycia (karta biała). */
-  --card-backdrop: none;
   --card-border-color: transparent;
   --card-shadow: 0 20px 25px -5px rgb(var(--brand-600) / 0.18), 0 8px 10px -6px rgb(var(--brand-600) / 0.12);
   --btn-radius: 0.75rem;
 }
 
 /* Wspólna powierzchnia karty na stronach klienta/logowania. Styl steruje się
-   zmiennymi --card-* (injekcja w app.js: solid/glass/elevated + promień). */
+   zmiennymi --card-* (injekcja w app.js: solid/glass/elevated + promień).
+   UWAGA: backdrop-filter NIE jest tu — dla szkła wstrzykuje go app.js (surfaceVars)
+   LITERALNIE (blur(14px)), bo Safari NIE stosuje -webkit-backdrop-filter przez var()
+   (inspektor pokazuje rozwiniętą wartość, ale silnik jej nie renderuje). */
 .evoke-card {
   background: var(--card-bg);
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow);
   border: 1px solid var(--card-border-color);
-  -webkit-backdrop-filter: var(--card-backdrop);
-  backdrop-filter: var(--card-backdrop);
 }
 
 /* Układ „Panel na tle": karta staje się płaską treścią flush panelu

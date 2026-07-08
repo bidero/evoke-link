@@ -108,20 +108,25 @@ function paletteVars(hex) {
 function surfaceVars(layout) {
   const L = layout || {};
   const vars = [];
+  let extra = '';
   if (Number.isInteger(L.radius) && L.radius !== 24) vars.push(`--card-radius:${L.radius}px`);
   if (L.button === 'pill') vars.push('--btn-radius:9999px');
   if (L.card === 'glass') {
     vars.push(
       '--card-bg:rgba(255,255,255,0.62)',
-      // CAŁA wartość (nie blur(var(...))) — Safari nie rozwiązuje var() w środku blur().
-      '--card-backdrop:blur(14px)',
       '--card-border-color:rgba(255,255,255,0.55)',
       '--card-shadow:0 10px 40px rgba(2,6,23,0.18)'
     );
+    // backdrop-filter LITERALNIE (nie przez var()): Safari NIE stosuje
+    // -webkit-backdrop-filter podanego jako var(...) — literał blur(14px) działa.
+    // Reguła po linku do app.css → wygrywa; `.evoke-panel-mode .evoke-card` (wyższa
+    // specyficzność) i tak ją zeruje, gdy styl to panel.
+    extra = '.evoke-card{-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}';
   } else if (L.card === 'elevated') {
     vars.push('--card-shadow:0 30px 60px -15px rgba(2,6,23,0.35)');
   }
-  return vars.length ? `<style>:root{${vars.join(';')}}</style>` : '';
+  const root = vars.length ? `:root{${vars.join(';')}}` : '';
+  return (root || extra) ? `<style>${root}${extra}</style>` : '';
 }
 
 app.use(async (req, res, next) => {
