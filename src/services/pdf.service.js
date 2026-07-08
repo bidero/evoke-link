@@ -83,7 +83,10 @@ function projectTables(charges, brand, style, hasVat) {
     // tytułu projektu na dole strony, gdy jego tabela ląduje już na następnej.
     out.push({ text: cur, bold: true, color: brand, fontSize: 11, margin: [0, 14, 0, 5], headlineLevel: 'projectTitle' });
     out.push({
-      table: { headerRows: 1, widths, body: [header(), ...rows] },
+      // keepWithHeaderRows: 1 — nagłówek kolumn nie zostaje sam na dole strony: gdy nie mieści
+      // się z ≥1 wierszem danych, CAŁA tabela zjeżdża na następną stronę (bez sytuacji „tytuł +
+      // pusty nagłówek" na dole). Przeniesienie samego tytułu ogarnia pageBreakBefore w buildDoc.
+      table: { headerRows: 1, keepWithHeaderRows: 1, widths, body: [header(), ...rows] },
       layout: style === 'bordered' ? borderedLayout : lightLayout,
     });
   };
@@ -275,11 +278,16 @@ function buildDoc({ client, charges, filters = {}, settings }) {
     pageMargins: sideBar ? [60, 48, 48, 56] : [48, 48, 48, 56],
     defaultStyle: { font: 'Roboto', fontSize: 10, color: '#0f172a', lineHeight: 1.15 },
     content,
-    // Tytuł projektu trzymamy razem z jego tabelą: gdy po tytule nic już nie zmieściło się
-    // na stronie (tabela poszła na następną), przerzucamy tytuł razem z nią. Tytuł to jedna
-    // linia, więc na świeżej stronie zawsze się mieści — brak ryzyka pętli.
-    pageBreakBefore: (currentNode, followingNodesOnPage) =>
-      currentNode.headlineLevel === 'projectTitle' && followingNodesOnPage.length === 0,
+    // Tytuł projektu nie może zostać osierocony na dole strony. Liczba „following" węzłów
+    // jest tu zawodna (pdfmake liczy komórki tabeli jako following, nawet gdy zjeżdżają niżej),
+    // więc patrzymy na REALNE miejsce pod tytułem: gdy nie starczy na tytuł + nagłówek kolumn
+    // + ≥1 wiersz danych, przerzucamy tytuł razem z tabelą na następną stronę. Po przerzuceniu
+    // tytuł jest u góry strony (dużo miejsca) → warunek fałszywy, brak pętli.
+    pageBreakBefore: (currentNode) => {
+      if (currentNode.headlineLevel !== 'projectTitle' || !currentNode.startPosition) return false;
+      const sp = currentNode.startPosition;
+      return sp.pageInnerHeight - sp.top < 90; // ~tytuł(32) + nagłówek(22) + wiersz(24) + zapas
+    },
     footer: (cp, pc) => ({ text: `${appName} · strona ${cp}/${pc}`, alignment: 'center', color: '#94a3b8', fontSize: 8, margin: [0, 16, 0, 0] }),
   };
 
@@ -399,4 +407,4 @@ function clientStatementBuffer(opts) {
   });
 }
 
-module.exports = { clientStatement, clientStatementBuffer, statementFilename };
+module.exports = { clientStatement, clientStatementBuffer, statementFilename, buildDoc };
