@@ -1155,7 +1155,7 @@ function settingsForm(init) {
     },
     cardStyle(){
       var r='border-radius:'+Math.min(28,this.layoutRadius)+'px';
-      if(this.layoutCard==='glass') return 'background:rgba(255,255,255,0.62);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.5);'+r;
+      if(this.layoutCard==='glass') return 'background:rgba(255,255,255,0.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.5);'+r;
       if(this.layoutCard==='elevated') return 'background:#fff;box-shadow:0 18px 40px -12px rgba(2,6,23,0.45);'+r;
       return 'background:#fff;box-shadow:0 6px 16px rgba(2,6,23,0.12);'+r;
     },
