@@ -178,7 +178,8 @@ async function downloadFile(req, res, next) {
     await events.log({ type: 'downloaded', message: `Pobrano plik: ${file.originalName}`, transferId: transfer.id, projectId: transfer.projectId, ip: req.ip });
 
     res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(file.originalName)}`);
+    // originalName może być ścieżką z folderu ('katalog/plik.pdf') — do nagłówka sama nazwa.
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(file.originalName.split('/').pop())}`);
     res.setHeader('Content-Length', Number(file.size));
     storage.readStream(file.storedPath).pipe(res);
   } catch (err) {

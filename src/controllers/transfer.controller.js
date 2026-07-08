@@ -233,7 +233,8 @@ async function adminDownloadFile(req, res, next) {
     const file = transfer && transfer.files.find((f) => String(f.id) === String(req.params.fileId));
     if (!file) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
     res.setHeader('Content-Type', file.mimeType || 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(file.originalName)}`);
+    // originalName może być ścieżką z folderu ('katalog/plik.pdf') — do nagłówka sama nazwa.
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(file.originalName.split('/').pop())}`);
     res.setHeader('Content-Length', Number(file.size));
     storage.readStream(file.storedPath).pipe(res);
   } catch (err) {

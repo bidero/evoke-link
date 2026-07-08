@@ -11,7 +11,7 @@ const CHUNK_ROOT = path.join(storage.TMP_DIR, 'chunks');
 storage.ensureDir(CHUNK_ROOT);
 
 const ID_RE = /^[a-f0-9]{16,64}$/i;
-const MAX_FILES = 500;            // bezpiecznik na liczbę plików w sesji
+const MAX_FILES = 5000;           // bezpiecznik na liczbę plików w sesji (folder potrafi mieć setki)
 const MAX_CHUNKS = 200000;        // bezpiecznik na liczbę kawałków w pliku
 const STALE_MS = 24 * 60 * 60 * 1000; // sesje starsze niż 24h = porzucone
 
@@ -30,17 +30,27 @@ function chunkPath(uploadId, fileIndex, chunkIndex) {
   return path.join(sessionDir(uploadId), fileIndex + '_' + chunkIndex + '.part');
 }
 
-function manifestPath(uploadId) {
-  return path.join(sessionDir(uploadId), 'manifest.json');
+// Nazwa pliku od klienta może być ścieżką względną z folderu ('katalog/plik.pdf' —
+// ZIP odtwarza wtedy strukturę). Wycinamy wszystko, co pozwoliłoby wyjść poza nią:
+// backslashe, wiodące ukośniki/dyski, segmenty '.' i '..', znaki sterujące.
+function sanitizeRelName(name) {
+  const parts = String(name || '')
+    .replace(/[\x00-\x1f\x7f]/g, '')
+    .replace(/\\/g, '/')
+    .replace(/^[a-zA-Z]:/, '')
+    .split('/')
+    .map((s) => s.trim())
+    .filter((s) => s && s !== '.' && s !== '..');
+  return parts.join('/').slice(0, 512);
 }
 
-function readManifest(uploadId) {
-  try { return JSON.parse(fs.readFileSync(manifestPath(uploadId), 'utf8')); }
-  catch (_) { return { files: {} }; }
-}
-
-function writeManifest(uploadId, m) {
-  fs.writeFileSync(manifestPath(uploadId), JSON.stringify(m));
+// Metadane pliku trzymamy w OSOBNYM pliku <fi>.meta (nie we wspólnym manifeście):
+// wspólny manifest.json był czytany i przepisywany w całości przy KAŻDYM kawałku
+// (kwadratowy koszt przy setkach plików) i miał wyścig read-modify-write, gdy kawałki
+// różnych plików trafiały do różnych procesów Passengera. Każdy kawałek tego samego
+// pliku niesie te same metadane, więc zapis jest idempotentny.
+function metaPath(uploadId, fi) {
+  return path.join(sessionDir(uploadId), fi + '.meta');
 }
 
 // Zapisuje pojedynczy kawałek do własnego pliku (kolejność dowolna).
@@ -54,13 +64,13 @@ function writeChunk(uploadId, fileIndex, buffer, meta) {
 
   fs.writeFileSync(chunkPath(uploadId, fi, ci), buffer);
 
-  const m = readManifest(uploadId);
-  if (!m.files[fi]) m.files[fi] = {};
-  if (meta.name) m.files[fi].name = meta.name;
-  if (!m.files[fi].name) m.files[fi].name = 'plik-' + fi;
-  if (meta.type) m.files[fi].type = meta.type;
-  m.files[fi].total = Math.max(total, m.files[fi].total || 0);
-  writeManifest(uploadId, m);
+  if (!fs.existsSync(metaPath(uploadId, fi))) {
+    fs.writeFileSync(metaPath(uploadId, fi), JSON.stringify({
+      name: sanitizeRelName(meta.name) || 'plik-' + fi,
+      type: meta.type || '',
+      total,
+    }));
+  }
 }
 
 // Łączy kawałki 0..total-1 jednego pliku w <fi>.bin — STRUMIENIOWO (nie blokuje
@@ -88,12 +98,18 @@ function concatFile(uploadId, fi, total) {
 // Składa sesję: dla każdego pliku skleja kawałki strumieniowo. Asynchroniczne.
 // Zwraca tablicę plików w kształcie multera. Pliki niekompletne są pomijane.
 async function assembleFiles(uploadId) {
-  const m = readManifest(uploadId);
   const dir = sessionDir(uploadId);
+  let entries = [];
+  try { entries = fs.readdirSync(dir); } catch (_) { return []; }
+  const indices = entries
+    .filter((n) => n.endsWith('.meta'))
+    .map((n) => parseInt(n, 10))
+    .filter(Number.isInteger)
+    .sort((a, b) => a - b);
   const out = [];
-  const indices = Object.keys(m.files).map((k) => parseInt(k, 10)).sort((a, b) => a - b);
   for (const fi of indices) {
-    const meta = m.files[fi];
+    let meta;
+    try { meta = JSON.parse(fs.readFileSync(metaPath(uploadId, fi), 'utf8')); } catch (_) { continue; }
     const total = Math.max(1, parseInt(meta.total, 10) || 1);
     const okFile = await concatFile(uploadId, fi, total);
     if (!okFile) continue;

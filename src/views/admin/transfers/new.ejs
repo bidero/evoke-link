@@ -14,10 +14,13 @@
       @click="$refs.input.click()"
     >
       <input x-ref="input" type="file" multiple class="hidden" @change="addFiles($event.target.files)" />
+      <input x-ref="dirInput" type="file" webkitdirectory multiple class="hidden" @change="addFiles($event.target.files)" />
       <div class="text-slate-600">
         <div class="flex justify-center mb-2"><%- icon('cloudUpload', { size: 36 }) %></div>
-        <p class="font-medium">Przeciągnij pliki tutaj</p>
-        <p class="text-sm text-slate-400">lub kliknij, aby wybrać</p>
+        <p class="font-medium">Przeciągnij pliki lub folder tutaj</p>
+        <p class="text-sm text-slate-400">lub kliknij, aby wybrać &middot;
+          <button type="button" @click.stop="$refs.dirInput.click()" class="font-medium text-brand-700 hover:text-brand-800 underline underline-offset-2">wybierz folder</button>
+        </p>
       </div>
     </div>
 
@@ -121,8 +124,20 @@ function uploader() {
     uploading: false,
     finalizing: false,
     progress: 0,
-    addFiles(list) { this.files.push(...Array.from(list)); },
-    onDrop(e) { this.dragging = false; this.addFiles(e.dataTransfer.files); },
+    // list: FileList (zwykły input lub webkitdirectory) albo [{ file, relPath }] z onDrop.
+    // Trzymamy { file, name } — name to ścieżka względna z folderu ('katalog/plik.pdf').
+    addFiles(list) {
+      let over = false;
+      Array.from(list).forEach((f) => {
+        const file = f && f.file ? f.file : f;
+        const name = (f && f.relPath) || file.webkitRelativePath || file.name;
+        if (/^(\.DS_Store|Thumbs\.db|desktop\.ini|\.localized)$|^\._/.test(name.split('/').pop())) return;
+        if (this.files.length >= 5000) { over = true; return; } // MAX_FILES z chunk.service.js
+        this.files.push({ file, name, size: file.size });
+      });
+      if (over) alert('Maksymalnie 5000 plików w jednej wysyłce — nadmiarowe pominięto.');
+    },
+    onDrop(e) { this.dragging = false; window.collectDataTransferFiles(e.dataTransfer).then((items) => this.addFiles(items)); },
     remove(i) { this.files.splice(i, 1); },
     totalSize() { return this.files.reduce((s, f) => s + f.size, 0); },
     human(b) {
