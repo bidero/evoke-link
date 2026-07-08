@@ -6,6 +6,7 @@ const cookieSession = require('cookie-session');
 const expressLayouts = require('express-ejs-layouts');
 const helmet = require('helmet');
 
+const pkg = require('../package.json');
 const config = require('./config');
 const fmt = require('./utils/format');
 const { icon, eventIcon } = require('./utils/icons');
@@ -85,6 +86,7 @@ app.use(injectUser);
 
 // Pomocniki dostępne w każdym szablonie: fmt.* (formatowanie) i icon() (ikony SVG).
 app.use((req, res, next) => {
+  res.locals.assetVer = pkg.version; // cache-busting ?v= dla app.css — świeży CSS po każdym releasie
   res.locals.fmt = fmt;
   res.locals.icon = icon;
   res.locals.eventIcon = eventIcon;
@@ -111,7 +113,8 @@ function surfaceVars(layout) {
   if (L.card === 'glass') {
     vars.push(
       '--card-bg:rgba(255,255,255,0.62)',
-      '--card-blur:14px',
+      // CAŁA wartość (nie blur(var(...))) — Safari nie rozwiązuje var() w środku blur().
+      '--card-backdrop:blur(14px)',
       '--card-border-color:rgba(255,255,255,0.55)',
       '--card-shadow:0 10px 40px rgba(2,6,23,0.18)'
     );

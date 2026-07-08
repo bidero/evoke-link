@@ -6,7 +6,7 @@
   <script>try{if(localStorage.getItem('evoke-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}window.toggleTheme=function(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('evoke-theme',d?'dark':'light')}catch(e){}};</script>
   <% const appName = (typeof settings !== 'undefined' && settings) ? settings.appName : 'Evoke LINK'; %>
   <title><%= typeof title !== 'undefined' ? title + ' — ' + appName : appName %></title>
-  <link rel="stylesheet" href="/css/app.css" />
+  <link rel="stylesheet" href="/css/app.css?v=<%= assetVer %>" />
   <% if (typeof settings !== 'undefined' && settings && settings.faviconPath) { %><link rel="icon" href="<%= settings.faviconPath %>" /><% } %>
   <%
     // Podgląd linku (OG/Twitter) — gdy klient wkleja link np. w czacie/mailu.
