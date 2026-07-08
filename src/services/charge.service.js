@@ -172,10 +172,35 @@ function forStatement(clientId, { from, to, status, ids } = {}) {
     const list = ids.map((x) => parseInt(x, 10)).filter(Number.isInteger);
     where.id = { in: list.length ? list : [-1] }; // pusty wybór = nic
   }
-  return prisma.charge.findMany({
-    where,
-    include: { project: { select: { id: true, name: true } } },
-    orderBy: [{ project: { name: 'asc' } }, { date: 'asc' }, { createdAt: 'asc' }],
+  return prisma.charge
+    .findMany({ where, include: { project: { select: { id: true, name: true } } } })
+    .then(sortForStatement);
+}
+
+// Porządek chronologiczny rozliczenia (PDF/CSV/e-mail): pozycje pogrupowane po
+// projekcie, a bloki projektów ułożone wg NAJSTARSZEJ pozycji w projekcie (najstarsza
+// czynność wypycha swój projekt na górę). Wewnątrz projektu — od najstarszej do najnowszej.
+// Efektywna data = `date`, a gdy pusta → `createdAt` (pozycje bez daty nie skaczą na górę,
+// jak przy sortowaniu SQL, gdzie NULL ląduje pierwszy).
+function sortForStatement(charges) {
+  const eff = (c) => (c.date || c.createdAt).getTime();
+  const key = (c) => (c.project ? 'p' + c.project.id : 'none');
+  const groupMin = {};
+  for (const c of charges) {
+    const k = key(c);
+    const t = eff(c);
+    if (groupMin[k] == null || t < groupMin[k]) groupMin[k] = t;
+  }
+  return charges.sort((a, b) => {
+    const ka = key(a), kb = key(b);
+    if (ka !== kb) {
+      if (groupMin[ka] !== groupMin[kb]) return groupMin[ka] - groupMin[kb]; // starsza grupa wyżej
+      // remis dat → nazwa projektu (pl); „Bez projektu" na końcu remisu
+      const na = (a.project && a.project.name) || '￿';
+      const nb = (b.project && b.project.name) || '￿';
+      return na.localeCompare(nb, 'pl');
+    }
+    return eff(a) - eff(b) || a.createdAt - b.createdAt; // w grupie: najstarsze na górze
   });
 }
 
