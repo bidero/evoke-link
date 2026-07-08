@@ -79,7 +79,9 @@ function projectTables(charges, brand, style, hasVat) {
   const widths = hasVat ? ['auto', '*', 'auto', 'auto', 'auto', 'auto'] : ['auto', '*', 'auto', 'auto'];
   const flush = () => {
     if (cur === null) return;
-    out.push({ text: cur, bold: true, color: brand, fontSize: 11, margin: [0, 14, 0, 5] });
+    // headlineLevel: znacznik dla pageBreakBefore w buildDoc — nie zostawiamy osieroconego
+    // tytułu projektu na dole strony, gdy jego tabela ląduje już na następnej.
+    out.push({ text: cur, bold: true, color: brand, fontSize: 11, margin: [0, 14, 0, 5], headlineLevel: 'projectTitle' });
     out.push({
       table: { headerRows: 1, widths, body: [header(), ...rows] },
       layout: style === 'bordered' ? borderedLayout : lightLayout,
@@ -273,6 +275,11 @@ function buildDoc({ client, charges, filters = {}, settings }) {
     pageMargins: sideBar ? [60, 48, 48, 56] : [48, 48, 48, 56],
     defaultStyle: { font: 'Roboto', fontSize: 10, color: '#0f172a', lineHeight: 1.15 },
     content,
+    // Tytuł projektu trzymamy razem z jego tabelą: gdy po tytule nic już nie zmieściło się
+    // na stronie (tabela poszła na następną), przerzucamy tytuł razem z nią. Tytuł to jedna
+    // linia, więc na świeżej stronie zawsze się mieści — brak ryzyka pętli.
+    pageBreakBefore: (currentNode, followingNodesOnPage) =>
+      currentNode.headlineLevel === 'projectTitle' && followingNodesOnPage.length === 0,
     footer: (cp, pc) => ({ text: `${appName} · strona ${cp}/${pc}`, alignment: 'center', color: '#94a3b8', fontSize: 8, margin: [0, 16, 0, 0] }),
   };
 
