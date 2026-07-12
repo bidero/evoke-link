@@ -11,12 +11,14 @@ const mail = require('../services/mail.service');
 const events = require('../services/event.service');
 const { grossOf } = require('../services/charge.service'); // kwoty BRUTTO (amount = netto)
 const retainerService = require('../services/retainer.service');
+const updateService = require('../services/update.service');
 
 const EVERY_DAYS = parseInt(process.env.REMIND_EVERY_DAYS, 10) || 7;
 
 async function run() {
-  // Retainery generujemy ZAWSZE (nie wymagają SMTP) — dopiero maile mają bramkę niżej.
+  // Retainery i sprawdzenie aktualizacji ZAWSZE (nie wymagają SMTP) — bramka mailowa jest niżej.
   await runRetainers();
+  await runUpdateCheck();
   const s = await settingsService.get();
   if (!mail.isConfigured()) { console.log('[reminders] SMTP niewłączony — pomijam maile'); return; }
   await runPaymentReminders(s);
@@ -31,6 +33,23 @@ async function runRetainers() {
     console.log(`[retainers] wygenerowano pozycji cyklicznych: ${n}`);
   } catch (e) {
     console.error('[retainers] błąd:', e.message);
+  }
+}
+
+// Powiadomienie o dostępnej aktualizacji z GitHuba (dzwonek) — gdy włączone (plik-flaga,
+// Ustawienia → Zaawansowane). Anty-duplikat: hash origin/main zapamiętany w pliku stanu.
+async function runUpdateCheck() {
+  try {
+    if (updateService.isNotifyDisabled()) { console.log('[update] powiadomienia wyłączone — pomijam'); return; }
+    const r = await updateService.checkForUpdates();
+    if (!r.behind) { console.log('[update] wersja aktualna'); return; }
+    if (updateService.readStatus().notifiedHash === r.remoteHash) { console.log('[update] już powiadomiono o tej wersji'); return; }
+    const to = r.remote ? `v${r.remote}` : 'nowszej wersji';
+    await events.log({ type: 'update', message: `Dostępna aktualizacja do ${to} (zmian: ${r.behind}) — Ustawienia → Zaawansowane` });
+    updateService.writeStatus({ notifiedHash: r.remoteHash });
+    console.log(`[update] powiadomiono o aktualizacji do ${to}`);
+  } catch (e) {
+    console.error('[update] błąd sprawdzania:', updateService.redact(e.message));
   }
 }
 
@@ -130,4 +149,4 @@ if (require.main === module) {
     .finally(async () => { await prisma.$disconnect(); });
 }
 
-module.exports = { run, runRetainers, runPaymentReminders, runExpiryWarnings, runDailyDigest };
+module.exports = { run, runRetainers, runUpdateCheck, runPaymentReminders, runExpiryWarnings, runDailyDigest };

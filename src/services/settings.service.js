@@ -18,7 +18,8 @@ const DEFAULTS = {
   logo: { size: 36, align: 'left', darkPath: null }, // wysokość px, wyrównanie, osobne logo dla trybu ciemnego
   // Układ stron klienta. style: classic (obecny) | centered | split.
   // card: solid | glass | elevated. radius w px. button: rounded | pill.
-  layout: { style: 'classic', card: 'solid', cardSide: 'right', hideName: false, heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded', stickyHeader: false, font: 'system' },
+  // portalNav: nawigacja sekcji portali /c i /p — none (stos) | tabs | side-left | side-right.
+  layout: { style: 'classic', card: 'solid', cardSide: 'right', hideName: false, heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded', stickyHeader: false, font: 'system', portalNav: 'none' },
   customCss: '',
   // E-mail: osobne logo + treści + powiadomienie do klienta. Puste pola = domyślne.
   emails: {
@@ -44,6 +45,7 @@ const ALIGNS = ['left', 'center', 'right'];
 const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel', 'panel-bg', 'sidebar', 'corner'];
 const CARD_STYLES = ['solid', 'glass', 'elevated'];
 const BUTTON_STYLES = ['rounded', 'pill'];
+const PORTAL_NAVS = ['none', 'tabs', 'side-left', 'side-right'];
 const PDF_TEMPLATES = ['standard', 'band', 'accent', 'proforma', 'accent-card', 'accent-band', 'accent-min', 'clean'];
 const PDF_DOCTYPES = ['rozliczenie', 'proforma'];
 
@@ -87,6 +89,7 @@ function normLayout(l) {
     button: BUTTON_STYLES.includes(x.button) ? x.button : DEFAULTS.layout.button,
     stickyHeader: !!x.stickyHeader,
     font: fonts.PAIRS[x.font] ? x.font : DEFAULTS.layout.font,
+    portalNav: PORTAL_NAVS.includes(x.portalNav) ? x.portalNav : DEFAULTS.layout.portalNav,
   };
 }
 

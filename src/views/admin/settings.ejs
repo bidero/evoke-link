@@ -45,7 +45,7 @@
     presetCss: Object.fromEntries(Object.entries(presets).map(([k, v]) => [k, v.css])),
   };
 %>
-<div class="max-w-4xl" x-data="Object.assign(settingsForm(<%= JSON.stringify(formState) %>), { tab: 'branding' })">
+<div class="max-w-4xl" x-data="Object.assign(settingsForm(<%= JSON.stringify(formState) %>), { tab: '<%= tabInit %>' })">
 
   <% if (saved) { %>
     <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">
@@ -611,6 +611,19 @@
         </div>
       </div>
 
+      <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Nawigacja portali klienta <span class="text-slate-400 font-normal">(/c i /p — sekcje: projekty, pliki, oferty, płatności)</span></label>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+          <% [['none','Jedna karta'],['tabs','Zakładki u góry'],['side-left','Menu z lewej'],['side-right','Menu z prawej']].forEach(function(o){ %>
+            <label class="cursor-pointer">
+              <input type="radio" name="portalNav" value="<%= o[0] %>" <%= (settings.layout.portalNav || 'none') === o[0] ? 'checked' : '' %> class="peer sr-only" />
+              <span class="block text-center rounded-lg border border-slate-300 px-2 py-2 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
+            </label>
+          <% }); %>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1">Menu boczne wymaga szerokiej karty — w kompozycjach „Panel na tle", „Pełne tło", „Róg" i „Split" automatycznie zmienia się w zakładki; na telefonach zawsze zakładki.</p>
+      </div>
+
       <div class="space-y-2 pt-1">
         <label class="flex items-center gap-2 text-sm text-slate-600">
           <input type="checkbox" name="heroOnBg" <%= settings.layout.heroOnBg ? 'checked' : '' %> @change="heroOnBg=$event.target.checked" class="rounded border-slate-300" />
@@ -1092,7 +1105,135 @@
     </div>
     <p class="text-[11px] text-slate-400">Auto-backup wykonuje cron (<code>node src/jobs/backup.job.js</code>); „Wyłącz" sprawia tylko, że cron pomija wykonanie (flaga w katalogu backupów).</p>
   </div>
+
+  <!-- Aktualizacje z GitHuba (zaawansowane) — check/run/status przez fetch (update.controller) -->
+  <div x-show="tab==='advanced'" x-cloak class="mt-6 bg-white rounded-2xl border border-slate-200 p-6 space-y-4" x-data="updater()">
+    <div class="flex items-center justify-between gap-3">
+      <h2 class="text-sm font-semibold text-slate-700">Aktualizacje</h2>
+      <span class="text-xs text-slate-400">Zainstalowana wersja: <span class="font-medium text-slate-600">v<%= appVersion %></span></span>
+    </div>
+    <p class="text-xs text-slate-400">Aktualizacja pobiera zmiany z GitHuba (<code>git pull</code>), instaluje zależności, stosuje migracje bazy i restartuje aplikację. Przed aktualizacją wykonywana jest kopia zapasowa (baza + pliki).</p>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button type="button" @click="check" :disabled="checking || running"
+              class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition disabled:opacity-40 disabled:cursor-not-allowed">
+        <span x-show="!checking">Sprawdź aktualizacje</span><span x-show="checking" x-cloak>Sprawdzanie…</span>
+      </button>
+      <button type="button" x-show="info && !info.upToDate && !done" x-cloak @click="start" :disabled="running"
+              class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition disabled:opacity-40 disabled:cursor-not-allowed">
+        <span x-show="!running">Aktualizuj <span x-show="info && info.remote">do v<span x-text="info ? info.remote : ''"></span></span></span>
+        <span x-show="running" x-cloak>Aktualizuję…</span>
+      </button>
+    </div>
+
+    <template x-if="err">
+      <div class="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2" x-text="err"></div>
+    </template>
+
+    <template x-if="info && info.upToDate && !done">
+      <div class="rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">Masz najnowszą wersję (v<span x-text="info.current"></span>).</div>
+    </template>
+
+    <template x-if="info && !info.upToDate && !running && !done">
+      <div class="rounded-xl border border-slate-200 overflow-hidden">
+        <div class="px-4 py-2 bg-slate-50 text-xs text-slate-500">Dostępna wersja: <span class="font-semibold text-slate-700" x-text="info.remote ? 'v' + info.remote : 'nowsza'"></span> · zmian do pobrania: <span x-text="info.behind"></span></div>
+        <ul class="divide-y divide-slate-100 text-sm max-h-56 overflow-y-auto">
+          <template x-for="c in info.commits" :key="c.hash">
+            <li class="px-4 py-2 flex items-start gap-3">
+              <code class="text-xs text-slate-400 mt-0.5 shrink-0" x-text="c.hash"></code>
+              <span class="flex-1 text-slate-700 min-w-0" x-text="c.subject"></span>
+              <span class="text-xs text-slate-400 shrink-0" x-text="c.date"></span>
+            </li>
+          </template>
+        </ul>
+      </div>
+    </template>
+
+    <div x-show="running || log" x-cloak class="space-y-2">
+      <div class="flex items-center gap-2 text-sm text-slate-600" x-show="running">
+        <span class="w-2 h-2 rounded-full bg-brand-600 animate-pulse"></span>
+        <span x-text="stepLabel()"></span>
+      </div>
+      <pre class="rounded-xl bg-slate-900 text-slate-100 text-xs p-3 max-h-64 overflow-y-auto whitespace-pre-wrap" x-ref="logbox" x-text="log"></pre>
+    </div>
+
+    <template x-if="done">
+      <div class="rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">
+        Zaktualizowano do <span class="font-semibold" x-text="to ? 'v' + to : 'nowej wersji'"></span>.
+        <a href="/admin/settings?tab=advanced" class="underline font-medium">Odśwież stronę</a>, aby korzystać z nowej wersji.
+      </div>
+    </template>
+
+    <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+      <div class="text-sm">
+        <span class="text-slate-600">Powiadomienie o nowej wersji (dzwonek, cron):</span>
+        <% if (updateNotifyDisabled) { %><span class="font-medium text-amber-600">wyłączone</span><% } else { %><span class="font-medium text-green-600">włączone</span><% } %>
+      </div>
+      <form method="POST" action="/admin/update/notify">
+        <% if (updateNotifyDisabled) { %>
+          <input type="hidden" name="enable" value="on" />
+          <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">Włącz</button>
+        <% } else { %>
+          <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-sm font-medium px-4 py-2 transition">Wyłącz</button>
+        <% } %>
+      </form>
+    </div>
+    <p class="text-[11px] text-slate-400">Wymaga gita z dostępem do repozytorium na serwerze (ten sam, którego używa ręczny deploy). Sprawdzanie cronem wykonuje <code>node src/jobs/reminders.job.js</code>.</p>
+  </div>
 </div>
+
+<script>
+// Sekcja „Aktualizacje": sprawdzenie wersji + start aktualizacji + polling stanu/logu.
+// Polling ignoruje błędy sieci — w trakcie restartu Passengera aplikacja chwilowo nie odpowiada.
+function updater() {
+  return {
+    checking: false, running: false, done: false, info: null, log: '', step: '', to: null, err: '', timer: null,
+    init() {
+      // Powrót na stronę w trakcie aktualizacji — podejmij polling.
+      fetch('/admin/update/status').then(function(r){ return r.json(); }).then((d) => {
+        if (d.running) { this.running = true; this.poll(); }
+      }).catch(function(){});
+    },
+    async check() {
+      this.checking = true; this.err = ''; this.done = false;
+      try {
+        const r = await fetch('/admin/update/check', { method: 'POST' });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Nie udało się sprawdzić aktualizacji');
+        this.info = d;
+      } catch (e) { this.err = e.message; }
+      finally { this.checking = false; }
+    },
+    async start() {
+      if (!confirm('Uruchomić aktualizację? Najpierw wykona się kopia zapasowa, a po zakończeniu aplikacja się zrestartuje.')) return;
+      this.err = ''; this.done = false; this.log = ''; this.running = true;
+      try {
+        const r = await fetch('/admin/update/run', { method: 'POST' });
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error || 'Nie udało się uruchomić aktualizacji');
+        this.poll();
+      } catch (e) { this.err = e.message; this.running = false; }
+    },
+    poll() {
+      clearInterval(this.timer);
+      this.timer = setInterval(async () => {
+        try {
+          const r = await fetch('/admin/update/status');
+          const d = await r.json();
+          this.log = d.log || ''; this.step = d.step || '';
+          this.$nextTick(() => { const b = this.$refs.logbox; if (b) b.scrollTop = b.scrollHeight; });
+          if (d.state === 'done') { this.to = d.to; this.stop(true); }
+          else if (d.state === 'failed') { this.err = d.error || 'Aktualizacja nie powiodła się — sprawdź log.'; this.stop(false); }
+        } catch (_) { /* restart w toku — polluj dalej */ }
+      }, 2000);
+    },
+    stop(ok) { clearInterval(this.timer); this.running = false; this.done = ok; },
+    stepLabel() {
+      return { start: 'Startuję…', backup: 'Kopia zapasowa…', git: 'Pobieranie zmian…', npm: 'Instalacja zależności…', prisma: 'Migracje bazy…', done: 'Kończenie…' }[this.step] || 'Pracuję…';
+    },
+  };
+}
+</script>
 
 <script>
 function settingsForm(init) {

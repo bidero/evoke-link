@@ -11,6 +11,7 @@ const { sanitizeEmailHtml } = require('../utils/htmlEmail');
 const background = require('../utils/background');
 const fonts = require('../utils/fonts');
 const backup = require('../services/backup.service');
+const updateService = require('../services/update.service');
 const { THEMES } = require('../utils/themes');
 const panelUi = require('../utils/panelUi');
 
@@ -31,6 +32,10 @@ async function showSettings(req, res, next) {
       presets: background.PRESETS,
       themes: THEMES,
       autoBackupDisabled: backup.isAutoDisabled(),
+      appVersion: updateService.currentVersion(),
+      updateNotifyDisabled: updateService.isNotifyDisabled(),
+      // Deep-link zakładki (?tab=advanced — np. z powiadomienia o aktualizacji).
+      tabInit: ['branding', 'wyglad', 'panel', 'pdf', 'email', 'advanced'].includes(req.query.tab) ? req.query.tab : 'branding',
       saved: req.query.saved === '1',
       mailReady: mail.isConfigured(),
       adminEmail: config.admin.email,
@@ -138,6 +143,7 @@ async function updateSettings(req, res, next) {
       button: ['rounded', 'pill'].includes(b.layoutButton) ? b.layoutButton : 'rounded',
       stickyHeader: b.stickyHeader === 'on',
       font: fonts.PAIRS[b.layoutFont] ? b.layoutFont : 'system',
+      portalNav: ['none', 'tabs', 'side-left', 'side-right'].includes(b.portalNav) ? b.portalNav : 'none',
     };
 
     // --- Wydruk PDF rozliczenia ---

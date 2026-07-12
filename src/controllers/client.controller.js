@@ -398,8 +398,10 @@ async function showClientPortal(req, res, next) {
       .map((o) => ({ title: o.title, token: o.token, gross: offerService.totals(o.items).gross, st: offerService.state(o), validUntil: o.validUntil }))
       .filter((o) => o.st !== 'expired'); // wygasłe chowamy przed klientem
 
+    // GOTCHA EJS: local NIE może nazywać się `client` — widok używa include('_portal_nav'),
+    // a truthy `client` w locals przełącza EJS w tryb client-side („include is not a function").
     res.render('public/client-portal', {
-      title: client.name, layout: PUBLIC_LAYOUT, client,
+      title: client.name, layout: PUBLIC_LAYOUT, portalClient: client,
       unpaid, unpaidTotal, seller, transferTitle, paymentQr,
       paidDeclaredAt, paidFlash: req.query.paid === '1',
       offers,
@@ -422,11 +424,11 @@ async function submitPaidDeclaration(req, res, next) {
     const rows = await chargeService.unpaidForClient(client.id);
     const total = rows.reduce((sum, c) => sum + chargeService.grossOf(c), 0);
     const recent = await prisma.event.findFirst({ where: { clientId: client.id, type: 'paid_declared', createdAt: { gte: new Date(Date.now() - 7 * 86400000) } } });
-    if (!rows.length || recent) return res.redirect(`/c/${client.token}?paid=1`); // idempotentnie
+    if (!rows.length || recent) return res.redirect(`/c/${client.token}?paid=1#platnosci`); // idempotentnie
 
     await events.log({ type: 'paid_declared', message: `Klient zgłosił wpłatę (${rows.length} poz., ${fmt.money(total)})`, clientId: client.id, ip: req.ip });
     mail.sendPaymentDeclared({ client, total, count: rows.length }).catch((e) => console.error('[mail] wpłata:', e.message));
-    res.redirect(`/c/${client.token}?paid=1`);
+    res.redirect(`/c/${client.token}?paid=1#platnosci`); // hash: przy włączonej nawigacji otwiera sekcję „Do zapłaty"
   } catch (err) {
     next(err);
   }

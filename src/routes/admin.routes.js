@@ -154,6 +154,13 @@ router.post('/notifications/clear', notifications.clearAll); // przed :id
 router.get('/notifications/:id/open', notifications.open);
 router.post('/notifications/:id/dismiss', notifications.dismiss);
 
+// Aktualizacja aplikacji z GitHuba (Ustawienia → Zaawansowane).
+const updates = require('../controllers/update.controller');
+router.post('/update/check', updates.check);
+router.post('/update/run', updates.run);
+router.get('/update/status', updates.status);
+router.post('/update/notify', updates.toggleNotify);
+
 // Customizacja (Etap 5 + 6: kolory panelu, tło stron klienta).
 router.get('/settings', settings.showSettings);
 router.post('/settings/test-email', settings.sendTestEmail);

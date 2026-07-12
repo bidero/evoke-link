@@ -76,6 +76,7 @@ const EVENT_ICON = {
   paid_declared: 'banknote',
   offer_accepted: 'check',
   offer_rejected: 'x',
+  update: 'cog',
 };
 
 function eventIcon(type, opts = {}) {

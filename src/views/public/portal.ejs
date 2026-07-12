@@ -1,5 +1,21 @@
-<div class="w-full max-w-2xl">
-  <div class="evoke-card p-5 sm:p-8">
+<%
+  // Nawigacja sekcji (Settings.layout.portalNav → efektywny tryb w res.locals.portalNavMode).
+  var navMode = (typeof portalNavMode !== 'undefined' && portalNavMode) ? portalNavMode : 'none';
+  var navOn = navMode !== 'none';
+  var sideNav = navOn && navMode.indexOf('side') === 0;
+  const fileRequests = project.fileRequests || []; const openRequests = fileRequests.filter((r) => !r.done);
+  var sections = [
+    { key: 'pliki', label: 'Pliki od nas', icon: 'download' },
+    { key: 'wyslij', label: 'Prześlij pliki', icon: 'upload', badge: openRequests.length || null },
+  ];
+  var sectionKeys = sections.map(function(s){ return s.key; });
+  // Po uploadzie (?sent=1) otwieramy sekcję wysyłki — banner podziękowania i przesłane pliki są tam.
+  var defaultSec = sent ? 'wyslij' : sectionKeys[0];
+  function secAttr(key, first) { return navOn ? ('x-show="sec===\'' + key + '\'"' + (first ? '' : ' x-cloak')) : ''; }
+%>
+<div class="w-full <%= sideNav ? 'max-w-4xl' : 'max-w-2xl' %>">
+  <div class="evoke-card p-5 sm:p-8"
+       <% if (navOn) { %>x-data="{ sec: (function(){ var h = location.hash.replace('#',''); var ks = <%= JSON.stringify(sectionKeys) %>; return ks.indexOf(h) >= 0 ? h : '<%= defaultSec %>'; })() }"<% } %>>
     <%- include('_hero_in_card') %>
     <h1 class="text-2xl font-semibold tracking-tight"><%= project.name %></h1>
     <% if (project.description) { %>
@@ -12,131 +28,139 @@
       </div>
     <% } %>
 
-    <!-- Pliki od nas -->
-    <div class="mt-8">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-sm font-semibold text-slate-700 flex items-center gap-2"><%- icon('download', { size: 16 }) %> Pliki od nas</h2>
-        <% const totalFromUs = fromUs.reduce((n, t) => n + t.files.length, 0); %>
-        <% if (totalFromUs > 0) { %>
-          <a href="/p/<%= project.clientToken %>/zip" class="text-sm text-brand-700 hover:underline">Pobierz wszystko (ZIP)</a>
-        <% } %>
-      </div>
+    <div class="mt-8 <%= sideNav ? 'md:flex md:gap-8 md:items-start' : '' %>">
+      <% if (navOn) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'side' }) %><% } %>
+      <div class="min-w-0 flex-1">
+        <% if (navOn) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'tabs' }) %><% } %>
 
-      <% if (totalFromUs === 0) { %>
-        <p class="text-sm text-slate-400">Brak udostępnionych plików.</p>
-      <% } else { %>
-        <div class="space-y-4">
-          <% fromUs.forEach(function(t){ %>
-            <div class="rounded-xl border border-slate-200 overflow-hidden">
-              <div class="px-4 py-2 bg-slate-50 text-xs text-slate-500 flex items-center justify-between gap-2">
-                <span><%= t.title || 'Pliki' %> · <%= fmt.date(t.createdAt) %></span>
-                <% if (t.proofing && t.approvalStatus) { %>
-                  <span class="px-1.5 py-0.5 rounded-full font-medium <%= t.approvalStatus === 'approved' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700' %>"><%= t.approvalStatus === 'approved' ? 'Zatwierdzone ✓' : 'Poprawki' %></span>
-                <% } %>
-              </div>
-              <div class="divide-y divide-slate-100">
-                <% t.files.forEach(function(f){ %>
-                  <%- include('_file_row', { f: f, downloadHref: '/p/' + project.clientToken + '/file/' + f.id, previewHref: '/p/' + project.clientToken + '/preview/' + f.id }) %>
+        <!-- Pliki od nas -->
+        <div <%- secAttr('pliki', true) %>>
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold text-slate-700 flex items-center gap-2"><%- icon('download', { size: 16 }) %> Pliki od nas</h2>
+            <% const totalFromUs = fromUs.reduce((n, t) => n + t.files.length, 0); %>
+            <% if (totalFromUs > 0) { %>
+              <a href="/p/<%= project.clientToken %>/zip" class="text-sm text-brand-700 hover:underline">Pobierz wszystko (ZIP)</a>
+            <% } %>
+          </div>
+
+          <% if (totalFromUs === 0) { %>
+            <p class="text-sm text-slate-400">Brak udostępnionych plików.</p>
+          <% } else { %>
+            <div class="space-y-4">
+              <% fromUs.forEach(function(t){ %>
+                <div class="rounded-xl border border-slate-200 overflow-hidden">
+                  <div class="px-4 py-2 bg-slate-50 text-xs text-slate-500 flex items-center justify-between gap-2">
+                    <span><%= t.title || 'Pliki' %> · <%= fmt.date(t.createdAt) %></span>
+                    <% if (t.proofing && t.approvalStatus) { %>
+                      <span class="px-1.5 py-0.5 rounded-full font-medium <%= t.approvalStatus === 'approved' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700' %>"><%= t.approvalStatus === 'approved' ? 'Zatwierdzone ✓' : 'Poprawki' %></span>
+                    <% } %>
+                  </div>
+                  <div class="divide-y divide-slate-100">
+                    <% t.files.forEach(function(f){ %>
+                      <%- include('_file_row', { f: f, downloadHref: '/p/' + project.clientToken + '/file/' + f.id, previewHref: '/p/' + project.clientToken + '/preview/' + f.id }) %>
+                    <% }); %>
+                  </div>
+                  <% if (t.proofing) { %>
+                    <div class="px-3 pb-3">
+                      <%- include('_proofing', { t: t, action: '/p/' + project.clientToken + '/decision/' + t.id }) %>
+                    </div>
+                  <% } %>
+                </div>
+              <% }); %>
+            </div>
+          <% } %>
+        </div>
+
+        <!-- Prześlij pliki: lista braków + upload + wcześniej przesłane -->
+        <div <%- secAttr('wyslij') %>>
+          <% if (fileRequests.length) { %>
+            <div class="<%= navOn ? 'mb-8' : 'mt-8 pt-6 border-t border-slate-100' %>">
+              <h2 class="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-3"><%- icon('check', { size: 16 }) %> Potrzebujemy od Ciebie</h2>
+              <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+                <% fileRequests.forEach(function(r){ %>
+                  <div class="flex items-start gap-2.5 px-4 py-2.5 text-sm <%= r.done ? 'bg-green-50/40' : '' %>">
+                    <% if (r.done) { %>
+                      <%- icon('check', { size: 16, cls: 'text-green-600 mt-0.5 shrink-0' }) %>
+                    <% } else { %>
+                      <span class="w-4 h-4 rounded-full border-2 border-slate-300 mt-0.5 shrink-0"></span>
+                    <% } %>
+                    <div class="min-w-0">
+                      <div class="<%= r.done ? 'text-slate-400 line-through' : 'text-slate-700' %>"><%= r.label %></div>
+                      <% if (r.note && !r.done) { %><div class="text-xs text-slate-400 mt-0.5"><%= r.note %></div><% } %>
+                    </div>
+                  </div>
                 <% }); %>
               </div>
-              <% if (t.proofing) { %>
-                <div class="px-3 pb-3">
-                  <%- include('_proofing', { t: t, action: '/p/' + project.clientToken + '/decision/' + t.id }) %>
-                </div>
-              <% } %>
+              <% if (openRequests.length) { %><p class="text-xs text-slate-400 mt-2">Prześlij brakujące materiały poniżej — możesz wskazać, czego dotyczą pliki.</p><% } %>
             </div>
-          <% }); %>
-        </div>
-      <% } %>
-    </div>
+          <% } %>
 
-    <!-- Lista braków: czego jeszcze potrzebujemy od klienta -->
-    <% const fileRequests = project.fileRequests || []; const openRequests = fileRequests.filter((r) => !r.done); %>
-    <% if (fileRequests.length) { %>
-      <div class="mt-8 pt-6 border-t border-slate-100">
-        <h2 class="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-3"><%- icon('check', { size: 16 }) %> Potrzebujemy od Ciebie</h2>
-        <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
-          <% fileRequests.forEach(function(r){ %>
-            <div class="flex items-start gap-2.5 px-4 py-2.5 text-sm <%= r.done ? 'bg-green-50/40' : '' %>">
-              <% if (r.done) { %>
-                <%- icon('check', { size: 16, cls: 'text-green-600 mt-0.5 shrink-0' }) %>
-              <% } else { %>
-                <span class="w-4 h-4 rounded-full border-2 border-slate-300 mt-0.5 shrink-0"></span>
+          <!-- Upload od klienta -->
+          <div class="<%= navOn ? '' : 'mt-8 pt-6 border-t border-slate-100' %>" x-data="uploader()">
+            <h2 class="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-3"><%- icon('upload', { size: 16 }) %> Prześlij nam pliki</h2>
+            <form @submit.prevent="submit" class="space-y-4">
+              <% if (typeof openRequests !== 'undefined' && openRequests.length) { %>
+                <select name="fileRequestId" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+                  <option value="">Czego dotyczą te pliki? (opcjonalnie)</option>
+                  <% openRequests.forEach(function(r){ %><option value="<%= r.id %>"><%= r.label %></option><% }); %>
+                </select>
               <% } %>
-              <div class="min-w-0">
-                <div class="<%= r.done ? 'text-slate-400 line-through' : 'text-slate-700' %>"><%= r.label %></div>
-                <% if (r.note && !r.done) { %><div class="text-xs text-slate-400 mt-0.5"><%= r.note %></div><% } %>
+              <div @dragover.prevent="dragging = true" @dragleave.prevent="dragging = false" @drop.prevent="onDrop($event)"
+                   :class="dragging ? 'border-brand-500 bg-brand-50' : 'border-slate-300'"
+                   class="rounded-2xl border-2 border-dashed p-6 text-center transition cursor-pointer" @click="$refs.input.click()">
+                <input x-ref="input" type="file" multiple class="hidden" @change="addFiles($event.target.files)" />
+                <input x-ref="dirInput" type="file" webkitdirectory multiple class="hidden" @change="addFiles($event.target.files)" />
+                <div class="flex justify-center mb-1"><%- icon('cloudUpload', { size: 28 }) %></div>
+                <p class="text-sm font-medium text-slate-600">Przeciągnij pliki lub folder tutaj</p>
+                <p class="text-xs text-slate-400">lub kliknij, aby wybrać &middot;
+                  <button type="button" @click.stop="$refs.dirInput.click()" class="font-medium text-brand-700 hover:text-brand-800 underline underline-offset-2">wybierz folder</button>
+                </p>
               </div>
-            </div>
-          <% }); %>
+
+              <template x-if="files.length">
+                <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 text-sm">
+                  <template x-for="(f, i) in files" :key="i">
+                    <div class="flex items-center gap-3 px-3 py-2">
+                      <template x-if="f.preview"><img :src="f.preview" alt="" class="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0" /></template>
+                      <template x-if="!f.preview"><span class="w-9 h-9 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg></span></template>
+                      <div class="min-w-0 flex-1">
+                        <div class="truncate text-slate-700" x-text="f.name"></div>
+                        <div class="mt-1 h-1.5 bg-slate-100 rounded-full overflow-hidden" x-show="uploading">
+                          <div class="h-full bg-brand-600 transition-all duration-200" :style="'width:' + Math.max(f.progress, 2) + '%'"></div>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-2 shrink-0">
+                        <span class="text-xs text-slate-400" x-show="!uploading" x-text="human(f.size)"></span>
+                        <span class="text-xs text-slate-500 tabular-nums" x-show="uploading" x-text="f.progress + '%'"></span>
+                        <button type="button" @click="remove(i)" x-show="!uploading" class="text-slate-400 hover:text-red-600" aria-label="Usuń"><%- icon('x', { size: 16, cls: '' }) %></button>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </template>
+
+              <button type="submit" :disabled="uploading || !files.length"
+                      class="evoke-btn w-full rounded-xl bg-brand-600 hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 transition">
+                <span x-show="!uploading">Prześlij pliki</span>
+                <span x-show="uploading" x-text="finalizing ? 'Finalizowanie…' : ('Wysyłanie… ' + progress + '%')"></span>
+              </button>
+            </form>
+
+            <!-- Twoje wcześniej przesłane pliki -->
+            <% const totalFromClient = fromClient.reduce((n, t) => n + t.files.length, 0); %>
+            <% if (totalFromClient > 0) { %>
+              <div class="mt-6">
+                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Twoje przesłane pliki</h3>
+                <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+                  <% fromClient.forEach(function(t){ t.files.forEach(function(f){ %>
+                    <%- include('_file_row', { f: f, downloadHref: '/p/' + project.clientToken + '/file/' + f.id, previewHref: '/p/' + project.clientToken + '/preview/' + f.id }) %>
+                  <% }); }); %>
+                </div>
+              </div>
+            <% } %>
+          </div>
         </div>
-        <% if (openRequests.length) { %><p class="text-xs text-slate-400 mt-2">Prześlij brakujące materiały poniżej — możesz wskazać, czego dotyczą pliki.</p><% } %>
       </div>
-    <% } %>
-
-    <!-- Upload od klienta -->
-    <div class="mt-8 pt-6 border-t border-slate-100" x-data="uploader()">
-      <h2 class="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-3"><%- icon('upload', { size: 16 }) %> Prześlij nam pliki</h2>
-      <form @submit.prevent="submit" class="space-y-4">
-        <% if (typeof openRequests !== 'undefined' && openRequests.length) { %>
-          <select name="fileRequestId" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
-            <option value="">Czego dotyczą te pliki? (opcjonalnie)</option>
-            <% openRequests.forEach(function(r){ %><option value="<%= r.id %>"><%= r.label %></option><% }); %>
-          </select>
-        <% } %>
-        <div @dragover.prevent="dragging = true" @dragleave.prevent="dragging = false" @drop.prevent="onDrop($event)"
-             :class="dragging ? 'border-brand-500 bg-brand-50' : 'border-slate-300'"
-             class="rounded-2xl border-2 border-dashed p-6 text-center transition cursor-pointer" @click="$refs.input.click()">
-          <input x-ref="input" type="file" multiple class="hidden" @change="addFiles($event.target.files)" />
-          <input x-ref="dirInput" type="file" webkitdirectory multiple class="hidden" @change="addFiles($event.target.files)" />
-          <div class="flex justify-center mb-1"><%- icon('cloudUpload', { size: 28 }) %></div>
-          <p class="text-sm font-medium text-slate-600">Przeciągnij pliki lub folder tutaj</p>
-          <p class="text-xs text-slate-400">lub kliknij, aby wybrać &middot;
-            <button type="button" @click.stop="$refs.dirInput.click()" class="font-medium text-brand-700 hover:text-brand-800 underline underline-offset-2">wybierz folder</button>
-          </p>
-        </div>
-
-        <template x-if="files.length">
-          <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 text-sm">
-            <template x-for="(f, i) in files" :key="i">
-              <div class="flex items-center gap-3 px-3 py-2">
-                <template x-if="f.preview"><img :src="f.preview" alt="" class="w-9 h-9 rounded-lg object-cover border border-slate-200 shrink-0" /></template>
-                <template x-if="!f.preview"><span class="w-9 h-9 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg></span></template>
-                <div class="min-w-0 flex-1">
-                  <div class="truncate text-slate-700" x-text="f.name"></div>
-                  <div class="mt-1 h-1.5 bg-slate-100 rounded-full overflow-hidden" x-show="uploading">
-                    <div class="h-full bg-brand-600 transition-all duration-200" :style="'width:' + Math.max(f.progress, 2) + '%'"></div>
-                  </div>
-                </div>
-                <div class="flex items-center gap-2 shrink-0">
-                  <span class="text-xs text-slate-400" x-show="!uploading" x-text="human(f.size)"></span>
-                  <span class="text-xs text-slate-500 tabular-nums" x-show="uploading" x-text="f.progress + '%'"></span>
-                  <button type="button" @click="remove(i)" x-show="!uploading" class="text-slate-400 hover:text-red-600" aria-label="Usuń"><%- icon('x', { size: 16, cls: '' }) %></button>
-                </div>
-              </div>
-            </template>
-          </div>
-        </template>
-
-        <button type="submit" :disabled="uploading || !files.length"
-                class="evoke-btn w-full rounded-xl bg-brand-600 hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 transition">
-          <span x-show="!uploading">Prześlij pliki</span>
-          <span x-show="uploading" x-text="finalizing ? 'Finalizowanie…' : ('Wysyłanie… ' + progress + '%')"></span>
-        </button>
-      </form>
-
-      <!-- Twoje wcześniej przesłane pliki -->
-      <% const totalFromClient = fromClient.reduce((n, t) => n + t.files.length, 0); %>
-      <% if (totalFromClient > 0) { %>
-        <div class="mt-6">
-          <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Twoje przesłane pliki</h3>
-          <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
-            <% fromClient.forEach(function(t){ t.files.forEach(function(f){ %>
-              <%- include('_file_row', { f: f, downloadHref: '/p/' + project.clientToken + '/file/' + f.id, previewHref: '/p/' + project.clientToken + '/preview/' + f.id }) %>
-            <% }); }); %>
-          </div>
-        </div>
-      <% } %>
     </div>
   </div>
 </div>
@@ -153,6 +177,8 @@ function uploader() {
       if (fr && fr.value) body.append('fileRequestId', fr.value);
       const res = await fetch(path + '/upload', { method: 'POST', body: body });
       if (!res.ok) throw new Error('Błąd wysyłania (' + res.status + ').');
+      // BEZ doklejania hasha: przy identycznym URL nawigacja „tylko-hash" nie przeładowuje strony
+      // (drugi upload pod rząd nie pokazałby nowych plików). Sekcję otwiera serwerowe ?sent=1.
       window.location = res.url || (window.location.pathname + '?sent=1');
     },
   });

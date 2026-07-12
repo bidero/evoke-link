@@ -26,6 +26,7 @@ async function open(req, res, next) {
   try {
     await events.markRead(req.params.id);
     const ev = await events.findById(req.params.id);
+    if (ev && ev.type === 'update') return res.redirect('/admin/settings?tab=advanced'); // sekcja „Aktualizacje"
     if (ev && ev.transferId) return res.redirect(`/admin/transfers/${ev.transferId}`);
     if (ev && ev.projectId) return res.redirect(`/admin/projects/${ev.projectId}`);
     if (ev && ev.clientId) return res.redirect(`/admin/clients/${ev.clientId}`);
