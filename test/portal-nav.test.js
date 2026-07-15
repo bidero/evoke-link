@@ -88,18 +88,22 @@ test('portalNav: tabs/side na /c i /p, none = stos, walidacja zapisu', async () 
     html = await (await fetch(`${base}/c/${client.token}`)).text();
     assert.match(html, /data-pnav="chrome-top"/, '/c z menu w nagłówku');
 
-    // rail-left: własny pełnowysoki brandowy pas z menu + fallback mobilny (pasek u góry)
+    // rail-left: własny brandowy pas z menu (zwijany hamburgerem) + fallback mobilny (pasek u góry)
     await settingsService.update({ layout: { ...snapLayout, style: 'classic', portalNav: 'rail-left' } });
     html = await (await fetch(`${base}/p/${project.clientToken}`)).text();
     assert.match(html, /data-pnav="rail"/, '/p z pasem pionowym');
-    assert.match(html, /w-60 shrink-0 bg-brand-600/, 'własny brandowy pas');
+    assert.match(html, /shrink-0 bg-brand-600[^"]*transition-\[width\]/, 'brandowy pas ze zwijaniem (animowana szerokość)');
+    assert.match(html, /railOpen = !railOpen/, 'hamburger zwija/rozwija pas');
+    assert.match(html, /railOpen: true/, 'pas domyślnie rozwinięty');
     assert.match(html, /data-pnav="top"/, 'fallback mobilny przy pasie');
+    // logo NIE w pasie — pas ma tylko przyciski; logo w nagłówku (klasyczny układ)
+    assert.ok(!/bg-brand-600[\s\S]{0,400}logo_/.test(html), 'brak logo w pasie pionowym');
 
     // rail przy kompozycji „Pasek boczny": menu wchodzi w istniejący pas (bez własnego)
     await settingsService.update({ layout: { ...snapLayout, style: 'sidebar', portalNav: 'rail-left' } });
     html = await (await fetch(`${base}/p/${project.clientToken}`)).text();
     assert.match(html, /data-pnav="rail"/, 'sidebar: menu w pasie kompozycji');
-    assert.ok(!/w-60 shrink-0 bg-brand-600/.test(html), 'sidebar: bez dublowania pasa');
+    assert.ok(!/transition-\[width\]/.test(html), 'sidebar: pas kompozycji bez zwijania');
 
     // szklany panel: styl karty „glass" + kompozycja panel → panel półprzezroczysty (reguła w head)
     await settingsService.update({ layout: { ...snapLayout, style: 'panel', card: 'glass', portalNav: 'none' } });

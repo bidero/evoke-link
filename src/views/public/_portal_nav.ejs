@@ -115,14 +115,16 @@
 <%# Pionowe menu w brandowym pasie (rail-* = własny pas; przy kompozycji „Pasek boczny"
     wpinane w jej istniejący pas). Zawsze na kolorze brandu — biały tekst;
     aktywna pozycja bg-white/90 (NIE bg-white — GOTCHA dark mode). %>
+<%# Etykiety/badge chowane przez x-show="railOpen" (zwinięty pas = ikony wyśrodkowane).
+    railOpen pochodzi z x-data wrappera; w kompozycji „Pasek boczny" jest zawsze true (bez zwijania). %>
 <nav data-pnav="rail" class="space-y-1">
   <% sections.forEach(function(s){ %>
     <button type="button" <%- navClick(s) %>
-            <% if (!s.action) { %>:class="sec==='<%= s.key %>' ? 'bg-white/90 text-brand-700 font-medium' : 'text-white/85 hover:bg-white/15'"<% } %>
+            <% if (!s.action) { %>:class="{ 'bg-white/90 text-brand-700 font-medium': sec==='<%= s.key %>', 'text-white/85 hover:bg-white/15': sec!=='<%= s.key %>', 'justify-center px-0': !railOpen }"<% } else { %>:class="{ 'justify-center px-0': !railOpen }"<% } %>
             class="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition text-left <%= s.action ? 'text-white/85 hover:bg-white/15' : '' %>">
       <%- icon(s.icon, { size: 16, cls: 'shrink-0' }) %>
-      <span class="flex-1 truncate"><%= s.label %></span>
-      <% if (s.badge) { %><span class="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-white/20"><%= s.badge %></span><% } %>
+      <span class="flex-1 truncate" x-show="railOpen"><%= s.label %></span>
+      <% if (s.badge) { %><span class="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-white/20" x-show="railOpen"><%= s.badge %></span><% } %>
       <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
     </button>
   <% }); %>

@@ -64,9 +64,11 @@
   const railNav = !!pNav && pMode.indexOf('rail') === 0;
   const railRight = pMode === 'rail-right';
   const railOwn = railNav && L.style !== 'sidebar'; // przy kompozycji „Pasek boczny" menu wchodzi w JEJ pas
-  // Logo na TLE (aside kompozycji panel-bg/sidebar): chowamy, gdy brandowy pas już je pokazuje
-  // (railOwn — inaczej podwójne logo) albo gdy admin wyłączył ręcznie (hideBgLogo).
-  const showBgLogo = !railOwn && !L.hideBgLogo;
+  // Logo na TLE (aside kompozycji panel-bg/sidebar) POKAZUJEMY normalnie — logo znika z PASA
+  // pionowego, nie z panelu/tła (decyzja usera). Ręczny wyłącznik: hideBgLogo.
+  const showBgLogo = !L.hideBgLogo;
+  // Klasyczne układy (renderują standardowy <header> niżej) mają logo w nagłówku — to awaryjne
+  // miejsce, gdy pas pionowy odebrał logo. panel/panel-bg/banner mają własne logo (na tle/w panelu).
   // „Wiadomości" jako pozycja menu (action) → pływająca koperta znika (okienko otwiera CustomEvent 'open-msgs').
   const msgInMenu = !!(pNav && pNav.sections && pNav.sections.some((s) => s.action === 'messages'));
   // Brandowy pas przy PRAWEJ krawędzi (własny rail-right albo kompozycja „Pasek boczny" z kartą po lewej)
@@ -79,7 +81,7 @@
 <body class="client-bg min-h-screen text-slate-800 antialiased <%= panelMode ? 'evoke-panel-mode' : '' %>" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
   <%- typeof bgSlideshow !== 'undefined' ? bgSlideshow : '' %>
   <%- typeof bgOverlay !== 'undefined' ? bgOverlay : '' %>
-  <div class="relative z-10 min-h-screen flex flex-col" <% if (pNav) { %>x-data="{ sec: (function(){ var h = location.hash.replace('#',''); var ks = <%= JSON.stringify(pNav.keys) %>; return ks.indexOf(h) >= 0 ? h : '<%= pNav.defaultSec %>'; })() }"<% } %>>
+  <div class="relative z-10 min-h-screen flex flex-col" <% if (pNav) { %>x-data="{ sec: (function(){ var h = location.hash.replace('#',''); var ks = <%= JSON.stringify(pNav.keys) %>; return ks.indexOf(h) >= 0 ? h : '<%= pNav.defaultSec %>'; })(), railOpen: true }"<% } %>>
 
     <% if (!headerNav) { %>
     <%# headerNav: przełącznik trybu jest W pasku menu (partial chrome-top, withTheme) — nie dublujemy pływającego. %>
@@ -147,28 +149,27 @@
     <% } %>
 
     <% if (railOwn) { %>
-    <%# Własny pełnowysoki brandowy pas z menu (portalNav rail-*) — działa w każdej kompozycji;
-        na mobile pas znika, menu przejmuje poziomy pasek u góry (page-top, mobileOnly). %>
+    <%# Własny brandowy pas z menu (portalNav rail-*) — bez logo (jest w nagłówku/panelu/na tle).
+        Zwijany hamburgerem: szerokość animowana (w-60 ↔ w-16), treść płynnie się przesuwa (push).
+        `railOpen` z x-data wrappera. Na mobile pas znika, menu przejmuje poziomy pasek u góry. %>
     <div class="flex-1 flex">
-      <aside class="hidden md:flex w-60 shrink-0 bg-brand-600 text-white flex-col p-6 <%= railRight ? 'order-2' : '' %>">
-        <div class="flex items-center gap-2">
-          <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
-            <%- logoTag(settings, { appName, imgClass: 'max-w-[80%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
-          <% } else if (!L.hideName) { %>
-            <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold">E</div>
-            <span class="font-semibold tracking-tight"><%= appName %></span>
-          <% } %>
-        </div>
-        <div class="mt-8"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail' }) %></div>
-        <div class="mt-auto pt-6 text-xs text-white/70"><%= footerText %></div>
+      <aside class="hidden md:flex shrink-0 bg-brand-600 text-white flex-col p-4 overflow-hidden transition-[width] duration-300 ease-in-out <%= railRight ? 'order-2' : '' %>"
+             :class="railOpen ? 'md:w-60' : 'md:w-16'">
+        <button type="button" @click="railOpen = !railOpen" title="Zwiń/rozwiń menu" aria-label="Zwiń lub rozwiń menu"
+                class="w-9 h-9 inline-flex items-center justify-center rounded-lg text-white/85 hover:bg-white/15 transition shrink-0 mb-6" :class="railOpen ? '' : 'mx-auto'">
+          <%- icon('menu', { size: 20, cls: '' }) %>
+        </button>
+        <%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail' }) %>
+        <div class="mt-auto pt-6 text-xs text-white/70 whitespace-nowrap" x-show="railOpen" x-transition.opacity><%= footerText %></div>
       </aside>
       <div class="flex-1 flex flex-col min-w-0">
         <div class="md:hidden px-4 pt-4"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'page-top', mobileOnly: true }) %></div>
     <% } %>
 
     <% if (L.style !== 'banner' && !noChrome) { %>
-    <%# railOwn: na desktopie logo jest w pasie — nagłówek tylko na mobile (bez dublowania) %>
-    <header class="px-6 py-5 <%= railOwn ? 'md:hidden' : '' %> <%= sticky ? 'sticky top-0 z-20' : '' %>"<% if (sticky) { %> data-sticky-header style="--sticky-bg:<%= stickyBg %>"<% } %>>
+    <%# Klasyczne układy: nagłówek z logo. Przy pasie pionowym (railOwn) to JEDYNE miejsce na logo
+        (pas jest bez logo), więc pokazujemy go też na desktopie. %>
+    <header class="px-6 py-5 <%= sticky ? 'sticky top-0 z-20' : '' %>"<% if (sticky) { %> data-sticky-header style="--sticky-bg:<%= stickyBg %>"<% } %>>
       <% if (headerNav) { %>
         <%# Menu w nagłówku (portalNav 'header'): obok logo; przy logo wyśrodkowanym — pod nim.
             Przełącznik trybu jest wewnątrz menu (withTheme), a koperta w menu — brak pływających ikon, więc bez pr. %>
