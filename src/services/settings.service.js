@@ -45,7 +45,9 @@ const ALIGNS = ['left', 'center', 'right'];
 const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel', 'panel-bg', 'sidebar', 'corner'];
 const CARD_STYLES = ['solid', 'glass', 'elevated'];
 const BUTTON_STYLES = ['rounded', 'pill'];
-const PORTAL_NAVS = ['none', 'tabs', 'side-left', 'side-right'];
+// W karcie: tabs | side-*. Pływające przy karcie: top (pasek nad kartą) | bar-* (panel obok).
+// W chrome strony: header (menu w nagłówku obok logo) | rail-* (pełnowysoki brandowy pas pionowy).
+const PORTAL_NAVS = ['none', 'tabs', 'side-left', 'side-right', 'top', 'bar-left', 'bar-right', 'header', 'rail-left', 'rail-right'];
 const PDF_TEMPLATES = ['standard', 'band', 'accent', 'proforma', 'accent-card', 'accent-band', 'accent-min', 'clean'];
 const PDF_DOCTYPES = ['rozliczenie', 'proforma'];
 

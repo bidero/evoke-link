@@ -55,11 +55,20 @@
   const noChrome = panelMode || L.style === 'sidebar'; // własny nagłówek/stopka w środku
   const sticky = !!L.stickyHeader;
   const stickyBg = dark ? 'rgba(15,23,42,0.55)' : 'rgba(255,255,255,0.62)';
+  // Nawigacja sekcji portali (/c, /p): kontroler dostarcza portalNav (sekcje+klucze+defaultSec),
+  // efektywny tryb w portalNavMode. Layout renderuje warianty CHROME (header / rail-*) i trzyma
+  // x-data ze stanem `sec` na wrapperze — wspólny scope dla menu w chrome i sekcji widoku (x-show).
+  const pNav = (typeof portalNav !== 'undefined' && portalNav && typeof portalNavMode !== 'undefined' && portalNavMode && portalNavMode !== 'none') ? portalNav : null;
+  const pMode = pNav ? portalNavMode : 'none';
+  const headerNav = !!pNav && pMode === 'header';
+  const railNav = !!pNav && pMode.indexOf('rail') === 0;
+  const railRight = pMode === 'rail-right';
+  const railOwn = railNav && L.style !== 'sidebar'; // przy kompozycji „Pasek boczny" menu wchodzi w JEJ pas
 %>
 <body class="client-bg min-h-screen text-slate-800 antialiased <%= panelMode ? 'evoke-panel-mode' : '' %>" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
   <%- typeof bgSlideshow !== 'undefined' ? bgSlideshow : '' %>
   <%- typeof bgOverlay !== 'undefined' ? bgOverlay : '' %>
-  <div class="relative z-10 min-h-screen flex flex-col">
+  <div class="relative z-10 min-h-screen flex flex-col" <% if (pNav) { %>x-data="{ sec: (function(){ var h = location.hash.replace('#',''); var ks = <%= JSON.stringify(pNav.keys) %>; return ks.indexOf(h) >= 0 ? h : '<%= pNav.defaultSec %>'; })() }"<% } %>>
 
     <button type="button" onclick="window.toggleTheme&&window.toggleTheme()" title="Tryb jasny/ciemny" aria-label="Przełącz tryb"
       class="fixed top-4 right-4 z-30 w-10 h-10 inline-flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 backdrop-blur transition text-brand-600 dark:text-slate-100">
@@ -120,16 +129,52 @@
     </div>
     <% } %>
 
+    <% if (railOwn) { %>
+    <%# Własny pełnowysoki brandowy pas z menu (portalNav rail-*) — działa w każdej kompozycji;
+        na mobile pas znika, menu przejmuje poziomy pasek u góry (page-top, mobileOnly). %>
+    <div class="flex-1 flex">
+      <aside class="hidden md:flex w-60 shrink-0 bg-brand-600 text-white flex-col p-6 <%= railRight ? 'order-2' : '' %>">
+        <div class="flex items-center gap-2">
+          <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
+            <%- logoTag(settings, { appName, imgClass: 'max-w-[80%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
+          <% } else if (!L.hideName) { %>
+            <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold">E</div>
+            <span class="font-semibold tracking-tight"><%= appName %></span>
+          <% } %>
+        </div>
+        <div class="mt-8"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail' }) %></div>
+        <div class="mt-auto pt-6 text-xs text-white/70"><%= footerText %></div>
+      </aside>
+      <div class="flex-1 flex flex-col min-w-0">
+        <div class="md:hidden px-4 pt-4"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'page-top', mobileOnly: true }) %></div>
+    <% } %>
+
     <% if (L.style !== 'banner' && !noChrome) { %>
-    <header class="px-6 py-5 <%= sticky ? 'sticky top-0 z-20' : '' %>"<% if (sticky) { %> data-sticky-header style="--sticky-bg:<%= stickyBg %>"<% } %>>
-      <div class="flex items-center gap-2 w-full <%= justify %> <%= dark ? 'text-white' : '' %>">
-        <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
-          <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
-        <% } else if (!L.hideName) { %>
-          <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
-          <span class="font-semibold tracking-tight"><%= appName %></span>
-        <% } %>
-      </div>
+    <%# railOwn: na desktopie logo jest w pasie — nagłówek tylko na mobile (bez dublowania) %>
+    <header class="px-6 py-5 <%= railOwn ? 'md:hidden' : '' %> <%= sticky ? 'sticky top-0 z-20' : '' %>"<% if (sticky) { %> data-sticky-header style="--sticky-bg:<%= stickyBg %>"<% } %>>
+      <% if (headerNav) { %>
+        <%# Menu w nagłówku (portalNav 'header'): obok logo; przy logo wyśrodkowanym — pod nim. %>
+        <div class="w-full <%= dark ? 'text-white' : '' %> <%= logoCfg.align === 'center' ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between gap-4' %>">
+          <div class="flex items-center gap-2 min-w-0">
+            <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
+              <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
+            <% } else if (!L.hideName) { %>
+              <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
+              <span class="font-semibold tracking-tight"><%= appName %></span>
+            <% } %>
+          </div>
+          <%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'bg' }) %>
+        </div>
+      <% } else { %>
+        <div class="flex items-center gap-2 w-full <%= justify %> <%= dark ? 'text-white' : '' %>">
+          <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
+            <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
+          <% } else if (!L.hideName) { %>
+            <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
+            <span class="font-semibold tracking-tight"><%= appName %></span>
+          <% } %>
+        </div>
+      <% } %>
     </header>
     <% } %>
 
@@ -144,6 +189,9 @@
             <span class="font-semibold tracking-tight"><%= appName %></span>
           <% } %>
         </div>
+        <% if (headerNav) { %>
+          <div class="max-w-5xl mx-auto w-full mt-4"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'brand' }) %></div>
+        <% } %>
         <% if (showHero) { %>
           <div class="max-w-5xl mx-auto w-full mt-4">
             <h1 class="text-2xl sm:text-3xl font-bold tracking-tight"><%= heroTitle %></h1>
@@ -209,6 +257,7 @@
               <span class="font-semibold tracking-tight text-slate-800"><%= appName %></span>
             <% } %>
           </div>
+          <% if (headerNav) { %><div class="-mt-2 mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white' }) %></div><% } %>
           <div class="flex-1 flex flex-col justify-center">
             <%- body %>
           </div>
@@ -241,6 +290,7 @@
               <span class="font-semibold tracking-tight text-slate-800"><%= appName %></span>
             <% } %>
           </div>
+          <% if (headerNav) { %><div class="mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white' }) %></div><% } %>
           <div class="flex-1 flex flex-col justify-center"><%- body %></div>
         </section>
         <aside class="hidden md:flex flex-1 flex-col justify-between p-10 <%= pbRight ? 'md:order-1' : '' %>">
@@ -267,20 +317,28 @@
       <% const sbRight = L.cardSide === 'right'; %>
       <main class="flex-1 flex">
         <aside class="hidden md:flex w-72 shrink-0 bg-brand-600 text-white flex-col justify-between p-8 <%= sbRight ? 'md:order-2' : '' %>">
-          <div class="flex items-center gap-2 <%= justify %>">
-            <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
-              <%- logoTag(settings, { appName, imgClass: 'max-w-[80%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
-            <% } else if (!L.hideName) { %>
-              <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold">E</div>
-              <span class="font-semibold tracking-tight"><%= appName %></span>
-            <% } %>
+          <div>
+            <div class="flex items-center gap-2 <%= justify %>">
+              <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
+                <%- logoTag(settings, { appName, imgClass: 'max-w-[80%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
+              <% } else if (!L.hideName) { %>
+                <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center font-bold">E</div>
+                <span class="font-semibold tracking-tight"><%= appName %></span>
+              <% } %>
+            </div>
+            <%# portalNav rail-*: menu wpina się w istniejący pas kompozycji (bez własnego pasa) %>
+            <% if (railNav) { %><div class="mt-8"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail' }) %></div><% } %>
           </div>
           <% if (showHero) { %>
             <div><h1 class="text-2xl font-bold tracking-tight"><%= heroTitle %></h1><% if (heroSubtitle) { %><p class="mt-2 text-sm text-white/80"><%= heroSubtitle %></p><% } %></div>
           <% } %>
           <div class="text-xs text-white/70"><%= footerText %></div>
         </aside>
-        <div class="flex-1 flex items-center justify-center p-6 sm:p-10"><%- body %></div>
+        <div class="flex-1 flex flex-col min-w-0">
+          <% if (railNav) { %><div class="md:hidden px-6 pt-4"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'page-top', mobileOnly: true }) %></div><% } %>
+          <% if (headerNav) { %><div class="px-6 pt-5 flex justify-center"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'bg' }) %></div><% } %>
+          <div class="flex-1 flex items-center justify-center p-6 sm:p-10"><%- body %></div>
+        </div>
       </main>
 
     <% } else if (L.style === 'corner') { %>
@@ -321,9 +379,15 @@
     <% } %>
 
     <% if (!noChrome) { %>
-    <footer class="px-6 py-5 text-center text-xs <%= dark ? 'text-slate-300/70' : 'text-slate-400' %>">
+    <%# railOwn: na desktopie stopka jest w pasie — dolna tylko na mobile %>
+    <footer class="px-6 py-5 text-center text-xs <%= railOwn ? 'md:hidden' : '' %> <%= dark ? 'text-slate-300/70' : 'text-slate-400' %>">
       <%= footerText %>
     </footer>
+    <% } %>
+
+    <% if (railOwn) { %>
+      </div>
+    </div>
     <% } %>
   </div>
 </body>

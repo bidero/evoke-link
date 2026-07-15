@@ -372,6 +372,11 @@ async function showClientPortal(req, res, next) {
       events.log({ type: 'viewed', message: 'Klient otworzył portal', clientId: client.id, ip: req.ip });
     }
 
+    // Zapamiętaj wizytę w portalu klienta — /p pokaże link powrotny „Wszystkie projekty"
+    // TYLKO przybyłym z /c (link /p bywa udostępniany osobom trzecim — nie ujawniamy adresu /c).
+    req.session.cPortal = req.session.cPortal || {};
+    req.session.cPortal[client.token] = true;
+
     // Sekcja „Do zapłaty": nierozliczone pozycje + dane do przelewu (+ QR wg ZBP, gdy konto = 26 cyfr).
     // Wyłączana przełącznikiem w Ustawienia → Rozliczenia (PDF) (`pdf.portalBilling`).
     const pdfCfg = (await settingsService.get()).pdf || {};
@@ -398,14 +403,29 @@ async function showClientPortal(req, res, next) {
       .map((o) => ({ title: o.title, token: o.token, gross: offerService.totals(o.items).gross, st: offerService.state(o), validUntil: o.validUntil }))
       .filter((o) => o.st !== 'expired'); // wygasłe chowamy przed klientem
 
+    // Nawigacja sekcji portalu (Settings.layout.portalNav) — budowana tu, bo warianty
+    // „chrome" (menu w nagłówku / pas pionowy) renderuje LAYOUT, nie widok.
+    // Pozycje tylko dla niepustych sekcji; przy < 2 sekcjach null = stos jak dotąd.
+    const documents = await documentService.listVisible(client.id);
+    const paidFlash = req.query.paid === '1';
+    const navSections = [{ key: 'projekty', label: 'Projekty', icon: 'folder' }];
+    if (offers.length) navSections.push({ key: 'oferty', label: 'Oferty', icon: 'fileText', badge: offers.filter((o) => o.st === 'open').length || null });
+    if (documents.length) navSections.push({ key: 'dokumenty', label: 'Dokumenty', icon: 'file' });
+    if (unpaid.length) navSections.push({ key: 'platnosci', label: 'Do zapłaty', icon: 'banknote' });
+    const portalNav = navSections.length >= 2 ? {
+      sections: navSections,
+      keys: navSections.map((s) => s.key),
+      // Po zgłoszeniu wpłaty (?paid=1) otwieramy „Do zapłaty" — tam banner podziękowania.
+      defaultSec: paidFlash && unpaid.length ? 'platnosci' : 'projekty',
+    } : null;
+
     // GOTCHA EJS: local NIE może nazywać się `client` — widok używa include('_portal_nav'),
     // a truthy `client` w locals przełącza EJS w tryb client-side („include is not a function").
     res.render('public/client-portal', {
       title: client.name, layout: PUBLIC_LAYOUT, portalClient: client,
       unpaid, unpaidTotal, seller, transferTitle, paymentQr,
-      paidDeclaredAt, paidFlash: req.query.paid === '1',
-      offers,
-      documents: await documentService.listVisible(client.id),
+      paidDeclaredAt, paidFlash,
+      offers, documents, portalNav,
     });
   } catch (err) {
     next(err);

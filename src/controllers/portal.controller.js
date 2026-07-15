@@ -70,7 +70,24 @@ async function showPortal(req, res, next) {
     res.locals.msgThread = await messageService.thread({ projectId: project.id });
     res.locals.msgHasReply = messageService.hasUnseen(res.locals.msgThread, (req.session.msgSeen || {})[project.clientToken]);
     const { fromUs, fromClient } = visibleSets(project);
-    res.render('public/portal', { title: project.name, layout: PUBLIC_LAYOUT, project, fromUs, fromClient, sent: req.query.sent === '1' });
+    // Link powrotny do portalu klienta /c — tylko gdy ta sesja odwiedziła portal
+    // (flaga z client.controller; obcym z samym linkiem /p nie ujawniamy adresu /c).
+    const backToPortal = project.client && req.session.cPortal && req.session.cPortal[project.client.token]
+      ? `/c/${project.client.token}` : null;
+    // Nawigacja sekcji portalu (Settings.layout.portalNav) — budowana tu, bo warianty
+    // „chrome" (menu w nagłówku / pas pionowy) renderuje LAYOUT, nie widok.
+    const openRequests = (project.fileRequests || []).filter((r) => !r.done);
+    const sent = req.query.sent === '1';
+    const portalNav = {
+      sections: [
+        { key: 'pliki', label: 'Pliki od nas', icon: 'download' },
+        { key: 'wyslij', label: 'Prześlij pliki', icon: 'upload', badge: openRequests.length || null },
+      ],
+      keys: ['pliki', 'wyslij'],
+      // Po uploadzie (?sent=1) otwieramy sekcję wysyłki — tam banner podziękowania.
+      defaultSec: sent ? 'wyslij' : 'pliki',
+    };
+    res.render('public/portal', { title: project.name, layout: PUBLIC_LAYOUT, project, fromUs, fromClient, sent, portalNav, backToPortal });
   } catch (err) {
     next(err);
   }

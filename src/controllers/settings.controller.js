@@ -143,7 +143,7 @@ async function updateSettings(req, res, next) {
       button: ['rounded', 'pill'].includes(b.layoutButton) ? b.layoutButton : 'rounded',
       stickyHeader: b.stickyHeader === 'on',
       font: fonts.PAIRS[b.layoutFont] ? b.layoutFont : 'system',
-      portalNav: ['none', 'tabs', 'side-left', 'side-right'].includes(b.portalNav) ? b.portalNav : 'none',
+      portalNav: ['none', 'tabs', 'side-left', 'side-right', 'top', 'bar-left', 'bar-right', 'header', 'rail-left', 'rail-right'].includes(b.portalNav) ? b.portalNav : 'none',
     };
 
     // --- Wydruk PDF rozliczenia ---

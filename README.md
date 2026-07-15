@@ -27,7 +27,7 @@ Stos: **Node.js + Express**, **SQLite** (przez Prisma), szablony **EJS + Tailwin
 - 🔔 **Dashboard i powiadomienia** — aktywne transfery, miejsce na dysku, dzwonek z licznikiem nieprzeczytanych.
 - 🧱 **Konfigurowalny panel** — widżety pulpitu przestawiane drag&drop bezpośrednio na pulpicie (statystyki, zadania z kalendarza, przychód + top klienci, nieprzeczytane wiadomości) z regulowaną szerokością (¼/⅓/½/⅔/pełna) i ukrywaniem; menu boczne z ikonami: własna kolejność, ukrywanie i nazwy pozycji.
 - 🎨 **Customizacja** — z panelu, bez kodu: logo (rozmiar + pozycja, bezpieczny upload SVG), favicon, nazwa, kolor przewodni, osobne kolory panelu (akcent / sidebar / tło / czcionka), tło stron klienta (presety, **własny gradient**, obraz, **ziarno z regulacją mocy**), treści i stopka. Strona logowania brandowana jak strony klienta. Pole na **własny CSS** dla zmian ponad dostępne opcje.
-- 🧭 **Nawigacja portali klienta** — sekcje portalu (projekty, pliki, oferty, dokumenty, płatności) jako zakładki lub menu boczne zamiast jednej długiej karty; wybór w ustawieniach, na telefonach zawsze zakładki.
+- 🧭 **Nawigacja portali klienta** — sekcje portalu (projekty, pliki, oferty, dokumenty, płatności) zamiast jednej długiej karty: zakładki lub menu w karcie, pasek nad kartą / panel obok karty, **menu w nagłówku strony obok logo** albo **pełnowysoki brandowy pas pionowy** (lewo/prawo); wybór w ustawieniach, na telefonach zawsze wariant poziomy. Z projektu wraca się linkiem „Wszystkie projekty" (widocznym tylko dla klienta, który przyszedł ze swojego portalu).
 - 🔄 **Aktualizacje z panelu** — sprawdzanie i instalacja nowych wersji z GitHuba jednym kliknięciem (Ustawienia → Zaawansowane): automatyczna kopia zapasowa przed aktualizacją, log na żywo, restart aplikacji i opcjonalne powiadomienie w dzwonku o dostępnej nowej wersji.
 - 🔑 **Konto** — zmiana hasła administratora z panelu (zapis do bazy, fallback do `.env`).
 
@@ -186,5 +186,5 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Załączniki w wiadomościach** — klient dołącza plik do wątku (portale `/p`, `/t`, `/c`), agencja pobiera go ze skrzynki
 - [x] **Lejek sprzedaży** — widok „Sprzedaż": wszystkie otwarte oferty, wartość lejka, wygasające, skuteczność i szybkie ponaglenie
 - [x] **Dokumenty klienta** — repozytorium umów/NDA/briefów na 360°, z opcją udostępnienia wybranych plików w portalu klienta
-- [x] **Nawigacja portali klienta** — sekcje /c i /p jako zakładki lub menu boczne (opcja w Ustawienia → Wygląd)
+- [x] **Nawigacja portali klienta** — sekcje /c i /p jako zakładki/menu w karcie, pasek lub panel przy karcie, menu w nagłówku strony albo brandowy pas pionowy (opcja w Ustawienia → Wygląd); link powrotny z projektu do portalu klienta
 - [x] **Aktualizator z GitHuba** — sprawdzanie i instalacja nowych wersji z panelu (backup przed aktualizacją, log na żywo, powiadomienie o nowej wersji)

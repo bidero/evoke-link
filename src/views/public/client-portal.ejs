@@ -1,30 +1,30 @@
 <%
-  // Nawigacja sekcji (Settings.layout.portalNav → efektywny tryb w res.locals.portalNavMode).
-  // Pozycje tylko dla niepustych sekcji; przy < 2 sekcjach lub trybie 'none' — stos jak dotąd.
+  // Nawigacja sekcji: sekcje/klucze/defaultSec buduje KONTROLER (portalNav) — czyta je też layout,
+  // który renderuje warianty chrome (menu w nagłówku / pas pionowy) i trzyma x-data ze stanem `sec`.
+  // Efektywny tryb w res.locals.portalNavMode; portalNav = null przy < 2 sekcjach → stos jak dotąd.
   var navMode = (typeof portalNavMode !== 'undefined' && portalNavMode) ? portalNavMode : 'none';
-  var openOffers = offers.filter(function(o){ return o.st === 'open'; }).length;
-  var sections = [{ key: 'projekty', label: 'Projekty', icon: 'folder' }];
-  if (offers.length) sections.push({ key: 'oferty', label: 'Oferty', icon: 'fileText', badge: openOffers || null });
-  if (typeof documents !== 'undefined' && documents.length) sections.push({ key: 'dokumenty', label: 'Dokumenty', icon: 'file' });
-  if (typeof unpaid !== 'undefined' && unpaid.length) sections.push({ key: 'platnosci', label: 'Do zapłaty', icon: 'banknote' });
-  var navOn = navMode !== 'none' && sections.length >= 2;
+  var nav = (typeof portalNav !== 'undefined' && portalNav) ? portalNav : null;
+  var navOn = navMode !== 'none' && !!nav;
+  var sections = nav ? nav.sections : [];
+  var inCard = navOn && (navMode === 'tabs' || navMode.indexOf('side') === 0); // zakładki/menu w karcie
   var sideNav = navOn && navMode.indexOf('side') === 0;
-  var sectionKeys = sections.map(function(s){ return s.key; });
-  // Po zgłoszeniu wpłaty (?paid=1) otwieramy „Do zapłaty" — tam jest banner podziękowania.
-  var defaultSec = (paidFlash && sectionKeys.indexOf('platnosci') >= 0) ? 'platnosci' : sectionKeys[0];
-  // Otwiera sekcję: przy stosie zawsze true; przy nawigacji steruje x-show.
+  var pageTop = navOn && navMode === 'top';            // pasek nad kartą (pływający)
+  var pageBar = navOn && navMode.indexOf('bar') === 0; // panel obok karty (pływający)
+  // Otwiera sekcję: przy stosie zawsze true; przy nawigacji steruje x-show (stan `sec` z layoutu).
   function secAttr(key, first) { return navOn ? ('x-show="sec===\'' + key + '\'"' + (first ? '' : ' x-cloak')) : ''; }
 %>
-<div class="w-full <%= sideNav ? 'max-w-4xl' : 'max-w-2xl' %>">
-  <div class="evoke-card p-5 sm:p-8"
-       <% if (navOn) { %>x-data="{ sec: (function(){ var h = location.hash.replace('#',''); var ks = <%= JSON.stringify(sectionKeys) %>; return ks.indexOf(h) >= 0 ? h : '<%= defaultSec %>'; })() }"<% } %>>
+<div class="w-full <%= (sideNav || pageBar) ? 'max-w-4xl' : 'max-w-2xl' %>">
+  <% if (pageTop || pageBar) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'page-top' }) %><% } %>
+  <div class="<%= pageBar ? 'md:flex md:gap-6 md:items-start' : '' %>">
+    <% if (pageBar) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'page-side' }) %><% } %>
+    <div class="evoke-card p-5 sm:p-8 <%= pageBar ? 'flex-1 min-w-0' : '' %>">
     <h1 class="text-2xl font-semibold tracking-tight mb-1"><%= portalClient.name %></h1>
     <p class="text-sm text-slate-500 mb-6">Twoje projekty — wybierz, aby zobaczyć i przesłać pliki.</p>
 
     <div class="<%= sideNav ? 'md:flex md:gap-8 md:items-start' : '' %>">
-      <% if (navOn) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'side' }) %><% } %>
+      <% if (inCard) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'side' }) %><% } %>
       <div class="min-w-0 flex-1">
-        <% if (navOn) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'tabs' }) %><% } %>
+        <% if (inCard) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'tabs' }) %><% } %>
 
         <div <%- secAttr('projekty', true) %>>
           <%
@@ -174,6 +174,7 @@
           </div>
         <% } %>
       </div>
+    </div>
     </div>
   </div>
 </div>

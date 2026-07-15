@@ -191,11 +191,16 @@ app.use(async (req, res, next) => {
     res.locals.surfaceStyleTag = surfaceVars(s.layout);
     res.locals.typographyStyleTag = fonts.styleTag(s.layout && s.layout.font);
 
-    // Efektywny tryb nawigacji portali (/c, /p): menu boczne degraduje do zakładek
-    // w wąskich kompozycjach (panel/showcase/corner/split — karta nie ma miejsca na kolumnę).
+    // Efektywny tryb nawigacji portali (/c, /p): w wąskich kompozycjach (panel/showcase/
+    // corner/split — brak miejsca na kolumnę) menu w karcie degraduje do zakładek,
+    // a pasek boczny strony do paska u góry.
     const narrowStyles = ['panel', 'panel-bg', 'showcase', 'corner', 'split'];
-    const pn = s.layout.portalNav || 'none';
-    res.locals.portalNavMode = pn.startsWith('side') && narrowStyles.includes(s.layout.style) ? 'tabs' : pn;
+    let pn = s.layout.portalNav || 'none';
+    if (narrowStyles.includes(s.layout.style)) {
+      if (pn.startsWith('side')) pn = 'tabs';
+      else if (pn.startsWith('bar')) pn = 'top';
+    }
+    res.locals.portalNavMode = pn;
 
     // Własny CSS admina (escape hatch) — wstrzykiwany do wszystkich layoutów.
     res.locals.customStyleTag = s.customCss ? `<style>${sanitizeCss(s.customCss)}</style>` : '';

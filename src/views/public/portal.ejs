@@ -1,22 +1,28 @@
 <%
-  // Nawigacja sekcji (Settings.layout.portalNav → efektywny tryb w res.locals.portalNavMode).
+  // Nawigacja sekcji: sekcje/klucze/defaultSec buduje KONTROLER (portalNav) — czyta je też layout,
+  // który renderuje warianty chrome (menu w nagłówku / pas pionowy) i trzyma x-data ze stanem `sec`.
   var navMode = (typeof portalNavMode !== 'undefined' && portalNavMode) ? portalNavMode : 'none';
-  var navOn = navMode !== 'none';
+  var nav = (typeof portalNav !== 'undefined' && portalNav) ? portalNav : null;
+  var navOn = navMode !== 'none' && !!nav;
+  var sections = nav ? nav.sections : [];
+  var inCard = navOn && (navMode === 'tabs' || navMode.indexOf('side') === 0); // zakładki/menu w karcie
   var sideNav = navOn && navMode.indexOf('side') === 0;
+  var pageTop = navOn && navMode === 'top';            // pasek nad kartą (pływający)
+  var pageBar = navOn && navMode.indexOf('bar') === 0; // panel obok karty (pływający)
   const fileRequests = project.fileRequests || []; const openRequests = fileRequests.filter((r) => !r.done);
-  var sections = [
-    { key: 'pliki', label: 'Pliki od nas', icon: 'download' },
-    { key: 'wyslij', label: 'Prześlij pliki', icon: 'upload', badge: openRequests.length || null },
-  ];
-  var sectionKeys = sections.map(function(s){ return s.key; });
-  // Po uploadzie (?sent=1) otwieramy sekcję wysyłki — banner podziękowania i przesłane pliki są tam.
-  var defaultSec = sent ? 'wyslij' : sectionKeys[0];
   function secAttr(key, first) { return navOn ? ('x-show="sec===\'' + key + '\'"' + (first ? '' : ' x-cloak')) : ''; }
 %>
-<div class="w-full <%= sideNav ? 'max-w-4xl' : 'max-w-2xl' %>">
-  <div class="evoke-card p-5 sm:p-8"
-       <% if (navOn) { %>x-data="{ sec: (function(){ var h = location.hash.replace('#',''); var ks = <%= JSON.stringify(sectionKeys) %>; return ks.indexOf(h) >= 0 ? h : '<%= defaultSec %>'; })() }"<% } %>>
+<div class="w-full <%= (sideNav || pageBar) ? 'max-w-4xl' : 'max-w-2xl' %>">
+  <% if (pageTop || pageBar) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'page-top' }) %><% } %>
+  <div class="<%= pageBar ? 'md:flex md:gap-6 md:items-start' : '' %>">
+    <% if (pageBar) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'page-side' }) %><% } %>
+    <div class="evoke-card p-5 sm:p-8 <%= pageBar ? 'flex-1 min-w-0' : '' %>">
     <%- include('_hero_in_card') %>
+    <% if (typeof backToPortal !== 'undefined' && backToPortal) { %>
+      <a href="<%= backToPortal %>" class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-brand-700 transition mb-2">
+        <%- icon('arrowLeft', { size: 14, cls: '' }) %> Wszystkie projekty
+      </a>
+    <% } %>
     <h1 class="text-2xl font-semibold tracking-tight"><%= project.name %></h1>
     <% if (project.description) { %>
       <p class="text-sm text-slate-500 mt-1 whitespace-pre-line"><%= project.description %></p>
@@ -29,9 +35,9 @@
     <% } %>
 
     <div class="mt-8 <%= sideNav ? 'md:flex md:gap-8 md:items-start' : '' %>">
-      <% if (navOn) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'side' }) %><% } %>
+      <% if (inCard) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'side' }) %><% } %>
       <div class="min-w-0 flex-1">
-        <% if (navOn) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'tabs' }) %><% } %>
+        <% if (inCard) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'tabs' }) %><% } %>
 
         <!-- Pliki od nas -->
         <div <%- secAttr('pliki', true) %>>
@@ -161,6 +167,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </div>

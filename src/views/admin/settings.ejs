@@ -614,14 +614,14 @@
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Nawigacja portali klienta <span class="text-slate-400 font-normal">(/c i /p — sekcje: projekty, pliki, oferty, płatności)</span></label>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
-          <% [['none','Jedna karta'],['tabs','Zakładki u góry'],['side-left','Menu z lewej'],['side-right','Menu z prawej']].forEach(function(o){ %>
+          <% [['none','Jedna karta'],['tabs','Zakładki w karcie'],['side-left','Menu w karcie (lewo)'],['side-right','Menu w karcie (prawo)'],['top','Pasek nad kartą'],['bar-left','Panel obok karty (lewo)'],['bar-right','Panel obok karty (prawo)'],['header','Menu w nagłówku'],['rail-left','Pas pionowy (lewo)'],['rail-right','Pas pionowy (prawo)']].forEach(function(o){ %>
             <label class="cursor-pointer">
               <input type="radio" name="portalNav" value="<%= o[0] %>" <%= (settings.layout.portalNav || 'none') === o[0] ? 'checked' : '' %> class="peer sr-only" />
               <span class="block text-center rounded-lg border border-slate-300 px-2 py-2 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
             </label>
           <% }); %>
         </div>
-        <p class="text-[11px] text-slate-400 mt-1">Menu boczne wymaga szerokiej karty — w kompozycjach „Panel na tle", „Pełne tło", „Róg" i „Split" automatycznie zmienia się w zakładki; na telefonach zawsze zakładki.</p>
+        <p class="text-[11px] text-slate-400 mt-1">Warianty „w karcie" i pływające („Pasek nad kartą", „Panel obok karty") trzymają się kontenera z plikami; „Menu w nagłówku" staje obok logo na samej górze strony, a „Pas pionowy" to pełnowysoki brandowy pas z lewej/prawej (przy kompozycji „Pasek boczny" menu wchodzi w jej istniejący pas). W wąskich kompozycjach menu w karcie zmienia się w zakładki, a panel obok karty w pasek nad kartą; na telefonach zawsze wariant poziomy.</p>
       </div>
 
       <div class="space-y-2 pt-1">
