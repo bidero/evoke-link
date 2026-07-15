@@ -138,6 +138,7 @@ async function updateSettings(req, res, next) {
       card: ['solid', 'glass', 'elevated'].includes(b.layoutCard) ? b.layoutCard : 'solid',
       cardSide: ['left', 'right', 'center'].includes(b.cardSide) ? b.cardSide : 'right',
       hideName: b.hideName === 'on',
+      hideBgLogo: b.hideBgLogo === 'on',
       heroOnBg: b.heroOnBg === 'on',
       applyToLogin: b.applyToLogin === 'on',
       radius: Math.min(40, Math.max(0, parseInt(b.layoutRadius, 10) >= 0 ? parseInt(b.layoutRadius, 10) : 24)),
@@ -153,6 +154,7 @@ async function updateSettings(req, res, next) {
       docType: ['rozliczenie', 'proforma'].includes(b.pdfDocType) ? b.pdfDocType : 'rozliczenie',
       logoHeight: Math.min(90, Math.max(20, parseInt(b.pdfLogoHeight, 10) || 48)),
       portalBilling: b.portalBilling === 'on',
+      hideSeller: b.hideSeller === 'on',
       seller: {
         name: (b.sellerName || '').trim(),
         address: (b.sellerAddress || '').trim(),

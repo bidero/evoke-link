@@ -19,7 +19,7 @@ const DEFAULTS = {
   // Układ stron klienta. style: classic (obecny) | centered | split.
   // card: solid | glass | elevated. radius w px. button: rounded | pill.
   // portalNav: nawigacja sekcji portali /c i /p — none (stos) | tabs | side-left | side-right.
-  layout: { style: 'classic', card: 'solid', cardSide: 'right', hideName: false, heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded', stickyHeader: false, font: 'system', portalNav: 'none' },
+  layout: { style: 'classic', card: 'solid', cardSide: 'right', hideName: false, hideBgLogo: false, heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded', stickyHeader: false, font: 'system', portalNav: 'none' },
   customCss: '',
   // E-mail: osobne logo + treści + powiadomienie do klienta. Puste pola = domyślne.
   emails: {
@@ -36,7 +36,7 @@ const DEFAULTS = {
   },
   // Wydruk PDF rozliczenia: szablon + wysokość logo (px) + dane sprzedawcy na dokument.
   // portalBilling: sekcja „Do zapłaty" (pozycje + dane do przelewu + QR) w portalu klienta /c.
-  pdf: { template: 'standard', docType: 'rozliczenie', logoHeight: 48, portalBilling: true, seller: { name: '', address: '', nip: '', bank: '' } },
+  pdf: { template: 'standard', docType: 'rozliczenie', logoHeight: 48, portalBilling: true, hideSeller: false, seller: { name: '', address: '', nip: '', bank: '' } },
   // Układ panelu admina: kolejność/ukrywanie pozycji menu i widżetów pulpitu (delty, puste = domyślnie).
   panel: { menu: [], dashboard: [] },
 };
@@ -61,6 +61,7 @@ function normPdf(p) {
     docType: PDF_DOCTYPES.includes(x.docType) ? x.docType : DEFAULTS.pdf.docType,
     logoHeight: Math.min(90, Math.max(20, Number.isFinite(h) ? h : DEFAULTS.pdf.logoHeight)),
     portalBilling: x.portalBilling === undefined ? DEFAULTS.pdf.portalBilling : !!x.portalBilling,
+    hideSeller: !!x.hideSeller, // ukryj dane sprzedawcy w PDF (czasem potrzebny sam wykaz pozycji)
     seller: { name: str(s.name), address: str(s.address), nip: str(s.nip), bank: str(s.bank) },
   };
 }
@@ -85,6 +86,7 @@ function normLayout(l) {
     card: CARD_STYLES.includes(x.card) ? x.card : DEFAULTS.layout.card,
     cardSide: ['left', 'right', 'center'].includes(x.cardSide) ? x.cardSide : DEFAULTS.layout.cardSide,
     hideName: !!x.hideName,
+    hideBgLogo: !!x.hideBgLogo,
     heroOnBg: x.heroOnBg === undefined ? DEFAULTS.layout.heroOnBg : !!x.heroOnBg,
     applyToLogin: !!x.applyToLogin,
     radius: Math.min(40, Math.max(0, Number.isInteger(r) ? r : DEFAULTS.layout.radius)),

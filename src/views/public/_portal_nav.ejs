@@ -102,6 +102,14 @@
       <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
     </button>
   <% }); %>
+  <% if (typeof withTheme !== 'undefined' && withTheme) { %>
+    <%# Przełącznik trybu jasny/ciemny w jednej linii z menu (headerNav — pływająca ikona ukryta). %>
+    <button type="button" onclick="window.toggleTheme&&window.toggleTheme()" title="Tryb jasny/ciemny" aria-label="Przełącz tryb"
+            class="inline-flex items-center justify-center rounded-xl w-8 h-8 transition <%= idleCls %>">
+      <span class="dark:hidden"><%- icon('moon', { size: 16, cls: '' }) %></span>
+      <span class="hidden dark:inline"><%- icon('sun', { size: 16, cls: '' }) %></span>
+    </button>
+  <% } %>
 </nav>
 <% } else if (part === 'rail') { %>
 <%# Pionowe menu w brandowym pasie (rail-* = własny pas; przy kompozycji „Pasek boczny"

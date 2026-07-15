@@ -96,7 +96,8 @@ function projectTables(charges, brand, style, hasVat) {
     const base = [
       { text: fmt.dateOnly(c.date), fontSize: 10 },
       { text: c.label || 'Pozycja', fontSize: 10 },
-      { text: c.paidAt ? 'Rozliczono' : 'Do zapłaty', fontSize: 9, color: c.paidAt ? '#16a34a' : '#d97706' },
+      // noWrap: status zawsze w jednej linii (w wąskich szablonach z paskiem „Rozliczono" zawijało się).
+      { text: c.paidAt ? 'Rozliczono' : 'Do zapłaty', fontSize: 9, color: c.paidAt ? '#16a34a' : '#d97706', noWrap: true },
     ];
     if (hasVat) {
       base.push(
@@ -252,7 +253,9 @@ function buildDoc({ client, charges, filters = {}, settings }) {
   const pdfCfg = settings.pdf || {};
   const tpl = pdfCfg.template || 'standard';
   const logoH = pdfCfg.logoHeight || 48;
-  const seller = pdfCfg.seller || { name: '', address: '', nip: '', bank: '' };
+  // hideSeller: zerujemy dane sprzedawcy → partiesBlock pokazuje sam blok nabywcy,
+  // a totalsBlock pomija linię „Do zapłaty na konto" (czasem potrzebny sam wykaz pozycji).
+  const seller = pdfCfg.hideSeller ? { name: '', address: '', nip: '', bank: '' } : (pdfCfg.seller || { name: '', address: '', nip: '', bank: '' });
   const title = pdfCfg.docType === 'proforma' ? 'Proforma' : 'Rozliczenie';
   const today = fmt.dateOnly(new Date());
   const now = new Date();

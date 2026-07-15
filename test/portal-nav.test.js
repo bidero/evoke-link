@@ -82,6 +82,9 @@ test('portalNav: tabs/side na /c i /p, none = stos, walidacja zapisu', async () 
     await settingsService.update({ layout: { ...snapLayout, style: 'classic', portalNav: 'header' } });
     html = await (await fetch(`${base}/p/${project.clientToken}`)).text();
     assert.match(html, /data-pnav="chrome-top"/, '/p z menu w nagłówku');
+    // przełącznik trybu w jednej linii z menu; brak pływającego (fixed) przełącznika
+    assert.match(html, /data-pnav="chrome-top"[\s\S]*toggleTheme/, 'przełącznik trybu wewnątrz paska menu');
+    assert.ok(!/fixed top-4 right-4[^>]*toggleTheme|toggleTheme[\s\S]{0,120}fixed top-4 right-4/.test(html), 'brak pływającego przełącznika przy menu w nagłówku');
     html = await (await fetch(`${base}/c/${client.token}`)).text();
     assert.match(html, /data-pnav="chrome-top"/, '/c z menu w nagłówku');
 

@@ -64,6 +64,9 @@
   const railNav = !!pNav && pMode.indexOf('rail') === 0;
   const railRight = pMode === 'rail-right';
   const railOwn = railNav && L.style !== 'sidebar'; // przy kompozycji „Pasek boczny" menu wchodzi w JEJ pas
+  // Logo na TLE (aside kompozycji panel-bg/sidebar): chowamy, gdy brandowy pas już je pokazuje
+  // (railOwn — inaczej podwójne logo) albo gdy admin wyłączył ręcznie (hideBgLogo).
+  const showBgLogo = !railOwn && !L.hideBgLogo;
   // „Wiadomości" jako pozycja menu (action) → pływająca koperta znika (okienko otwiera CustomEvent 'open-msgs').
   const msgInMenu = !!(pNav && pNav.sections && pNav.sections.some((s) => s.action === 'messages'));
   // Brandowy pas przy PRAWEJ krawędzi (własny rail-right albo kompozycja „Pasek boczny" z kartą po lewej)
@@ -78,11 +81,14 @@
   <%- typeof bgOverlay !== 'undefined' ? bgOverlay : '' %>
   <div class="relative z-10 min-h-screen flex flex-col" <% if (pNav) { %>x-data="{ sec: (function(){ var h = location.hash.replace('#',''); var ks = <%= JSON.stringify(pNav.keys) %>; return ks.indexOf(h) >= 0 ? h : '<%= pNav.defaultSec %>'; })() }"<% } %>>
 
+    <% if (!headerNav) { %>
+    <%# headerNav: przełącznik trybu jest W pasku menu (partial chrome-top, withTheme) — nie dublujemy pływającego. %>
     <button type="button" onclick="window.toggleTheme&&window.toggleTheme()" title="Tryb jasny/ciemny" aria-label="Przełącz tryb"
       class="fixed top-4 right-4 z-30 w-10 h-10 inline-flex items-center justify-center rounded-full <%= fabCls %> backdrop-blur transition">
       <span class="dark:hidden"><%- icon('moon', { size: 18, cls: '' }) %></span>
       <span class="hidden dark:inline"><%- icon('sun', { size: 18, cls: '' }) %></span>
     </button>
+    <% } %>
 
     <% if (typeof msgContext !== 'undefined' && msgContext) { %>
     <div class="fixed top-4 right-16 z-30" x-data="{ open: false, hasReply: <%= (typeof msgHasReply !== 'undefined' && msgHasReply) ? 'true' : 'false' %> }" @keydown.escape.window="open = false"
@@ -165,8 +171,8 @@
     <header class="px-6 py-5 <%= railOwn ? 'md:hidden' : '' %> <%= sticky ? 'sticky top-0 z-20' : '' %>"<% if (sticky) { %> data-sticky-header style="--sticky-bg:<%= stickyBg %>"<% } %>>
       <% if (headerNav) { %>
         <%# Menu w nagłówku (portalNav 'header'): obok logo; przy logo wyśrodkowanym — pod nim.
-            pr-12 odsuwa menu od pływającego przełącznika trybu (fixed top-4 right-4). %>
-        <div class="w-full <%= dark ? 'text-white' : '' %> <%= logoCfg.align === 'center' ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between gap-4 pr-12' %>">
+            Przełącznik trybu jest wewnątrz menu (withTheme), a koperta w menu — brak pływających ikon, więc bez pr. %>
+        <div class="w-full <%= dark ? 'text-white' : '' %> <%= logoCfg.align === 'center' ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between gap-4' %>">
           <div class="flex items-center gap-2 min-w-0">
             <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
               <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
@@ -175,7 +181,7 @@
               <span class="font-semibold tracking-tight"><%= appName %></span>
             <% } %>
           </div>
-          <%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'bg' }) %>
+          <%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'bg', withTheme: true }) %>
         </div>
       <% } else { %>
         <div class="flex items-center gap-2 w-full <%= justify %> <%= dark ? 'text-white' : '' %>">
@@ -202,7 +208,7 @@
           <% } %>
         </div>
         <% if (headerNav) { %>
-          <div class="max-w-5xl mx-auto w-full mt-4"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'brand' }) %></div>
+          <div class="max-w-5xl mx-auto w-full mt-4"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'brand', withTheme: true }) %></div>
         <% } %>
         <% if (showHero) { %>
           <div class="max-w-5xl mx-auto w-full mt-4">
@@ -269,7 +275,7 @@
               <span class="font-semibold tracking-tight text-slate-800"><%= appName %></span>
             <% } %>
           </div>
-          <% if (headerNav) { %><div class="-mt-2 mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white' }) %></div><% } %>
+          <% if (headerNav) { %><div class="-mt-2 mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white', withTheme: true }) %></div><% } %>
           <div class="flex-1 flex flex-col justify-center">
             <%- body %>
           </div>
@@ -302,10 +308,11 @@
               <span class="font-semibold tracking-tight text-slate-800"><%= appName %></span>
             <% } %>
           </div>
-          <% if (headerNav) { %><div class="mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white' }) %></div><% } %>
+          <% if (headerNav) { %><div class="mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white', withTheme: true }) %></div><% } %>
           <div class="flex-1 flex flex-col justify-center"><%- body %></div>
         </section>
         <aside class="hidden md:flex flex-1 flex-col justify-between p-10 <%= pbRight ? 'md:order-1' : '' %>">
+          <% if (showBgLogo) { %>
           <div class="flex items-center gap-2 <%= justify %>">
             <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
               <%- logoTag(settings, { appName, imgClass: 'max-w-[60%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
@@ -314,6 +321,7 @@
               <span class="font-semibold tracking-tight <%= dark ? 'text-white' : 'text-slate-800' %>"><%= appName %></span>
             <% } %>
           </div>
+          <% } else { %><div></div><% } %>
           <div>
             <% if (showHero) { %>
               <h1 class="text-3xl sm:text-4xl font-bold tracking-tight <%= heroT %>"><%= heroTitle %></h1>
@@ -330,6 +338,7 @@
       <main class="flex-1 flex">
         <aside class="hidden md:flex w-72 shrink-0 bg-brand-600 text-white flex-col justify-between p-8 <%= sbRight ? 'md:order-2' : '' %>">
           <div>
+            <% if (showBgLogo) { %>
             <div class="flex items-center gap-2 <%= justify %>">
               <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
                 <%- logoTag(settings, { appName, imgClass: 'max-w-[80%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
@@ -338,8 +347,9 @@
                 <span class="font-semibold tracking-tight"><%= appName %></span>
               <% } %>
             </div>
+            <% } %>
             <%# portalNav rail-*: menu wpina się w istniejący pas kompozycji (bez własnego pasa) %>
-            <% if (railNav) { %><div class="mt-8"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail' }) %></div><% } %>
+            <% if (railNav) { %><div class="<%= showBgLogo ? 'mt-8' : '' %>"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail' }) %></div><% } %>
           </div>
           <% if (showHero) { %>
             <div><h1 class="text-2xl font-bold tracking-tight"><%= heroTitle %></h1><% if (heroSubtitle) { %><p class="mt-2 text-sm text-white/80"><%= heroSubtitle %></p><% } %></div>
@@ -348,7 +358,7 @@
         </aside>
         <div class="flex-1 flex flex-col min-w-0">
           <% if (railNav) { %><div class="md:hidden px-6 pt-4"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'page-top', mobileOnly: true }) %></div><% } %>
-          <% if (headerNav) { %><div class="px-6 pt-5 flex justify-center"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'bg' }) %></div><% } %>
+          <% if (headerNav) { %><div class="px-6 pt-5 flex justify-center"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'bg', withTheme: true }) %></div><% } %>
           <div class="flex-1 flex items-center justify-center p-6 sm:p-10"><%- body %></div>
         </div>
       </main>
