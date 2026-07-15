@@ -32,6 +32,7 @@ async function showSettings(req, res, next) {
       presets: background.PRESETS,
       themes: THEMES,
       autoBackupDisabled: backup.isAutoDisabled(),
+      backups: backup.list(),
       appVersion: updateService.currentVersion(),
       updateNotifyDisabled: updateService.isNotifyDisabled(),
       // Deep-link zakładki (?tab=advanced — np. z powiadomienia o aktualizacji).
@@ -311,6 +312,25 @@ async function downloadBackup(req, res, next) {
   }
 }
 
+// Pobranie ZAPISANEJ kopii z listy (nazwa sanityzowana w backup.filePath — zero traversal).
+function downloadBackupFile(req, res) {
+  const p = backup.filePath(req.params.name);
+  if (!p) return res.status(404).send('Nie znaleziono kopii');
+  res.download(p);
+}
+
+// Usunięcie zapisanej kopii z listy.
+async function deleteBackupFile(req, res, next) {
+  try {
+    if (backup.remove(req.params.name)) {
+      await events.log({ type: 'updated', message: `Usunięto kopię zapasową ${req.params.name}`, ip: req.ip });
+    }
+    res.redirect('/admin/settings?saved=1&tab=advanced');
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Włączenie/wyłączenie automatycznego backupu (cron sprawdza flagę).
 function toggleAutoBackup(req, res, next) {
   try {
@@ -334,4 +354,4 @@ async function sendTestEmail(req, res, next) {
   }
 }
 
-module.exports = { showSettings, updateSettings, applyTheme, downloadBackup, toggleAutoBackup, sendTestEmail };
+module.exports = { showSettings, updateSettings, applyTheme, downloadBackup, downloadBackupFile, deleteBackupFile, toggleAutoBackup, sendTestEmail };

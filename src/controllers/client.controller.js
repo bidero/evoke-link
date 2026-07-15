@@ -413,7 +413,11 @@ async function showClientPortal(req, res, next) {
     if (documents.length) navSections.push({ key: 'dokumenty', label: 'Dokumenty', icon: 'file' });
     if (unpaid.length) navSections.push({ key: 'platnosci', label: 'Do zapłaty', icon: 'banknote' });
     const portalNav = navSections.length >= 2 ? {
-      sections: navSections,
+      sections: navSections.concat([
+        // Pozycja-akcja (NIE sekcja — brak w keys, nie liczy się do progu ≥2):
+        // otwiera okienko wiadomości; dot = nowa odpowiedź agencji.
+        { key: 'wiadomosci', label: 'Wiadomości', icon: 'mail', action: 'messages', dot: !!res.locals.msgHasReply },
+      ]),
       keys: navSections.map((s) => s.key),
       // Po zgłoszeniu wpłaty (?paid=1) otwieramy „Do zapłaty" — tam banner podziękowania.
       defaultSec: paidFlash && unpaid.length ? 'platnosci' : 'projekty',

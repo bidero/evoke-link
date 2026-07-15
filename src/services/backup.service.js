@@ -83,4 +83,32 @@ function rotate(keep) {
   return files.length;
 }
 
-module.exports = { BACKUP_DIR, isAutoDisabled, setAuto, snapshotDb, streamBackup, saveBackup, rotate, stamp };
+// Nazwa kopii — wyłącznie wzorzec naszych ZIP-ów, bez separatorów ścieżek (zero traversal).
+const NAME_RE = /^evoke-backup-[\w-]+\.zip$/;
+
+// Lista zapisanych kopii (najnowsze pierwsze) — do tabeli w panelu.
+function list() {
+  try {
+    return fs.readdirSync(BACKUP_DIR)
+      .filter((f) => NAME_RE.test(f))
+      .map((f) => { const st = fs.statSync(path.join(BACKUP_DIR, f)); return { name: f, size: st.size, mtime: st.mtime }; })
+      .sort((a, b) => b.mtime - a.mtime);
+  } catch (_) { return []; }
+}
+
+// Bezpieczna ścieżka kopii po nazwie — null przy złej nazwie albo braku pliku.
+function filePath(name) {
+  if (typeof name !== 'string' || !NAME_RE.test(name) || name !== path.basename(name)) return null;
+  const p = path.join(BACKUP_DIR, name);
+  try { return fs.existsSync(p) ? p : null; } catch (_) { return null; }
+}
+
+// Usuwa kopię (po sanityzacji nazwy). Zwraca true, gdy faktycznie skasowano.
+function remove(name) {
+  const p = filePath(name);
+  if (!p) return false;
+  fs.rmSync(p);
+  return true;
+}
+
+module.exports = { BACKUP_DIR, isAutoDisabled, setAuto, snapshotDb, streamBackup, saveBackup, rotate, stamp, list, filePath, remove };

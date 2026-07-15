@@ -64,6 +64,14 @@
   const railNav = !!pNav && pMode.indexOf('rail') === 0;
   const railRight = pMode === 'rail-right';
   const railOwn = railNav && L.style !== 'sidebar'; // przy kompozycji „Pasek boczny" menu wchodzi w JEJ pas
+  // „Wiadomości" jako pozycja menu (action) → pływająca koperta znika (okienko otwiera CustomEvent 'open-msgs').
+  const msgInMenu = !!(pNav && pNav.sections && pNav.sections.some((s) => s.action === 'messages'));
+  // Brandowy pas przy PRAWEJ krawędzi (własny rail-right albo kompozycja „Pasek boczny" z kartą po lewej)
+  // → pływające ikonki (tryb/koperta) muszą być białe, inaczej giną na kolorze brandu.
+  const brandTopRight = (railOwn && railRight) || (L.style === 'sidebar' && L.cardSide === 'right');
+  const fabCls = brandTopRight
+    ? 'bg-white/15 hover:bg-white/25 text-white'
+    : 'bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 text-brand-600 dark:text-slate-100';
 %>
 <body class="client-bg min-h-screen text-slate-800 antialiased <%= panelMode ? 'evoke-panel-mode' : '' %>" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
   <%- typeof bgSlideshow !== 'undefined' ? bgSlideshow : '' %>
@@ -71,18 +79,21 @@
   <div class="relative z-10 min-h-screen flex flex-col" <% if (pNav) { %>x-data="{ sec: (function(){ var h = location.hash.replace('#',''); var ks = <%= JSON.stringify(pNav.keys) %>; return ks.indexOf(h) >= 0 ? h : '<%= pNav.defaultSec %>'; })() }"<% } %>>
 
     <button type="button" onclick="window.toggleTheme&&window.toggleTheme()" title="Tryb jasny/ciemny" aria-label="Przełącz tryb"
-      class="fixed top-4 right-4 z-30 w-10 h-10 inline-flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 backdrop-blur transition text-brand-600 dark:text-slate-100">
+      class="fixed top-4 right-4 z-30 w-10 h-10 inline-flex items-center justify-center rounded-full <%= fabCls %> backdrop-blur transition">
       <span class="dark:hidden"><%- icon('moon', { size: 18, cls: '' }) %></span>
       <span class="hidden dark:inline"><%- icon('sun', { size: 18, cls: '' }) %></span>
     </button>
 
     <% if (typeof msgContext !== 'undefined' && msgContext) { %>
-    <div class="fixed top-4 right-16 z-30" x-data="{ open: false, hasReply: <%= (typeof msgHasReply !== 'undefined' && msgHasReply) ? 'true' : 'false' %> }" @keydown.escape.window="open = false">
+    <div class="fixed top-4 right-16 z-30" x-data="{ open: false, hasReply: <%= (typeof msgHasReply !== 'undefined' && msgHasReply) ? 'true' : 'false' %> }" @keydown.escape.window="open = false"
+         @open-msgs.window="open = !open; if (open && hasReply) { fetch('<%= msgContext.seen %>', { method: 'POST' }).catch(function(){}); hasReply = false }">
+      <% if (!msgInMenu) { %>
       <button type="button" @click="open = !open; if (open && hasReply) { fetch('<%= msgContext.seen %>', { method: 'POST' }).catch(function(){}); hasReply = false }" title="Wiadomości" aria-label="Wiadomości"
-        class="relative w-10 h-10 inline-flex items-center justify-center rounded-full bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 backdrop-blur transition text-brand-600 dark:text-slate-100">
+        class="relative w-10 h-10 inline-flex items-center justify-center rounded-full <%= fabCls %> backdrop-blur transition">
         <%- icon('mail', { size: 18, cls: '' }) %>
         <span x-show="hasReply" x-cloak class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 ring-2 ring-white"></span>
       </button>
+      <% } %>
       <div x-show="open" x-cloak x-transition @click.outside="open = false"
         class="absolute right-0 mt-2 w-80 max-w-[88vw] rounded-2xl border border-slate-200 bg-white shadow-xl p-4 text-left text-slate-800">
         <div class="text-sm font-semibold mb-1">Napisz do nas</div>
@@ -153,8 +164,9 @@
     <%# railOwn: na desktopie logo jest w pasie — nagłówek tylko na mobile (bez dublowania) %>
     <header class="px-6 py-5 <%= railOwn ? 'md:hidden' : '' %> <%= sticky ? 'sticky top-0 z-20' : '' %>"<% if (sticky) { %> data-sticky-header style="--sticky-bg:<%= stickyBg %>"<% } %>>
       <% if (headerNav) { %>
-        <%# Menu w nagłówku (portalNav 'header'): obok logo; przy logo wyśrodkowanym — pod nim. %>
-        <div class="w-full <%= dark ? 'text-white' : '' %> <%= logoCfg.align === 'center' ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between gap-4' %>">
+        <%# Menu w nagłówku (portalNav 'header'): obok logo; przy logo wyśrodkowanym — pod nim.
+            pr-12 odsuwa menu od pływającego przełącznika trybu (fixed top-4 right-4). %>
+        <div class="w-full <%= dark ? 'text-white' : '' %> <%= logoCfg.align === 'center' ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between gap-4 pr-12' %>">
           <div class="flex items-center gap-2 min-w-0">
             <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
               <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>

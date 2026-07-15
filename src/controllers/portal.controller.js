@@ -82,6 +82,8 @@ async function showPortal(req, res, next) {
       sections: [
         { key: 'pliki', label: 'Pliki od nas', icon: 'download' },
         { key: 'wyslij', label: 'Prześlij pliki', icon: 'upload', badge: openRequests.length || null },
+        // Pozycja-akcja (NIE sekcja — brak w keys): otwiera okienko wiadomości; dot = nowa odpowiedź.
+        { key: 'wiadomosci', label: 'Wiadomości', icon: 'mail', action: 'messages', dot: !!res.locals.msgHasReply },
       ],
       keys: ['pliki', 'wyslij'],
       // Po uploadzie (?sent=1) otwieramy sekcję wysyłki — tam banner podziękowania.

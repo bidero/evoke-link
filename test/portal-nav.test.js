@@ -24,11 +24,12 @@ test('portalNav: tabs/side na /c i /p, none = stos, walidacja zapisu', async () 
     // druga sekcja na /c (Do zapłaty) — nierozliczona pozycja
     charge = await prisma.charge.create({ data: { clientId: client.id, label: 'Poz. testowa', amount: 12300 } });
 
-    // none (domyślnie): brak zakładek
+    // none (domyślnie): brak zakładek, pływająca koperta wiadomości widoczna
     await settingsService.update({ layout: { ...snapLayout, style: 'classic', portalNav: 'none' } });
     let html = await (await fetch(`${base}/c/${client.token}`)).text();
     assert.ok(!/role="tablist"/.test(html), '/c bez nawigacji przy none');
     assert.match(html, /Do zapłaty/); // sekcje w stosie
+    assert.match(html, /title="Wiadomości"/, 'bez nawigacji koperta zostaje');
 
     // tabs: pasek zakładek na /c i /p
     await settingsService.update({ layout: { ...snapLayout, style: 'classic', portalNav: 'tabs' } });
@@ -38,6 +39,10 @@ test('portalNav: tabs/side na /c i /p, none = stos, walidacja zapisu', async () 
     html = await (await fetch(`${base}/p/${project.clientToken}`)).text();
     assert.match(html, /role="tablist"/, '/p z zakładkami');
     assert.match(html, /sec==='wyslij'/, 'sekcja wysyłki sterowana x-show');
+
+    // „Wiadomości" jako pozycja menu: przy włączonej nawigacji koperta znika, klik = open-msgs
+    assert.match(html, /open-msgs/, 'pozycja Wiadomości emituje zdarzenie okienka');
+    assert.ok(!/title="Wiadomości"/.test(html), 'pływająca koperta ukryta przy nawigacji');
 
     // side-left: kolumna menu (md+) + zakładki jako fallback mobilny
     await settingsService.update({ layout: { ...snapLayout, style: 'classic', portalNav: 'side-left' } });
@@ -92,6 +97,14 @@ test('portalNav: tabs/side na /c i /p, none = stos, walidacja zapisu', async () 
     html = await (await fetch(`${base}/p/${project.clientToken}`)).text();
     assert.match(html, /data-pnav="rail"/, 'sidebar: menu w pasie kompozycji');
     assert.ok(!/w-60 shrink-0 bg-brand-600/.test(html), 'sidebar: bez dublowania pasa');
+
+    // szklany panel: styl karty „glass" + kompozycja panel → panel półprzezroczysty (reguła w head)
+    await settingsService.update({ layout: { ...snapLayout, style: 'panel', card: 'glass', portalNav: 'none' } });
+    html = await (await fetch(`${base}/p/${project.clientToken}`)).text();
+    assert.match(html, /\.evoke-panel\{background-color:rgba\(255,255,255,0\.62\)/, 'reguła szklanego panelu wstrzyknięta');
+    await settingsService.update({ layout: { ...snapLayout, style: 'panel', card: 'solid', portalNav: 'none' } });
+    html = await (await fetch(`${base}/p/${project.clientToken}`)).text();
+    assert.ok(!/\.evoke-panel\{background-color/.test(html), 'pełna biel: panel bez reguły szkła');
 
     // walidacja: nieznana wartość wraca do none
     await settingsService.update({ layout: { ...snapLayout, portalNav: 'zmyslony' } });

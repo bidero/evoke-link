@@ -167,6 +167,8 @@ router.post('/settings/test-email', settings.sendTestEmail);
 router.post('/settings/apply-theme', settings.applyTheme);
 router.post('/settings/backup', settings.downloadBackup);
 router.post('/settings/backup-auto', settings.toggleAutoBackup);
+router.get('/settings/backups/:name', settings.downloadBackupFile);          // pobranie zapisanej kopii
+router.post('/settings/backups/:name/delete', settings.deleteBackupFile);    // usunięcie kopii z listy
 router.post(
   '/settings',
   brandingUpload.fields([

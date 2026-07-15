@@ -121,7 +121,13 @@ function surfaceVars(layout) {
     // -webkit-backdrop-filter podanego jako var(...) — literał blur(14px) działa.
     // Reguła po linku do app.css → wygrywa; `.evoke-panel-mode .evoke-card` (wyższa
     // specyficzność) i tak ją zeruje, gdy styl to panel.
-    extra = '.evoke-card{-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}';
+    extra = '.evoke-card{-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}'
+      // Szklany panel: kompozycje „Panel na tle" / „Panel na tle 2" — biały flush panel też
+      // robi się półprzezroczysty (tło prześwituje). Nadpisuje utility .bg-white (ta sama
+      // specyficzność, ale reguła wstrzykiwana PO app.css). Dark mode: !important, bo
+      // html.dark .bg-white ma !important.
+      + '.evoke-panel{background-color:rgba(255,255,255,0.62);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}'
+      + 'html.dark .evoke-panel{background-color:rgba(15,23,42,0.55)!important}';
   } else if (L.card === 'elevated') {
     vars.push('--card-shadow:0 30px 60px -15px rgba(2,6,23,0.35)');
   }

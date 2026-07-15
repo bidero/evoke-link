@@ -188,3 +188,4 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Dokumenty klienta** — repozytorium umów/NDA/briefów na 360°, z opcją udostępnienia wybranych plików w portalu klienta
 - [x] **Nawigacja portali klienta** — sekcje /c i /p jako zakładki/menu w karcie, pasek lub panel przy karcie, menu w nagłówku strony albo brandowy pas pionowy (opcja w Ustawienia → Wygląd); link powrotny z projektu do portalu klienta
 - [x] **Aktualizator z GitHuba** — sprawdzanie i instalacja nowych wersji z panelu (backup przed aktualizacją, log na żywo, powiadomienie o nowej wersji)
+- [x] **Wiadomości w menu portalu + lista kopii** — pozycja „Wiadomości" (z kropką nowej odpowiedzi) we wszystkich wariantach nawigacji; szklany panel dla kompozycji „Panel na tle"; lista kopii zapasowych z pobieraniem i usuwaniem starych

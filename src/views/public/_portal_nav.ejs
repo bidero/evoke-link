@@ -1,22 +1,35 @@
 <%# Nawigacja sekcji portali klienta (/c i /p) — Settings.layout.portalNav.
     W karcie: part 'side' (kolumna menu od md) i 'tabs' (poziome zakładki; przy menu bocznym
-    tylko poniżej md — fallback mobilny). Na poziomie strony (poza kartą, na tle):
-    part 'page-top' (pasek u góry; dla bar-* tylko poniżej md) i 'page-side' (pływający
-    panel boczny od md). Warianty page-* adaptują kolory do ciemnego tła (bgDark).
-    Locals: sections [{key,label,icon,badge?}], navMode, part. Stan `sec` z x-data widoku. %>
+    tylko poniżej md — fallback mobilny). Pływające: 'page-top' (pasek nad kartą; dla bar-*/rail-*
+    fallback mobilny przez local `mobileOnly`) i 'page-side' (panel obok karty). Chrome strony:
+    'chrome-top' (nagłówek/banner/panel; tone: bg|white|brand) i 'rail' (brandowy pas pionowy).
+    Locals: sections [{key,label,icon,badge?,action?,dot?}], navMode, part.
+    Pozycja z `action:'messages'` NIE jest sekcją — otwiera okienko wiadomości (CustomEvent
+    'open-msgs' łapany w layoucie); `dot` = kropka nowej odpowiedzi.
+    KONTRAST: żadnych heurystyk ciemności tła (bgDark bywa mylne dla górnej części gradientu) —
+    chipy zawsze jasne półprzezroczyste + warianty dark: (klasa html.dark). Aktywne pozycje na
+    brandzie używają bg-white/90, NIE bg-white (dark mode nadpisuje .bg-white na ciemno !important). %>
 <% const side = navMode.indexOf('side') === 0; %>
-<% const dk = (typeof bgDark !== 'undefined' && bgDark); %>
+<%
+  // @click pozycji: sekcja przełącza `sec` (+hash); akcja „wiadomości" emituje zdarzenie okienka.
+  function navClick(s) {
+    return s.action === 'messages'
+      ? '@click="window.dispatchEvent(new CustomEvent(\'open-msgs\'))"'
+      : '@click="sec=\'' + s.key + '\'; history.replaceState(null,\'\',\'#' + s.key + '\')"';
+  }
+%>
 <% if (part === 'side' && side) { %>
 <nav class="hidden md:block w-44 shrink-0 <%= navMode === 'side-right' ? 'md:order-2' : '' %>">
   <ul class="space-y-1 sticky top-6">
     <% sections.forEach(function(s){ %>
       <li>
-        <button type="button" @click="sec='<%= s.key %>'; history.replaceState(null,'','#<%= s.key %>')"
-                :class="sec==='<%= s.key %>' ? 'bg-brand-50 text-brand-700 font-medium' : 'text-slate-600 hover:bg-slate-50'"
-                class="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition text-left">
+        <button type="button" <%- navClick(s) %>
+                <% if (!s.action) { %>:class="sec==='<%= s.key %>' ? 'bg-brand-50 text-brand-700 font-medium' : 'text-slate-600 hover:bg-slate-50'"<% } %>
+                class="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition text-left <%= s.action ? 'text-slate-600 hover:bg-slate-50' : '' %>">
           <%- icon(s.icon, { size: 16, cls: 'shrink-0' }) %>
           <span class="flex-1 truncate"><%= s.label %></span>
           <% if (s.badge) { %><span class="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700"><%= s.badge %></span><% } %>
+          <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
         </button>
       </li>
     <% }); %>
@@ -25,12 +38,13 @@
 <% } else if (part === 'tabs') { %>
 <div class="<%= side ? 'md:hidden ' : '' %>flex gap-1 overflow-x-auto border-b border-slate-200 mb-6" role="tablist">
   <% sections.forEach(function(s){ %>
-    <button type="button" role="tab" @click="sec='<%= s.key %>'; history.replaceState(null,'','#<%= s.key %>')"
-            :class="sec==='<%= s.key %>' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'"
-            class="inline-flex items-center gap-1.5 whitespace-nowrap border-b-2 -mb-px px-3 py-2 text-sm font-medium transition">
+    <button type="button" role="tab" <%- navClick(s) %>
+            <% if (!s.action) { %>:class="sec==='<%= s.key %>' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'"<% } %>
+            class="inline-flex items-center gap-1.5 whitespace-nowrap border-b-2 -mb-px px-3 py-2 text-sm font-medium transition <%= s.action ? 'border-transparent text-slate-500 hover:text-slate-700' : '' %>">
       <%- icon(s.icon, { size: 15, cls: 'shrink-0' }) %>
       <span><%= s.label %></span>
       <% if (s.badge) { %><span class="text-[11px] px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700"><%= s.badge %></span><% } %>
+      <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
     </button>
   <% }); %>
 </div>
@@ -38,29 +52,31 @@
 <%# Pasek u góry strony (nad kartą, na tle). Fallback mobilny (md:hidden) dla bar-*/rail-*
     — wymuszany też jawnie przez local `mobileOnly` (include z layoutu). %>
 <div data-pnav="top" role="tablist"
-     class="<%= ((typeof mobileOnly !== 'undefined' && mobileOnly) || navMode.indexOf('bar') === 0) ? 'md:hidden ' : '' %>mb-5 flex flex-wrap justify-center gap-1 rounded-2xl <%= dk ? 'bg-white/10' : 'bg-white/70 shadow-sm' %> backdrop-blur px-2 py-1.5">
+     class="<%= ((typeof mobileOnly !== 'undefined' && mobileOnly) || navMode.indexOf('bar') === 0) ? 'md:hidden ' : '' %>mb-5 flex flex-wrap justify-center gap-1 rounded-2xl bg-white/70 shadow-sm dark:bg-white/10 dark:shadow-none backdrop-blur px-2 py-1.5">
   <% sections.forEach(function(s){ %>
-    <button type="button" role="tab" @click="sec='<%= s.key %>'; history.replaceState(null,'','#<%= s.key %>')"
-            :class="sec==='<%= s.key %>' ? 'bg-brand-600 text-white' : '<%= dk ? 'text-white/85 hover:bg-white/10' : 'text-slate-600 hover:bg-slate-100' %>'"
-            class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-medium transition">
+    <button type="button" role="tab" <%- navClick(s) %>
+            <% if (!s.action) { %>:class="sec==='<%= s.key %>' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100'"<% } %>
+            class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-medium transition <%= s.action ? 'text-slate-600 hover:bg-slate-100' : '' %>">
       <%- icon(s.icon, { size: 15, cls: 'shrink-0' }) %>
       <span><%= s.label %></span>
       <% if (s.badge) { %><span class="text-[11px] px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700"><%= s.badge %></span><% } %>
+      <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
     </button>
   <% }); %>
 </div>
 <% } else if (part === 'page-side' && navMode.indexOf('bar') === 0) { %>
 <%# Pływający pasek boczny strony (osobny panel obok karty, na tle). %>
 <nav data-pnav="bar" class="hidden md:block w-48 shrink-0 <%= navMode === 'bar-right' ? 'md:order-2' : '' %>">
-  <ul class="sticky top-6 space-y-1 rounded-2xl <%= dk ? 'bg-white/10' : 'bg-white/70 shadow-sm' %> backdrop-blur p-2">
+  <ul class="sticky top-6 space-y-1 rounded-2xl bg-white/70 shadow-sm dark:bg-white/10 dark:shadow-none backdrop-blur p-2">
     <% sections.forEach(function(s){ %>
       <li>
-        <button type="button" @click="sec='<%= s.key %>'; history.replaceState(null,'','#<%= s.key %>')"
-                :class="sec==='<%= s.key %>' ? 'bg-brand-600 text-white font-medium' : '<%= dk ? 'text-white/85 hover:bg-white/10' : 'text-slate-600 hover:bg-white' %>'"
-                class="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition text-left">
+        <button type="button" <%- navClick(s) %>
+                <% if (!s.action) { %>:class="sec==='<%= s.key %>' ? 'bg-brand-600 text-white font-medium' : 'text-slate-600 hover:bg-slate-100'"<% } %>
+                class="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition text-left <%= s.action ? 'text-slate-600 hover:bg-slate-100' : '' %>">
           <%- icon(s.icon, { size: 16, cls: 'shrink-0' }) %>
           <span class="flex-1 truncate"><%= s.label %></span>
           <% if (s.badge) { %><span class="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700"><%= s.badge %></span><% } %>
+          <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
         </button>
       </li>
     <% }); %>
@@ -68,36 +84,38 @@
 </nav>
 <% } else if (part === 'chrome-top') { %>
 <%# Menu w chrome strony (nagłówek obok logo / banner / biały panel).
-    tone: 'bg' (na tle, dark-aware) | 'white' (w białym panelu) | 'brand' (na kolorze brandu). %>
+    tone: 'bg' (na tle strony — jasny chip) | 'white' (w białym panelu) | 'brand' (na kolorze brandu). %>
 <%
   var tn = (typeof tone !== 'undefined' && tone) ? tone : 'bg';
-  var actCls = tn === 'brand' ? 'bg-white text-brand-700' : 'bg-brand-600 text-white';
-  var idleCls = tn === 'brand' ? 'text-white/85 hover:bg-white/15'
-    : tn === 'white' ? 'text-slate-600 hover:bg-slate-100'
-    : (dk ? 'text-white/85 hover:bg-white/15' : 'text-slate-600 hover:bg-black/5');
+  var actCls = tn === 'brand' ? 'bg-white/90 text-brand-700' : 'bg-brand-600 text-white';
+  var idleCls = tn === 'brand' ? 'text-white/85 hover:bg-white/15' : 'text-slate-600 hover:bg-slate-100';
+  var wrapCls = tn === 'bg' ? 'rounded-2xl bg-white/70 shadow-sm dark:bg-white/10 dark:shadow-none backdrop-blur px-2 py-1.5' : '';
 %>
-<nav data-pnav="chrome-top" role="tablist" class="flex flex-wrap items-center gap-1">
+<nav data-pnav="chrome-top" role="tablist" class="flex flex-wrap items-center gap-1 <%= wrapCls %>">
   <% sections.forEach(function(s){ %>
-    <button type="button" role="tab" @click="sec='<%= s.key %>'; history.replaceState(null,'','#<%= s.key %>')"
-            :class="sec==='<%= s.key %>' ? '<%= actCls %>' : '<%= idleCls %>'"
-            class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-medium transition">
+    <button type="button" role="tab" <%- navClick(s) %>
+            <% if (!s.action) { %>:class="sec==='<%= s.key %>' ? '<%= actCls %>' : '<%= idleCls %>'"<% } %>
+            class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-medium transition <%= s.action ? idleCls : '' %>">
       <%- icon(s.icon, { size: 15, cls: 'shrink-0' }) %>
       <span><%= s.label %></span>
       <% if (s.badge) { %><span class="text-[11px] px-1.5 py-0.5 rounded-full <%= tn === 'brand' ? 'bg-white/20' : 'bg-brand-100 text-brand-700' %>"><%= s.badge %></span><% } %>
+      <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
     </button>
   <% }); %>
 </nav>
 <% } else if (part === 'rail') { %>
 <%# Pionowe menu w brandowym pasie (rail-* = własny pas; przy kompozycji „Pasek boczny"
-    wpinane w jej istniejący pas). Zawsze na kolorze brandu — biały tekst. %>
+    wpinane w jej istniejący pas). Zawsze na kolorze brandu — biały tekst;
+    aktywna pozycja bg-white/90 (NIE bg-white — GOTCHA dark mode). %>
 <nav data-pnav="rail" class="space-y-1">
   <% sections.forEach(function(s){ %>
-    <button type="button" @click="sec='<%= s.key %>'; history.replaceState(null,'','#<%= s.key %>')"
-            :class="sec==='<%= s.key %>' ? 'bg-white text-brand-700 font-medium' : 'text-white/85 hover:bg-white/15'"
-            class="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition text-left">
+    <button type="button" <%- navClick(s) %>
+            <% if (!s.action) { %>:class="sec==='<%= s.key %>' ? 'bg-white/90 text-brand-700 font-medium' : 'text-white/85 hover:bg-white/15'"<% } %>
+            class="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition text-left <%= s.action ? 'text-white/85 hover:bg-white/15' : '' %>">
       <%- icon(s.icon, { size: 16, cls: 'shrink-0' }) %>
       <span class="flex-1 truncate"><%= s.label %></span>
       <% if (s.badge) { %><span class="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-white/20"><%= s.badge %></span><% } %>
+      <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
     </button>
   <% }); %>
 </nav>

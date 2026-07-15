@@ -1104,6 +1104,25 @@
       </form>
     </div>
     <p class="text-[11px] text-slate-400">Auto-backup wykonuje cron (<code>node src/jobs/backup.job.js</code>); „Wyłącz" sprawia tylko, że cron pomija wykonanie (flaga w katalogu backupów).</p>
+
+    <% if (typeof backups !== 'undefined' && backups.length) { %>
+      <div class="pt-3 border-t border-slate-100">
+        <p class="text-xs font-medium text-slate-500 mb-2">Zapisane kopie (<%= backups.length %>)</p>
+        <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 text-sm max-h-64 overflow-y-auto">
+          <% backups.forEach(function(b){ %>
+            <div class="flex items-center gap-3 px-3 py-2">
+              <span class="min-w-0 flex-1 truncate text-slate-700" title="<%= b.name %>"><%= b.name %></span>
+              <span class="text-xs text-slate-400 shrink-0 whitespace-nowrap"><%= fmt.bytes(b.size) %> · <%= fmt.date(b.mtime) %></span>
+              <a href="/admin/settings/backups/<%= encodeURIComponent(b.name) %>" class="text-brand-700 hover:text-brand-800 shrink-0" title="Pobierz"><%- icon('download', { size: 15, cls: '' }) %></a>
+              <form method="POST" action="/admin/settings/backups/<%= encodeURIComponent(b.name) %>/delete" onsubmit="return confirm('Usunąć kopię <%= b.name %>?')" class="shrink-0 leading-none">
+                <button type="submit" class="text-slate-400 hover:text-red-600 transition" title="Usuń"><%- icon('trash', { size: 15, cls: '' }) %></button>
+              </form>
+            </div>
+          <% }); %>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1">Rotację (limit <code>BACKUP_KEEP</code>) robi cron — tu możesz dodatkowo skasować stare kopie ręcznie.</p>
+      </div>
+    <% } %>
   </div>
 
   <!-- Aktualizacje z GitHuba (zaawansowane) — check/run/status przez fetch (update.controller) -->
