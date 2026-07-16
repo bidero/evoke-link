@@ -81,7 +81,10 @@
 <body class="client-bg min-h-screen text-slate-800 antialiased <%= panelMode ? 'evoke-panel-mode' : '' %>" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
   <%- typeof bgSlideshow !== 'undefined' ? bgSlideshow : '' %>
   <%- typeof bgOverlay !== 'undefined' ? bgOverlay : '' %>
-  <div class="relative z-10 min-h-screen flex flex-col" <% if (pNav) { %>x-data="{ sec: (function(){ var h = location.hash.replace('#',''); var ks = <%= JSON.stringify(pNav.keys) %>; return ks.indexOf(h) >= 0 ? h : '<%= pNav.defaultSec %>'; })(), railOpen: true }"<% } %>>
+  <%# railOpen: zapamiętany wybór (localStorage) ma pierwszeństwo — pas trzyma stan między ekranami;
+      dopóki użytkownik nie zwinie/rozwinie ręcznie, obowiązuje domyślny per-strona (/c zwinięty, /p rozwinięty). %>
+  <div class="relative z-10 min-h-screen flex flex-col"
+       <% if (pNav) { %>x-data="{ sec: (function(){ var h = location.hash.replace('#',''); var ks = <%= JSON.stringify(pNav.keys) %>; return ks.indexOf(h) >= 0 ? h : '<%= pNav.defaultSec %>'; })(), railOpen: (function(){ try{ var v=localStorage.getItem('evoke-rail'); if(v==='0'||v==='1') return v==='1'; }catch(e){} return <%= pNav.railOpen === false ? 'false' : 'true' %>; })() }" x-init="$watch('railOpen', function(v){ try{ localStorage.setItem('evoke-rail', v?'1':'0'); }catch(e){} })"<% } %>>
 
     <% if (!headerNav) { %>
     <%# headerNav: przełącznik trybu jest W pasku menu (partial chrome-top, withTheme) — nie dublujemy pływającego. %>
@@ -160,7 +163,7 @@
           <%- icon('menu', { size: 20, cls: '' }) %>
         </button>
         <%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail' }) %>
-        <div class="mt-auto pt-6 text-xs text-white/70 whitespace-nowrap" x-show="railOpen" x-transition.opacity><%= footerText %></div>
+        <%# Stopka NIE w pasie — zostaje w kompozycji (na tle / standardowa), żeby nie dublować napisu. %>
       </aside>
       <div class="flex-1 flex flex-col min-w-0">
         <div class="md:hidden px-4 pt-4"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'page-top', mobileOnly: true }) %></div>
@@ -402,8 +405,9 @@
     <% } %>
 
     <% if (!noChrome) { %>
-    <%# railOwn: na desktopie stopka jest w pasie — dolna tylko na mobile %>
-    <footer class="px-6 py-5 text-center text-xs <%= railOwn ? 'md:hidden' : '' %> <%= dark ? 'text-slate-300/70' : 'text-slate-400' %>">
+    <%# Standardowa stopka (klasyczne układy). Pas pionowy nie ma już własnej stopki,
+        więc pokazujemy ją też przy railOwn (jedyne miejsce na napis). %>
+    <footer class="px-6 py-5 text-center text-xs <%= dark ? 'text-slate-300/70' : 'text-slate-400' %>">
       <%= footerText %>
     </footer>
     <% } %>

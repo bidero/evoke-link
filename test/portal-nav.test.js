@@ -94,8 +94,16 @@ test('portalNav: tabs/side na /c i /p, none = stos, walidacja zapisu', async () 
     assert.match(html, /data-pnav="rail"/, '/p z pasem pionowym');
     assert.match(html, /shrink-0 bg-brand-600[^"]*transition-\[width\]/, 'brandowy pas ze zwijaniem (animowana szerokość)');
     assert.match(html, /railOpen = !railOpen/, 'hamburger zwija/rozwija pas');
-    assert.match(html, /railOpen: true/, 'pas domyślnie rozwinięty');
+    // stan pasa czytany z localStorage (zapamiętany między ekranami); domyślny per-strona to fallback
+    assert.match(html, /localStorage\.getItem\('evoke-rail'\)/, 'pas czyta zapamiętany stan');
+    assert.match(html, /setItem\('evoke-rail'/, 'pas zapisuje zmianę stanu');
+    assert.match(html, /return true; \}\)\(\) \}/, 'wewnątrz projektu (/p) domyślnie rozwinięty (fallback)');
     assert.match(html, /data-pnav="top"/, 'fallback mobilny przy pasie');
+    // stopka NIE w pasie (koniec dublowania napisu) — pas ma tylko przyciski
+    assert.ok(!/data-pnav="rail"[\s\S]{0,200}bezpieczna wymiana/.test(html), 'brak stopki w pasie');
+    // /c (lista projektów): pas startuje ZWINIĘTY (fallback per-strona)
+    const chtml = await (await fetch(`${base}/c/${client.token}`)).text();
+    assert.match(chtml, /return false; \}\)\(\) \}/, 'lista projektów (/c) domyślnie zwinięty (fallback)');
     // logo NIE w pasie — pas ma tylko przyciski; logo w nagłówku (klasyczny układ)
     assert.ok(!/bg-brand-600[\s\S]{0,400}logo_/.test(html), 'brak logo w pasie pionowym');
 

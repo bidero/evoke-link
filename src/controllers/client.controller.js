@@ -421,6 +421,7 @@ async function showClientPortal(req, res, next) {
       keys: navSections.map((s) => s.key),
       // Po zgłoszeniu wpłaty (?paid=1) otwieramy „Do zapłaty" — tam banner podziękowania.
       defaultSec: paidFlash && unpaid.length ? 'platnosci' : 'projekty',
+      railOpen: false, // lista projektów (/c): pas pionowy startuje zwinięty (więcej miejsca na listę)
     } : null;
 
     // GOTCHA EJS: local NIE może nazywać się `client` — widok używa include('_portal_nav'),

@@ -88,6 +88,7 @@ async function showPortal(req, res, next) {
       keys: ['pliki', 'wyslij'],
       // Po uploadzie (?sent=1) otwieramy sekcję wysyłki — tam banner podziękowania.
       defaultSec: sent ? 'wyslij' : 'pliki',
+      railOpen: true, // wewnątrz projektu pas pionowy startuje rozwinięty
     };
     res.render('public/portal', { title: project.name, layout: PUBLIC_LAYOUT, project, fromUs, fromClient, sent, portalNav, backToPortal });
   } catch (err) {
