@@ -40,17 +40,23 @@ function run(cmd, args, opts = {}) {
 }
 
 async function main() {
+  // --no-backup (z startUpdate opts.skipBackup): pomija krok kopii zapasowej.
+  const skipBackup = process.argv.includes('--no-backup');
   const from = upd.currentVersion();
   upd.writeStatus({ state: 'running', step: 'backup', startedAt: upd.readStatus().startedAt || new Date().toISOString(), from, error: null });
   log(`== Aktualizacja Evoke LINK (z v${from}) — ${new Date().toISOString()} ==`);
 
-  // 1. Kopia zapasowa (obowiązkowa — błąd przerywa aktualizację).
-  log('[1/4] Kopia zapasowa (baza + pliki)…');
-  const backup = require('../services/backup.service');
+  // 1. Kopia zapasowa (błąd przerywa aktualizację). Można pominąć (skipBackup).
   const prisma = require('../db/client');
-  const r = await backup.saveBackup('all');
-  backup.rotate(KEEP);
-  log(`  zapisano ${path.basename(r.path)} (${(r.size / 1048576).toFixed(1)} MB)`);
+  if (skipBackup) {
+    log('[1/4] Kopia zapasowa — POMINIĘTA (na życzenie).');
+  } else {
+    log('[1/4] Kopia zapasowa (baza + pliki)…');
+    const backup = require('../services/backup.service');
+    const r = await backup.saveBackup('all');
+    backup.rotate(KEEP);
+    log(`  zapisano ${path.basename(r.path)} (${(r.size / 1048576).toFixed(1)} MB)`);
+  }
   // Zwolnij silnik Prismy PRZED npm install (GOTCHA Windows: EPERM na pliku silnika).
   await prisma.$disconnect();
 

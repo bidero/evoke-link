@@ -1139,7 +1139,7 @@
       <h2 class="text-sm font-semibold text-slate-700">Aktualizacje</h2>
       <span class="text-xs text-slate-400">Zainstalowana wersja: <span class="font-medium text-slate-600">v<%= appVersion %></span></span>
     </div>
-    <p class="text-xs text-slate-400">Aktualizacja pobiera zmiany z GitHuba (<code>git pull</code>), instaluje zależności, stosuje migracje bazy i restartuje aplikację. Przed aktualizacją wykonywana jest kopia zapasowa (baza + pliki).</p>
+    <p class="text-xs text-slate-400">Aktualizacja pobiera zmiany z GitHuba (<code>git pull</code>), instaluje zależności, stosuje migracje bazy i restartuje aplikację. Domyślnie przed aktualizacją wykonywana jest kopia zapasowa (baza + pliki) — można to wyłączyć poniżej.</p>
 
     <div class="flex flex-wrap items-center gap-2">
       <button type="button" @click="check" :disabled="checking || running"
@@ -1152,6 +1152,11 @@
         <span x-show="running" x-cloak>Aktualizuję…</span>
       </button>
     </div>
+
+    <label class="flex items-center gap-2 text-sm text-slate-600" x-show="info && !info.upToDate && !done && !running" x-cloak>
+      <input type="checkbox" x-model="withBackup" class="rounded border-slate-300" />
+      Zrób kopię zapasową przed aktualizacją <span class="text-slate-400">(zalecane; odznacz, gdy masz świeżą kopię lub mało miejsca)</span>
+    </label>
 
     <template x-if="err">
       <div class="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2" x-text="err"></div>
@@ -1214,7 +1219,7 @@
 // Polling ignoruje błędy sieci — w trakcie restartu Passengera aplikacja chwilowo nie odpowiada.
 function updater() {
   return {
-    checking: false, running: false, done: false, info: null, log: '', step: '', to: null, err: '', timer: null,
+    checking: false, running: false, done: false, info: null, log: '', step: '', to: null, err: '', timer: null, withBackup: true,
     init() {
       // Powrót na stronę w trakcie aktualizacji — podejmij polling.
       fetch('/admin/update/status').then(function(r){ return r.json(); }).then((d) => {
@@ -1232,10 +1237,17 @@ function updater() {
       finally { this.checking = false; }
     },
     async start() {
-      if (!confirm('Uruchomić aktualizację? Najpierw wykona się kopia zapasowa, a po zakończeniu aplikacja się zrestartuje.')) return;
+      const msg = this.withBackup
+        ? 'Uruchomić aktualizację? Najpierw wykona się kopia zapasowa, a po zakończeniu aplikacja się zrestartuje.'
+        : 'Uruchomić aktualizację BEZ kopii zapasowej? Po zakończeniu aplikacja się zrestartuje.';
+      if (!confirm(msg)) return;
       this.err = ''; this.done = false; this.log = ''; this.running = true;
       try {
-        const r = await fetch('/admin/update/run', { method: 'POST' });
+        const r = await fetch('/admin/update/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ skipBackup: !this.withBackup }),
+        });
         const d = await r.json();
         if (!r.ok) throw new Error(d.error || 'Nie udało się uruchomić aktualizacji');
         this.poll();

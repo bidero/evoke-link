@@ -96,12 +96,15 @@ function isRunning() {
 
 // Start aktualizacji: czyści log, ustawia lock i odpala job jako proces odłączony
 // (detached + unref — przeżyje restart aplikacji, którego sam na końcu zażąda).
-function startUpdate() {
+// opts.skipBackup → job pomija krok kopii zapasowej (flaga --no-backup w argv).
+function startUpdate(opts = {}) {
   if (isRunning()) throw new Error('Aktualizacja już trwa');
   fs.mkdirSync(TMP_DIR, { recursive: true });
   fs.writeFileSync(LOG_FILE, '');
   writeStatus({ state: 'running', step: 'start', startedAt: new Date().toISOString(), finishedAt: null, error: null, from: currentVersion(), to: null });
-  const child = spawn(process.execPath, [path.join(ROOT, 'src', 'jobs', 'update.job.js')], {
+  const args = [path.join(ROOT, 'src', 'jobs', 'update.job.js')];
+  if (opts.skipBackup) args.push('--no-backup');
+  const child = spawn(process.execPath, args, {
     cwd: ROOT, detached: true, stdio: 'ignore', windowsHide: true,
   });
   child.unref();

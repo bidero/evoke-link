@@ -16,9 +16,11 @@ async function check(req, res) {
 async function run(req, res) {
   try {
     if (updateService.isRunning()) return res.status(409).json({ error: 'Aktualizacja już trwa' });
-    updateService.startUpdate();
-    await events.log({ type: 'updated', message: 'Uruchomiono aktualizację z GitHuba', ip: req.ip });
-    res.json({ started: true });
+    // skipBackup=true (checkbox „bez kopii") pomija krok backupu w jobie.
+    const skipBackup = req.body && (req.body.skipBackup === true || req.body.skipBackup === 'on' || req.body.skipBackup === '1');
+    updateService.startUpdate({ skipBackup });
+    await events.log({ type: 'updated', message: `Uruchomiono aktualizację z GitHuba${skipBackup ? ' (bez kopii)' : ''}`, ip: req.ip });
+    res.json({ started: true, skipBackup });
   } catch (e) {
     res.status(500).json({ error: updateService.redact(e.message) });
   }

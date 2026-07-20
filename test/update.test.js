@@ -71,6 +71,15 @@ test('plik stanu: merge zapisu, lock aktualizacji i stale-lock', () => {
   }
 });
 
+test('job aktualizacji: flaga --no-backup pomija krok kopii', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'src', 'jobs', 'update.job.js'), 'utf8');
+  assert.match(src, /process\.argv\.includes\('--no-backup'\)/, 'job czyta flagę --no-backup');
+  assert.match(src, /POMINIĘTA/, 'log informuje o pominięciu kopii');
+  // startUpdate({ skipBackup }) dokłada argument --no-backup do spawnu
+  const svc = fs.readFileSync(path.join(__dirname, '..', 'src', 'services', 'update.service.js'), 'utf8');
+  assert.match(svc, /opts\.skipBackup.*--no-backup/s, 'startUpdate dokłada --no-backup przy skipBackup');
+});
+
 test('wersja bieżąca czytana z package.json', () => {
   const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8'));
   assert.equal(upd.currentVersion(), pkg.version);
