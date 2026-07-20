@@ -23,17 +23,21 @@ router.get('/t/:token/zip', download.downloadZip);
 router.post('/t/:token/decision', messageLimiter, download.submitDecision);
 router.get('/t/:token/preview/:fileId', download.previewFile);
 router.get('/t/:token/file/:fileId', download.downloadFile);
+router.get('/t/:token/wiadomosci', download.showMessages); // podstrona wiadomości (zamiast popupu)
 router.post('/t/:token/message', messageLimiter, messageUpload, download.submitMessage);
 router.post('/t/:token/messages/seen', download.markSeen);
 
 // Publiczny upload od klienta (Etap 2).
 router.get('/upload/:token', receive.showUploadPage);
+router.get('/upload/:token/wiadomosci', receive.showMessages);
+router.post('/upload/:token/message', messageLimiter, messageUpload, receive.submitMessage);
 router.post('/upload/:token/password', passwordLimiter, receive.submitPassword);
 router.post('/upload/:token/chunk', chunkParser, receiveChunk);
 router.post('/upload/:token', receiveUpload('files'), receive.submitUpload);
 
 // Panel klienta na poziomie projektu (/p/:token).
 router.get('/p/:token', portal.showPortal);
+router.get('/p/:token/wiadomosci', portal.showMessages); // podstrona wiadomości (zamiast popupu)
 router.post('/p/:token/password', passwordLimiter, portal.submitPassword);
 router.get('/p/:token/zip', portal.downloadAllZip);
 router.get('/p/:token/preview/:fileId', portal.previewFile);
@@ -46,6 +50,7 @@ router.post('/p/:token/messages/seen', portal.markSeen);
 
 // Portal klienta — wszystkie projekty przypisane do klienta (/c/:token).
 router.get('/c/:token', clientCtrl.showClientPortal);
+router.get('/c/:token/wiadomosci', clientCtrl.showClientMessages); // podstrona wiadomości (zamiast popupu)
 router.post('/c/:token/message', messageLimiter, messageUpload, clientCtrl.submitClientMessage);
 router.post('/c/:token/messages/seen', clientCtrl.markSeen);
 router.post('/c/:token/paid', messageLimiter, clientCtrl.submitPaidDeclaration); // „Zgłoś wpłatę"
@@ -54,6 +59,8 @@ router.get('/c/:token/documents/:docId', require('../controllers/document.contro
 // Oferty — publiczna strona z akceptacją/odrzuceniem (/o/:token).
 const offerCtrl = require('../controllers/offer.controller');
 router.get('/o/:token', offerCtrl.showOffer);
+router.get('/o/:token/wiadomosci', offerCtrl.showMessages); // podstrona wiadomości (wątek klienta)
+router.post('/o/:token/message', messageLimiter, messageUpload, offerCtrl.submitMessage);
 router.post('/o/:token/decision', messageLimiter, offerCtrl.submitDecision);
 
 // Onboarding — jednorazowy formularz uzupełnienia danych przez klienta.

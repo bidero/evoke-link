@@ -5,6 +5,8 @@ const clientService = require('../services/client.service');
 const projectService = require('../services/project.service');
 const events = require('../services/event.service');
 const mail = require('../services/mail.service');
+const messageService = require('../services/message.service');
+const { contentRailNav, contentMsgNav } = require('../utils/contentNav');
 const config = require('../config');
 
 const PUBLIC_LAYOUT = 'layouts/public';
@@ -95,11 +97,51 @@ async function showOffer(req, res, next) {
     if (st === 'open' && firstViewThisSession(req, offer.token)) {
       events.log({ type: 'viewed', message: `Klient otworzył ofertę „${offer.title}"`, clientId: offer.clientId, projectId: offer.projectId || undefined, ip: req.ip });
     }
+    // Wiadomości: wątek klienta-właściciela oferty (ten sam co w portalu /c).
+    res.locals.msgContext = { action: `/o/${offer.token}/message`, page: `/o/${offer.token}/wiadomosci`, scope: `oferta „${offer.title}"` };
+    res.locals.msgSent = req.query.msg === '1';
+    res.locals.msgThread = await messageService.thread({ clientId: offer.clientId });
+    res.locals.msgHasReply = messageService.hasUnseen(res.locals.msgThread, (req.session.msgSeen || {})[offer.token]);
     res.render('public/offer', {
       title: offer.title, layout: PUBLIC_LAYOUT, offer, state: st,
       totals: offerService.totals(offer.items), error: null,
       done: req.query.done === '1',
+      portalNav: contentRailNav(res, { msgHref: `/o/${offer.token}/wiadomosci`, msgDot: res.locals.msgHasReply }),
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Podstrona wiadomości (/o/:token/wiadomosci) — wątek klienta + formularz.
+async function showMessages(req, res, next) {
+  try {
+    const offer = await offerService.getByToken(req.params.token);
+    if (!offer) return res.status(404).render('public/unavailable', { title: 'Nie znaleziono', layout: PUBLIC_LAYOUT, reason: 'not_found' });
+    res.locals.msgContext = { action: `/o/${offer.token}/message`, page: `/o/${offer.token}/wiadomosci`, scope: `oferta „${offer.title}"` };
+    res.locals.msgSent = req.query.msg === '1';
+    res.locals.msgThread = await messageService.thread({ clientId: offer.clientId });
+    req.session.msgSeen = req.session.msgSeen || {};
+    req.session.msgSeen[offer.token] = Date.now();
+    const back = { href: `/o/${offer.token}`, label: offer.title };
+    res.render('public/messages', {
+      title: 'Wiadomości', layout: PUBLIC_LAYOUT, msgBack: back,
+      portalNav: contentMsgNav(res, { backHref: back.href, backLabel: back.label, msgHref: `/o/${offer.token}/wiadomosci` }),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Wiadomość od klienta ze strony oferty (/o) → wątek klienta + mail do agencji.
+async function submitMessage(req, res, next) {
+  try {
+    const offer = await offerService.getByToken(req.params.token);
+    if (!offer) return res.status(404).render('public/unavailable', { title: 'Nie znaleziono', layout: PUBLIC_LAYOUT, reason: 'not_found' });
+    const { body, senderName, senderEmail } = req.body;
+    const msg = await messageService.create({ body, senderName, senderEmail, clientId: offer.clientId, ip: req.ip, file: req.file });
+    if (msg) mail.sendNewMessageNotification({ message: msg, client: offer.client }).catch((e) => console.error('[mail] wiadomość:', e.message));
+    res.redirect(`/o/${offer.token}/wiadomosci?msg=1`);
   } catch (err) {
     next(err);
   }
@@ -131,4 +173,4 @@ async function submitDecision(req, res, next) {
   }
 }
 
-module.exports = { showPipeline, createOffer, deleteOffer, sendOffer, showOffer, submitDecision };
+module.exports = { showPipeline, createOffer, deleteOffer, sendOffer, showOffer, showMessages, submitMessage, submitDecision };

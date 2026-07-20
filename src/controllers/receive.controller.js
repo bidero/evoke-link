@@ -3,6 +3,8 @@ const transferService = require('../services/transfer.service');
 const storage = require('../services/storage.service');
 const mail = require('../services/mail.service');
 const events = require('../services/event.service');
+const messageService = require('../services/message.service');
+const { contentRailNav, contentMsgNav } = require('../utils/contentNav');
 
 const PUBLIC_LAYOUT = 'layouts/public';
 
@@ -50,7 +52,52 @@ async function showUploadPage(req, res, next) {
     if (firstViewThisSession(req, transfer.token)) {
       events.log({ type: 'viewed', message: 'Klient otworzył link do wgrania plików', transferId: transfer.id, projectId: transfer.projectId, ip: req.ip });
     }
-    res.render('public/upload', { title: transfer.title || 'Prześlij pliki', layout: PUBLIC_LAYOUT, transfer, sent: false });
+    // Wiadomości (jak na /t): kontekst wątku = transfer przychodzący.
+    res.locals.msgContext = { action: `/upload/${transfer.token}/message`, page: `/upload/${transfer.token}/wiadomosci`, scope: transfer.title || '' };
+    res.locals.msgSent = req.query.msg === '1';
+    res.locals.msgThread = await messageService.thread({ transferId: transfer.id });
+    res.locals.msgHasReply = messageService.hasUnseen(res.locals.msgThread, (req.session.msgSeen || {})[transfer.token]);
+    res.render('public/upload', {
+      title: transfer.title || 'Prześlij pliki', layout: PUBLIC_LAYOUT, transfer, sent: false,
+      portalNav: contentRailNav(res, { msgHref: `/upload/${transfer.token}/wiadomosci`, msgDot: res.locals.msgHasReply }),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Podstrona wiadomości (/upload/:token/wiadomosci) — wątek + formularz.
+async function showMessages(req, res, next) {
+  try {
+    const transfer = await loadIncoming(req, res);
+    if (!transfer) return;
+    if (transferService.requiresPassword(transfer) && !isUnlocked(req, transfer.token)) {
+      return res.render('public/password', { title: 'Chronione hasłem', layout: PUBLIC_LAYOUT, token: transfer.token, action: `/upload/${transfer.token}/password`, error: null });
+    }
+    res.locals.msgContext = { action: `/upload/${transfer.token}/message`, page: `/upload/${transfer.token}/wiadomosci`, scope: transfer.title || '' };
+    res.locals.msgSent = req.query.msg === '1';
+    res.locals.msgThread = await messageService.thread({ transferId: transfer.id });
+    req.session.msgSeen = req.session.msgSeen || {};
+    req.session.msgSeen[transfer.token] = Date.now();
+    const back = { href: `/upload/${transfer.token}`, label: transfer.title || 'Prześlij pliki' };
+    res.render('public/messages', {
+      title: 'Wiadomości', layout: PUBLIC_LAYOUT, msgBack: back,
+      portalNav: contentMsgNav(res, { backHref: back.href, backLabel: back.label, msgHref: `/upload/${transfer.token}/wiadomosci` }),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Wiadomość od klienta ze strony uploadu (/upload) → skrzynka + mail do agencji.
+async function submitMessage(req, res, next) {
+  try {
+    const transfer = await loadIncoming(req, res);
+    if (!transfer) return;
+    const { body, senderName, senderEmail } = req.body;
+    const msg = await messageService.create({ body, senderName, senderEmail, transferId: transfer.id, projectId: transfer.projectId, clientId: transfer.project ? transfer.project.clientId : null, ip: req.ip, file: req.file });
+    if (msg) mail.sendNewMessageNotification({ message: msg, project: transfer.project, transfer }).catch((e) => console.error('[mail] wiadomość:', e.message));
+    res.redirect(`/upload/${transfer.token}/wiadomosci?msg=1`);
   } catch (err) {
     next(err);
   }
@@ -122,11 +169,15 @@ async function submitUpload(req, res, next) {
         .catch((e) => console.error('[mail] potwierdzenie klienta:', e.message));
     }
 
-    res.render('public/upload', { title: transfer.title || 'Dziękujemy', layout: PUBLIC_LAYOUT, transfer: { ...updated, project: transfer.project }, sent: true, count: files.length });
+    res.render('public/upload', {
+      title: transfer.title || 'Dziękujemy', layout: PUBLIC_LAYOUT,
+      transfer: { ...updated, project: transfer.project }, sent: true, count: files.length,
+      portalNav: contentRailNav(res, { msgHref: `/upload/${transfer.token}/wiadomosci`, msgDot: false }),
+    });
   } catch (err) {
     (req.files || []).forEach((f) => storage.removeTmp(f.path));
     next(err);
   }
 }
 
-module.exports = { showUploadPage, submitPassword, submitUpload };
+module.exports = { showUploadPage, showMessages, submitMessage, submitPassword, submitUpload };

@@ -57,6 +57,31 @@ function gate(req, res, project) {
   return true;
 }
 
+// Nawigacja sekcji portalu (Settings.layout.portalNav) — budowana tu, bo warianty „chrome"
+// (menu w nagłówku / pas pionowy) renderuje LAYOUT, nie widok. Pozycje z `href` to LINKI
+// (powrót, Wiadomości — osobna podstrona); reszta przełącza sekcje (x-show, stan `sec`).
+// opts: { res, backToPortal?, openCount?, defaultSec?, linkBase? (podstrona: sekcje jako linki),
+//         msgActive? (podświetl Wiadomości), railOpen? }
+function buildNav(project, opts) {
+  const res = opts.res;
+  const isRail = String(res.locals.portalNavMode || '').indexOf('rail') === 0;
+  const sections = [];
+  // „← Wszystkie projekty" jako pozycja PASA (przy pasie znika z karty); inne warianty: link w karcie.
+  if (isRail && opts.backToPortal) sections.push({ key: 'wstecz', label: 'Wszystkie projekty', icon: 'arrowLeft', action: 'back', href: opts.backToPortal });
+  sections.push(
+    { key: 'pliki', label: 'Pliki od nas', icon: 'download' },
+    { key: 'wyslij', label: 'Prześlij pliki', icon: 'upload', badge: opts.openCount || null },
+    { key: 'wiadomosci', label: 'Wiadomości', icon: 'mail', action: 'messages', href: `/p/${project.clientToken}/wiadomosci`, dot: !!res.locals.msgHasReply, active: !!opts.msgActive },
+  );
+  return {
+    sections,
+    keys: ['pliki', 'wyslij'],
+    defaultSec: opts.defaultSec || 'pliki',
+    linkBase: opts.linkBase || null,
+    railOpen: opts.railOpen !== undefined ? opts.railOpen : true, // wewnątrz projektu pas domyślnie rozwinięty
+  };
+}
+
 async function showPortal(req, res, next) {
   try {
     const project = await loadProject(req, res);
@@ -65,7 +90,7 @@ async function showPortal(req, res, next) {
     if (firstViewThisSession(req, project.clientToken)) {
       events.log({ type: 'viewed', message: 'Klient otworzył panel projektu', projectId: project.id, ip: req.ip });
     }
-    res.locals.msgContext = { action: `/p/${project.clientToken}/message`, seen: `/p/${project.clientToken}/messages/seen`, scope: `projekt „${project.name}"` };
+    res.locals.msgContext = { action: `/p/${project.clientToken}/message`, page: `/p/${project.clientToken}/wiadomosci`, scope: `projekt „${project.name}"` };
     res.locals.msgSent = req.query.msg === '1';
     res.locals.msgThread = await messageService.thread({ projectId: project.id });
     res.locals.msgHasReply = messageService.hasUnseen(res.locals.msgThread, (req.session.msgSeen || {})[project.clientToken]);
@@ -74,22 +99,14 @@ async function showPortal(req, res, next) {
     // (flaga z client.controller; obcym z samym linkiem /p nie ujawniamy adresu /c).
     const backToPortal = project.client && req.session.cPortal && req.session.cPortal[project.client.token]
       ? `/c/${project.client.token}` : null;
-    // Nawigacja sekcji portalu (Settings.layout.portalNav) — budowana tu, bo warianty
-    // „chrome" (menu w nagłówku / pas pionowy) renderuje LAYOUT, nie widok.
     const openRequests = (project.fileRequests || []).filter((r) => !r.done);
     const sent = req.query.sent === '1';
-    const portalNav = {
-      sections: [
-        { key: 'pliki', label: 'Pliki od nas', icon: 'download' },
-        { key: 'wyslij', label: 'Prześlij pliki', icon: 'upload', badge: openRequests.length || null },
-        // Pozycja-akcja (NIE sekcja — brak w keys): otwiera okienko wiadomości; dot = nowa odpowiedź.
-        { key: 'wiadomosci', label: 'Wiadomości', icon: 'mail', action: 'messages', dot: !!res.locals.msgHasReply },
-      ],
-      keys: ['pliki', 'wyslij'],
+    const portalNav = buildNav(project, {
+      res, backToPortal,
+      openCount: openRequests.length,
       // Po uploadzie (?sent=1) otwieramy sekcję wysyłki — tam banner podziękowania.
       defaultSec: sent ? 'wyslij' : 'pliki',
-      railOpen: true, // wewnątrz projektu pas pionowy startuje rozwinięty
-    };
+    });
     res.render('public/portal', { title: project.name, layout: PUBLIC_LAYOUT, project, fromUs, fromClient, sent, portalNav, backToPortal });
   } catch (err) {
     next(err);
@@ -103,6 +120,31 @@ function markSeen(req, res) {
   res.status(204).end();
 }
 
+// Podstrona wiadomości (/p/:token/wiadomosci) — wątek + formularz (zastępuje dawny popup).
+async function showMessages(req, res, next) {
+  try {
+    const project = await loadProject(req, res);
+    if (!project) return;
+    if (!gate(req, res, project)) return;
+    res.locals.msgContext = { action: `/p/${project.clientToken}/message`, page: `/p/${project.clientToken}/wiadomosci`, scope: `projekt „${project.name}"` };
+    res.locals.msgSent = req.query.msg === '1';
+    res.locals.msgThread = await messageService.thread({ projectId: project.id });
+    // Wejście na podstronę = obejrzenie wątku (chowa kropkę nowej odpowiedzi).
+    req.session.msgSeen = req.session.msgSeen || {};
+    req.session.msgSeen[project.clientToken] = Date.now();
+    const backToPortal = project.client && req.session.cPortal && req.session.cPortal[project.client.token]
+      ? `/c/${project.client.token}` : null;
+    // Sekcje jako LINKI wstecz do portalu (linkBase) — na podstronie nie ma treści sekcji.
+    const portalNav = buildNav(project, { res, backToPortal, linkBase: `/p/${project.clientToken}`, msgActive: true });
+    res.render('public/messages', {
+      title: `Wiadomości — ${project.name}`, layout: PUBLIC_LAYOUT, portalNav,
+      msgBack: { href: `/p/${project.clientToken}`, label: project.name },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Wiadomość od klienta z panelu projektu (/p) → skrzynka + mail do agencji.
 async function submitMessage(req, res, next) {
   try {
@@ -111,7 +153,7 @@ async function submitMessage(req, res, next) {
     const { body, senderName, senderEmail } = req.body;
     const msg = await messageService.create({ body, senderName, senderEmail, projectId: project.id, clientId: project.clientId, ip: req.ip, file: req.file });
     if (msg) mail.sendNewMessageNotification({ message: msg, client: project.client, project }).catch((e) => console.error('[mail] wiadomość:', e.message));
-    res.redirect(`/p/${project.clientToken}?msg=1`);
+    res.redirect(`/p/${project.clientToken}/wiadomosci?msg=1`);
   } catch (err) {
     next(err);
   }
@@ -285,4 +327,4 @@ async function submitDecision(req, res, next) {
   }
 }
 
-module.exports = { showPortal, submitMessage, submitDecision, markSeen, submitPassword, submitUpload, downloadFile, previewFile, downloadAllZip };
+module.exports = { showPortal, showMessages, submitMessage, submitDecision, markSeen, submitPassword, submitUpload, downloadFile, previewFile, downloadAllZip };

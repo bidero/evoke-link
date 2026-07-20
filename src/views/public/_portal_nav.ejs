@@ -1,83 +1,100 @@
-<%# Nawigacja sekcji portali klienta (/c i /p) — Settings.layout.portalNav.
-    W karcie: part 'side' (kolumna menu od md) i 'tabs' (poziome zakładki; przy menu bocznym
-    tylko poniżej md — fallback mobilny). Pływające: 'page-top' (pasek nad kartą; dla bar-*/rail-*
-    fallback mobilny przez local `mobileOnly`) i 'page-side' (panel obok karty). Chrome strony:
-    'chrome-top' (nagłówek/banner/panel; tone: bg|white|brand) i 'rail' (brandowy pas pionowy).
-    Locals: sections [{key,label,icon,badge?,action?,dot?}], navMode, part.
-    Pozycja z `action:'messages'` NIE jest sekcją — otwiera okienko wiadomości (CustomEvent
-    'open-msgs' łapany w layoucie); `dot` = kropka nowej odpowiedzi.
-    KONTRAST: żadnych heurystyk ciemności tła (bgDark bywa mylne dla górnej części gradientu) —
-    chipy zawsze jasne półprzezroczyste + warianty dark: (klasa html.dark). Aktywne pozycje na
-    brandzie używają bg-white/90, NIE bg-white (dark mode nadpisuje .bg-white na ciemno !important). %>
+<%# Nawigacja sekcji portali klienta — Settings.layout.portalNav.
+    Części: 'side'/'tabs' (w karcie), 'page-top'/'page-side' (pływające), 'chrome-top' (nagłówek/
+    banner/panel; tone bg|white|brand), 'rail' (brandowy pas pionowy — zwijany, railOpen z wrappera).
+    Model pozycji: { key, label, icon, badge?, dot?, href?, active?, action? }.
+    - pozycja z `href` = LINK (powrót, Wiadomości-podstrona, sekcje przez linkBase);
+    - pozycja bez `href` = przycisk przełączający sekcję (Alpine `sec`, x-show w widoku);
+    - local `linkBase` (podstrona wiadomości): sekcje renderują się jako linki `linkBase#key`.
+    KONTRAST: chipy zawsze jasne półprzezroczyste + warianty dark:; aktywna pozycja na brandzie
+    = bg-white/90, NIE bg-white (html.dark nadpisuje .bg-white na ciemno !important). %>
 <% const side = navMode.indexOf('side') === 0; %>
 <%
-  // @click pozycji: sekcja przełącza `sec` (+hash); akcja „wiadomości" emituje zdarzenie okienka.
-  function navClick(s) {
-    return s.action === 'messages'
-      ? '@click="window.dispatchEvent(new CustomEvent(\'open-msgs\'))"'
-      : '@click="sec=\'' + s.key + '\'; history.replaceState(null,\'\',\'#' + s.key + '\')"';
+  // Sekcje jako linki na podstronach (linkBase); pozycje z własnym href bez zmian.
+  var items = sections.map(function(s){
+    if (!s.href && typeof linkBase !== 'undefined' && linkBase && s.key) return Object.assign({}, s, { href: linkBase + '#' + s.key });
+    return s;
+  });
+  // @click przycisku sekcji: przełącza `sec` + hash; extra (np. zamknięcie pasa na mobile) doklejane.
+  function secClick(s, extra) {
+    return '@click="sec=\'' + s.key + '\'; history.replaceState(null,\'\',\'#' + s.key + '\')' + (extra || '') + '"';
   }
 %>
 <% if (part === 'side' && side) { %>
 <nav class="hidden md:block w-44 shrink-0 <%= navMode === 'side-right' ? 'md:order-2' : '' %>">
   <ul class="space-y-1 sticky top-6">
-    <% sections.forEach(function(s){ %>
+    <% items.forEach(function(s){ const base = 'w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition text-left'; %>
       <li>
-        <button type="button" <%- navClick(s) %>
-                <% if (!s.action) { %>:class="sec==='<%= s.key %>' ? 'bg-brand-50 text-brand-700 font-medium' : 'text-slate-600 hover:bg-slate-50'"<% } %>
-                class="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition text-left <%= s.action ? 'text-slate-600 hover:bg-slate-50' : '' %>">
+        <% if (s.href) { %>
+        <a href="<%= s.href %>" class="<%= base %> <%= s.active ? 'bg-brand-50 text-brand-700 font-medium' : 'text-slate-600 hover:bg-slate-50' %>">
+        <% } else { %>
+        <button type="button" <%- secClick(s) %>
+                :class="sec==='<%= s.key %>' ? 'bg-brand-50 text-brand-700 font-medium' : 'text-slate-600 hover:bg-slate-50'"
+                class="<%= base %>">
+        <% } %>
           <%- icon(s.icon, { size: 16, cls: 'shrink-0' }) %>
           <span class="flex-1 truncate"><%= s.label %></span>
           <% if (s.badge) { %><span class="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700"><%= s.badge %></span><% } %>
           <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
-        </button>
+        <%- s.href ? '</a>' : '</button>' %>
       </li>
     <% }); %>
   </ul>
 </nav>
 <% } else if (part === 'tabs') { %>
 <div class="<%= side ? 'md:hidden ' : '' %>flex gap-1 overflow-x-auto border-b border-slate-200 mb-6" role="tablist">
-  <% sections.forEach(function(s){ %>
-    <button type="button" role="tab" <%- navClick(s) %>
-            <% if (!s.action) { %>:class="sec==='<%= s.key %>' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'"<% } %>
-            class="inline-flex items-center gap-1.5 whitespace-nowrap border-b-2 -mb-px px-3 py-2 text-sm font-medium transition <%= s.action ? 'border-transparent text-slate-500 hover:text-slate-700' : '' %>">
+  <% items.forEach(function(s){ const base = 'inline-flex items-center gap-1.5 whitespace-nowrap border-b-2 -mb-px px-3 py-2 text-sm font-medium transition'; %>
+    <% if (s.href) { %>
+    <a href="<%= s.href %>" role="tab" class="<%= base %> <%= s.active ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700' %>">
+    <% } else { %>
+    <button type="button" role="tab" <%- secClick(s) %>
+            :class="sec==='<%= s.key %>' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'"
+            class="<%= base %>">
+    <% } %>
       <%- icon(s.icon, { size: 15, cls: 'shrink-0' }) %>
       <span><%= s.label %></span>
       <% if (s.badge) { %><span class="text-[11px] px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700"><%= s.badge %></span><% } %>
       <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
-    </button>
+    <%- s.href ? '</a>' : '</button>' %>
   <% }); %>
 </div>
 <% } else if (part === 'page-top') { %>
-<%# Pasek u góry strony (nad kartą, na tle). Fallback mobilny (md:hidden) dla bar-*/rail-*
+<%# Pasek u góry strony (nad kartą, na tle). Fallback mobilny (md:hidden) dla bar-*
     — wymuszany też jawnie przez local `mobileOnly` (include z layoutu). %>
 <div data-pnav="top" role="tablist"
      class="<%= ((typeof mobileOnly !== 'undefined' && mobileOnly) || navMode.indexOf('bar') === 0) ? 'md:hidden ' : '' %>mb-5 flex flex-wrap justify-center gap-1 rounded-2xl bg-white/70 shadow-sm dark:bg-white/10 dark:shadow-none backdrop-blur px-2 py-1.5">
-  <% sections.forEach(function(s){ %>
-    <button type="button" role="tab" <%- navClick(s) %>
-            <% if (!s.action) { %>:class="sec==='<%= s.key %>' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100'"<% } %>
-            class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-medium transition <%= s.action ? 'text-slate-600 hover:bg-slate-100' : '' %>">
+  <% items.forEach(function(s){ const base = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-medium transition'; %>
+    <% if (s.href) { %>
+    <a href="<%= s.href %>" role="tab" class="<%= base %> <%= s.active ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100' %>">
+    <% } else { %>
+    <button type="button" role="tab" <%- secClick(s) %>
+            :class="sec==='<%= s.key %>' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-100'"
+            class="<%= base %>">
+    <% } %>
       <%- icon(s.icon, { size: 15, cls: 'shrink-0' }) %>
       <span><%= s.label %></span>
       <% if (s.badge) { %><span class="text-[11px] px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700"><%= s.badge %></span><% } %>
       <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
-    </button>
+    <%- s.href ? '</a>' : '</button>' %>
   <% }); %>
 </div>
 <% } else if (part === 'page-side' && navMode.indexOf('bar') === 0) { %>
 <%# Pływający pasek boczny strony (osobny panel obok karty, na tle). %>
 <nav data-pnav="bar" class="hidden md:block w-48 shrink-0 <%= navMode === 'bar-right' ? 'md:order-2' : '' %>">
   <ul class="sticky top-6 space-y-1 rounded-2xl bg-white/70 shadow-sm dark:bg-white/10 dark:shadow-none backdrop-blur p-2">
-    <% sections.forEach(function(s){ %>
+    <% items.forEach(function(s){ const base = 'w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition text-left'; %>
       <li>
-        <button type="button" <%- navClick(s) %>
-                <% if (!s.action) { %>:class="sec==='<%= s.key %>' ? 'bg-brand-600 text-white font-medium' : 'text-slate-600 hover:bg-slate-100'"<% } %>
-                class="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition text-left <%= s.action ? 'text-slate-600 hover:bg-slate-100' : '' %>">
+        <% if (s.href) { %>
+        <a href="<%= s.href %>" class="<%= base %> <%= s.active ? 'bg-brand-600 text-white font-medium' : 'text-slate-600 hover:bg-slate-100' %>">
+        <% } else { %>
+        <button type="button" <%- secClick(s) %>
+                :class="sec==='<%= s.key %>' ? 'bg-brand-600 text-white font-medium' : 'text-slate-600 hover:bg-slate-100'"
+                class="<%= base %>">
+        <% } %>
           <%- icon(s.icon, { size: 16, cls: 'shrink-0' }) %>
           <span class="flex-1 truncate"><%= s.label %></span>
           <% if (s.badge) { %><span class="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700"><%= s.badge %></span><% } %>
           <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
-        </button>
+        <%- s.href ? '</a>' : '</button>' %>
       </li>
     <% }); %>
   </ul>
@@ -92,15 +109,19 @@
   var wrapCls = tn === 'bg' ? 'rounded-2xl bg-white/70 shadow-sm dark:bg-white/10 dark:shadow-none backdrop-blur px-2 py-1.5' : '';
 %>
 <nav data-pnav="chrome-top" role="tablist" class="flex flex-wrap items-center gap-1 <%= wrapCls %>">
-  <% sections.forEach(function(s){ %>
-    <button type="button" role="tab" <%- navClick(s) %>
-            <% if (!s.action) { %>:class="sec==='<%= s.key %>' ? '<%= actCls %>' : '<%= idleCls %>'"<% } %>
-            class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-medium transition <%= s.action ? idleCls : '' %>">
+  <% items.forEach(function(s){ const base = 'inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-1.5 text-sm font-medium transition'; %>
+    <% if (s.href) { %>
+    <a href="<%= s.href %>" role="tab" class="<%= base %> <%= s.active ? actCls : idleCls %>">
+    <% } else { %>
+    <button type="button" role="tab" <%- secClick(s) %>
+            :class="sec==='<%= s.key %>' ? '<%= actCls %>' : '<%= idleCls %>'"
+            class="<%= base %>">
+    <% } %>
       <%- icon(s.icon, { size: 15, cls: 'shrink-0' }) %>
       <span><%= s.label %></span>
       <% if (s.badge) { %><span class="text-[11px] px-1.5 py-0.5 rounded-full <%= tn === 'brand' ? 'bg-white/20' : 'bg-brand-100 text-brand-700' %>"><%= s.badge %></span><% } %>
       <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
-    </button>
+    <%- s.href ? '</a>' : '</button>' %>
   <% }); %>
   <% if (typeof withTheme !== 'undefined' && withTheme) { %>
     <%# Przełącznik trybu jasny/ciemny w jednej linii z menu (headerNav — pływająca ikona ukryta). %>
@@ -112,21 +133,23 @@
   <% } %>
 </nav>
 <% } else if (part === 'rail') { %>
-<%# Pionowe menu w brandowym pasie (rail-* = własny pas; przy kompozycji „Pasek boczny"
-    wpinane w jej istniejący pas). Zawsze na kolorze brandu — biały tekst;
-    aktywna pozycja bg-white/90 (NIE bg-white — GOTCHA dark mode). %>
-<%# Etykiety/badge chowane przez x-show="railOpen" (zwinięty pas = ikony wyśrodkowane).
-    railOpen pochodzi z x-data wrappera; w kompozycji „Pasek boczny" jest zawsze true (bez zwijania). %>
+<%# Pionowe menu w brandowym pasie (rail-* = własny zwijany pas; przy kompozycji „Pasek boczny"
+    wpinane w jej stały pas — tam railOpen jest zawsze true). Etykiety x-show="railOpen";
+    po zwinięciu ikony wyśrodkowane. Na mobile klik sekcji zamyka rozwinięty pas (overlay). %>
 <nav data-pnav="rail" class="space-y-1">
-  <% sections.forEach(function(s){ %>
-    <button type="button" <%- navClick(s) %>
-            <% if (!s.action) { %>:class="{ 'bg-white/90 text-brand-700 font-medium': sec==='<%= s.key %>', 'text-white/85 hover:bg-white/15': sec!=='<%= s.key %>', 'justify-center px-0': !railOpen }"<% } else { %>:class="{ 'justify-center px-0': !railOpen }"<% } %>
-            class="w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition text-left <%= s.action ? 'text-white/85 hover:bg-white/15' : '' %>">
+  <% items.forEach(function(s){ const base = 'w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition text-left'; %>
+    <% if (s.href) { %>
+    <a href="<%= s.href %>" class="<%= base %> <%= s.active ? 'bg-white/90 text-brand-700 font-medium' : 'text-white/85 hover:bg-white/15' %>" :class="{ 'justify-center px-0': !railOpen }">
+    <% } else { %>
+    <button type="button" <%- secClick(s, "; if(!window.matchMedia('(min-width: 768px)').matches) railOpen=false") %>
+            :class="{ 'bg-white/90 text-brand-700 font-medium': sec==='<%= s.key %>', 'text-white/85 hover:bg-white/15': sec!=='<%= s.key %>', 'justify-center px-0': !railOpen }"
+            class="<%= base %>">
+    <% } %>
       <%- icon(s.icon, { size: 16, cls: 'shrink-0' }) %>
       <span class="flex-1 truncate" x-show="railOpen"><%= s.label %></span>
       <% if (s.badge) { %><span class="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-white/20" x-show="railOpen"><%= s.badge %></span><% } %>
       <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
-    </button>
+    <%- s.href ? '</a>' : '</button>' %>
   <% }); %>
 </nav>
 <% } %>

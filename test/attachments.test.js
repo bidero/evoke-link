@@ -36,8 +36,8 @@ test('załącznik: klient dołącza plik do wiadomości, agencja pobiera z panel
     assert.ok(msg.attachmentPath && msg.attachmentPath.replace(/\\/g, '/').startsWith('_messages/'), 'ścieżka w _messages/');
     assert.ok(fs.existsSync(storage.absolutePath(msg.attachmentPath)), 'plik na dysku');
 
-    // badge w wątku klienta (portal /c)
-    const portal = await (await fetch(`${base}/c/${cl.token}`)).text();
+    // nazwa pliku w wątku klienta — na PODSTRONIE wiadomości (popup zastąpiony podstroną)
+    const portal = await (await fetch(`${base}/c/${cl.token}/wiadomosci`)).text();
     assert.match(portal, /umowa\.pdf/, 'nazwa pliku widoczna w wątku klienta');
 
     // pobranie z panelu (wymaga logowania)

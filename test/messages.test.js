@@ -33,8 +33,8 @@ test('klient pisze → agencja odpowiada → wątek w panelu + badge u klienta',
     assert.equal(original.clientId, c.id, 'wiązanie z klientem z projektu');
     assert.equal(original.isRead, false);
 
-    // przed odpowiedzią — brak badge nowej odpowiedzi
-    assert.match(await (await fetch(`${base}/p/${token}`)).text(), /hasReply: false/);
+    // przed odpowiedzią — brak kropki nowej odpowiedzi (bg-red-500 przy pozycji Wiadomości/kopercie)
+    assert.ok(!/bg-red-500/.test(await (await fetch(`${base}/p/${token}`)).text()), 'przed odpowiedzią brak kropki');
 
     // odpowiedź agencji
     const outBody = 'odpowiedz ' + Date.now();
@@ -48,8 +48,10 @@ test('klient pisze → agencja odpowiada → wątek w panelu + badge u klienta',
     const ihtml = await (await fetch(`${base}/admin/messages`, { headers: { Cookie: cookie } })).text();
     assert.ok(ihtml.includes(inBody) && ihtml.includes(outBody), 'wątek pokazuje obie wiadomości');
 
-    // po odpowiedzi — badge nowej odpowiedzi u klienta
-    assert.match(await (await fetch(`${base}/p/${token}`)).text(), /hasReply: true/);
+    // po odpowiedzi — kropka nowej odpowiedzi u klienta; podstrona wiadomości pokazuje wątek
+    assert.match(await (await fetch(`${base}/p/${token}`)).text(), /bg-red-500/, 'po odpowiedzi kropka nowej odpowiedzi');
+    const mhtml = await (await fetch(`${base}/p/${token}/wiadomosci`)).text();
+    assert.ok(mhtml.includes(inBody) && mhtml.includes(outBody), 'podstrona wiadomości pokazuje wątek');
   } finally {
     await prisma.message.deleteMany({ where: { projectId: p.id } });
     await prisma.project.delete({ where: { id: p.id } });

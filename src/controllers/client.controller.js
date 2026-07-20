@@ -364,7 +364,7 @@ async function showClientPortal(req, res, next) {
       }
     }
 
-    res.locals.msgContext = { action: `/c/${client.token}/message`, seen: `/c/${client.token}/messages/seen`, scope: '' };
+    res.locals.msgContext = { action: `/c/${client.token}/message`, page: `/c/${client.token}/wiadomosci`, scope: '' };
     res.locals.msgSent = req.query.msg === '1';
     res.locals.msgThread = await messageService.thread({ clientId: client.id });
     res.locals.msgHasReply = messageService.hasUnseen(res.locals.msgThread, (req.session.msgSeen || {})[client.token]);
@@ -405,18 +405,20 @@ async function showClientPortal(req, res, next) {
 
     // Nawigacja sekcji portalu (Settings.layout.portalNav) — budowana tu, bo warianty
     // „chrome" (menu w nagłówku / pas pionowy) renderuje LAYOUT, nie widok.
-    // Pozycje tylko dla niepustych sekcji; przy < 2 sekcjach null = stos jak dotąd.
+    // Pozycje tylko dla niepustych sekcji; przy < 2 sekcjach null = stos jak dotąd,
+    // ALE pas pionowy pokazujemy zawsze (nosi też Wiadomości + tryb ciemny).
+    const isRail = String(res.locals.portalNavMode || '').indexOf('rail') === 0;
     const documents = await documentService.listVisible(client.id);
     const paidFlash = req.query.paid === '1';
     const navSections = [{ key: 'projekty', label: 'Projekty', icon: 'folder' }];
     if (offers.length) navSections.push({ key: 'oferty', label: 'Oferty', icon: 'fileText', badge: offers.filter((o) => o.st === 'open').length || null });
     if (documents.length) navSections.push({ key: 'dokumenty', label: 'Dokumenty', icon: 'file' });
     if (unpaid.length) navSections.push({ key: 'platnosci', label: 'Do zapłaty', icon: 'banknote' });
-    const portalNav = navSections.length >= 2 ? {
+    const portalNav = (navSections.length >= 2 || isRail) ? {
       sections: navSections.concat([
-        // Pozycja-akcja (NIE sekcja — brak w keys, nie liczy się do progu ≥2):
-        // otwiera okienko wiadomości; dot = nowa odpowiedź agencji.
-        { key: 'wiadomosci', label: 'Wiadomości', icon: 'mail', action: 'messages', dot: !!res.locals.msgHasReply },
+        // Pozycja-LINK (nie sekcja — brak w keys, nie liczy się do progu ≥2):
+        // prowadzi na podstronę wiadomości; dot = nowa odpowiedź agencji.
+        { key: 'wiadomosci', label: 'Wiadomości', icon: 'mail', action: 'messages', href: `/c/${client.token}/wiadomosci`, dot: !!res.locals.msgHasReply },
       ]),
       keys: navSections.map((s) => s.key),
       // Po zgłoszeniu wpłaty (?paid=1) otwieramy „Do zapłaty" — tam banner podziękowania.
@@ -466,6 +468,34 @@ function markSeen(req, res) {
   res.status(204).end();
 }
 
+// Podstrona wiadomości (/c/:token/wiadomosci) — wątek + formularz (zastępuje dawny popup).
+async function showClientMessages(req, res, next) {
+  try {
+    const client = await clientService.getByToken(req.params.token);
+    if (!client) return res.status(404).render('public/unavailable', { title: 'Nie znaleziono', layout: PUBLIC_LAYOUT, reason: 'not_found' });
+    res.locals.msgContext = { action: `/c/${client.token}/message`, page: `/c/${client.token}/wiadomosci`, scope: '' };
+    res.locals.msgSent = req.query.msg === '1';
+    res.locals.msgThread = await messageService.thread({ clientId: client.id });
+    // Wejście na podstronę = obejrzenie wątku (chowa kropkę nowej odpowiedzi).
+    req.session.msgSeen = req.session.msgSeen || {};
+    req.session.msgSeen[client.token] = Date.now();
+    // Minimalna nawigacja podstrony: powrót do portalu + Wiadomości (aktywne).
+    const portalNav = {
+      sections: [
+        { key: 'wstecz', label: 'Twoje projekty', icon: 'arrowLeft', action: 'back', href: `/c/${client.token}` },
+        { key: 'wiadomosci', label: 'Wiadomości', icon: 'mail', action: 'messages', href: `/c/${client.token}/wiadomosci`, active: true },
+      ],
+      keys: [], defaultSec: null, railOpen: false,
+    };
+    res.render('public/messages', {
+      title: `Wiadomości — ${client.name}`, layout: PUBLIC_LAYOUT, portalNav,
+      msgBack: { href: `/c/${client.token}`, label: 'Twoje projekty' },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Wiadomość od klienta z portalu klienta (/c) → skrzynka + mail do agencji.
 async function submitClientMessage(req, res, next) {
   try {
@@ -474,10 +504,10 @@ async function submitClientMessage(req, res, next) {
     const { body, senderName, senderEmail } = req.body;
     const msg = await messageService.create({ body, senderName, senderEmail, clientId: client.id, ip: req.ip, file: req.file });
     if (msg) mail.sendNewMessageNotification({ message: msg, client }).catch((e) => console.error('[mail] wiadomość:', e.message));
-    res.redirect(`/c/${client.token}?msg=1`);
+    res.redirect(`/c/${client.token}/wiadomosci?msg=1`);
   } catch (err) {
     next(err);
   }
 }
 
-module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, createFollowup, showClientPortal, submitClientMessage, submitPaidDeclaration, markSeen };
+module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, createFollowup, showClientPortal, showClientMessages, submitClientMessage, submitPaidDeclaration, markSeen };

@@ -18,7 +18,8 @@
     <% if (pageBar) { %><%- include('_portal_nav', { sections: sections, navMode: navMode, part: 'page-side' }) %><% } %>
     <div class="evoke-card p-5 sm:p-8 <%= pageBar ? 'flex-1 min-w-0' : '' %>">
     <%- include('_hero_in_card') %>
-    <% if (typeof backToPortal !== 'undefined' && backToPortal) { %>
+    <%# Przy pasie pionowym link powrotny jest POZYCJĄ PASA — w karcie tylko dla innych wariantów. %>
+    <% if (typeof backToPortal !== 'undefined' && backToPortal && navMode.indexOf('rail') !== 0) { %>
       <a href="<%= backToPortal %>" class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-brand-700 transition mb-2">
         <%- icon('arrowLeft', { size: 14, cls: '' }) %> Wszystkie projekty
       </a>

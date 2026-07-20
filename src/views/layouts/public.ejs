@@ -69,7 +69,7 @@
   const showBgLogo = !L.hideBgLogo;
   // Klasyczne układy (renderują standardowy <header> niżej) mają logo w nagłówku — to awaryjne
   // miejsce, gdy pas pionowy odebrał logo. panel/panel-bg/banner mają własne logo (na tle/w panelu).
-  // „Wiadomości" jako pozycja menu (action) → pływająca koperta znika (okienko otwiera CustomEvent 'open-msgs').
+  // „Wiadomości" jako pozycja menu (link na podstronę) → pływająca koperta-link znika.
   const msgInMenu = !!(pNav && pNav.sections && pNav.sections.some((s) => s.action === 'messages'));
   // Brandowy pas przy PRAWEJ krawędzi (własny rail-right albo kompozycja „Pasek boczny" z kartą po lewej)
   // → pływające ikonki (tryb/koperta) muszą być białe, inaczej giną na kolorze brandu.
@@ -81,13 +81,15 @@
 <body class="client-bg min-h-screen text-slate-800 antialiased <%= panelMode ? 'evoke-panel-mode' : '' %>" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
   <%- typeof bgSlideshow !== 'undefined' ? bgSlideshow : '' %>
   <%- typeof bgOverlay !== 'undefined' ? bgOverlay : '' %>
-  <%# railOpen: zapamiętany wybór (localStorage) ma pierwszeństwo — pas trzyma stan między ekranami;
-      dopóki użytkownik nie zwinie/rozwinie ręcznie, obowiązuje domyślny per-strona (/c zwinięty, /p rozwinięty). %>
+  <%# railOpen (desktop): zapamiętany wybór (localStorage) ma pierwszeństwo — pas trzyma stan między
+      ekranami; bez niego domyślny per-strona (/c zwinięty, /p rozwinięty). Na MOBILE zawsze start
+      zwinięty (rozwinięcie = pełnoekranowy overlay) i bez zapisu do pamięci. %>
   <div class="relative z-10 min-h-screen flex flex-col"
-       <% if (pNav) { %>x-data="{ sec: (function(){ var h = location.hash.replace('#',''); var ks = <%= JSON.stringify(pNav.keys) %>; return ks.indexOf(h) >= 0 ? h : '<%= pNav.defaultSec %>'; })(), railOpen: (function(){ try{ var v=localStorage.getItem('evoke-rail'); if(v==='0'||v==='1') return v==='1'; }catch(e){} return <%= pNav.railOpen === false ? 'false' : 'true' %>; })() }" x-init="$watch('railOpen', function(v){ try{ localStorage.setItem('evoke-rail', v?'1':'0'); }catch(e){} })"<% } %>>
+       <% if (pNav) { %>x-data="{ sec: (function(){ var h = location.hash.replace('#',''); var ks = <%= JSON.stringify(pNav.keys) %>; return ks.indexOf(h) >= 0 ? h : '<%= pNav.defaultSec %>'; })(), railOpen: (function(){ if (!window.matchMedia('(min-width: 768px)').matches) return false; try{ var v=localStorage.getItem('evoke-rail'); if(v==='0'||v==='1') return v==='1'; }catch(e){} return <%= pNav.railOpen === false ? 'false' : 'true' %>; })() }" x-init="$watch('railOpen', function(v){ if (!window.matchMedia('(min-width: 768px)').matches) return; try{ localStorage.setItem('evoke-rail', v?'1':'0'); }catch(e){} })"<% } %>>
 
-    <% if (!headerNav) { %>
-    <%# headerNav: przełącznik trybu jest W pasku menu (partial chrome-top, withTheme) — nie dublujemy pływającego. %>
+    <% if (!headerNav && !railOwn) { %>
+    <%# headerNav: przełącznik trybu jest W pasku menu (chrome-top, withTheme);
+        railOwn: przełącznik na dole pasa pionowego — nie dublujemy pływającego. %>
     <button type="button" onclick="window.toggleTheme&&window.toggleTheme()" title="Tryb jasny/ciemny" aria-label="Przełącz tryb"
       class="fixed top-4 right-4 z-30 w-10 h-10 inline-flex items-center justify-center rounded-full <%= fabCls %> backdrop-blur transition">
       <span class="dark:hidden"><%- icon('moon', { size: 18, cls: '' }) %></span>
@@ -95,53 +97,14 @@
     </button>
     <% } %>
 
-    <% if (typeof msgContext !== 'undefined' && msgContext) { %>
-    <div class="fixed top-4 right-16 z-30" x-data="{ open: false, hasReply: <%= (typeof msgHasReply !== 'undefined' && msgHasReply) ? 'true' : 'false' %> }" @keydown.escape.window="open = false"
-         @open-msgs.window="open = !open; if (open && hasReply) { fetch('<%= msgContext.seen %>', { method: 'POST' }).catch(function(){}); hasReply = false }">
-      <% if (!msgInMenu) { %>
-      <button type="button" @click="open = !open; if (open && hasReply) { fetch('<%= msgContext.seen %>', { method: 'POST' }).catch(function(){}); hasReply = false }" title="Wiadomości" aria-label="Wiadomości"
-        class="relative w-10 h-10 inline-flex items-center justify-center rounded-full <%= fabCls %> backdrop-blur transition">
-        <%- icon('mail', { size: 18, cls: '' }) %>
-        <span x-show="hasReply" x-cloak class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 ring-2 ring-white"></span>
-      </button>
-      <% } %>
-      <div x-show="open" x-cloak x-transition @click.outside="open = false"
-        class="absolute right-0 mt-2 w-80 max-w-[88vw] rounded-2xl border border-slate-200 bg-white shadow-xl p-4 text-left text-slate-800">
-        <div class="text-sm font-semibold mb-1">Napisz do nas</div>
-        <% if (msgContext.scope) { %><p class="text-xs text-slate-400 mb-2"><%= msgContext.scope %></p><% } %>
-        <% if (typeof msgThread !== 'undefined' && msgThread && msgThread.length) { %>
-          <div class="mb-3 max-h-56 overflow-y-auto space-y-2 pr-1">
-            <% msgThread.forEach(function(mm){ var out = mm.direction === 'out'; %>
-              <div class="flex <%= out ? 'justify-start' : 'justify-end' %>">
-                <div class="max-w-[85%]">
-                  <div class="rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words <%= out ? 'bg-slate-100 text-slate-800' : 'bg-brand-600 text-white' %>"><%= mm.body %></div>
-                  <% if (mm.attachmentName) { %>
-                    <div class="mt-1 inline-flex items-center gap-1.5 text-xs <%= out ? 'text-slate-500' : 'text-brand-700' %>"><%- icon('file', { size: 12, cls: '' }) %><%= mm.attachmentName %></div>
-                  <% } %>
-                </div>
-              </div>
-            <% }); %>
-          </div>
-        <% } %>
-        <form method="POST" action="<%= msgContext.action %>" enctype="multipart/form-data" class="space-y-2"
-              x-data="{ fileName: '' }">
-          <textarea name="body" required rows="4" maxlength="4000" placeholder="Twoja wiadomość…"
-            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
-          <div class="grid grid-cols-2 gap-2">
-            <input name="senderName" type="text" placeholder="Imię (opc.)" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-            <input name="senderEmail" type="email" placeholder="E-mail (opc.)" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-          </div>
-          <div class="flex items-center gap-2">
-            <label class="inline-flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer hover:text-brand-700 transition">
-              <%- icon('cloudUpload', { size: 15, cls: '' }) %> Dołącz plik
-              <input type="file" name="attachment" class="hidden" @change="fileName = $event.target.files.length ? $event.target.files[0].name : ''" />
-            </label>
-            <span class="text-xs text-slate-400 truncate" x-show="fileName" x-text="fileName" x-cloak></span>
-          </div>
-          <button type="submit" class="w-full rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium py-2 transition">Wyślij</button>
-        </form>
-      </div>
-    </div>
+    <% if (typeof msgContext !== 'undefined' && msgContext && msgContext.page && !msgInMenu) { %>
+    <%# Wiadomości: pływająca koperta-LINK na podstronę wątku (dawny popup zastąpiony podstroną
+        public/messages.ejs; gdy nawigacja ma pozycję „Wiadomości" — koperta znika). %>
+    <a href="<%= msgContext.page %>" title="Wiadomości" aria-label="Wiadomości"
+       class="fixed top-4 right-16 z-30 w-10 h-10 inline-flex items-center justify-center rounded-full <%= fabCls %> backdrop-blur transition">
+      <%- icon('mail', { size: 18, cls: '' }) %>
+      <% if (typeof msgHasReply !== 'undefined' && msgHasReply) { %><span class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 ring-2 ring-white"></span><% } %>
+    </a>
     <% } %>
 
     <% if (typeof msgSent !== 'undefined' && msgSent) { %>
@@ -152,21 +115,27 @@
     <% } %>
 
     <% if (railOwn) { %>
-    <%# Własny brandowy pas z menu (portalNav rail-*) — bez logo (jest w nagłówku/panelu/na tle).
-        Zwijany hamburgerem: szerokość animowana (w-60 ↔ w-16), treść płynnie się przesuwa (push).
-        `railOpen` z x-data wrappera. Na mobile pas znika, menu przejmuje poziomy pasek u góry. %>
+    <%# Własny brandowy pas z menu (portalNav rail-*) — bez logo i stopki (są w kompozycji).
+        Desktop: zwijany hamburgerem (md:w-60 ↔ md:w-16, push — treść płynnie się przesuwa).
+        Mobile: wąski pasek ikon (w-14) w potoku; rozwinięcie = pełnoekranowy overlay (fixed inset-0,
+        rozciągany insetami — pewniejsze niż w-full na fixed), klik pozycji zamyka. Tryb na dole. %>
     <div class="flex-1 flex">
-      <aside class="hidden md:flex shrink-0 bg-brand-600 text-white flex-col p-4 overflow-hidden transition-[width] duration-300 ease-in-out <%= railRight ? 'order-2' : '' %>"
-             :class="railOpen ? 'md:w-60' : 'md:w-16'">
+      <aside class="flex shrink-0 bg-brand-600 text-white flex-col p-3 overflow-hidden transition-[width] duration-300 ease-in-out <%= railRight ? 'md:order-2' : '' %>"
+             :class="railOpen ? 'fixed inset-0 z-40 md:static md:inset-auto md:w-60' : 'w-14 md:w-16'">
         <button type="button" @click="railOpen = !railOpen" title="Zwiń/rozwiń menu" aria-label="Zwiń lub rozwiń menu"
                 class="w-9 h-9 inline-flex items-center justify-center rounded-lg text-white/85 hover:bg-white/15 transition shrink-0 mb-6" :class="railOpen ? '' : 'mx-auto'">
           <%- icon('menu', { size: 20, cls: '' }) %>
         </button>
-        <%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail' }) %>
-        <%# Stopka NIE w pasie — zostaje w kompozycji (na tle / standardowa), żeby nie dublować napisu. %>
+        <%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail', linkBase: pNav.linkBase || null }) %>
+        <button type="button" onclick="window.toggleTheme&&window.toggleTheme()" title="Tryb jasny/ciemny" aria-label="Przełącz tryb"
+                class="mt-auto w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-white/85 hover:bg-white/15 transition text-left"
+                :class="railOpen ? '' : 'justify-center px-0'">
+          <span class="dark:hidden shrink-0"><%- icon('moon', { size: 16, cls: '' }) %></span>
+          <span class="hidden dark:inline shrink-0"><%- icon('sun', { size: 16, cls: '' }) %></span>
+          <span class="flex-1 truncate" x-show="railOpen">Tryb jasny / ciemny</span>
+        </button>
       </aside>
       <div class="flex-1 flex flex-col min-w-0">
-        <div class="md:hidden px-4 pt-4"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'page-top', mobileOnly: true }) %></div>
     <% } %>
 
     <% if (L.style !== 'banner' && !noChrome) { %>
@@ -185,7 +154,7 @@
               <span class="font-semibold tracking-tight"><%= appName %></span>
             <% } %>
           </div>
-          <%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'bg', withTheme: true }) %>
+          <%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'bg', withTheme: true, linkBase: pNav.linkBase || null }) %>
         </div>
       <% } else { %>
         <div class="flex items-center gap-2 w-full <%= justify %> <%= dark ? 'text-white' : '' %>">
@@ -212,7 +181,7 @@
           <% } %>
         </div>
         <% if (headerNav) { %>
-          <div class="max-w-5xl mx-auto w-full mt-4"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'brand', withTheme: true }) %></div>
+          <div class="max-w-5xl mx-auto w-full mt-4"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'brand', withTheme: true, linkBase: pNav.linkBase || null }) %></div>
         <% } %>
         <% if (showHero) { %>
           <div class="max-w-5xl mx-auto w-full mt-4">
@@ -279,7 +248,7 @@
               <span class="font-semibold tracking-tight text-slate-800"><%= appName %></span>
             <% } %>
           </div>
-          <% if (headerNav) { %><div class="-mt-2 mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white', withTheme: true }) %></div><% } %>
+          <% if (headerNav) { %><div class="-mt-2 mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white', withTheme: true, linkBase: pNav.linkBase || null }) %></div><% } %>
           <div class="flex-1 flex flex-col justify-center">
             <%- body %>
           </div>
@@ -312,7 +281,7 @@
               <span class="font-semibold tracking-tight text-slate-800"><%= appName %></span>
             <% } %>
           </div>
-          <% if (headerNav) { %><div class="mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white', withTheme: true }) %></div><% } %>
+          <% if (headerNav) { %><div class="mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white', withTheme: true, linkBase: pNav.linkBase || null }) %></div><% } %>
           <div class="flex-1 flex flex-col justify-center"><%- body %></div>
         </section>
         <aside class="hidden md:flex flex-1 flex-col justify-between p-10 <%= pbRight ? 'md:order-1' : '' %>">
@@ -353,7 +322,7 @@
             </div>
             <% } %>
             <%# portalNav rail-*: menu wpina się w istniejący pas kompozycji (bez własnego pasa) %>
-            <% if (railNav) { %><div class="<%= showBgLogo ? 'mt-8' : '' %>"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail' }) %></div><% } %>
+            <% if (railNav) { %><div class="<%= showBgLogo ? 'mt-8' : '' %>"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail', linkBase: pNav.linkBase || null }) %></div><% } %>
           </div>
           <% if (showHero) { %>
             <div><h1 class="text-2xl font-bold tracking-tight"><%= heroTitle %></h1><% if (heroSubtitle) { %><p class="mt-2 text-sm text-white/80"><%= heroSubtitle %></p><% } %></div>
@@ -361,8 +330,8 @@
           <div class="text-xs text-white/70"><%= footerText %></div>
         </aside>
         <div class="flex-1 flex flex-col min-w-0">
-          <% if (railNav) { %><div class="md:hidden px-6 pt-4"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'page-top', mobileOnly: true }) %></div><% } %>
-          <% if (headerNav) { %><div class="px-6 pt-5 flex justify-center"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'bg', withTheme: true }) %></div><% } %>
+          <% if (railNav) { %><div class="md:hidden px-6 pt-4"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'page-top', mobileOnly: true, linkBase: pNav.linkBase || null }) %></div><% } %>
+          <% if (headerNav) { %><div class="px-6 pt-5 flex justify-center"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'bg', withTheme: true, linkBase: pNav.linkBase || null }) %></div><% } %>
           <div class="flex-1 flex items-center justify-center p-6 sm:p-10"><%- body %></div>
         </div>
       </main>

@@ -6,6 +6,7 @@ const events = require('../services/event.service');
 const messageService = require('../services/message.service');
 const mail = require('../services/mail.service');
 const { isRaster } = require('../utils/fileIcon');
+const { contentRailNav, contentMsgNav } = require('../utils/contentNav');
 
 const PUBLIC_LAYOUT = 'layouts/public';
 
@@ -69,7 +70,7 @@ async function showDownloadPage(req, res, next) {
       events.log({ type: 'viewed', message: 'Klient otworzył link do pobrania', transferId: transfer.id, projectId: transfer.projectId, ip: req.ip });
     }
 
-    res.locals.msgContext = { action: `/t/${transfer.token}/message`, seen: `/t/${transfer.token}/messages/seen`, scope: transfer.title || '' };
+    res.locals.msgContext = { action: `/t/${transfer.token}/message`, page: `/t/${transfer.token}/wiadomosci`, scope: transfer.title || '' };
     res.locals.msgSent = req.query.msg === '1';
     res.locals.msgThread = await messageService.thread({ transferId: transfer.id });
     res.locals.msgHasReply = messageService.hasUnseen(res.locals.msgThread, (req.session.msgSeen || {})[transfer.token]);
@@ -77,6 +78,7 @@ async function showDownloadPage(req, res, next) {
       title: transfer.title || 'Pobierz pliki',
       layout: PUBLIC_LAYOUT,
       transfer,
+      portalNav: contentRailNav(res, { msgHref: `/t/${transfer.token}/wiadomosci`, msgDot: res.locals.msgHasReply }),
     });
   } catch (err) {
     next(err);
@@ -90,6 +92,30 @@ function markSeen(req, res) {
   res.status(204).end();
 }
 
+// Podstrona wiadomości (/t/:token/wiadomosci) — wątek + formularz (zastępuje dawny popup).
+async function showMessages(req, res, next) {
+  try {
+    const transfer = await loadAvailable(req, res);
+    if (!transfer) return;
+    if (transferService.requiresPassword(transfer) && !isUnlocked(req, transfer.token)) {
+      return res.render('public/password', { title: 'Plik chroniony hasłem', layout: PUBLIC_LAYOUT, token: transfer.token, error: null });
+    }
+    res.locals.msgContext = { action: `/t/${transfer.token}/message`, page: `/t/${transfer.token}/wiadomosci`, scope: transfer.title || '' };
+    res.locals.msgSent = req.query.msg === '1';
+    res.locals.msgThread = await messageService.thread({ transferId: transfer.id });
+    // Wejście na podstronę = obejrzenie wątku (chowa kropkę nowej odpowiedzi).
+    req.session.msgSeen = req.session.msgSeen || {};
+    req.session.msgSeen[transfer.token] = Date.now();
+    const back = { href: `/t/${transfer.token}`, label: transfer.title || 'Pobierz pliki' };
+    res.render('public/messages', {
+      title: 'Wiadomości', layout: PUBLIC_LAYOUT, msgBack: back,
+      portalNav: contentMsgNav(res, { backHref: back.href, backLabel: back.label, msgHref: `/t/${transfer.token}/wiadomosci` }),
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Wiadomość od klienta ze strony pobierania (/t) → skrzynka + mail do agencji.
 async function submitMessage(req, res, next) {
   try {
@@ -98,7 +124,7 @@ async function submitMessage(req, res, next) {
     const { body, senderName, senderEmail } = req.body;
     const msg = await messageService.create({ body, senderName, senderEmail, transferId: transfer.id, projectId: transfer.projectId, clientId: transfer.project ? transfer.project.clientId : null, ip: req.ip, file: req.file });
     if (msg) mail.sendNewMessageNotification({ message: msg, project: transfer.project, transfer }).catch((e) => console.error('[mail] wiadomość:', e.message));
-    res.redirect(`/t/${transfer.token}?msg=1`);
+    res.redirect(`/t/${transfer.token}/wiadomosci?msg=1`);
   } catch (err) {
     next(err);
   }
@@ -220,4 +246,4 @@ async function downloadZip(req, res, next) {
   }
 }
 
-module.exports = { showDownloadPage, submitMessage, submitDecision, markSeen, submitPassword, downloadFile, previewFile, downloadZip };
+module.exports = { showDownloadPage, showMessages, submitMessage, submitDecision, markSeen, submitPassword, downloadFile, previewFile, downloadZip };

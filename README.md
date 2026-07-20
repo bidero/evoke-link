@@ -189,3 +189,4 @@ app.js              punkt startowy (entry dla Passengera)
 - [x] **Nawigacja portali klienta** — sekcje /c i /p jako zakładki/menu w karcie, pasek lub panel przy karcie, menu w nagłówku strony albo brandowy pas pionowy (opcja w Ustawienia → Wygląd); link powrotny z projektu do portalu klienta
 - [x] **Aktualizator z GitHuba** — sprawdzanie i instalacja nowych wersji z panelu (backup przed aktualizacją, log na żywo, powiadomienie o nowej wersji)
 - [x] **Wiadomości w menu portalu + lista kopii** — pozycja „Wiadomości" (z kropką nowej odpowiedzi) we wszystkich wariantach nawigacji; szklany panel dla kompozycji „Panel na tle"; lista kopii zapasowych z pobieraniem i usuwaniem starych
+- [x] **Pas pionowy jako nawigator + wiadomości jako podstrona** — pas z hamburgerem zawsze widoczny (na telefonie pełnoekranowy overlay), z przełącznikiem trybu i powrotem „Wszystkie projekty"; okno wiadomości zamienione na osobną, spójną podstronę na wszystkich stronach klienta

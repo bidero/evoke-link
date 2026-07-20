@@ -40,8 +40,8 @@ test('portalNav: tabs/side na /c i /p, none = stos, walidacja zapisu', async () 
     assert.match(html, /role="tablist"/, '/p z zakładkami');
     assert.match(html, /sec==='wyslij'/, 'sekcja wysyłki sterowana x-show');
 
-    // „Wiadomości" jako pozycja menu: przy włączonej nawigacji koperta znika, klik = open-msgs
-    assert.match(html, /open-msgs/, 'pozycja Wiadomości emituje zdarzenie okienka');
+    // „Wiadomości" jako pozycja menu: LINK na podstronę wątku; pływająca koperta ukryta
+    assert.match(html, new RegExp(`href="/p/${project.clientToken}/wiadomosci"`), 'pozycja Wiadomości linkuje na podstronę');
     assert.ok(!/title="Wiadomości"/.test(html), 'pływająca koperta ukryta przy nawigacji');
 
     // side-left: kolumna menu (md+) + zakładki jako fallback mobilny
@@ -98,7 +98,12 @@ test('portalNav: tabs/side na /c i /p, none = stos, walidacja zapisu', async () 
     assert.match(html, /localStorage\.getItem\('evoke-rail'\)/, 'pas czyta zapamiętany stan');
     assert.match(html, /setItem\('evoke-rail'/, 'pas zapisuje zmianę stanu');
     assert.match(html, /return true; \}\)\(\) \}/, 'wewnątrz projektu (/p) domyślnie rozwinięty (fallback)');
-    assert.match(html, /data-pnav="top"/, 'fallback mobilny przy pasie');
+    // pas widoczny też na MOBILE (wąski pasek ikon; rozwinięcie = pełnoekranowy overlay)
+    assert.match(html, /fixed inset-0 z-40 md:static md:inset-auto md:w-60/, 'mobile: rozwinięcie jako overlay');
+    assert.ok(!/data-pnav="top"/.test(html), 'bez poziomego paska mobilnego — pas przejął mobile');
+    // tryb jasny/ciemny na dole pasa; brak pływającego przełącznika
+    assert.match(html, /Tryb jasny \/ ciemny/, 'przełącznik trybu w pasie');
+    assert.ok(!/fixed top-4 right-4/.test(html), 'brak pływających ikon przy własnym pasie');
     // stopka NIE w pasie (koniec dublowania napisu) — pas ma tylko przyciski
     assert.ok(!/data-pnav="rail"[\s\S]{0,200}bezpieczna wymiana/.test(html), 'brak stopki w pasie');
     // /c (lista projektów): pas startuje ZWINIĘTY (fallback per-strona)
@@ -134,6 +139,19 @@ test('portalNav: tabs/side na /c i /p, none = stos, walidacja zapisu', async () 
     html = await (await fetch(`${base}/p/${project.clientToken}`, { headers: { Cookie: cookie } })).text();
     assert.match(html, /Wszystkie projekty/, 'po wizycie na /c link powrotny widoczny');
     assert.match(html, new RegExp(`href="/c/${client.token}"`), 'link prowadzi do portalu klienta');
+    // przy pasie link powrotny jest POZYCJĄ PASA (znika z karty)
+    await settingsService.update({ layout: { ...snapLayout, style: 'classic', portalNav: 'rail-left' } });
+    html = await (await fetch(`${base}/p/${project.clientToken}`, { headers: { Cookie: cookie } })).text();
+    assert.match(html, /data-pnav="rail"[\s\S]*Wszystkie projekty/, 'powrót jako pozycja pasa');
+
+    // podstrona wiadomości (zamiast popupu): wątek + formularz + powrót
+    html = await (await fetch(`${base}/p/${project.clientToken}/wiadomosci`)).text();
+    assert.match(html, /Wiadomości<\/h1>/, 'podstrona /p/wiadomosci renderuje się');
+    assert.match(html, new RegExp(`action="/p/${project.clientToken}/message"`), 'formularz POSTuje do endpointu wiadomości');
+    assert.match(html, new RegExp(`href="/p/${project.clientToken}#pliki"`), 'sekcje pasa jako linki wstecz (linkBase)');
+    html = await (await fetch(`${base}/c/${client.token}/wiadomosci`)).text();
+    assert.match(html, /Wiadomości<\/h1>/, 'podstrona /c/wiadomosci renderuje się');
+    assert.match(html, new RegExp(`action="/c/${client.token}/message"`), 'formularz /c POSTuje do endpointu wiadomości');
   } finally {
     await settingsService.update({ layout: snapLayout });
     if (client) await prisma.event.deleteMany({ where: { OR: [{ clientId: client.id }, { projectId: project ? project.id : -1 }] } });
