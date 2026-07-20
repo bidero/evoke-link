@@ -92,14 +92,18 @@ test('portalNav: tabs/side na /c i /p, none = stos, walidacja zapisu', async () 
     await settingsService.update({ layout: { ...snapLayout, style: 'classic', portalNav: 'rail-left' } });
     html = await (await fetch(`${base}/p/${project.clientToken}`)).text();
     assert.match(html, /data-pnav="rail"/, '/p z pasem pionowym');
-    assert.match(html, /shrink-0 bg-brand-600[^"]*transition-\[width\]/, 'brandowy pas ze zwijaniem (animowana szerokość)');
+    assert.match(html, /bg-brand-600[^"]*transition-\[width\]/, 'brandowy pas ze zwijaniem (animowana szerokość)');
     assert.match(html, /railOpen = !railOpen/, 'hamburger zwija/rozwija pas');
     // stan pasa czytany z localStorage (zapamiętany między ekranami); domyślny per-strona to fallback
     assert.match(html, /localStorage\.getItem\('evoke-rail'\)/, 'pas czyta zapamiętany stan');
     assert.match(html, /setItem\('evoke-rail'/, 'pas zapisuje zmianę stanu');
     assert.match(html, /return true; \}\)\(\) \}/, 'wewnątrz projektu (/p) domyślnie rozwinięty (fallback)');
-    // pas widoczny też na MOBILE (wąski pasek ikon; rozwinięcie = pełnoekranowy overlay)
-    assert.match(html, /fixed inset-0 z-40 md:static md:inset-auto md:w-60/, 'mobile: rozwinięcie jako overlay');
+    // pas PRZYKLEJONY na desktopie (sticky, wysokość 100dvh — tryb zawsze na dole)
+    assert.match(html, /h-\[100dvh\] md:self-start md:sticky/, 'pas sticky na wysokość 100dvh');
+    // mobile: fixed, animowana szerokość w-14 → w-screen; desktop md:w-16 ↔ md:w-60
+    assert.match(html, /fixed w-screen z-40 md:w-60/, 'mobile open: pełna szerokość (animacja)');
+    assert.match(html, /fixed w-14 z-30 md:w-16/, 'mobile collapsed: wąski pasek');
+    assert.match(html, /transition-\[width\]/, 'animacja szerokości pasa');
     assert.ok(!/data-pnav="top"/.test(html), 'bez poziomego paska mobilnego — pas przejął mobile');
     // tryb jasny/ciemny na dole pasa; brak pływającego przełącznika
     assert.match(html, /Tryb jasny \/ ciemny/, 'przełącznik trybu w pasie');

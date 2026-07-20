@@ -116,26 +116,34 @@
 
     <% if (railOwn) { %>
     <%# Własny brandowy pas z menu (portalNav rail-*) — bez logo i stopki (są w kompozycji).
-        Desktop: zwijany hamburgerem (md:w-60 ↔ md:w-16, push — treść płynnie się przesuwa).
-        Mobile: wąski pasek ikon (w-14) w potoku; rozwinięcie = pełnoekranowy overlay (fixed inset-0,
-        rozciągany insetami — pewniejsze niż w-full na fixed), klik pozycji zamyka. Tryb na dole. %>
+        WYSOKOŚĆ = 100dvh (nie 100vh — na mobile 100vh chowa dół za paskiem URL, więc tryb był poza
+        ekranem). Hamburger (góra) i tryb jasny/ciemny (dół) ZAWSZE widoczne; środek (menu) przewija
+        się wewnętrznie. Desktop: md:sticky top-0 (nie przewija się z treścią), zwijany hamburgerem
+        (md:w-16 ↔ md:w-60, push). Mobile: FIXED wąski pasek ikon (w-14) → rozwija się PŁYNNIE do
+        pełnej szerokości (w-screen, animacja transition-[width]); klik pozycji zamyka.
+        Hamburger jest LEWO-wyrównany zawsze (bez mx-auto) → zostaje w miejscu przy zwijaniu. %>
     <div class="flex-1 flex">
-      <aside class="flex shrink-0 bg-brand-600 text-white flex-col p-3 overflow-hidden transition-[width] duration-300 ease-in-out <%= railRight ? 'md:order-2' : '' %>"
-             :class="railOpen ? 'fixed inset-0 z-40 md:static md:inset-auto md:w-60' : 'w-14 md:w-16'">
+      <aside class="flex shrink-0 flex-col bg-brand-600 text-white p-3 overflow-hidden transition-[width] duration-300 ease-in-out top-0 h-[100dvh] md:self-start md:sticky md:z-auto <%= railRight ? 'right-0 md:order-2 md:right-auto' : 'left-0 md:left-auto' %>"
+             :class="railOpen ? 'fixed w-screen z-40 md:w-60' : 'fixed w-14 z-30 md:w-16'">
         <button type="button" @click="railOpen = !railOpen" title="Zwiń/rozwiń menu" aria-label="Zwiń lub rozwiń menu"
-                class="w-9 h-9 inline-flex items-center justify-center rounded-lg text-white/85 hover:bg-white/15 transition shrink-0 mb-6" :class="railOpen ? '' : 'mx-auto'">
+                class="w-8 h-8 inline-flex items-center justify-center rounded-lg text-white/85 hover:bg-white/15 transition shrink-0 mb-4">
           <%- icon('menu', { size: 20, cls: '' }) %>
         </button>
-        <%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail', linkBase: pNav.linkBase || null }) %>
+        <%# Menu w środku — flex-1 (spycha tryb na dół) + własne przewijanie przy wielu pozycjach. %>
+        <div class="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
+          <%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail', linkBase: pNav.linkBase || null }) %>
+        </div>
         <button type="button" onclick="window.toggleTheme&&window.toggleTheme()" title="Tryb jasny/ciemny" aria-label="Przełącz tryb"
-                class="mt-auto w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-white/85 hover:bg-white/15 transition text-left"
+                class="shrink-0 mt-2 w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-white/85 hover:bg-white/15 transition text-left"
                 :class="railOpen ? '' : 'justify-center px-0'">
           <span class="dark:hidden shrink-0"><%- icon('moon', { size: 16, cls: '' }) %></span>
           <span class="hidden dark:inline shrink-0"><%- icon('sun', { size: 16, cls: '' }) %></span>
           <span class="flex-1 truncate" x-show="railOpen">Tryb jasny / ciemny</span>
         </button>
       </aside>
-      <div class="flex-1 flex flex-col min-w-0">
+      <%# Mobile: pas jest FIXED (poza potokiem) → treść dostaje margines na wąski pasek (pl/pr-14).
+          Desktop: pas w potoku (sticky), bez marginesu. %>
+      <div class="flex-1 flex flex-col min-w-0 <%= railRight ? 'pr-14 md:pr-0' : 'pl-14 md:pl-0' %>">
     <% } %>
 
     <% if (L.style !== 'banner' && !noChrome) { %>
