@@ -32,11 +32,24 @@
   <%- typeof darkStyleTag !== 'undefined' ? darkStyleTag : '' %>
   <%- typeof typographyStyleTag !== 'undefined' ? typographyStyleTag : '' %>
   <%- typeof customStyleTag !== 'undefined' ? customStyleTag : '' %>
+  <%# Turbo Drive — nawigacja portali klienta bez pełnego przeładowania (linki same-origin przez
+      fetch + podmiana <body>, zachowany back/scroll). Lokalnie (jak Alpine) — CSP 'self' pokrywa.
+      Alpine radzi sobie z podmianą <body> przez swój obserwator mutacji; skrypty zależne od DOM
+      (tło/szkło, sticky) re-inicjujemy na `turbo:load`. %>
+  <script defer src="/js/turbo.js"></script>
   <script src="/js/chunked-upload.js"></script>
   <script src="/js/uploader.js"></script>
   <script defer src="/js/bg-rotate.js"></script>
   <script defer src="/js/sticky-header.js"></script>
   <script defer src="/js/alpine.min.js"></script>
+  <script>
+    // Po każdej nawigacji Turbo (i przy pierwszym ładowaniu) odśwież skrypty zależne od DOM.
+    // Init-y są idempotentne (sticky: re-query elementu; bg: czyści interwał slideshow).
+    document.addEventListener('turbo:load', function () {
+      if (window.evokeBgInit) window.evokeBgInit();
+      if (window.evokeStickyInit) window.evokeStickyInit();
+    });
+  </script>
 </head>
 <%
   const dark = (typeof bgDark !== 'undefined' && bgDark);

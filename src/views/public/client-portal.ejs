@@ -101,7 +101,7 @@
             <% if (!navOn) { %><h2 class="text-sm font-semibold text-slate-700 mb-3">Dokumenty</h2><% } %>
             <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
               <% documents.forEach(function(d){ %>
-                <a href="/c/<%= portalClient.token %>/documents/<%= d.id %>" class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition group">
+                <a href="/c/<%= portalClient.token %>/documents/<%= d.id %>" data-turbo="false" class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition group">
                   <span class="shrink-0"><%- icon('fileText', { size: 18, cls: 'text-slate-400' }) %></span>
                   <span class="min-w-0 flex-1">
                     <span class="block text-sm font-medium text-slate-800 truncate"><%= d.label || d.name %></span>
@@ -164,7 +164,7 @@
                   <%- icon('clock', { size: 13, cls: 'text-amber-500' }) %> Zgłoszono wpłatę <%= fmt.dateOnly(paidDeclaredAt) %> — czekamy na potwierdzenie
                 </span>
               <% } else { %>
-                <form method="POST" action="/c/<%= portalClient.token %>/paid" onsubmit="return confirm('Zgłosić wykonanie przelewu za powyższe pozycje?')">
+                <form method="POST" action="/c/<%= portalClient.token %>/paid" data-turbo="false" onsubmit="return confirm('Zgłosić wykonanie przelewu za powyższe pozycje?')">
                   <button type="submit" class="evoke-btn inline-flex items-center gap-1.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-sm font-medium px-4 py-2 transition">
                     <%- icon('banknote', { size: 15, cls: '' }) %> Zgłoś wykonanie przelewu
                   </button>

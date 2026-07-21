@@ -28,13 +28,13 @@
 
   <div x-show="open" x-cloak class="<%= t.approvalStatus ? 'mt-3 pt-3 border-t border-slate-200/70' : 'mt-3' %>">
     <div x-show="!changes" class="space-y-2">
-      <form method="POST" action="<%= action %>">
+      <form method="POST" action="<%= action %>" data-turbo="false">
         <input type="hidden" name="decision" value="approved" />
         <button type="submit" class="w-full rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium py-2.5 transition inline-flex items-center justify-center gap-1.5"><%- icon('check', { size: 15, cls: '' }) %> Zatwierdzam</button>
       </form>
       <button type="button" @click="changes = true" class="w-full rounded-lg border border-slate-300 text-slate-700 hover:bg-white text-sm font-medium py-2.5 transition inline-flex items-center justify-center">Zgłaszam poprawki…</button>
     </div>
-    <form x-show="changes" x-cloak method="POST" action="<%= action %>" class="space-y-2">
+    <form x-show="changes" x-cloak method="POST" action="<%= action %>" data-turbo="false" class="space-y-2">
       <input type="hidden" name="decision" value="changes" />
       <textarea name="comment" required rows="3" maxlength="4000" placeholder="Opisz, co poprawić…"
                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>

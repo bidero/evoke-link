@@ -69,6 +69,9 @@
 /* Przyciski objęte kształtem z ustawień (zaokrąglony/pigułka). */
 .evoke-btn { border-radius: var(--btn-radius) !important; }
 
+/* Pasek postępu Turbo (nawigacja portali klienta bez reloadu) — w kolorze przewodnim. */
+.turbo-progress-bar { background-color: rgb(var(--brand-600)); }
+
 /* Alpine: ukryj elementy z x-cloak do czasu inicjalizacji (bez migotania). */
 [x-cloak] { display: none !important; }
 

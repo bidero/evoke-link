@@ -16,7 +16,7 @@
         <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
       <% } %>
 
-      <form method="POST" action="/onboard/<%= onbClient.onboardingToken %>" class="space-y-5">
+      <form method="POST" action="/onboard/<%= onbClient.onboardingToken %>" data-turbo="false" class="space-y-5">
         <div class="space-y-3">
           <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Dane firmowe</p>
           <div>

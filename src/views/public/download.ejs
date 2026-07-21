@@ -15,7 +15,7 @@
     <% } %>
 
     <!-- Pobierz wszystko -->
-    <a href="/t/<%= transfer.token %>/zip"
+    <a href="/t/<%= transfer.token %>/zip" data-turbo="false"
        class="evoke-btn flex items-center justify-center gap-2 w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium py-3 transition mb-5">
       <%- icon('download', { size: 18, cls: '' }) %> Pobierz wszystko (ZIP)
     </a>

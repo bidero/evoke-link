@@ -52,7 +52,7 @@
       </div>
 
       <!-- Decyzja -->
-      <form method="POST" action="/o/<%= offer.token %>/decision" class="mt-5 space-y-3" x-data="{ comment: '', name: '' }">
+      <form method="POST" action="/o/<%= offer.token %>/decision" data-turbo="false" class="mt-5 space-y-3" x-data="{ comment: '', name: '' }">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input name="name" x-model="name" type="text" placeholder="Imię i nazwisko (opcjonalnie)"
                  class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />

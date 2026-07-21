@@ -6,7 +6,11 @@
 //     znikający dopiero przy scroll/resize). Po odsłonięciu wymuszamy re-sample backdropu:
 //     na jedną klatkę mocniejszy blur (22px), potem powrót do wartości z CSS — przeglądarka
 //     przelicza backdrop, a różnica 22→14px jest niezauważalna.
+// Init jest RE-URUCHAMIALNY (window.evokeBgInit) — po nawigacji Turbo `<body>` jest podmieniany,
+// więc odsłonięcie tła i re-sample „szkła" trzeba odpalić ponownie; slideshow interval jest
+// czyszczony przy każdym init, żeby nie stackować `setInterval`.
 (function () {
+  var slideTimer = null;
   // Wymusza ponowne próbkowanie backdrop-filter: na JEDNĄ klatkę mocniejszy blur, potem powrót.
   // Zmiana wartości filtra (nie usunięcie) każe przeglądarce przeliczyć backdrop, a przejście
   // 22px→14px jest niezauważalne (w przeciwieństwie do blur→none→blur, które daje ostry błysk).
@@ -39,13 +43,14 @@
   }
 
   function initSlides() {
+    if (slideTimer) { clearInterval(slideTimer); slideTimer = null; } // re-init: nie stackuj interwału
     var box = document.querySelector('[data-bg-rotate]');
     if (!box) return;
     var slides = box.querySelectorAll('.bg-slide');
     if (slides.length < 2) return;
     var sec = Math.max(3, parseInt(box.getAttribute('data-bg-rotate'), 10) || 8);
     var cur = 0;
-    setInterval(function () {
+    slideTimer = setInterval(function () {
       var nextIdx = (cur + 1) % slides.length;
       var prev = cur;
       slides[nextIdx].style.opacity = '1';            // nowa warstwa wchodzi (crossfade)
@@ -55,6 +60,7 @@
   }
 
   function init() { initGlass(); initSlides(); }
+  window.evokeBgInit = init;
   if (document.readyState !== 'loading') init();
   else document.addEventListener('DOMContentLoaded', init);
 })();

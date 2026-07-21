@@ -1,5 +1,6 @@
 <% const _m = fileMeta(f.originalName, f.mimeType); %>
-<a href="<%= downloadHref %>" class="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-slate-50 transition group">
+<%# data-turbo="false": to POBIERANIE pliku (Content-Disposition), nie nawigacja HTML — Turbo nie może go przechwycić. %>
+<a href="<%= downloadHref %>" data-turbo="false" class="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-slate-50 transition group">
   <span class="shrink-0">
     <% if (_m.thumb && typeof previewHref !== 'undefined' && previewHref) { %>
       <img src="<%= previewHref %>" alt="" loading="lazy" class="w-9 h-9 rounded-lg object-cover border border-slate-200 bg-slate-50" />
