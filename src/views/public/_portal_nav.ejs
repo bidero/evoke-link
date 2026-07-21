@@ -137,7 +137,9 @@
     wpinane w jej stały pas — tam railOpen jest zawsze true). Etykiety x-show="railOpen";
     po zwinięciu ikony wyśrodkowane. Na mobile klik sekcji zamyka rozwinięty pas (overlay). %>
 <nav data-pnav="rail" class="space-y-1">
-  <% items.forEach(function(s){ const base = 'w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition text-left'; %>
+  <%# STAŁA wysokość `h-9` (nie py-2): przy zwinięciu etykieta znika (x-show), więc py-2 dawało niższy
+      element niż po rozwinięciu (ikona+podpis) → hover/aktywny „skakał". Stała wysokość = brak skoku. %>
+  <% items.forEach(function(s){ const base = 'w-full flex items-center gap-2.5 rounded-xl px-3 h-9 text-sm transition text-left'; %>
     <% if (s.href) { %>
     <a href="<%= s.href %>" class="<%= base %> <%= s.active ? 'bg-white/90 text-brand-700 font-medium' : 'text-white/85 hover:bg-white/15' %>" :class="{ 'justify-center px-0': !railOpen }">
     <% } else { %>

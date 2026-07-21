@@ -106,6 +106,9 @@ html.dark {
   --admin-text: var(--dk-text);
   --admin-sidebar: var(--dk-surface);
   --admin-sidebar-text: var(--dk-text);
+  /* Pasek nagłówka panelu też idzie na ciemno (inaczej trzymał jasny kolor z ustawień w dark mode). */
+  --admin-header: var(--dk-surface);
+  --admin-header-text: var(--dk-text);
   /* Karta stron klienta na ciemno */
   --card-bg: var(--dk-surface);
   --card-border-color: var(--dk-border);

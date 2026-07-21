@@ -92,8 +92,10 @@
     : 'bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 text-brand-600 dark:text-slate-100';
 %>
 <body class="client-bg min-h-screen text-slate-800 antialiased <%= panelMode ? 'evoke-panel-mode' : '' %>" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
-  <%- typeof bgSlideshow !== 'undefined' ? bgSlideshow : '' %>
-  <%- typeof bgOverlay !== 'undefined' ? bgOverlay : '' %>
+  <%# Warstwy tła w kontenerze `data-turbo-permanent`: Turbo przenosi go 1:1 na nową stronę zamiast
+      odtwarzać → obraz tła (odsłaniany opacity 0→1 po onload) NIE re-odsłania się przy każdej
+      nawigacji, więc znika „błysk" tła przy przejściu między portalami. id musi być stałe. %>
+  <div id="evoke-bg" data-turbo-permanent aria-hidden="true"><%- typeof bgSlideshow !== 'undefined' ? bgSlideshow : '' %><%- typeof bgOverlay !== 'undefined' ? bgOverlay : '' %></div>
   <%# railOpen (desktop): zapamiętany wybór (localStorage) ma pierwszeństwo — pas trzyma stan między
       ekranami; bez niego domyślny per-strona (/c zwinięty, /p rozwinięty). Na MOBILE zawsze start
       zwinięty (rozwinięcie = pełnoekranowy overlay) i bez zapisu do pamięci. %>
@@ -163,7 +165,7 @@
           <%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail', linkBase: pNav.linkBase || null }) %>
         </div>
         <button type="button" onclick="window.toggleTheme&&window.toggleTheme()" title="Tryb jasny/ciemny" aria-label="Przełącz tryb"
-                class="shrink-0 mt-2 w-full flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm text-white/85 hover:bg-white/15 transition text-left"
+                class="shrink-0 mt-2 w-full flex items-center gap-2.5 rounded-xl px-3 h-9 text-sm text-white/85 hover:bg-white/15 transition text-left"
                 :class="railOpen ? '' : 'justify-center px-0'">
           <span class="dark:hidden shrink-0"><%- icon('moon', { size: 16, cls: '' }) %></span>
           <span class="hidden dark:inline shrink-0"><%- icon('sun', { size: 16, cls: '' }) %></span>
