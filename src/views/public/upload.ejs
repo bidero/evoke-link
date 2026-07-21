@@ -29,7 +29,7 @@
       <form @submit.prevent="submit" class="space-y-4">
         <div
           @dragover.prevent="dragging = true" @dragleave.prevent="dragging = false" @drop.prevent="onDrop($event)"
-          :class="dragging ? 'border-brand-500 bg-brand-50' : 'border-slate-300'"
+          :class="dragging ? 'border-brand-500 bg-brand-50' : 'border-slate-400'"
           class="rounded-2xl border-2 border-dashed p-8 text-center transition cursor-pointer"
           @click="$refs.input.click()">
           <input x-ref="input" type="file" multiple class="hidden" @change="addFiles($event.target.files)" />

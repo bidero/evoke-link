@@ -121,13 +121,23 @@
         się wewnętrznie. Desktop: md:sticky top-0 (nie przewija się z treścią), zwijany hamburgerem
         (md:w-16 ↔ md:w-60, push). Mobile: FIXED wąski pasek ikon (w-14) → rozwija się PŁYNNIE do
         pełnej szerokości (w-screen, animacja transition-[width]); klik pozycji zamyka.
-        Hamburger jest LEWO-wyrównany zawsze (bez mx-auto) → zostaje w miejscu przy zwijaniu. %>
+        Hamburger: WYŚRODKOWANY w zwiniętym pasku (justify-center), po rozwinięciu dosunięty do
+        KRAWĘDZI pasa (lewej dla rail-left, PRAWEJ dla rail-right) — zostaje w miejscu przy zwijaniu
+        i przy pasie z prawej nie „ucieka" z panelem. %>
     <div class="flex-1 flex">
+      <%# PODKŁAD pasa (tylko mobile). Pas ma h-[100dvh] (żeby tryb/moon był na dole WIDOKU), ale na
+          iOS `100dvh` na elemencie `fixed` bywa liczone jak mały ekran (svh) — przy schowanym pasku
+          URL pas jest KRÓTSZY niż ekran i pod nim prześwituje tło strony (przy tle-obrazie baza body
+          to ciemne #0f172a → „ciemny pasek z prawej"). Podkład używa `inset-y-0` (top:0;bottom:0,
+          BEZ jednostek dvh/vh — pełni całą wysokość viewportu) i wypełnia kolumnę pasa kolorem brandu
+          do samego dołu. Kryty przez rozwinięty pas (w-screen, z wyższym z). %>
+      <div aria-hidden="true" class="md:hidden fixed inset-y-0 z-20 w-14 bg-brand-600 pointer-events-none <%= railRight ? 'right-0' : 'left-0' %>"></div>
       <aside class="flex shrink-0 flex-col bg-brand-600 text-white p-3 overflow-hidden transition-[width] duration-300 ease-in-out top-0 h-[100dvh] md:self-start md:sticky md:z-auto <%= railRight ? 'right-0 md:order-2 md:right-auto' : 'left-0 md:left-auto' %>"
              :class="railOpen ? 'fixed w-screen z-40 md:w-60' : 'fixed w-14 z-30 md:w-16'">
         <button type="button" @click="railOpen = !railOpen" title="Zwiń/rozwiń menu" aria-label="Zwiń lub rozwiń menu"
-                class="w-8 h-8 inline-flex items-center justify-center rounded-lg text-white/85 hover:bg-white/15 transition shrink-0 mb-4">
-          <%- icon('menu', { size: 20, cls: '' }) %>
+                class="w-full flex items-center rounded-lg text-white/85 hover:bg-white/15 transition shrink-0 mb-4"
+                :class="railOpen ? '<%= railRight ? "justify-end" : "justify-start" %>' : 'justify-center'">
+          <span class="w-8 h-8 inline-flex items-center justify-center shrink-0"><%- icon('menu', { size: 20, cls: '' }) %></span>
         </button>
         <%# Menu w środku — flex-1 (spycha tryb na dół) + własne przewijanie przy wielu pozycjach. %>
         <div class="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
@@ -281,7 +291,10 @@
       <% const pbRight = L.cardSide === 'right'; %>
       <main class="flex-1 flex">
         <section class="evoke-panel w-full md:max-w-md bg-white min-h-screen flex flex-col px-6 sm:px-9 py-7 shrink-0 <%= pbRight ? 'md:order-2' : '' %>">
-          <div class="md:hidden flex items-center gap-2 <%= justify %> mb-6">
+          <%# Mobile: logo NAD treścią (na tle jest tylko md+). Przyklejony nagłówek (stickyHeader):
+              pełnoszerokościowy pasek (ujemne marginesy wychodzą poza padding sekcji), bg-white,
+              zostaje na górze przy przewijaniu. %>
+          <div class="md:hidden flex items-center gap-2 <%= justify %> mb-6 <%= sticky ? 'sticky top-0 z-20 bg-white py-3 -mx-6 sm:-mx-9 px-6 sm:px-9' : '' %>">
             <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
               <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
             <% } else if (!L.hideName) { %>

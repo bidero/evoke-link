@@ -112,9 +112,12 @@ function surfaceVars(layout) {
   if (Number.isInteger(L.radius) && L.radius !== 24) vars.push(`--card-radius:${L.radius}px`);
   if (L.button === 'pill') vars.push('--btn-radius:9999px');
   if (L.card === 'glass') {
+    // Krycie szkła 0.74 (było 0.62): przy 0.62 tekst pomocniczy (slate-400/500) i przerywana
+    // ramka dropzone gubiły się na jasnym tle — 0.74 wciąż daje efekt „mrożonego szkła" (blur),
+    // ale skutecznie rozjaśnia tło karty → czcionki i ramki są czytelne.
     vars.push(
-      '--card-bg:rgba(255,255,255,0.62)',
-      '--card-border-color:rgba(255,255,255,0.55)',
+      '--card-bg:rgba(255,255,255,0.74)',
+      '--card-border-color:rgba(255,255,255,0.6)',
       '--card-shadow:0 10px 40px rgba(2,6,23,0.18)'
     );
     // backdrop-filter LITERALNIE (nie przez var()): Safari NIE stosuje
@@ -126,8 +129,8 @@ function surfaceVars(layout) {
       // robi się półprzezroczysty (tło prześwituje). Nadpisuje utility .bg-white (ta sama
       // specyficzność, ale reguła wstrzykiwana PO app.css). Dark mode: !important, bo
       // html.dark .bg-white ma !important.
-      + '.evoke-panel{background-color:rgba(255,255,255,0.62);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}'
-      + 'html.dark .evoke-panel{background-color:rgba(15,23,42,0.55)!important}';
+      + '.evoke-panel{background-color:rgba(255,255,255,0.74);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}'
+      + 'html.dark .evoke-panel{background-color:rgba(15,23,42,0.62)!important}';
   } else if (L.card === 'elevated') {
     vars.push('--card-shadow:0 30px 60px -15px rgba(2,6,23,0.35)');
   }

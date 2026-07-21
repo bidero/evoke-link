@@ -125,7 +125,7 @@ test('portalNav: tabs/side na /c i /p, none = stos, walidacja zapisu', async () 
     // szklany panel: styl karty „glass" + kompozycja panel → panel półprzezroczysty (reguła w head)
     await settingsService.update({ layout: { ...snapLayout, style: 'panel', card: 'glass', portalNav: 'none' } });
     html = await (await fetch(`${base}/p/${project.clientToken}`)).text();
-    assert.match(html, /\.evoke-panel\{background-color:rgba\(255,255,255,0\.62\)/, 'reguła szklanego panelu wstrzyknięta');
+    assert.match(html, /\.evoke-panel\{background-color:rgba\(255,255,255,0\.74\)/, 'reguła szklanego panelu wstrzyknięta');
     await settingsService.update({ layout: { ...snapLayout, style: 'panel', card: 'solid', portalNav: 'none' } });
     html = await (await fetch(`${base}/p/${project.clientToken}`)).text();
     assert.ok(!/\.evoke-panel\{background-color/.test(html), 'pełna biel: panel bez reguły szkła');
