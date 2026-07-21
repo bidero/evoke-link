@@ -43,10 +43,12 @@
   <script defer src="/js/sticky-header.js"></script>
   <script defer src="/js/alpine.min.js"></script>
   <script>
-    // Po każdej nawigacji Turbo (i przy pierwszym ładowaniu) odśwież skrypty zależne od DOM.
-    // Init-y są idempotentne (sticky: re-query elementu; bg: czyści interwał slideshow).
+    // Po każdej nawigacji Turbo re-inicjujemy TYLKO sticky-header (jest w podmienianym <body>).
+    // NIE wołamy tu evokeBgInit: tło siedzi w `#evoke-bg` (data-turbo-permanent) — nie jest
+    // odtwarzane, slideshow działa dalej, a `refreshGlass` (puls blur 22→14px) na szkle powodował
+    // MIGOTANIE elementów szklanych przy każdej nawigacji. Przy trwałym (stabilnym) tle nowe karty
+    // malują się od razu na świeżym backdropie, więc pulsu nie potrzeba.
     document.addEventListener('turbo:load', function () {
-      if (window.evokeBgInit) window.evokeBgInit();
       if (window.evokeStickyInit) window.evokeStickyInit();
     });
   </script>
