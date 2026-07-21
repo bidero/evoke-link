@@ -124,21 +124,27 @@
         Hamburger: WYŚRODKOWANY w zwiniętym pasku (justify-center), po rozwinięciu dosunięty do
         KRAWĘDZI pasa (lewej dla rail-left, PRAWEJ dla rail-right) — zostaje w miejscu przy zwijaniu
         i przy pasie z prawej nie „ucieka" z panelem. %>
-    <div class="flex-1 flex">
+    <div class="relative flex-1 flex">
       <%# PODKŁAD pasa (tylko mobile). Pas ma h-[100dvh] (żeby tryb/moon był na dole WIDOKU), ale na
-          iOS `100dvh` na elemencie `fixed` bywa liczone jak mały ekran (svh) — przy schowanym pasku
-          URL pas jest KRÓTSZY niż ekran i pod nim prześwituje tło strony (przy tle-obrazie baza body
-          to ciemne #0f172a → „ciemny pasek z prawej"). Podkład używa `inset-y-0` (top:0;bottom:0,
-          BEZ jednostek dvh/vh — pełni całą wysokość viewportu) i wypełnia kolumnę pasa kolorem brandu
-          do samego dołu. Kryty przez rozwinięty pas (w-screen, z wyższym z). %>
-      <div aria-hidden="true" class="md:hidden fixed inset-y-0 z-20 w-14 bg-brand-600 pointer-events-none <%= railRight ? 'right-0' : 'left-0' %>"></div>
+          iOS `100dvh`/`inset-y` na elemencie `position:fixed` bywa liczone jak mały ekran (svh) —
+          przy schowanym pasku URL pas jest KRÓTSZY niż realny widok i pod nim prześwituje baza body
+          (przy tle-obrazie ciemne #0f172a → „ciemny pasek z prawej", też w Safari). Dlatego podkład
+          jest `position:ABSOLUTE` względem `relative flex-1 flex` (a NIE fixed) — ten pojemnik ma
+          wysokość ≥ viewport (wypełnia `min-h-screen`), więc podkład `inset-y-0` sięga realnego dołu
+          dokumentu, bez pułapek fixed-viewport w Safari. Kryty przez rozwinięty pas (wyższy z). %>
+      <div aria-hidden="true" class="md:hidden absolute inset-y-0 z-0 w-14 bg-brand-600 pointer-events-none <%= railRight ? 'right-0' : 'left-0' %>"></div>
       <aside class="flex shrink-0 flex-col bg-brand-600 text-white p-3 overflow-hidden transition-[width] duration-300 ease-in-out top-0 h-[100dvh] md:self-start md:sticky md:z-auto <%= railRight ? 'right-0 md:order-2 md:right-auto' : 'left-0 md:left-auto' %>"
              :class="railOpen ? 'fixed w-screen z-40 md:w-60' : 'fixed w-14 z-30 md:w-16'">
-        <button type="button" @click="railOpen = !railOpen" title="Zwiń/rozwiń menu" aria-label="Zwiń lub rozwiń menu"
-                class="w-full flex items-center rounded-lg text-white/85 hover:bg-white/15 transition shrink-0 mb-4"
-                :class="railOpen ? '<%= railRight ? "justify-end" : "justify-start" %>' : 'justify-center'">
-          <span class="w-8 h-8 inline-flex items-center justify-center shrink-0"><%- icon('menu', { size: 20, cls: '' }) %></span>
-        </button>
+        <%# Hamburger: pojemnik `w-full flex` steruje TYLKO pozycją (wyśrodkowany gdy zwinięty,
+            przy krawędzi gdy rozwinięty), a klikalny/hoverowalny jest sam przycisk stałego rozmiaru
+            (w-10) — dzięki temu hover NIE zajmuje całej szerokości, a stuknięcie obok przycisku w
+            rozwiniętym panelu NIE zamyka pasa (iOS: przypadkowe zamknięcie „po chwili"). %>
+        <div class="w-full flex shrink-0 mb-4" :class="railOpen ? '<%= railRight ? "justify-end" : "justify-start" %>' : 'justify-center'">
+          <button type="button" @click="railOpen = !railOpen" title="Zwiń/rozwiń menu" aria-label="Zwiń lub rozwiń menu"
+                  class="w-10 h-10 inline-flex items-center justify-center rounded-lg text-white/85 hover:bg-white/15 transition">
+            <%- icon('menu', { size: 20, cls: '' }) %>
+          </button>
+        </div>
         <%# Menu w środku — flex-1 (spycha tryb na dół) + własne przewijanie przy wielu pozycjach. %>
         <div class="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
           <%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'rail', linkBase: pNav.linkBase || null }) %>
@@ -291,10 +297,10 @@
       <% const pbRight = L.cardSide === 'right'; %>
       <main class="flex-1 flex">
         <section class="evoke-panel w-full md:max-w-md bg-white min-h-screen flex flex-col px-6 sm:px-9 py-7 shrink-0 <%= pbRight ? 'md:order-2' : '' %>">
-          <%# Mobile: logo NAD treścią (na tle jest tylko md+). Przyklejony nagłówek (stickyHeader):
-              pełnoszerokościowy pasek (ujemne marginesy wychodzą poza padding sekcji), bg-white,
-              zostaje na górze przy przewijaniu. %>
-          <div class="md:hidden flex items-center gap-2 <%= justify %> mb-6 <%= sticky ? 'sticky top-0 z-20 bg-white py-3 -mx-6 sm:-mx-9 px-6 sm:px-9' : '' %>">
+          <%# Mobile: logo NAD treścią (na tle jest tylko md+). NIE przyklejamy go na mobile — ma
+              płynąć z treścią, bez tła (białe tło + odstęp od górnej krawędzi wyglądały źle).
+              „Przyklejony nagłówek" działa na DESKTOPIE: przykleja brandowy pas boczny (poniżej). %>
+          <div class="md:hidden flex items-center gap-2 <%= justify %> mb-6">
             <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
               <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
             <% } else if (!L.hideName) { %>
@@ -305,7 +311,9 @@
           <% if (headerNav) { %><div class="mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white', withTheme: true, linkBase: pNav.linkBase || null }) %></div><% } %>
           <div class="flex-1 flex flex-col justify-center"><%- body %></div>
         </section>
-        <aside class="hidden md:flex flex-1 flex-col justify-between p-10 <%= pbRight ? 'md:order-1' : '' %>">
+        <%# Przyklejony nagłówek na DESKTOPIE (stickyHeader): brandowy pas boczny (logo/hero/stopka)
+            zostaje w widoku przy przewijaniu treści panelu (md:sticky top-0 h-screen self-start). %>
+        <aside class="hidden md:flex flex-1 flex-col justify-between p-10 <%= pbRight ? 'md:order-1' : '' %> <%= sticky ? 'md:sticky md:top-0 md:h-screen md:self-start' : '' %>">
           <% if (showBgLogo) { %>
           <div class="flex items-center gap-2 <%= justify %>">
             <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>

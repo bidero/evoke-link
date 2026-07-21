@@ -130,7 +130,13 @@ function surfaceVars(layout) {
       // specyficzność, ale reguła wstrzykiwana PO app.css). Dark mode: !important, bo
       // html.dark .bg-white ma !important.
       + '.evoke-panel{background-color:rgba(255,255,255,0.74);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}'
-      + 'html.dark .evoke-panel{background-color:rgba(15,23,42,0.62)!important}';
+      + 'html.dark .evoke-panel{background-color:rgba(15,23,42,0.62)!important}'
+      // Tekst pomocniczy jest na szkle jaśniejszy niż na białej karcie → przyciemniamy szare
+      // czcionki WEWNĄTRZ szklanych powierzchni o jeden stopień (slate-400→500, slate-500→600).
+      // Wyższa specyficzność niż utility (0,0,2,0), więc wygrywa w jasnym; dark mode nietknięty
+      // (html.dark .text-slate-* ma !important).
+      + '.evoke-card .text-slate-400,.evoke-panel .text-slate-400{color:#64748b}'
+      + '.evoke-card .text-slate-500,.evoke-panel .text-slate-500{color:#475569}';
   } else if (L.card === 'elevated') {
     vars.push('--card-shadow:0 30px 60px -15px rgba(2,6,23,0.35)');
   }
