@@ -84,7 +84,9 @@ async function send({ to, subject, html, text, replyTo, attachments }) {
 }
 
 // Brandowany szablon HTML maila (logo/kolor/nazwa z ustawień). content = HTML wnętrza.
-async function wrap(content, { heading } = {}) {
+// Nowoczesny, czysty layout: cienki brandowy pasek u góry, logo/wordmark na białym,
+// hairline oddzielający treść od stopki, miękki cień. „preheader" = ukryty podgląd w skrzynce.
+async function wrap(content, { heading, preheader } = {}) {
   let s;
   try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
   const appName = esc(s.appName || 'Evoke LINK');
@@ -93,25 +95,31 @@ async function wrap(content, { heading } = {}) {
   const logo = mailLogo ? `${config.appUrl}${mailLogo}` : null;
   const footer = esc((s.texts && s.texts.footer) || `${appName} · bezpieczna wymiana plików`);
   const head = logo
-    ? `<img src="${esc(logo)}" alt="${appName}" style="height:34px;max-width:200px;object-fit:contain" />`
-    : `<span style="font-size:18px;font-weight:700;color:#fff">${appName}</span>`;
+    ? `<img src="${esc(logo)}" alt="${appName}" style="height:30px;max-width:190px;object-fit:contain;display:block" />`
+    : `<span style="font-size:19px;font-weight:700;letter-spacing:-0.02em;color:${esc(primary)}">${appName}</span>`;
+  const pre = (preheader || heading)
+    ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;font-size:1px;line-height:1px">${esc(preheader || heading)}</div>`
+    : '';
 
-  return `<!doctype html><html><body style="margin:0;background:#f1f5f9;padding:24px;font-family:Segoe UI,Arial,sans-serif;color:#0f172a">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0">
-        <tr><td style="background:${esc(primary)};padding:18px 24px">${head}</td></tr>
-        <tr><td style="padding:28px 24px">
-          ${heading ? `<h1 style="margin:0 0 12px;font-size:20px">${esc(heading)}</h1>` : ''}
-          ${content}
+  return `<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head>
+  <body style="margin:0;padding:0;background:#f4f4f7;-webkit-font-smoothing:antialiased;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a">
+    ${pre}
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f7"><tr><td align="center" style="padding:32px 16px">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #ececf1;box-shadow:0 1px 3px rgba(15,23,42,0.06)">
+        <tr><td style="height:4px;line-height:4px;font-size:0;background:${esc(primary)}">&nbsp;</td></tr>
+        <tr><td style="padding:26px 36px 0">${head}</td></tr>
+        <tr><td style="padding:22px 36px 32px">
+          ${heading ? `<h1 style="margin:0 0 14px;font-size:21px;line-height:1.3;font-weight:700;letter-spacing:-0.01em;color:#0f172a">${esc(heading)}</h1>` : ''}
+          <div style="font-size:15px;line-height:1.6;color:#334155">${content}</div>
         </td></tr>
-        <tr><td style="padding:16px 24px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:12px">${footer}</td></tr>
+        <tr><td style="padding:20px 36px;background:#fafafa;border-top:1px solid #f0f0f4;color:#94a3b8;font-size:12px;line-height:1.5">${footer}</td></tr>
       </table>
     </td></tr></table>
   </body></html>`;
 }
 
 function btn(href, label, primary) {
-  return `<a href="${esc(href)}" style="display:inline-block;background:${esc(primary || '#6e00a5')};color:#fff;text-decoration:none;font-weight:600;padding:12px 22px;border-radius:10px">${esc(label)}</a>`;
+  return `<a href="${esc(href)}" style="display:inline-block;background:${esc(primary || '#6e00a5')};color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;line-height:1;padding:14px 26px;border-radius:12px;letter-spacing:0.01em">${esc(label)}</a>`;
 }
 
 // Treść (wstęp/body) → bezpieczny HTML: podstawia placeholdery; jeśli to już HTML
