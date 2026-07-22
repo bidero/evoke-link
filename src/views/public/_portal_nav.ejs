@@ -147,10 +147,14 @@
             :class="{ 'bg-white/90 text-brand-700 font-medium': sec==='<%= s.key %>', 'text-white/85 hover:bg-white/15': sec!=='<%= s.key %>', 'justify-center px-0': !railOpen }"
             class="<%= base %>">
     <% } %>
-      <%- icon(s.icon, { size: 16, cls: 'shrink-0' }) %>
+      <%# Kropka powiadomienia = badge w ROGU ikony (absolutny), NIE osobny element flex — inaczej w
+          zwiniętym pasie spychała ikonę z centrum. Teraz ikona zostaje wyśrodkowana, kropka w rogu. %>
+      <span class="relative shrink-0 inline-flex">
+        <%- icon(s.icon, { size: 16, cls: 'shrink-0' }) %>
+        <% if (s.dot) { %><span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-brand-600"></span><% } %>
+      </span>
       <span class="flex-1 truncate" x-show="railOpen"><%= s.label %></span>
       <% if (s.badge) { %><span class="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-white/20" x-show="railOpen"><%= s.badge %></span><% } %>
-      <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
     <%- s.href ? '</a>' : '</button>' %>
   <% }); %>
 </nav>
