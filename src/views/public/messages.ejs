@@ -48,7 +48,7 @@
       <%# Composer jak w komunikatorze: „+ dołącz plik" po LEWEJ, „Wyślij" po PRAWEJ (jeden rząd).
           Po wyborze pliku — chip z nazwą i „×" (czyści input przez $refs.file). %>
       <div class="flex items-center gap-2">
-        <label class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 cursor-pointer hover:bg-brand-50 hover:text-brand-700 hover:border-brand-300 transition shrink-0" title="Dołącz plik">
+        <label class="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 cursor-pointer hover:bg-brand-50 hover:text-brand-700 hover:border-brand-300 transition shrink-0" title="Dołącz plik">
           <%- icon('plus', { size: 16, cls: '' }) %> <span class="hidden sm:inline">Dołącz plik</span>
           <input x-ref="file" type="file" name="attachment" class="hidden" @change="fileName = $event.target.files.length ? $event.target.files[0].name : ''" />
         </label>
@@ -56,7 +56,7 @@
           <%- icon('file', { size: 13, cls: 'shrink-0' }) %><span class="truncate" x-text="fileName"></span>
           <button type="button" @click="fileName=''; $refs.file.value=''" class="text-slate-400 hover:text-red-600 shrink-0" title="Usuń załącznik"><%- icon('x', { size: 13, cls: '' }) %></button>
         </span>
-        <button type="submit" class="evoke-btn ml-auto shrink-0 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-6 py-2 transition">Wyślij</button>
+        <button type="submit" class="evoke-btn ml-auto shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-6 py-2 transition">Wyślij <%- icon('send', { size: 16, cls: '' }) %></button>
       </div>
     </form>
   </div>
