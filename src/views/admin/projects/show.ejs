@@ -21,6 +21,7 @@
 <div class="mt-4 flex flex-wrap items-center gap-2">
   <a href="/admin/transfers/new?project=<%= project.id %>" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">+ Wyślij pliki klientowi</a>
   <a href="/admin/transfers/new-upload?project=<%= project.id %>" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">+ Link uploadu</a>
+  <% if (project.client) { %><a href="/admin/messages?client=<%= project.client.id %>&scope=p:<%= project.id %>" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-sm font-medium px-4 py-2 transition"><%- icon('mail', { size: 15, cls: '' }) %> Napisz do klienta</a><% } %>
   <form method="POST" action="/admin/projects/<%= project.id %>/archive" class="ml-auto">
     <% const _arch = project.status === 'archived'; %>
     <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition"><%- icon(_arch ? 'arrowLeft' : 'archive', { size: 15, cls: '' }) %> <%= _arch ? 'Przywróć z archiwum' : 'Archiwizuj' %></button>

@@ -92,6 +92,7 @@
     </div>
     <div class="flex flex-wrap items-center gap-2 shrink-0">
       <a href="/admin/projects/new?client=<%= client.id %>" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">+ Nowy projekt</a>
+      <a href="/admin/messages?client=<%= client.id %>" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-sm font-medium px-4 py-2 transition"><%- icon('mail', { size: 15, cls: '' }) %> Napisz</a>
       <a href="/admin/clients/<%= client.id %>/edit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">Edytuj</a>
     </div>
   </div>

@@ -8,6 +8,8 @@
   var lastMsg = (messages || [])[(messages || []).length - 1];
   var defScope = 'c';
   if (lastMsg) { if (lastMsg.projectId) defScope = 'p:' + lastMsg.projectId; else if (lastMsg.transferId) defScope = 't:' + lastMsg.transferId; }
+  // Podpowiedź kontekstu z linku „Napisz do klienta" na stronie projektu (?scope=p:<id>) — wygrywa.
+  if (typeof scopeHint !== 'undefined' && scopeHint) defScope = scopeHint;
 %>
 <div class="md:h-[calc(100vh-8rem)] md:flex md:gap-4">
   <!-- LEWA: lista rozmów (klienci) -->
@@ -16,6 +18,13 @@
       <h2 class="text-sm font-semibold text-slate-700">Rozmowy</h2>
       <% var anyUnread = conversations.some(function (c) { return c.unread > 0; }); %>
       <% if (anyUnread) { %><form method="POST" action="/admin/messages/read-all"><button type="submit" class="text-xs text-brand-700 hover:underline whitespace-nowrap">Przeczytaj wszystkie</button></form><% } %>
+    </div>
+    <%# „+ Nowa rozmowa": wybór DOWOLNEGO klienta (także bez wiadomości) → otwiera pustą rozmowę z polem pisania. %>
+    <div class="px-3 py-2 border-b border-slate-100">
+      <select onchange="if(this.value)window.location='/admin/messages?client='+this.value" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+        <option value="">+ Nowa rozmowa — wybierz klienta…</option>
+        <% (allClients || []).forEach(function (cl) { %><option value="<%= cl.id %>"><%= cl.name %></option><% }); %>
+      </select>
     </div>
     <div class="flex-1 overflow-y-auto divide-y divide-slate-100">
       <% if (!conversations.length) { %><p class="p-6 text-center text-sm text-slate-400">Brak rozmów. Otwórz kartotekę klienta lub projekt, aby napisać jako pierwszy.</p><% } %>

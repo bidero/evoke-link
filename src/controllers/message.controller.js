@@ -32,7 +32,8 @@ async function listMessages(req, res, next) {
     }
     // Lista PO markClientRead → badge wybranego klienta od razu = 0.
     const conversations = await messageService.conversationList();
-    res.render('admin/messages/index', { title: 'Wiadomości', active: 'messages', conversations, selected, messages, client, projects });
+    const allClients = await clientService.options(); // do „+ Nowa rozmowa" (klienci bez wiadomości też)
+    res.render('admin/messages/index', { title: 'Wiadomości', active: 'messages', conversations, selected, messages, client, projects, allClients, scopeHint: req.query.scope || null });
   } catch (err) {
     next(err);
   }
