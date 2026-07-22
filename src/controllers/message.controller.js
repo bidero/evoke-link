@@ -1,23 +1,60 @@
-// Panel: skrzynka wiadomości od klientów (Faza A — jednokierunkowo).
+// Panel: komunikator agencji ↔ klient (dwupanel: lista klientów ↔ jeden strumień rozmowy).
+// Agencja może odpowiadać I zagajać (out) w wybranym kontekście (Ogólne / projekt / transfer).
 const messageService = require('../services/message.service');
+const clientService = require('../services/client.service');
 const storage = require('../services/storage.service');
 const mail = require('../services/mail.service');
 const config = require('../config');
 
+// scope z formularza: 'c' (ogólne/kliencki) | 'p:<id>' (projekt) | 't:<id>' (transfer).
+function parseScope(scope, client) {
+  if (typeof scope === 'string') {
+    if (scope.startsWith('p:')) { const id = Number(scope.slice(2)); if ((client.projects || []).some((p) => p.id === id)) return { projectId: id }; }
+    else if (scope.startsWith('t:')) { const id = Number(scope.slice(2)); if (Number.isFinite(id)) return { transferId: id }; }
+  }
+  return {};
+}
+
 async function listMessages(req, res, next) {
   try {
-    const threads = await messageService.listThreads();
-    res.render('admin/messages/index', { title: 'Wiadomości', active: 'messages', threads });
+    const selId = req.query.client;
+    let client = null, messages = [], projects = [], selected = null;
+    if (selId === 'none') { selected = 'none'; messages = await messageService.conversation(null); }
+    else if (selId) {
+      client = await clientService.getById(Number(selId));
+      if (client) {
+        selected = String(client.id);
+        await messageService.markClientRead(client.id);          // otwarcie = trwałe przeczytanie
+        res.locals.unreadMessages = await messageService.unreadCount(); // odśwież badge w menu (po read)
+        messages = await messageService.conversation(client.id);
+        projects = client.projects || [];
+      }
+    }
+    // Lista PO markClientRead → badge wybranego klienta od razu = 0.
+    const conversations = await messageService.conversationList();
+    res.render('admin/messages/index', { title: 'Wiadomości', active: 'messages', conversations, selected, messages, client, projects });
   } catch (err) {
     next(err);
   }
 }
 
-async function markRead(req, res, next) {
+// Agencja wysyła (odpowiedź lub zagajenie) w wybranym kontekście + opcjonalny mail do klienta.
+async function sendMessage(req, res, next) {
   try {
-    const m = await messageService.getById(req.params.id);
-    if (m) await messageService.markThreadRead(m);
-    res.redirect('/admin/messages');
+    const client = await clientService.getById(Number(req.params.clientId));
+    if (!client) return res.redirect('/admin/messages');
+    const scope = parseScope(req.body.scope, client);
+    const msg = await messageService.send({ clientId: client.id, projectId: scope.projectId, transferId: scope.transferId, body: req.body.body });
+    if (msg) {
+      await messageService.markClientRead(client.id); // wysłanie = obejrzałem wątek
+      if (req.body.notify && client.email) {
+        // Link zwrotny zależny od kontekstu: projekt → /p, inaczej klient → /c.
+        let link = `${config.appUrl}/c/${client.token}`;
+        if (scope.projectId) { const p = (client.projects || []).find((x) => x.id === scope.projectId); if (p && p.clientToken) link = `${config.appUrl}/p/${p.clientToken}`; }
+        mail.sendClientReply({ to: client.email, body: msg.body, link }).catch((e) => console.error('[mail] wiadomość:', e.message));
+      }
+    }
+    res.redirect(`/admin/messages?client=${client.id}`);
   } catch (err) {
     next(err);
   }
@@ -32,33 +69,10 @@ async function markAllRead(req, res, next) {
   }
 }
 
-async function deleteMessage(req, res, next) {
+async function deleteConversation(req, res, next) {
   try {
-    const m = await messageService.getById(req.params.id);
-    if (m) await messageService.deleteThread(m);
-    res.redirect('/admin/messages');
-  } catch (err) {
-    next(err);
-  }
-}
-
-// Odpowiedź agencji na wiadomość klienta (Faza B) → out-message + mail do klienta.
-async function replyMessage(req, res, next) {
-  try {
-    const original = await messageService.getById(req.params.id);
-    if (!original) return res.redirect('/admin/messages');
-    const reply = await messageService.reply({ original, body: req.body.body });
-    if (reply) {
-      await messageService.markThreadRead(original);
-      const to = (original.senderEmail || (original.client && original.client.email) || '').trim();
-      if (to) {
-        // Link zwrotny: projekt → /p, inaczej klient → /c.
-        let link = '';
-        if (original.project && original.project.clientToken) link = `${config.appUrl}/p/${original.project.clientToken}`;
-        else if (original.client && original.client.token) link = `${config.appUrl}/c/${original.client.token}`;
-        mail.sendClientReply({ to, body: reply.body, link }).catch((e) => console.error('[mail] odpowiedź:', e.message));
-      }
-    }
+    const id = req.params.clientId;
+    await messageService.deleteClientConversation(id === 'none' ? null : Number(id));
     res.redirect('/admin/messages');
   } catch (err) {
     next(err);
@@ -78,4 +92,4 @@ async function downloadAttachment(req, res, next) {
   }
 }
 
-module.exports = { listMessages, replyMessage, markRead, markAllRead, deleteMessage, downloadAttachment };
+module.exports = { listMessages, sendMessage, markAllRead, deleteConversation, downloadAttachment };

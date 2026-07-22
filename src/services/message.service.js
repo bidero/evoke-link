@@ -153,4 +153,61 @@ function hasUnseen(thread, lastSeen) {
   return (thread || []).some((m) => m.direction === 'out' && new Date(m.createdAt).getTime() > ts);
 }
 
-module.exports = { create, listInbox, listThreads, unreadCount, getById, thread, reply, markThreadRead, deleteThread, attachment, hasUnseen, markRead, markAllRead, remove };
+// ── Komunikator agencji (dwupanel: lista klientów ↔ jeden strumień) ─────────────────────────────
+// Wszystkie wiadomości agregujemy PER KLIENT (każda ścieżka tworzenia ustawia clientId; wiadomości
+// bez klienta — transfer bez projektu — trafiają do kubełka „none").
+
+// Lista rozmów: jeden wpis na klienta mającego wiadomości. Sort po najnowszej. unread = in && !isRead.
+async function conversationList(limit = 300) {
+  const all = await prisma.message.findMany({
+    orderBy: { createdAt: 'asc' },
+    include: { client: { select: { id: true, name: true } } },
+  });
+  const map = new Map();
+  for (const m of all) {
+    const key = m.clientId ? 'c' + m.clientId : 'none';
+    let c = map.get(key);
+    if (!c) { c = { key, clientId: m.clientId || null, client: m.client || null, lastAt: m.createdAt, lastBody: '', lastDir: 'in', unread: 0 }; map.set(key, c); }
+    c.lastAt = m.createdAt; c.lastBody = m.body; c.lastDir = m.direction; // asc → ostatnia iteracja = najnowsza
+    if (m.client) c.client = m.client;
+    if (m.direction === 'in' && !m.isRead) c.unread += 1;
+  }
+  return Array.from(map.values()).sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt)).slice(0, limit);
+}
+
+// Strumień jednej rozmowy (wszystkie wiadomości klienta, chronologicznie) + kontekst do chipów.
+// clientId falsy → kubełek „Bez klienta" (clientId null).
+function conversation(clientId, limit = 300) {
+  const where = clientId ? { clientId: Number(clientId) } : { clientId: null };
+  return prisma.message.findMany({
+    where,
+    orderBy: { createdAt: 'asc' },
+    take: limit,
+    include: { project: { select: { id: true, name: true, clientToken: true } }, transfer: { select: { id: true, title: true } } },
+  });
+}
+
+// Agencja WYSYŁA (odpowiedź lub ZAGAJENIE) — direction 'out' w wybranym kontekście (scope).
+// scope: { projectId } | { transferId } | {} (ogólne/kliencki). clientId zawsze ustawiany.
+async function send({ clientId, projectId, transferId, body }) {
+  const text = (body == null ? '' : String(body)).trim().slice(0, MAX);
+  if (!text || !clientId) return null;
+  return prisma.message.create({
+    data: { body: text, direction: 'out', clientId: Number(clientId), projectId: projectId ? Number(projectId) : null, transferId: transferId ? Number(transferId) : null },
+  });
+}
+
+// Trwałe oznaczenie przeczytania: wszystkie przychodzące (in) danego klienta → isRead.
+function markClientRead(clientId) {
+  return prisma.message.updateMany({ where: { clientId: Number(clientId), direction: 'in', isRead: false }, data: { isRead: true } });
+}
+
+// Usuń całą rozmowę klienta (z załącznikami z dysku).
+async function deleteClientConversation(clientId) {
+  const scope = clientId ? { clientId: Number(clientId) } : { clientId: null };
+  const withFiles = await prisma.message.findMany({ where: { ...scope, attachmentPath: { not: null } }, select: { attachmentPath: true } });
+  withFiles.forEach((r) => storage.removeStored(r.attachmentPath));
+  return prisma.message.deleteMany({ where: scope });
+}
+
+module.exports = { create, listInbox, listThreads, unreadCount, getById, thread, reply, markThreadRead, deleteThread, attachment, hasUnseen, markRead, markAllRead, remove, conversationList, conversation, send, markClientRead, deleteClientConversation };

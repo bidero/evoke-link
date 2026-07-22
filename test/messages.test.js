@@ -36,17 +36,18 @@ test('klient pisze → agencja odpowiada → wątek w panelu + badge u klienta',
     // przed odpowiedzią — brak kropki nowej odpowiedzi (bg-red-500 przy pozycji Wiadomości/kopercie)
     assert.ok(!/bg-red-500/.test(await (await fetch(`${base}/p/${token}`)).text()), 'przed odpowiedzią brak kropki');
 
-    // odpowiedź agencji
+    // agencja odpowiada przez komunikator: send w kontekście projektu (scope p:<id>)
     const outBody = 'odpowiedz ' + Date.now();
-    const rep = await fetch(`${base}/admin/messages/${original.id}/reply`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookie }, body: new URLSearchParams({ body: outBody }), redirect: 'manual' });
+    const rep = await fetch(`${base}/admin/messages/${c.id}/send`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookie }, body: new URLSearchParams({ body: outBody, scope: 'p:' + p.id }), redirect: 'manual' });
     assert.equal(rep.status, 302);
     const reply = await prisma.message.findFirst({ where: { projectId: p.id, direction: 'out', body: outBody } });
     assert.ok(reply, 'odpowiedź zapisana jako out');
-    assert.equal((await prisma.message.findUnique({ where: { id: original.id } })).isRead, true, 'oryginał przeczytany');
+    assert.equal(reply.clientId, c.id, 'out powiązany z klientem');
+    assert.equal((await prisma.message.findUnique({ where: { id: original.id } })).isRead, true, 'oryginał przeczytany (trwale)');
 
-    // panel pokazuje obie w jednym wątku
-    const ihtml = await (await fetch(`${base}/admin/messages`, { headers: { Cookie: cookie } })).text();
-    assert.ok(ihtml.includes(inBody) && ihtml.includes(outBody), 'wątek pokazuje obie wiadomości');
+    // panel: strumień rozmowy klienta pokazuje obie wiadomości (dwupanel, ?client=<id>)
+    const ihtml = await (await fetch(`${base}/admin/messages?client=${c.id}`, { headers: { Cookie: cookie } })).text();
+    assert.ok(ihtml.includes(inBody) && ihtml.includes(outBody), 'strumień pokazuje obie wiadomości');
 
     // po odpowiedzi — kropka nowej odpowiedzi u klienta; podstrona wiadomości pokazuje wątek
     assert.match(await (await fetch(`${base}/p/${token}`)).text(), /bg-red-500/, 'po odpowiedzi kropka nowej odpowiedzi');

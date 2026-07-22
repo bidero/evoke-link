@@ -1,77 +1,90 @@
-<div class="flex items-center justify-between mb-6 gap-3">
-  <p class="text-sm text-slate-500">Rozmowy z klientami (z portali <code>/p</code>, <code>/t</code>, <code>/c</code>). Kliknij wiersz, aby rozwinąć.</p>
-  <% var anyUnread = threads.some(function(t){ return t.unread > 0; }); %>
-  <% if (anyUnread) { %>
-    <form method="POST" action="/admin/messages/read-all">
-      <button type="submit" class="text-sm text-brand-700 hover:underline whitespace-nowrap">Oznacz wszystkie jako przeczytane</button>
-    </form>
-  <% } %>
+<%
+  // Dwupanel: lista klientów (lewa) ↔ jeden strumień rozmowy (prawa). Dane z message.controller.
+  var selNone = selected === 'none';
+  var hasSel = !!selected && (!!client || selNone);
+  // Selektor kontekstu wysyłki: Ogólne + projekty klienta + transfery OBECNE w tej rozmowie.
+  var threadTransfers = {};
+  (messages || []).forEach(function (m) { if (m.transfer) threadTransfers[m.transfer.id] = m.transfer.title || ('Transfer #' + m.transfer.id); });
+  var lastMsg = (messages || [])[(messages || []).length - 1];
+  var defScope = 'c';
+  if (lastMsg) { if (lastMsg.projectId) defScope = 'p:' + lastMsg.projectId; else if (lastMsg.transferId) defScope = 't:' + lastMsg.transferId; }
+%>
+<div class="md:h-[calc(100vh-8rem)] md:flex md:gap-4">
+  <!-- LEWA: lista rozmów (klienci) -->
+  <aside class="<%= hasSel ? 'hidden md:flex' : 'flex' %> md:w-80 shrink-0 flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
+      <h2 class="text-sm font-semibold text-slate-700">Rozmowy</h2>
+      <% var anyUnread = conversations.some(function (c) { return c.unread > 0; }); %>
+      <% if (anyUnread) { %><form method="POST" action="/admin/messages/read-all"><button type="submit" class="text-xs text-brand-700 hover:underline whitespace-nowrap">Przeczytaj wszystkie</button></form><% } %>
+    </div>
+    <div class="flex-1 overflow-y-auto divide-y divide-slate-100">
+      <% if (!conversations.length) { %><p class="p-6 text-center text-sm text-slate-400">Brak rozmów. Otwórz kartotekę klienta lub projekt, aby napisać jako pierwszy.</p><% } %>
+      <% conversations.forEach(function (c) { var cid = c.clientId ? String(c.clientId) : 'none'; var name = c.client ? c.client.name : 'Bez klienta'; var active = selected === cid; %>
+        <a href="/admin/messages?client=<%= cid %>" class="block px-4 py-3 hover:bg-slate-50 transition <%= active ? 'bg-brand-50' : '' %>">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-sm font-medium text-slate-800 truncate"><%= name %></span>
+            <span class="text-[11px] text-slate-400 shrink-0"><%= fmt.date(c.lastAt) %></span>
+          </div>
+          <div class="flex items-center justify-between gap-2 mt-0.5">
+            <span class="text-xs text-slate-400 truncate"><%= (c.lastDir === 'out' ? 'Ty: ' : '') + c.lastBody %></span>
+            <% if (c.unread > 0) { %><span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-brand-600 text-white text-[10px] font-bold shrink-0"><%= c.unread %></span><% } %>
+          </div>
+        </a>
+      <% }); %>
+    </div>
+  </aside>
+
+  <!-- PRAWA: strumień rozmowy -->
+  <section class="<%= hasSel ? 'flex' : 'hidden md:flex' %> flex-1 min-w-0 flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden mt-4 md:mt-0">
+    <% if (!hasSel) { %>
+      <div class="flex-1 flex items-center justify-center text-sm text-slate-400 p-10 text-center">Wybierz rozmowę z listy, aby zobaczyć wiadomości.</div>
+    <% } else { %>
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2 min-w-0">
+          <a href="/admin/messages" class="md:hidden text-slate-400 hover:text-slate-700 shrink-0"><%- icon('arrowLeft', { size: 18, cls: '' }) %></a>
+          <span class="font-semibold text-slate-800 truncate"><%= client ? client.name : 'Bez klienta' %></span>
+          <% if (client) { %><a href="/admin/clients/<%= client.id %>" class="text-xs text-brand-700 hover:underline shrink-0">kartoteka →</a><% } %>
+        </div>
+        <form method="POST" action="/admin/messages/<%= selected %>/delete" onsubmit="return confirm('Usunąć całą rozmowę?');"><button type="submit" class="text-slate-400 hover:text-red-600 shrink-0" title="Usuń rozmowę"><%- icon('trash', { size: 16, cls: '' }) %></button></form>
+      </div>
+
+      <div id="msg-stream" class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        <% if (!messages.length) { %><p class="text-center text-sm text-slate-400 py-10">Brak wiadomości. Napisz pierwszy — klient dostanie powiadomienie.</p><% } %>
+        <% var prevChip = null; %>
+        <% messages.forEach(function (m) { var out = m.direction === 'out'; var chip = m.project ? m.project.name : (m.transfer ? (m.transfer.title || 'Transfer') : null); %>
+          <% if (chip && chip !== prevChip) { %><div class="flex justify-center"><span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">· <%= chip %></span></div><% } %><% prevChip = chip; %>
+          <div class="flex <%= out ? 'justify-end' : 'justify-start' %>">
+            <div class="max-w-[75%]">
+              <div class="rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words <%= out ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-800' %>"><%= m.body %></div>
+              <% if (m.attachmentName) { %><a href="/admin/messages/<%= m.id %>/attachment" class="mt-1 inline-flex items-center gap-1.5 text-xs text-brand-700 hover:underline"><%- icon('file', { size: 13, cls: '' }) %> <%= m.attachmentName %><% if (m.attachmentSize) { %> <span class="text-slate-400">(<%= fmt.bytes(m.attachmentSize) %>)</span><% } %></a><% } %>
+              <div class="text-[11px] text-slate-400 mt-0.5 <%= out ? 'text-right' : '' %>"><%= out ? 'Ty' : (m.senderName || 'Klient') %> · <%= fmt.date(m.createdAt) %></div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+
+      <% if (client) { %>
+      <form method="POST" action="/admin/messages/<%= client.id %>/send" class="border-t border-slate-100 p-3 flex flex-col gap-2">
+        <div class="flex items-center gap-2 flex-wrap text-xs">
+          <label class="text-slate-500">Kontekst:</label>
+          <select name="scope" class="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+            <option value="c" <%= defScope === 'c' ? 'selected' : '' %>>Ogólne</option>
+            <% (projects || []).forEach(function (p) { %><option value="p:<%= p.id %>" <%= defScope === 'p:' + p.id ? 'selected' : '' %>>Projekt: <%= p.name %></option><% }); %>
+            <% Object.keys(threadTransfers).forEach(function (tid) { %><option value="t:<%= tid %>" <%= defScope === 't:' + tid ? 'selected' : '' %>>Transfer: <%= threadTransfers[tid] %></option><% }); %>
+          </select>
+        </div>
+        <textarea name="body" required rows="2" maxlength="4000" placeholder="Napisz wiadomość…" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <label class="inline-flex items-center gap-1.5 text-xs text-slate-500"><input type="checkbox" name="notify" checked class="rounded border-slate-300" /> Powiadom mailem<% if (!client.email) { %> <span class="text-slate-300">(brak e-maila)</span><% } %></label>
+          <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-1.5 transition">Wyślij</button>
+        </div>
+      </form>
+      <% } %>
+    <% } %>
+  </section>
 </div>
 
-<% if (!threads.length) { %>
-  <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center text-sm text-slate-400">Brak wiadomości.</div>
-<% } else { %>
-  <div class="space-y-2">
-    <% threads.forEach(function(t){ %>
-      <% var lastIn = null; t.messages.forEach(function(m){ if (m.direction === 'in') lastIn = m; }); var replyToId = lastIn ? lastIn.id : t.lastId; %>
-      <% var last = t.messages[t.messages.length - 1]; %>
-      <% var ctxLabel = t.client ? t.client.name : (t.project ? t.project.name : (t.transfer ? (t.transfer.title || t.transfer.token) : 'Bez kontekstu')); %>
-      <div class="bg-white rounded-2xl border <%= t.unread > 0 ? 'border-brand-300' : 'border-slate-200' %> overflow-hidden" x-data="{ open: <%= t.unread > 0 ? 'true' : 'false' %> }">
-
-        <!-- nagłówek akordeonu (zwinięty widok) -->
-        <button type="button" @click="open = !open" class="w-full flex items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50 transition">
-          <div class="flex items-center gap-2 min-w-0">
-            <% if (t.unread > 0) { %><span class="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-brand-600 text-white text-[10px] font-bold shrink-0"><%= t.unread %></span><% } %>
-            <span class="font-medium text-slate-700 truncate shrink-0 max-w-[45%]"><%= ctxLabel %></span>
-            <span class="text-slate-400 text-sm truncate hidden sm:block"><%= (last && last.direction === 'out' ? 'Ty: ' : '') + (last ? last.body : '') %></span>
-          </div>
-          <div class="flex items-center gap-2 shrink-0 text-slate-400">
-            <span class="text-xs whitespace-nowrap"><%= fmt.date(t.lastAt) %></span>
-            <span :class="open && 'rotate-180'" class="transition-transform inline-flex"><%- icon('chevronDown', { size: 16, cls: '' }) %></span>
-          </div>
-        </button>
-
-        <!-- treść (po rozwinięciu): kontekst + akcje + rozmowa + odpowiedź -->
-        <div x-show="open" x-cloak class="px-4 pb-4 border-t border-slate-100">
-          <div class="flex items-center justify-between gap-3 py-2.5">
-            <div class="flex items-center gap-1.5 flex-wrap text-xs">
-              <% if (t.client) { %><a href="/admin/clients/<%= t.client.id %>" class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-700 transition">Klient: <%= t.client.name %></a><% } %>
-              <% if (t.project) { %><a href="/admin/projects/<%= t.project.id %>" class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-700 transition">Projekt: <%= t.project.name %></a><% } %>
-              <% if (t.transfer) { %><a href="/admin/transfers/<%= t.transfer.id %>" class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-700 transition">Transfer: <%= t.transfer.title || t.transfer.token %></a><% } %>
-            </div>
-            <div class="flex items-center gap-1 shrink-0">
-              <% if (t.unread > 0) { %>
-                <form method="POST" action="/admin/messages/<%= t.lastId %>/read"><button type="submit" class="text-slate-400 hover:text-green-600 px-2 py-1" title="Oznacz rozmowę jako przeczytaną"><%- icon('check', { size: 16, cls: '' }) %></button></form>
-              <% } %>
-              <form method="POST" action="/admin/messages/<%= t.lastId %>/delete" onsubmit="return confirm('Usunąć całą rozmowę?');"><button type="submit" class="text-slate-400 hover:text-red-600 px-2 py-1" title="Usuń rozmowę"><%- icon('trash', { size: 16, cls: '' }) %></button></form>
-            </div>
-          </div>
-
-          <div class="space-y-2">
-            <% t.messages.forEach(function(m){ var out = m.direction === 'out'; %>
-              <div class="flex <%= out ? 'justify-end' : 'justify-start' %>">
-                <div class="max-w-[80%]">
-                  <div class="rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words <%= out ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-800' %>"><%= m.body %></div>
-                  <% if (m.attachmentName) { %>
-                    <a href="/admin/messages/<%= m.id %>/attachment" class="mt-1 inline-flex items-center gap-1.5 text-xs text-brand-700 hover:text-brand-800 hover:underline">
-                      <%- icon('file', { size: 13, cls: '' }) %> <%= m.attachmentName %><% if (m.attachmentSize) { %> <span class="text-slate-400">(<%= fmt.bytes(m.attachmentSize) %>)</span><% } %>
-                    </a>
-                  <% } %>
-                  <div class="text-[11px] text-slate-400 mt-0.5 <%= out ? 'text-right' : '' %>"><%= out ? 'Ty' : (m.senderName || 'Klient') %><% if (!out && m.senderEmail) { %> · <%= m.senderEmail %><% } %> · <%= fmt.date(m.createdAt) %></div>
-                </div>
-              </div>
-            <% }); %>
-          </div>
-
-          <form method="POST" action="/admin/messages/<%= replyToId %>/reply" class="mt-3 flex flex-col gap-2">
-            <textarea name="body" required rows="2" maxlength="4000" placeholder="Twoja odpowiedź…" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
-            <div class="flex items-center gap-2 flex-wrap">
-              <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-1.5 transition">Wyślij odpowiedź</button>
-              <span class="text-xs text-slate-400"><% if (lastIn && lastIn.senderEmail) { %>Mail trafi na: <%= lastIn.senderEmail %><% } else { %>Klient zobaczy odpowiedź w panelu (brak e-maila)<% } %></span>
-            </div>
-          </form>
-        </div>
-      </div>
-    <% }); %>
-  </div>
-<% } %>
+<script>
+  // Auto-scroll strumienia na dół (najnowsze widoczne).
+  (function () { var s = document.getElementById('msg-stream'); if (s) s.scrollTop = s.scrollHeight; })();
+</script>

@@ -65,12 +65,11 @@ router.post('/calendar/reminders/:id/toggle', calendar.toggleReminder);
 router.post('/calendar/reminders/:id/move', calendar.moveReminder);
 router.post('/calendar/reminders/:id/delete', calendar.deleteReminder);
 
-router.get('/messages', messages.listMessages);
+router.get('/messages', messages.listMessages); // dwupanel: ?client=<id|none> = wybrana rozmowa
 router.post('/messages/read-all', messages.markAllRead);
-router.post('/messages/:id/reply', messages.replyMessage);
-router.get('/messages/:id/attachment', messages.downloadAttachment);
-router.post('/messages/:id/read', messages.markRead);
-router.post('/messages/:id/delete', messages.deleteMessage);
+router.get('/messages/:id/attachment', messages.downloadAttachment); // :id = id wiadomości
+router.post('/messages/:clientId/send', messages.sendMessage);       // odpowiedź/zagajenie (scope w body)
+router.post('/messages/:clientId/delete', messages.deleteConversation);
 
 // Transfery. Ważne: trasy z konkretnym słowem (new, new-upload, upload)
 // muszą być PRZED trasami z :id, żeby Express nie potraktował ich jak id.
