@@ -83,6 +83,7 @@ async function showMessages(req, res, next) {
     res.render('public/messages', {
       title: 'Wiadomości', layout: PUBLIC_LAYOUT, msgBack: back,
       portalNav: contentMsgNav(res, { backHref: back.href, backLabel: back.label, msgHref: `/upload/${transfer.token}/wiadomosci` }),
+      msgKnownSender: !!(transfer.project && transfer.project.clientId), // anonimowy transfer → zostaw imię/e-mail
     });
   } catch (err) {
     next(err);

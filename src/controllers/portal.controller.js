@@ -139,6 +139,7 @@ async function showMessages(req, res, next) {
     res.render('public/messages', {
       title: `Wiadomości — ${project.name}`, layout: PUBLIC_LAYOUT, portalNav,
       msgBack: { href: `/p/${project.clientToken}`, label: project.name },
+      msgKnownSender: !!project.clientId, // znany klient → bez pól imię/e-mail
     });
   } catch (err) {
     next(err);

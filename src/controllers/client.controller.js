@@ -506,6 +506,7 @@ async function showClientMessages(req, res, next) {
     res.render('public/messages', {
       title: `Wiadomości — ${client.name}`, layout: PUBLIC_LAYOUT, portalNav,
       msgBack: { href: `/c/${client.token}`, label: 'Twoje projekty' },
+      msgKnownSender: true, // portal klienta = znany nadawca
     });
   } catch (err) {
     next(err);

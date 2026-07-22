@@ -127,6 +127,7 @@ async function showMessages(req, res, next) {
     res.render('public/messages', {
       title: 'Wiadomości', layout: PUBLIC_LAYOUT, msgBack: back,
       portalNav: contentMsgNav(res, { backHref: back.href, backLabel: back.label, msgHref: `/o/${offer.token}/wiadomosci` }),
+      msgKnownSender: true, // oferta należy do klienta
     });
   } catch (err) {
     next(err);

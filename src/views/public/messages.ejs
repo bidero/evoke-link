@@ -31,19 +31,26 @@
       <p class="mt-6 text-sm text-slate-400">Brak wiadomości — napisz do nas poniżej.</p>
     <% } %>
 
-    <form method="POST" action="<%= msgContext.action %>" enctype="multipart/form-data" data-turbo="false" class="mt-6 pt-6 border-t border-slate-100 space-y-2" x-data="{ fileName: '' }">
+    <form method="POST" action="<%= msgContext.action %>" enctype="multipart/form-data" data-turbo="false" class="mt-6 pt-6 border-t border-slate-100 space-y-3" x-data="{ fileName: '' }">
       <textarea name="body" required rows="4" maxlength="4000" placeholder="Twoja wiadomość…"
         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
-      <div class="grid grid-cols-2 gap-2">
-        <input name="senderName" type="text" placeholder="Imię (opc.)" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-        <input name="senderEmail" type="email" placeholder="E-mail (opc.)" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-      </div>
-      <div class="flex items-center gap-2">
-        <label class="inline-flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer hover:text-brand-700 transition">
-          <%- icon('cloudUpload', { size: 15, cls: '' }) %> Dołącz plik
+      <%# Imię/e-mail TYLKO gdy nadawca nieznany (anonimowy transfer /t /upload). W portalu klienta
+          (/p /c /o) klient jest znany — pola zbędne. %>
+      <% if (typeof msgKnownSender === 'undefined' || !msgKnownSender) { %>
+        <div class="grid grid-cols-2 gap-2">
+          <input name="senderName" type="text" placeholder="Imię (opc.)" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <input name="senderEmail" type="email" placeholder="E-mail do odpowiedzi (opc.)" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </div>
+      <% } %>
+      <%# „Dołącz plik" jako wyraźny obramowany przycisk (było małym linkiem, łatwe do przeoczenia). %>
+      <div class="flex items-center gap-3 flex-wrap">
+        <label class="inline-flex items-center gap-2 rounded-lg border border-dashed border-slate-400 px-4 py-2 text-sm font-medium text-slate-600 cursor-pointer hover:bg-brand-50 hover:text-brand-700 hover:border-brand-300 transition">
+          <%- icon('cloudUpload', { size: 18, cls: '' }) %> Dołącz plik
           <input type="file" name="attachment" class="hidden" @change="fileName = $event.target.files.length ? $event.target.files[0].name : ''" />
         </label>
-        <span class="text-xs text-slate-400 truncate" x-show="fileName" x-text="fileName" x-cloak></span>
+        <span class="inline-flex items-center gap-1.5 text-xs text-slate-600 truncate min-w-0" x-show="fileName" x-cloak>
+          <%- icon('file', { size: 13, cls: 'shrink-0' }) %><span class="truncate" x-text="fileName"></span>
+        </span>
       </div>
       <button type="submit" class="evoke-btn w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium py-2.5 transition">Wyślij</button>
     </form>
