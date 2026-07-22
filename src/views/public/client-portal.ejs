@@ -38,12 +38,15 @@
             <% if (activeProjects.length) { %>
               <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
                 <% activeProjects.forEach(function(p){ %>
-                  <a href="/p/<%= p.clientToken %>" class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition group">
+                  <a href="/p/<%= p.clientToken %>" class="flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-50 transition group">
                     <span class="min-w-0">
                       <span class="block text-sm font-medium text-slate-800 truncate"><%= p.name %></span>
                       <% if (p.description) { %><span class="block text-xs text-slate-400 truncate"><%= p.description %></span><% } %>
                     </span>
-                    <span class="text-brand-600 opacity-0 group-hover:opacity-100 transition shrink-0"><%- icon('arrowRight', { size: 16 }) %></span>
+                    <span class="flex items-center gap-2.5 shrink-0">
+                      <% if (p.hasNewMsg) { %><span class="relative inline-flex text-brand-600" title="Nowa wiadomość"><%- icon('mail', { size: 16 }) %><span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span></span><% } %>
+                      <span class="text-brand-600 opacity-0 group-hover:opacity-100 transition"><%- icon('arrowRight', { size: 16 }) %></span>
+                    </span>
                   </a>
                 <% }); %>
               </div>
@@ -59,12 +62,15 @@
                 </button>
                 <div x-show="arch" x-cloak class="mt-2 rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
                   <% archivedProjects.forEach(function(p){ %>
-                    <a href="/p/<%= p.clientToken %>" class="flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition group">
+                    <a href="/p/<%= p.clientToken %>" class="flex items-center justify-between gap-3 px-4 py-3 hover:bg-slate-50 transition group">
                       <span class="min-w-0">
                         <span class="block text-sm text-slate-500 truncate"><%= p.name %></span>
                         <% if (p.description) { %><span class="block text-xs text-slate-400 truncate"><%= p.description %></span><% } %>
                       </span>
-                      <span class="text-slate-400 opacity-0 group-hover:opacity-100 transition shrink-0"><%- icon('arrowRight', { size: 16 }) %></span>
+                      <span class="flex items-center gap-2.5 shrink-0">
+                        <% if (p.hasNewMsg) { %><span class="relative inline-flex text-brand-600" title="Nowa wiadomość"><%- icon('mail', { size: 16 }) %><span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span></span><% } %>
+                        <span class="text-slate-400 opacity-0 group-hover:opacity-100 transition"><%- icon('arrowRight', { size: 16 }) %></span>
+                      </span>
                     </a>
                   <% }); %>
                 </div>

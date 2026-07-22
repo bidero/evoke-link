@@ -368,6 +368,22 @@ async function showClientPortal(req, res, next) {
     res.locals.msgSent = req.query.msg === '1';
     res.locals.msgThread = await messageService.thread({ clientId: client.id });
     res.locals.msgHasReply = messageService.hasUnseen(res.locals.msgThread, (req.session.msgSeen || {})[client.token]);
+
+    // Badge „nowa wiadomość" na kafelku projektu: ostatnia wiadomość agencji (direction 'out') w
+    // wątku projektu nowsza niż ostatnie otwarcie tego wątku (msgSeen[project.clientToken], sesyjne —
+    // spójnie z resztą). Jedno zapytanie na wszystkie projekty klienta (bez N+1).
+    const _projIds = client.projects.map((p) => p.id);
+    const _outMsgs = _projIds.length
+      ? await prisma.message.findMany({ where: { projectId: { in: _projIds }, direction: 'out' }, select: { projectId: true, createdAt: true } })
+      : [];
+    const _latestOut = {};
+    for (const m of _outMsgs) {
+      const t = new Date(m.createdAt).getTime();
+      if (!_latestOut[m.projectId] || t > _latestOut[m.projectId]) _latestOut[m.projectId] = t;
+    }
+    const _seen = req.session.msgSeen || {};
+    client.projects.forEach((p) => { p.hasNewMsg = !!_latestOut[p.id] && _latestOut[p.id] > (_seen[p.clientToken] || 0); });
+
     if (firstViewThisSession(req, client.token)) {
       events.log({ type: 'viewed', message: 'Klient otworzył portal', clientId: client.id, ip: req.ip });
     }
