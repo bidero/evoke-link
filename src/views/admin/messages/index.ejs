@@ -82,7 +82,7 @@
             <% Object.keys(threadTransfers).forEach(function (tid) { %><option value="t:<%= tid %>" <%= defScope === 't:' + tid ? 'selected' : '' %>>Transfer: <%= threadTransfers[tid] %></option><% }); %>
           </select>
         </div>
-        <textarea name="body" required rows="2" maxlength="4000" placeholder="Napisz wiadomość…" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+        <textarea name="body" required rows="2" maxlength="4000" placeholder="Napisz wiadomość… (Enter wysyła, Shift+Enter — nowa linia)" data-enter-send class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
         <div class="flex items-center justify-between gap-2 flex-wrap">
           <label class="inline-flex items-center gap-1.5 text-xs text-slate-500"><input type="checkbox" name="notify" checked class="rounded border-slate-300" /> Powiadom mailem<% if (!client.email) { %> <span class="text-slate-300">(brak e-maila)</span><% } %></label>
           <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-1.5 transition">Wyślij</button>
@@ -96,4 +96,12 @@
 <script>
   // Auto-scroll strumienia na dół (najnowsze widoczne).
   (function () { var s = document.getElementById('msg-stream'); if (s) s.scrollTop = s.scrollHeight; })();
+  // Enter wysyła wiadomość, Shift+Enter = nowa linia (jak w komunikatorze).
+  (function () {
+    var t = document.querySelector('textarea[data-enter-send]');
+    if (!t) return;
+    t.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); t.form.requestSubmit(); }
+    });
+  })();
 </script>
