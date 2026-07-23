@@ -2,6 +2,8 @@
 // Jeśli SMTP nie jest skonfigurowany (pusty SMTP_HOST), zamiast wysyłać
 // wypisujemy treść w konsoli — dzięki temu aplikacja działa lokalnie bez poczty.
 const nodemailer = require('nodemailer');
+const fs = require('fs');
+const path = require('path');
 const config = require('../config');
 const settingsService = require('./settings.service');
 const { grossOf } = require('./charge.service'); // kwoty BRUTTO w mailach (amount = netto)
@@ -9,6 +11,26 @@ const { stripTags } = require('../utils/htmlEmail');
 const { hexToRgb } = require('../utils/color');
 
 const MAIL_THEMES = ['classic', 'minimal', 'rail', 'tint', 'badge'];
+const PUBLIC_DIR = path.join(__dirname, '..', '..', 'public'); // logo brandingu leży w public/branding/
+const LOGO_MIME = { svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp' };
+
+// Logo maila OSADZONE inline (data URI), wczytane z pliku na dysku — ładuje się NATYCHMIAST z treścią
+// maila, bez zdalnego pobierania (koniec „logo ładuje się wieczność") i działa też gdy appUrl to
+// localhost / adres niedostępny z zewnątrz. SVG dozwolone (inline renderuje klient, który je wspiera,
+// jak wcześniej). Za duże (>48 KB — ryzyko przycięcia maila w Gmailu ~102 KB) albo brak pliku → null
+// (wtedy wrap() daje remote-URL dla rastra, a dla SVG/braku — czysty wordmark tekstowy).
+function logoDataUri(rawLogo) {
+  if (!rawLogo) return null;
+  const ext = (String(rawLogo).match(/\.([a-z0-9]+)(?:\?|$)/i) || [])[1];
+  const mime = ext && LOGO_MIME[ext.toLowerCase()];
+  if (!mime) return null;
+  try {
+    const file = path.join(PUBLIC_DIR, String(rawLogo).replace(/\.\./g, '').replace(/^\/+/, ''));
+    const buf = fs.readFileSync(file);
+    if (buf.length > 48 * 1024) return null;
+    return `data:${mime};base64,${buf.toString('base64')}`;
+  } catch (_) { return null; }
+}
 
 let transporter = null;
 function getTransporter() {
@@ -106,11 +128,11 @@ async function wrap(content, { heading, preheader } = {}) {
   const appName = esc(s.appName || 'Evoke LINK');
   const primary = (s.colors && s.colors.primary) || '#6e00a5';
   const theme = MAIL_THEMES.includes(s.emails && s.emails.theme) ? s.emails.theme : 'classic';
-  // Logo w mailu tylko jako RASTER (PNG/JPG/GIF/WEBP). SVG i inne formaty bywają blokowane
-  // przez klienty pocztowe (efekt „broken image" — ikonka ?); podobnie logo spod localhost.
-  // Gdy brak pewnego rastra → czysty wordmark tekstowy (jak na mockupach — zawsze się renderuje).
+  // Logo maila: najpierw próba OSADZENIA inline (data URI z pliku — natychmiastowe, bez fetchu).
+  // Gdy się nie uda (za duże/brak): raster → remote URL (fallback), SVG/brak → wordmark tekstowy.
   const rawLogo = (s.emails && s.emails.logoPath) || s.logoPath;
-  const logo = rawLogo && /\.(png|jpe?g|gif|webp)(\?|$)/i.test(rawLogo) ? `${config.appUrl}${rawLogo}` : null;
+  const logo = logoDataUri(rawLogo)
+    || (rawLogo && /\.(png|jpe?g|gif|webp)(\?|$)/i.test(rawLogo) ? `${config.appUrl}${rawLogo}` : null);
   const footer = esc((s.texts && s.texts.footer) || `${appName} · bezpieczna wymiana plików`);
   const wordmark = (align) => (logo
     ? `<img src="${esc(logo)}" alt="${appName}" style="height:30px;max-width:190px;object-fit:contain;display:${align === 'center' ? 'inline-block' : 'block'}" />`
