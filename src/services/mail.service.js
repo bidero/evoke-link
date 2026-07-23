@@ -106,8 +106,11 @@ async function wrap(content, { heading, preheader } = {}) {
   const appName = esc(s.appName || 'Evoke LINK');
   const primary = (s.colors && s.colors.primary) || '#6e00a5';
   const theme = MAIL_THEMES.includes(s.emails && s.emails.theme) ? s.emails.theme : 'classic';
-  const mailLogo = (s.emails && s.emails.logoPath) || s.logoPath; // osobne logo maili (gdy ustawione)
-  const logo = mailLogo ? `${config.appUrl}${mailLogo}` : null;
+  // Logo w mailu tylko jako RASTER (PNG/JPG/GIF/WEBP). SVG i inne formaty bywają blokowane
+  // przez klienty pocztowe (efekt „broken image" — ikonka ?); podobnie logo spod localhost.
+  // Gdy brak pewnego rastra → czysty wordmark tekstowy (jak na mockupach — zawsze się renderuje).
+  const rawLogo = (s.emails && s.emails.logoPath) || s.logoPath;
+  const logo = rawLogo && /\.(png|jpe?g|gif|webp)(\?|$)/i.test(rawLogo) ? `${config.appUrl}${rawLogo}` : null;
   const footer = esc((s.texts && s.texts.footer) || `${appName} · bezpieczna wymiana plików`);
   const wordmark = (align) => (logo
     ? `<img src="${esc(logo)}" alt="${appName}" style="height:30px;max-width:190px;object-fit:contain;display:${align === 'center' ? 'inline-block' : 'block'}" />`
@@ -115,13 +118,15 @@ async function wrap(content, { heading, preheader } = {}) {
   const headingH1 = (align) => (heading
     ? `<h1 style="margin:0 0 14px;font-size:21px;line-height:1.3;font-weight:700;letter-spacing:-0.01em;color:#0f172a${align === 'center' ? ';text-align:center' : ''}">${esc(heading)}</h1>`
     : '');
-  const body = `<div style="font-size:15px;line-height:1.6;color:#334155">${content}</div>`;
+  const body = (align) => `<div style="font-size:15px;line-height:1.6;color:#334155${align === 'center' ? ';text-align:center' : ''}">${content}</div>`;
   const pre = (preheader || heading)
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;font-size:1px;line-height:1px">${esc(preheader || heading)}</div>`
     : '';
   const head = `<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head>`;
   const openBody = `<body style="margin:0;padding:0;background:#f4f4f7;-webkit-font-smoothing:antialiased;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a">${pre}`;
-  const footerCell = (extra) => `<td style="padding:20px 36px;background:#fafafa;border-top:1px solid #f0f0f4;color:#94a3b8;font-size:12px;line-height:1.5${extra || ''}">${footer}</td>`;
+  // Stopka: hairline (cienka linia, jak na mockupach A/B/C) albo szary pasek (motyw tint = mockup D).
+  const footerBar = `<td style="padding:20px 36px;background:#fafafa;border-top:1px solid #f0f0f4;color:#94a3b8;font-size:12px;line-height:1.5">${footer}</td>`;
+  const footerHair = (center) => `<td ${center ? 'align="center" ' : ''}style="padding:28px 36px 36px"><div style="border-top:1px solid #f0f0f4;padding-top:16px;color:#94a3b8;font-size:12px;line-height:1.5${center ? ';text-align:center' : ''}">${footer}</div></td>`;
   const outer = (card) => `${head}${openBody}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f7"><tr><td align="center" style="padding:32px 16px">${card}</td></tr></table></body></html>`;
   const cardStyle = 'max-width:560px;width:100%;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #ececf1;box-shadow:0 1px 3px rgba(15,23,42,0.06)';
 
@@ -129,7 +134,7 @@ async function wrap(content, { heading, preheader } = {}) {
   if (theme === 'minimal') {
     return outer(`<table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#ffffff">
         <tr><td style="padding:36px 40px 0">${wordmark()}</td></tr>
-        <tr><td style="padding:26px 40px 0">${headingH1()}${body}</td></tr>
+        <tr><td style="padding:26px 40px 0">${headingH1()}${body()}</td></tr>
         <tr><td style="padding:32px 40px 40px"><div style="border-top:1px solid #ececf1;padding-top:16px;color:#94a3b8;font-size:12px;line-height:1.5">${footer}</div></td></tr>
       </table>`);
   }
@@ -142,25 +147,25 @@ async function wrap(content, { heading, preheader } = {}) {
           <td style="padding:28px 34px">
             ${wordmark()}
             <div style="height:20px;line-height:20px;font-size:0">&nbsp;</div>
-            ${headingH1()}${body}
+            ${headingH1()}${body()}
             <div style="margin-top:24px;border-top:1px solid #f0f0f4;padding-top:14px;color:#94a3b8;font-size:12px;line-height:1.5">${footer}</div>
           </td>
         </tr>
       </table>`);
   }
 
-  // --- TINT: nagłówek na delikatnym tincie marki ---
+  // --- TINT: nagłówek na delikatnym tincie marki (szary pasek stopki = mockup D) ---
   if (theme === 'tint') {
     const tintBg = tintHex(primary, 0.92);
     const tintBorder = tintHex(primary, 0.82);
     return outer(`<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="${cardStyle}">
         <tr><td style="padding:24px 36px;background:${tintBg};border-bottom:1px solid ${tintBorder}">${wordmark()}</td></tr>
-        <tr><td style="padding:26px 36px 32px">${headingH1()}${body}</td></tr>
-        <tr>${footerCell()}</tr>
+        <tr><td style="padding:26px 36px 32px">${headingH1()}${body()}</td></tr>
+        <tr>${footerBar}</tr>
       </table>`);
   }
 
-  // --- BADGE: wyśrodkowana ikona-badge + nagłówek (transakcyjny) ---
+  // --- BADGE: wyśrodkowana ikona-badge + nagłówek I TREŚĆ (transakcyjny) ---
   if (theme === 'badge') {
     const tintBg = tintHex(primary, 0.9);
     const initial = esc((s.appName || 'E').trim().charAt(0).toUpperCase() || 'E');
@@ -169,8 +174,8 @@ async function wrap(content, { heading, preheader } = {}) {
       : `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto"><tr><td width="56" height="56" align="center" valign="middle" style="width:56px;height:56px;background:${tintBg};border-radius:16px;font-size:24px;font-weight:700;color:${esc(primary)};text-align:center">${initial}</td></tr></table>`;
     return outer(`<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="${cardStyle}">
         <tr><td align="center" style="padding:40px 40px 0">${badge}<div style="height:20px;line-height:20px;font-size:0">&nbsp;</div>${headingH1('center')}</td></tr>
-        <tr><td style="padding:6px 40px 34px">${body}</td></tr>
-        <tr>${footerCell(';text-align:center')}</tr>
+        <tr><td align="center" style="padding:4px 40px 34px">${body('center')}</td></tr>
+        <tr>${footerHair(true)}</tr>
       </table>`);
   }
 
@@ -178,8 +183,8 @@ async function wrap(content, { heading, preheader } = {}) {
   return outer(`<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="${cardStyle}">
         <tr><td style="height:4px;line-height:4px;font-size:0;background:${esc(primary)}">&nbsp;</td></tr>
         <tr><td style="padding:26px 36px 0">${wordmark()}</td></tr>
-        <tr><td style="padding:22px 36px 32px">${headingH1()}${body}</td></tr>
-        <tr>${footerCell()}</tr>
+        <tr><td style="padding:22px 36px 32px">${headingH1()}${body()}</td></tr>
+        <tr>${footerHair()}</tr>
       </table>`);
 }
 
