@@ -14,7 +14,7 @@
       <div class="board-col flex-1 px-3 pb-3 space-y-2" data-stage="<%= col.stage %>">
         <% col.projects.forEach(function(p){ %>
           <div class="bg-white rounded-xl border border-slate-200 p-3 shadow-sm cursor-grab" data-id="<%= p.id %>">
-            <a href="/admin/projects/<%= p.id %>" class="block text-sm font-medium text-slate-800 hover:text-brand-700 truncate" draggable="false"><%= p.name %></a>
+            <a href="/admin/projects/<%= p.id %>?from=board" class="block text-sm font-medium text-slate-800 hover:text-brand-700 truncate" draggable="false"><%= p.name %></a>
             <div class="mt-1 flex items-center justify-between gap-2 text-xs text-slate-400">
               <span class="truncate"><%= p.client ? p.client.name : (p.clientName || '—') %></span>
               <span class="shrink-0"><%= p._count.transfers %> transf.</span>

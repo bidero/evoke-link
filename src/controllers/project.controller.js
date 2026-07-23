@@ -7,6 +7,7 @@ const events = require('../services/event.service');
 const mail = require('../services/mail.service');
 const config = require('../config');
 const fmt = require('../utils/format');
+const backlink = require('../utils/backlink');
 
 const parseClientId = (v) => (v ? parseInt(v, 10) : null);
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -140,6 +141,7 @@ async function showProject(req, res, next) {
       clientEmail: project.client ? project.client.email || '' : '',
       mailReady: mail.isConfigured(),
       chargeTotals: chargeService.totals(project.charges),
+      back: backlink.resolve(req.query.from), // kontekstowy powrót (np. z karty klienta)
     });
   } catch (err) {
     next(err);

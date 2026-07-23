@@ -1,7 +1,9 @@
 <% const incoming = transfer.direction === 'incoming'; %>
 <div class="max-w-3xl" x-data="{ copied: false }">
   <div class="flex items-center justify-between">
-    <% if (transfer.project) { %>
+    <% if (typeof back !== 'undefined' && back) { %>
+      <a href="<%= back.href %>" class="text-sm text-slate-500 hover:text-slate-700">← <%= back.label %></a>
+    <% } else if (transfer.project) { %>
       <a href="/admin/projects/<%= transfer.project.id %>" class="text-sm text-slate-500 hover:text-slate-700">← <%= transfer.project.name %></a>
     <% } else { %>
       <a href="/admin/transfers" class="text-sm text-slate-500 hover:text-slate-700">← Wszystkie transfery</a>

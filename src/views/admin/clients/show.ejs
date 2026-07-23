@@ -1,5 +1,5 @@
 <div class="mb-5">
-  <a href="/admin/clients" class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"><%- icon('arrowLeft', { size: 15 }) %> Klienci</a>
+  <a href="<%= (typeof back !== 'undefined' && back) ? back.href : '/admin/clients' %>" class="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"><%- icon('arrowLeft', { size: 15 }) %> <%= (typeof back !== 'undefined' && back) ? back.label : 'Klienci' %></a>
 </div>
 
 <% if (sent === 'ok') { %>
@@ -241,7 +241,7 @@
             <ul class="divide-y divide-slate-100">
               <% transfers.slice(0,3).forEach(function(t){ %>
                 <li>
-                  <a href="/admin/transfers/<%= t.id %>" class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition">
+                  <a href="/admin/transfers/<%= t.id %>?from=client:<%= client.id %>" class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition">
                     <span class="shrink-0"><% if (t.direction === 'incoming') { %><%- icon('download', { size: 15, cls: 'text-sky-600' }) %><% } else { %><%- icon('upload', { size: 15 }) %><% } %></span>
                     <span class="min-w-0 flex-1">
                       <span class="block text-sm text-slate-700 truncate"><%= t.title || ('Transfer ' + t.token) %></span>
@@ -291,7 +291,7 @@
           <ul class="divide-y divide-slate-100">
             <% client.projects.forEach(function(p){ %>
               <li>
-                <a href="/admin/projects/<%= p.id %>" class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 transition">
+                <a href="/admin/projects/<%= p.id %>?from=client:<%= client.id %>" class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 transition">
                   <span class="min-w-0">
                     <span class="block text-sm font-medium text-slate-800 truncate"><%= p.name %></span>
                     <span class="block text-xs text-slate-400 mt-0.5"><%= p._count.transfers %> transfer(ów) · akt. <%= fmt.date(p.updatedAt) %></span>
@@ -641,7 +641,7 @@
           <ul class="divide-y divide-slate-100">
             <% transfers.forEach(function(t){ %>
               <li>
-                <a href="/admin/transfers/<%= t.id %>" class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition">
+                <a href="/admin/transfers/<%= t.id %>?from=client:<%= client.id %>" class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition">
                   <span class="shrink-0"><% if (t.direction === 'incoming') { %><%- icon('download', { size: 15, cls: 'text-sky-600' }) %><% } else { %><%- icon('upload', { size: 15 }) %><% } %></span>
                   <span class="min-w-0 flex-1">
                     <span class="block text-sm text-slate-700 truncate"><%= t.title || ('Transfer ' + t.token) %></span>

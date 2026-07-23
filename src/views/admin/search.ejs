@@ -23,7 +23,7 @@
           <div class="px-5 py-3 border-b border-slate-100 text-sm font-medium text-slate-700 flex items-center gap-2"><%- icon('mail', { size: 15 }) %> Klienci (<%= results.clients.length %>)</div>
           <ul class="divide-y divide-slate-100">
             <% results.clients.forEach(function(c){ %>
-              <li><a href="/admin/clients/<%= c.id %>" class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 transition">
+              <li><a href="/admin/clients/<%= c.id %>?from=search:<%= encodeURIComponent(q) %>" class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 transition">
                 <span class="min-w-0">
                   <span class="block text-sm text-slate-800 truncate"><%= c.name %></span>
                   <% const _sub = [c.company, c.email, c.phone].filter(Boolean).join(' · '); %>
@@ -41,7 +41,7 @@
           <div class="px-5 py-3 border-b border-slate-100 text-sm font-medium text-slate-700 flex items-center gap-2"><%- icon('folder', { size: 15 }) %> Projekty (<%= results.projects.length %>)</div>
           <ul class="divide-y divide-slate-100">
             <% results.projects.forEach(function(p){ %>
-              <li><a href="/admin/projects/<%= p.id %>" class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 transition">
+              <li><a href="/admin/projects/<%= p.id %>?from=search:<%= encodeURIComponent(q) %>" class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-slate-50 transition">
                 <span class="min-w-0">
                   <span class="block text-sm text-slate-800 truncate"><%= p.name %></span>
                   <span class="block text-xs text-slate-400 truncate"><%= (p.client && p.client.name) || p.clientName || '—' %> · <%= p._count.transfers %> transfer(ów)</span>
@@ -58,7 +58,7 @@
           <div class="px-5 py-3 border-b border-slate-100 text-sm font-medium text-slate-700 flex items-center gap-2"><%- icon('upload', { size: 15 }) %> Transfery (<%= results.transfers.length %>)</div>
           <ul class="divide-y divide-slate-100">
             <% results.transfers.forEach(function(t){ %>
-              <li><a href="/admin/transfers/<%= t.id %>" class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition">
+              <li><a href="/admin/transfers/<%= t.id %>?from=search:<%= encodeURIComponent(q) %>" class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition">
                 <span class="shrink-0"><% if (t.direction === 'incoming') { %><%- icon('download', { size: 15, cls: 'text-sky-600' }) %><% } else { %><%- icon('upload', { size: 15 }) %><% } %></span>
                 <span class="min-w-0 flex-1">
                   <span class="block text-sm text-slate-700 truncate"><%= t.title || ('Transfer ' + t.token) %></span>

@@ -1,4 +1,4 @@
-<a href="/admin/projects" class="text-sm text-slate-500 hover:text-slate-700">← Wszystkie projekty</a>
+<% if (typeof back !== 'undefined' && back) { %><a href="<%= back.href %>" class="text-sm text-slate-500 hover:text-slate-700">← <%= back.label %></a><% } else { %><a href="/admin/projects" class="text-sm text-slate-500 hover:text-slate-700">← Wszystkie projekty</a><% } %>
 
 <!-- Nagłówek projektu -->
 <div class="mt-4 flex items-start justify-between gap-4">
@@ -93,7 +93,7 @@
           <div class="min-w-0 flex-1">
             <span class="<%= r.done ? 'text-slate-400 line-through' : 'text-slate-700' %>"><%= r.label %></span>
             <% if (r.note) { %><span class="text-xs text-slate-400 ml-2"><%= r.note %></span><% } %>
-            <% if (r.done && r.transferId) { %><a href="/admin/transfers/<%= r.transferId %>" class="text-xs text-brand-700 hover:underline ml-2">zobacz pliki →</a><% } %>
+            <% if (r.done && r.transferId) { %><a href="/admin/transfers/<%= r.transferId %>?from=project:<%= project.id %>" class="text-xs text-brand-700 hover:underline ml-2">zobacz pliki →</a><% } %>
           </div>
           <form method="POST" action="/admin/projects/<%= project.id %>/requests/<%= r.id %>/delete" onsubmit="return confirm('Usunąć punkt?');" class="shrink-0">
             <button type="submit" class="text-slate-300 hover:text-red-600 opacity-0 group-hover:opacity-100 transition p-1" title="Usuń"><%- icon('trash', { size: 14, cls: '' }) %></button>
@@ -112,7 +112,7 @@
         if (!items.length) return `<div class="px-5 py-6 text-center text-sm text-slate-400">${emptyText}</div>`;
         return items.map((t) => {
           const statusCls = t.status === 'active' ? 'bg-green-50 text-green-700' : (t.status === 'expired' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500');
-          return `<a href="/admin/transfers/${t.id}" class="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition">
+          return `<a href="/admin/transfers/${t.id}?from=project:${project.id}" class="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition">
             <span class="min-w-0 mr-3">
               <span class="block text-sm font-medium text-slate-800 truncate">${t.title || ('Transfer ' + t.token)}</span>
               <span class="block text-xs text-slate-400">${t.files.length} plik(ów) · ${fmt.date(t.createdAt)}</span>

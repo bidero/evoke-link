@@ -7,6 +7,7 @@ const events = require('../services/event.service');
 const mail = require('../services/mail.service');
 const config = require('../config');
 const { isRaster } = require('../utils/fileIcon');
+const backlink = require('../utils/backlink');
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -112,6 +113,7 @@ async function showTransfer(req, res, next) {
       publicUrl: publicUrlFor(transfer),
       mail: req.query.mail || null, // sent | invalid | error (flash po wysyłce linku)
       mailReady: mail.isConfigured(),
+      back: backlink.resolve(req.query.from), // kontekstowy powrót (np. z karty klienta/projektu)
     });
   } catch (err) {
     next(err);

@@ -14,6 +14,7 @@ const documentService = require('../services/document.service');
 const payment = require('../utils/payment');
 const config = require('../config');
 const fmt = require('../utils/format');
+const backlink = require('../utils/backlink');
 
 const PUBLIC_LAYOUT = 'layouts/public';
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -70,6 +71,7 @@ async function showClient(req, res, next) {
       onboarding: clientService.onboardingState(data.client),
       sent: req.query.sent || null,
       activeTab: TABS.includes(req.query.tab) ? req.query.tab : 'przeglad',
+      back: backlink.resolve(req.query.from), // kontekstowy powrót (np. z wyników wyszukiwania)
     });
   } catch (err) {
     next(err);
