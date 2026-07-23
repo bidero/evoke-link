@@ -1,0 +1,8 @@
+<%# Select „Czego dotyczą te pliki?" (openRequests). Osobny partial, bo po uploadzie odhaczona pozycja
+    znika z listy — stream podmienia zawartość #fr-select bez reloadu. Locals: openRequests. %>
+<% if (openRequests.length) { %>
+  <select name="fileRequestId" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+    <option value="">Czego dotyczą te pliki? (opcjonalnie)</option>
+    <% openRequests.forEach(function(r){ %><option value="<%= r.id %>"><%= r.label %></option><% }); %>
+  </select>
+<% } %>

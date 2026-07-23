@@ -83,35 +83,18 @@
           <% if (fileRequests.length) { %>
             <div class="<%= navOn ? 'mb-8' : 'mt-8 pt-6 border-t border-slate-100' %>">
               <h2 class="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-3"><%- icon('check', { size: 16 }) %> Potrzebujemy od Ciebie</h2>
-              <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
-                <% fileRequests.forEach(function(r){ %>
-                  <div class="flex items-start gap-2.5 px-4 py-2.5 text-sm <%= r.done ? 'bg-green-50/40' : '' %>">
-                    <% if (r.done) { %>
-                      <%- icon('check', { size: 16, cls: 'text-green-600 mt-0.5 shrink-0' }) %>
-                    <% } else { %>
-                      <span class="w-4 h-4 rounded-full border-2 border-slate-300 mt-0.5 shrink-0"></span>
-                    <% } %>
-                    <div class="min-w-0">
-                      <div class="<%= r.done ? 'text-slate-400 line-through' : 'text-slate-700' %>"><%= r.label %></div>
-                      <% if (r.note && !r.done) { %><div class="text-xs text-slate-400 mt-0.5"><%= r.note %></div><% } %>
-                    </div>
-                  </div>
-                <% }); %>
-              </div>
-              <% if (openRequests.length) { %><p class="text-xs text-slate-400 mt-2">Prześlij brakujące materiały poniżej — możesz wskazać, czego dotyczą pliki.</p><% } %>
+              <div id="fr-checklist"><%- include('_file_requests', { fileRequests: fileRequests, openRequests: openRequests }) %></div>
             </div>
           <% } %>
 
           <!-- Upload od klienta -->
           <div class="<%= navOn ? '' : 'mt-8 pt-6 border-t border-slate-100' %>" x-data="uploader()">
             <h2 class="text-sm font-semibold text-slate-700 flex items-center gap-2 mb-3"><%- icon('upload', { size: 16 }) %> Prześlij nam pliki</h2>
+            <%# Toast po uploadzie (Etap 2 — wypełniany streamem, bez reloadu). %>
+            <div id="upload-msg"></div>
             <form @submit.prevent="submit" data-turbo="false" class="space-y-4">
-              <% if (typeof openRequests !== 'undefined' && openRequests.length) { %>
-                <select name="fileRequestId" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
-                  <option value="">Czego dotyczą te pliki? (opcjonalnie)</option>
-                  <% openRequests.forEach(function(r){ %><option value="<%= r.id %>"><%= r.label %></option><% }); %>
-                </select>
-              <% } %>
+              <%# #fr-select: po uploadzie odhaczona pozycja znika z selecta — stream podmienia zawartość. %>
+              <div id="fr-select"><%- include('_fr_select', { openRequests: openRequests }) %></div>
               <div @dragover.prevent="dragging = true" @dragleave.prevent="dragging = false" @drop.prevent="onDrop($event)"
                    :class="dragging ? 'border-brand-500 bg-brand-50' : 'border-slate-400'"
                    class="rounded-2xl border-2 border-dashed p-6 text-center transition cursor-pointer" @click="$refs.input.click()">
@@ -153,18 +136,8 @@
               </button>
             </form>
 
-            <!-- Twoje wcześniej przesłane pliki -->
-            <% const totalFromClient = fromClient.reduce((n, t) => n + t.files.length, 0); %>
-            <% if (totalFromClient > 0) { %>
-              <div class="mt-6">
-                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Twoje przesłane pliki</h3>
-                <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
-                  <% fromClient.forEach(function(t){ t.files.forEach(function(f){ %>
-                    <%- include('_file_row', { f: f, downloadHref: '/p/' + project.clientToken + '/file/' + f.id, previewHref: '/p/' + project.clientToken + '/preview/' + f.id }) %>
-                  <% }); }); %>
-                </div>
-              </div>
-            <% } %>
+            <!-- Twoje wcześniej przesłane pliki (stabilny kontener #uploaded-files — podmiana streamem po uploadzie) -->
+            <div id="uploaded-files"><%- include('_uploaded_files', { fromClient: fromClient, token: project.clientToken }) %></div>
           </div>
         </div>
       </div>
@@ -183,11 +156,11 @@ function uploader() {
       // GOTCHA XHR: pola formularza trzeba dokleić ręcznie (jak projectId/clientVisible w new.ejs).
       const fr = document.querySelector('select[name=fileRequestId]');
       if (fr && fr.value) body.append('fileRequestId', fr.value);
-      const res = await fetch(path + '/upload', { method: 'POST', body: body });
+      // Etap 2: prosimy o Turbo Stream → serwer zwraca fragment, podmieniamy listę plików/checklistę
+      // BEZ przeładowania (Turbo.renderStreamMessage). Stan uploadera resetuje makeUploader po sukcesie.
+      const res = await fetch(path + '/upload', { method: 'POST', body: body, headers: { 'Accept': 'text/vnd.turbo-stream.html' } });
       if (!res.ok) throw new Error('Błąd wysyłania (' + res.status + ').');
-      // BEZ doklejania hasha: przy identycznym URL nawigacja „tylko-hash" nie przeładowuje strony
-      // (drugi upload pod rząd nie pokazałby nowych plików). Sekcję otwiera serwerowe ?sent=1.
-      window.location = res.url || (window.location.pathname + '?sent=1');
+      window.Turbo.renderStreamMessage(await res.text());
     },
   });
 }

@@ -1,0 +1,9 @@
+<%# Fragment Turbo Streams po uploadzie w portalu /p (Etap 2 — podmiana bez reloadu).
+    Renderowany z layout:false + Content-Type text/vnd.turbo-stream.html. Locals: fromClient, token,
+    fileRequests, openRequests, count. %>
+<turbo-stream action="update" target="uploaded-files"><template><%- include('../_uploaded_files', { fromClient: fromClient, token: token }) %></template></turbo-stream>
+<% if (fileRequests.length) { %>
+<turbo-stream action="update" target="fr-checklist"><template><%- include('../_file_requests', { fileRequests: fileRequests, openRequests: openRequests }) %></template></turbo-stream>
+<% } %>
+<turbo-stream action="update" target="fr-select"><template><%- include('../_fr_select', { openRequests: openRequests }) %></template></turbo-stream>
+<turbo-stream action="update" target="upload-msg"><template><div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Dziękujemy! Przesłano <%= count %> plik(ów).</div></template></turbo-stream>

@@ -1,0 +1,18 @@
+<%# Checklista „Potrzebujemy od Ciebie" (fileRequests) + podpowiedź. Używane w portal.ejs i w streamie
+    po uploadzie (odhaczenie punktu bez reloadu). Locals: fileRequests, openRequests. %>
+<div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+  <% fileRequests.forEach(function(r){ %>
+    <div class="flex items-start gap-2.5 px-4 py-2.5 text-sm <%= r.done ? 'bg-green-50/40' : '' %>">
+      <% if (r.done) { %>
+        <%- icon('check', { size: 16, cls: 'text-green-600 mt-0.5 shrink-0' }) %>
+      <% } else { %>
+        <span class="w-4 h-4 rounded-full border-2 border-slate-300 mt-0.5 shrink-0"></span>
+      <% } %>
+      <div class="min-w-0">
+        <div class="<%= r.done ? 'text-slate-400 line-through' : 'text-slate-700' %>"><%= r.label %></div>
+        <% if (r.note && !r.done) { %><div class="text-xs text-slate-400 mt-0.5"><%= r.note %></div><% } %>
+      </div>
+    </div>
+  <% }); %>
+</div>
+<% if (openRequests.length) { %><p class="text-xs text-slate-400 mt-2">Prześlij brakujące materiały poniżej — możesz wskazać, czego dotyczą pliki.</p><% } %>

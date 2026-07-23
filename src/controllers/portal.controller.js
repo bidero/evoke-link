@@ -215,6 +215,18 @@ async function submitUpload(req, res, next) {
       .sendUploadNotification({ transfer: updated, fileNames: files.map((f) => f.originalname), uploaderName: name, uploaderEmail: email, projectName: project.name, client: project.client })
       .catch((e) => console.error('[mail] błąd:', e.message));
 
+    // Etap 2: jeśli klient prosi o Turbo Stream (uploader z JS) — podmień listę plików/checklistę
+    // w miejscu, bez przeładowania. Fallback (bez JS) → dotychczasowy redirect z ?sent=1.
+    if ((req.get('accept') || '').includes('turbo-stream')) {
+      const fresh = await projectService.getByClientToken(project.clientToken);
+      const { fromClient } = visibleSets(fresh);
+      const fileRequests = fresh.fileRequests || [];
+      const openRequests = fileRequests.filter((r) => !r.done);
+      res.type('text/vnd.turbo-stream.html');
+      return res.render('public/streams/upload', {
+        layout: false, token: fresh.clientToken, fromClient, fileRequests, openRequests, count: files.length,
+      });
+    }
     res.redirect(`/p/${project.clientToken}?sent=1`);
   } catch (err) {
     (req.files || []).forEach((f) => storage.removeTmp(f.path));

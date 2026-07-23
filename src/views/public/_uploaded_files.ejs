@@ -1,0 +1,13 @@
+<%# Lista „Twoje przesłane pliki" (fromClient). Używane w portal.ejs (render początkowy) i w
+    streamie po uploadzie (Etap 2 — podmiana bez reloadu). Locals: fromClient, token. %>
+<% const totalFromClient = fromClient.reduce((n, t) => n + t.files.length, 0); %>
+<% if (totalFromClient > 0) { %>
+  <div class="mt-6">
+    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Twoje przesłane pliki</h3>
+    <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+      <% fromClient.forEach(function(t){ t.files.forEach(function(f){ %>
+        <%- include('_file_row', { f: f, downloadHref: '/p/' + token + '/file/' + f.id, previewHref: '/p/' + token + '/preview/' + f.id }) %>
+      <% }); }); %>
+    </div>
+  </div>
+<% } %>

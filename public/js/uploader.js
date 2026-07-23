@@ -61,7 +61,12 @@
           function (fi, fp) { if (self.files[fi]) self.files[fi].progress = fp; }
         ).then(function (uploadId) {
           self.finalizing = true;
-          return opts.finalize(uploadId, e && e.target);
+          return Promise.resolve(opts.finalize(uploadId, e && e.target)).then(function () {
+            // Sukces bez przeładowania (Etap 2): wyczyść stan, żeby formularz był gotów na kolejną wysyłkę.
+            // (Przy finalize robiącym pełny reload ten reset jest nieszkodliwy — strona i tak się przeładuje.)
+            self.files.forEach(function (f) { if (f.preview) { try { URL.revokeObjectURL(f.preview); } catch (e) {} } });
+            self.files = []; self.uploading = false; self.finalizing = false; self.progress = 0;
+          });
         }).catch(function (err) {
           self.uploading = false; self.finalizing = false;
           alert(err && err.message ? err.message : 'Błąd wysyłania.');
