@@ -192,6 +192,18 @@ function btn(href, label, primary) {
   return `<a href="${esc(href)}" style="display:inline-block;background:${esc(primary || '#6e00a5')};color:#ffffff;text-decoration:none;font-weight:600;font-size:15px;line-height:1;padding:14px 26px;border-radius:12px;letter-spacing:0.01em">${esc(label)}</a>`;
 }
 
+// Wyróżniony „box z kwotą" jak na mockupach: brandowy tint, DUŻA kwota w kolorze marki + muted subline.
+// Opcjonalny `caption` (mniejsza etykieta nad kwotą, np. nazwa pozycji). Centruje się sam w motywie
+// badge (dziedziczy text-align z wrappera treści), lewo w pozostałych.
+function amountBox(primary, amount, subline, caption) {
+  const p = primary || '#6e00a5';
+  return `<div style="margin:0 0 22px;padding:20px 22px;background:${tintHex(p, 0.94)};border:1px solid ${tintHex(p, 0.86)};border-radius:14px">`
+    + (caption ? `<div style="margin:0 0 6px;color:#64748b;font-size:13px;font-weight:500">${esc(caption)}</div>` : '')
+    + `<div style="font-size:27px;font-weight:700;letter-spacing:-0.02em;line-height:1.15;color:${p}">${esc(amount)}</div>`
+    + (subline ? `<div style="margin-top:4px;color:#94a3b8;font-size:13px">${esc(subline)}</div>` : '')
+    + `</div>`;
+}
+
 // Treść (wstęp/body) → bezpieczny HTML: podstawia placeholdery; jeśli to już HTML
 // (z edytora WYSIWYG, sanityzowany przy zapisie) zostawia, a tekst (wiadomość ad-hoc /
 // stare treści / domyślne) escapuje i zamienia nowe linie na <br>.
@@ -446,10 +458,7 @@ async function sendRetainerCharge({ to, client, charge, seller, portalUrl }) {
   const ib = introBlock(introSrc, vars, btn(portalUrl, 'Zobacz szczegóły', primary));
   const inner = `
     ${ib.html}
-    <div style="margin:0 0 16px;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">
-      <p style="margin:0"><b>${esc(charge.label)}</b></p>
-      <p style="margin:6px 0 0;font-size:15px">Do zapłaty: <b style="color:${esc(primary)}">${esc(money(gross))}</b>${dueStr ? ` <span style="color:#64748b;font-size:13px">· termin ${esc(dueStr)}</span>` : ''}</p>
-    </div>
+    ${amountBox(primary, money(gross), 'do zapłaty' + (dueStr ? ` · termin ${dueStr}` : ''), charge.label)}
     ${bank ? `<p style="margin:0 0 4px;color:#64748b;font-size:13px">${seller.name ? `Odbiorca: ${esc(seller.name)}<br>` : ''}Konto: ${esc(bank)}<br>Tytuł: ${esc(title)}</p>` : ''}
     ${ib.hasButton ? '' : `<p style="margin:16px 0 0">${btn(portalUrl, 'Zobacz szczegóły', primary)}</p>`}`;
   const html = await wrap(inner, { heading: 'Nowa pozycja rozliczeniowa' });
@@ -596,13 +605,10 @@ async function sendOfferLink({ to, url, offer, client, total }) {
   const money = (g) => (g / 100).toFixed(2).replace('.', ',') + ' zł';
   const validStr = offer.validUntil ? new Date(offer.validUntil).toLocaleDateString('pl-PL') : '';
   const inner = `
-    <p style="margin:0 0 12px">Przygotowaliśmy dla Ciebie ofertę: <b>${esc(offer.title)}</b>.</p>
-    <div style="margin:0 0 16px;padding:12px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px">
-      <p style="margin:0;font-size:15px">Wartość: <b style="color:${esc(primary)}">${esc(money(total))}</b> brutto</p>
-      ${validStr ? `<p style="margin:6px 0 0;color:#64748b;font-size:13px">Ważna do: ${esc(validStr)}</p>` : ''}
-    </div>
+    <p style="margin:0 0 22px;color:#64748b">Przygotowaliśmy dla Ciebie ofertę <b style="color:#334155">${esc(offer.title)}</b>. Sprawdź szczegóły i zatwierdź.</p>
+    ${amountBox(primary, money(total), 'brutto' + (validStr ? ` · ważna do ${validStr}` : ''))}
     <p style="margin:0 0 18px">${btn(url, 'Zobacz i zatwierdź ofertę', primary)}</p>
-    <p style="margin:0;color:#64748b;font-size:13px">Lub skopiuj adres:<br><a href="${esc(url)}" style="color:${esc(primary)}">${esc(url)}</a></p>`;
+    <p style="margin:0;color:#94a3b8;font-size:13px">Lub skopiuj adres:<br><a href="${esc(url)}" style="color:${esc(primary)}">${esc(url)}</a></p>`;
   const html = await wrap(inner, { heading: 'Oferta dla Ciebie' });
   const text = `Oferta: ${offer.title}\nWartość: ${money(total)} brutto${validStr ? `\nWażna do: ${validStr}` : ''}\n\nZobacz i zatwierdź: ${url}`;
   return send({ to, subject: `${appName} — oferta: ${offer.title}`, html, text, replyTo: config.admin.email });
