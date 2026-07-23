@@ -42,7 +42,8 @@
     <% } %>
   </div>
 <% } else { %>
-  <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+  <%# Desktop: tabela. Mobile: karty (poniżej). %>
+  <div class="hidden md:block bg-white rounded-2xl border border-slate-200 overflow-hidden">
     <div class="overflow-x-auto">
     <table class="w-full text-sm min-w-[640px]">
       <thead class="bg-slate-50 text-slate-500 text-left">
@@ -84,5 +85,34 @@
       </tbody>
     </table>
     </div>
+  </div>
+
+  <%# Mobile: karty zamiast tabeli. %>
+  <div class="md:hidden space-y-3">
+    <% clients.forEach(function(c){ const _s = _statusMap[c.status] || _statusMap.active; %>
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <div class="flex items-start justify-between gap-3">
+          <a href="/admin/clients/<%= c.id %>" class="min-w-0">
+            <span class="block font-medium text-slate-800 truncate"><%= c.name %></span>
+            <% if (c.company) { %><span class="block text-xs text-slate-400 truncate"><%= c.company %></span><% } %>
+          </a>
+          <span class="text-xs px-2 py-0.5 rounded-full shrink-0 <%= _s[1] %>"><%= _s[0] %></span>
+        </div>
+        <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+          <% if (c.email) { %><span class="truncate max-w-full"><%= c.email %></span><% } %>
+          <span>Projekty: <%= c._count.projects %></span>
+          <% if (c.outstanding > 0) { %><span class="text-amber-600 font-medium">Do zapłaty: <%= fmt.money(c.outstanding) %></span><% } %>
+        </div>
+        <div class="mt-3 flex items-center justify-between gap-2">
+          <a href="<%= appUrl %>/c/<%= c.token %>" target="_blank" class="text-xs text-brand-700 hover:underline truncate">/c/<%= c.token %></a>
+          <% if (c.email) { %>
+            <form method="POST" action="/admin/clients/<%= c.id %>/send-panel" class="shrink-0">
+              <input type="hidden" name="redirect" value="list" />
+              <button type="submit" title="Wyślij link panelu na <%= c.email %>" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-xs font-medium px-3 py-1.5 transition"><%- icon('mail', { size: 14 }) %> Wyślij</button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+    <% }); %>
   </div>
 <% } %>
