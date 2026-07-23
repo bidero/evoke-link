@@ -829,6 +829,21 @@
         <input name="mailLogo" type="file" accept="image/*,.svg" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm" />
       </div>
 
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">Motyw maili <span class="text-slate-400 font-normal">(dotyczy wszystkich wysyłanych wiadomości)</span></label>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          <% [['classic','Klasyczny','pasek u góry'],['minimal','Minimal','bez karty'],['rail','Pasek boczny','pionowy akcent'],['tint','Tint','tło nagłówka'],['badge','Badge','ikona + środek']].forEach(function(mt){ var on = (settings.emails.theme||'classic')===mt[0]; %>
+            <label class="relative cursor-pointer">
+              <input type="radio" name="mailTheme" value="<%= mt[0] %>" <%= on ? 'checked' : '' %> class="peer sr-only" />
+              <div class="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-center transition peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:ring-2 peer-checked:ring-brand-200 hover:border-brand-300">
+                <div class="text-sm font-medium text-slate-700 peer-checked:text-brand-700"><%= mt[1] %></div>
+                <div class="text-[11px] text-slate-400"><%= mt[2] %></div>
+              </div>
+            </label>
+          <% }); %>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: link do plików</label>

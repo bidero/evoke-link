@@ -24,6 +24,7 @@ const DEFAULTS = {
   // E-mail: osobne logo + treści + powiadomienie do klienta. Puste pola = domyślne.
   emails: {
     logoPath: null,
+    theme: 'classic', // wygląd wszystkich maili: classic | minimal | rail | tint | badge
     linkSubject: '', linkIntro: '',
     panelSubject: '', panelIntro: '',
     onboardSubject: '', onboardIntro: '',

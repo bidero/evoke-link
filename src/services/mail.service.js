@@ -6,6 +6,9 @@ const config = require('../config');
 const settingsService = require('./settings.service');
 const { grossOf } = require('./charge.service'); // kwoty BRUTTO w mailach (amount = netto)
 const { stripTags } = require('../utils/htmlEmail');
+const { hexToRgb } = require('../utils/color');
+
+const MAIL_THEMES = ['classic', 'minimal', 'rail', 'tint', 'badge'];
 
 let transporter = null;
 function getTransporter() {
@@ -83,39 +86,101 @@ async function send({ to, subject, html, text, replyTo, attachments }) {
   return t.sendMail({ from: config.mail.from, to, subject, html, text, replyTo, attachments });
 }
 
+// Miesza kolor marki z bielą (t=0..1) i zwraca hex — do jasnych tintów w motywach.
+function tintHex(primary, t) {
+  const rgb = hexToRgb(primary) || [110, 0, 165];
+  return '#' + rgb.map((c) => Math.round(c + (255 - c) * t).toString(16).padStart(2, '0')).join('');
+}
+
 // Brandowany szablon HTML maila (logo/kolor/nazwa z ustawień). content = HTML wnętrza.
-// Nowoczesny, czysty layout: cienki brandowy pasek u góry, logo/wordmark na białym,
-// hairline oddzielający treść od stopki, miękki cień. „preheader" = ukryty podgląd w skrzynce.
+// Motyw wyglądu WSZYSTKICH maili wybierany w Ustawieniach → E-mail (`emails.theme`):
+//   classic — cienki brandowy pasek u góry + logo na białym (domyślny),
+//   minimal — bez karty/cienia, samo światło i hairline (styl Stripe/Linear),
+//   rail    — pionowy pasek marki przy lewej krawędzi karty,
+//   tint    — nagłówek na delikatnym tincie marki,
+//   badge   — wyśrodkowana ikona-badge + nagłówek (styl transakcyjny).
+// „preheader" = ukryty podgląd w skrzynce (domyślnie = heading).
 async function wrap(content, { heading, preheader } = {}) {
   let s;
   try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
   const appName = esc(s.appName || 'Evoke LINK');
   const primary = (s.colors && s.colors.primary) || '#6e00a5';
+  const theme = MAIL_THEMES.includes(s.emails && s.emails.theme) ? s.emails.theme : 'classic';
   const mailLogo = (s.emails && s.emails.logoPath) || s.logoPath; // osobne logo maili (gdy ustawione)
   const logo = mailLogo ? `${config.appUrl}${mailLogo}` : null;
   const footer = esc((s.texts && s.texts.footer) || `${appName} · bezpieczna wymiana plików`);
-  const head = logo
-    ? `<img src="${esc(logo)}" alt="${appName}" style="height:30px;max-width:190px;object-fit:contain;display:block" />`
-    : `<span style="font-size:19px;font-weight:700;letter-spacing:-0.02em;color:${esc(primary)}">${appName}</span>`;
+  const wordmark = (align) => (logo
+    ? `<img src="${esc(logo)}" alt="${appName}" style="height:30px;max-width:190px;object-fit:contain;display:${align === 'center' ? 'inline-block' : 'block'}" />`
+    : `<span style="font-size:19px;font-weight:700;letter-spacing:-0.02em;color:${esc(primary)}">${appName}</span>`);
+  const headingH1 = (align) => (heading
+    ? `<h1 style="margin:0 0 14px;font-size:21px;line-height:1.3;font-weight:700;letter-spacing:-0.01em;color:#0f172a${align === 'center' ? ';text-align:center' : ''}">${esc(heading)}</h1>`
+    : '');
+  const body = `<div style="font-size:15px;line-height:1.6;color:#334155">${content}</div>`;
   const pre = (preheader || heading)
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;font-size:1px;line-height:1px">${esc(preheader || heading)}</div>`
     : '';
+  const head = `<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head>`;
+  const openBody = `<body style="margin:0;padding:0;background:#f4f4f7;-webkit-font-smoothing:antialiased;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a">${pre}`;
+  const footerCell = (extra) => `<td style="padding:20px 36px;background:#fafafa;border-top:1px solid #f0f0f4;color:#94a3b8;font-size:12px;line-height:1.5${extra || ''}">${footer}</td>`;
+  const outer = (card) => `${head}${openBody}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f7"><tr><td align="center" style="padding:32px 16px">${card}</td></tr></table></body></html>`;
+  const cardStyle = 'max-width:560px;width:100%;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #ececf1;box-shadow:0 1px 3px rgba(15,23,42,0.06)';
 
-  return `<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"></head>
-  <body style="margin:0;padding:0;background:#f4f4f7;-webkit-font-smoothing:antialiased;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a">
-    ${pre}
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f7"><tr><td align="center" style="padding:32px 16px">
-      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #ececf1;box-shadow:0 1px 3px rgba(15,23,42,0.06)">
+  // --- MINIMAL: bez karty, hairline, dużo światła ---
+  if (theme === 'minimal') {
+    return outer(`<table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%;background:#ffffff">
+        <tr><td style="padding:36px 40px 0">${wordmark()}</td></tr>
+        <tr><td style="padding:26px 40px 0">${headingH1()}${body}</td></tr>
+        <tr><td style="padding:32px 40px 40px"><div style="border-top:1px solid #ececf1;padding-top:16px;color:#94a3b8;font-size:12px;line-height:1.5">${footer}</div></td></tr>
+      </table>`);
+  }
+
+  // --- RAIL: pionowy pasek marki przy lewej krawędzi ---
+  if (theme === 'rail') {
+    return outer(`<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="${cardStyle}">
+        <tr>
+          <td width="6" style="background:${esc(primary)};font-size:0;line-height:0">&nbsp;</td>
+          <td style="padding:28px 34px">
+            ${wordmark()}
+            <div style="height:20px;line-height:20px;font-size:0">&nbsp;</div>
+            ${headingH1()}${body}
+            <div style="margin-top:24px;border-top:1px solid #f0f0f4;padding-top:14px;color:#94a3b8;font-size:12px;line-height:1.5">${footer}</div>
+          </td>
+        </tr>
+      </table>`);
+  }
+
+  // --- TINT: nagłówek na delikatnym tincie marki ---
+  if (theme === 'tint') {
+    const tintBg = tintHex(primary, 0.92);
+    const tintBorder = tintHex(primary, 0.82);
+    return outer(`<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="${cardStyle}">
+        <tr><td style="padding:24px 36px;background:${tintBg};border-bottom:1px solid ${tintBorder}">${wordmark()}</td></tr>
+        <tr><td style="padding:26px 36px 32px">${headingH1()}${body}</td></tr>
+        <tr>${footerCell()}</tr>
+      </table>`);
+  }
+
+  // --- BADGE: wyśrodkowana ikona-badge + nagłówek (transakcyjny) ---
+  if (theme === 'badge') {
+    const tintBg = tintHex(primary, 0.9);
+    const initial = esc((s.appName || 'E').trim().charAt(0).toUpperCase() || 'E');
+    const badge = logo
+      ? `<img src="${esc(logo)}" alt="${appName}" style="height:40px;max-width:180px;object-fit:contain;display:inline-block" />`
+      : `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto"><tr><td width="56" height="56" align="center" valign="middle" style="width:56px;height:56px;background:${tintBg};border-radius:16px;font-size:24px;font-weight:700;color:${esc(primary)};text-align:center">${initial}</td></tr></table>`;
+    return outer(`<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="${cardStyle}">
+        <tr><td align="center" style="padding:40px 40px 0">${badge}<div style="height:20px;line-height:20px;font-size:0">&nbsp;</div>${headingH1('center')}</td></tr>
+        <tr><td style="padding:6px 40px 34px">${body}</td></tr>
+        <tr>${footerCell(';text-align:center')}</tr>
+      </table>`);
+  }
+
+  // --- CLASSIC (domyślny): cienki brandowy pasek u góry + logo na białym ---
+  return outer(`<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="${cardStyle}">
         <tr><td style="height:4px;line-height:4px;font-size:0;background:${esc(primary)}">&nbsp;</td></tr>
-        <tr><td style="padding:26px 36px 0">${head}</td></tr>
-        <tr><td style="padding:22px 36px 32px">
-          ${heading ? `<h1 style="margin:0 0 14px;font-size:21px;line-height:1.3;font-weight:700;letter-spacing:-0.01em;color:#0f172a">${esc(heading)}</h1>` : ''}
-          <div style="font-size:15px;line-height:1.6;color:#334155">${content}</div>
-        </td></tr>
-        <tr><td style="padding:20px 36px;background:#fafafa;border-top:1px solid #f0f0f4;color:#94a3b8;font-size:12px;line-height:1.5">${footer}</td></tr>
-      </table>
-    </td></tr></table>
-  </body></html>`;
+        <tr><td style="padding:26px 36px 0">${wordmark()}</td></tr>
+        <tr><td style="padding:22px 36px 32px">${headingH1()}${body}</td></tr>
+        <tr>${footerCell()}</tr>
+      </table>`);
 }
 
 function btn(href, label, primary) {

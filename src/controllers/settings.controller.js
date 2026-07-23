@@ -187,6 +187,7 @@ async function updateSettings(req, res, next) {
       customCss: sanitizeCss(b.customCss || ''),
       emails: {
         logoPath: current.emails.logoPath || null,
+        theme: ['classic', 'minimal', 'rail', 'tint', 'badge'].includes(b.mailTheme) ? b.mailTheme : 'classic',
         linkSubject: (b.linkSubject || '').trim(),
         linkIntro: sanitizeEmailHtml(b.linkIntro || ''),
         panelSubject: (b.panelSubject || '').trim(),
