@@ -46,24 +46,31 @@
           </div>
         <% }); %>
         <div class="flex items-center justify-between gap-3 px-4 py-3 bg-slate-50">
-          <span class="text-slate-600 font-medium">Razem<% if (totals.vat > 0) { %> <span class="text-xs text-slate-400 font-normal">(w tym VAT <%= fmt.money(totals.vat) %>)</span><% } %></span>
+          <span class="min-w-0">
+            <span class="block text-slate-600 font-medium">Razem</span>
+            <% if (totals.vat > 0) { %><span class="block text-xs text-slate-400">w tym VAT <%= fmt.money(totals.vat) %></span><% } %>
+          </span>
           <span class="shrink-0 text-lg font-semibold text-brand-700"><%= fmt.money(totals.gross) %></span>
         </div>
       </div>
 
       <!-- Decyzja -->
+      <%# Formularz STACKOWANY (jedna kolumna). Kompozycje panel/panel-bg/sidebar pinują kartę do
+          stałej szerokości ~448px NIEZALEŻNIE od viewportu, więc breakpointy `sm:` (viewportowe)
+          wprowadzały w błąd — na szerokim ekranie robiły 2 kolumny w wąskim panelu (ucięte
+          placeholdery, zawijanie „Odrzucam / mam uwagi"). Stos jest bezpieczny przy każdej szerokości. %>
       <form method="POST" action="/o/<%= offer.token %>/decision" data-turbo="false" class="mt-5 space-y-3" x-data="{ comment: '', name: '' }">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="space-y-3">
           <input name="name" x-model="name" type="text" placeholder="Imię i nazwisko (opcjonalnie)"
-                 class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
           <input name="comment" x-model="comment" type="text" placeholder="Uwagi (wymagane przy odrzuceniu)"
-                 class="rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
         </div>
-        <div class="flex flex-col sm:flex-row gap-2">
+        <div class="flex flex-col gap-2">
           <button type="submit" name="decision" value="accepted"
-                  class="evoke-btn flex-1 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium py-3 transition">Akceptuję ofertę</button>
+                  class="evoke-btn w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium py-3 transition">Akceptuję ofertę</button>
           <button type="submit" name="decision" value="rejected" :disabled="!comment.trim()"
-                  class="evoke-btn flex-1 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-medium py-3 transition">Odrzucam / mam uwagi</button>
+                  class="evoke-btn w-full rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-medium py-3 transition">Odrzucam / mam uwagi</button>
         </div>
         <p class="text-xs text-slate-400 text-center">Akceptacja jest równoznaczna z potwierdzeniem zakresu i ceny.</p>
       </form>
