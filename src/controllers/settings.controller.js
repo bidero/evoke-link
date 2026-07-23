@@ -280,7 +280,9 @@ async function updateSettings(req, res, next) {
     await settingsService.update(data);
     await events.log({ type: 'updated', message: 'Zmieniono ustawienia / branding', ip: req.ip });
 
-    res.redirect('/admin/settings?saved=1');
+    // Zostań na zakładce, z której zapisano (ukryte pole `tab` z formularza).
+    const tab = ['branding', 'wyglad', 'panel', 'pdf', 'email', 'advanced'].includes(b.tab) ? b.tab : 'branding';
+    res.redirect('/admin/settings?saved=1&tab=' + tab);
   } catch (err) {
     next(err);
   }
@@ -290,7 +292,7 @@ async function updateSettings(req, res, next) {
 async function applyTheme(req, res, next) {
   try {
     const t = THEMES[req.body.theme];
-    if (!t) return res.redirect('/admin/settings');
+    if (!t) return res.redirect('/admin/settings?tab=wyglad');
     const cur = await settingsService.get();
     const data = {};
     if (t.colors) data.colors = { ...cur.colors, ...t.colors };
@@ -298,7 +300,7 @@ async function applyTheme(req, res, next) {
     if (t.layout) data.layout = { ...cur.layout, ...t.layout };
     await settingsService.update(data);
     await events.log({ type: 'updated', message: `Zastosowano motyw: ${t.label}`, ip: req.ip });
-    res.redirect('/admin/settings?saved=1');
+    res.redirect('/admin/settings?saved=1&tab=wyglad');
   } catch (err) {
     next(err);
   }
@@ -338,7 +340,7 @@ async function deleteBackupFile(req, res, next) {
 function toggleAutoBackup(req, res, next) {
   try {
     backup.setAuto(req.body.enable === 'on');
-    res.redirect('/admin/settings?saved=1');
+    res.redirect('/admin/settings?saved=1&tab=advanced');
   } catch (err) {
     next(err);
   }
@@ -348,12 +350,12 @@ function toggleAutoBackup(req, res, next) {
 async function sendTestEmail(req, res, next) {
   try {
     const to = (req.body.testTo || '').trim() || config.admin.email;
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return res.redirect('/admin/settings?test=error');
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return res.redirect('/admin/settings?test=error&tab=email');
     await mail.sendTest({ to });
-    res.redirect('/admin/settings?test=' + (mail.isConfigured() ? 'sent' : 'dev'));
+    res.redirect('/admin/settings?tab=email&test=' + (mail.isConfigured() ? 'sent' : 'dev'));
   } catch (e) {
     console.error('[mail] test:', e.message);
-    res.redirect('/admin/settings?test=error');
+    res.redirect('/admin/settings?test=error&tab=email');
   }
 }
 
