@@ -129,6 +129,7 @@ router.post('/clients/:id/retainers/:rid/delete', retainers.deleteRetainer);
 router.post('/clients/:id/offers', offers.createOffer);                  // oferta/wycena do akceptacji
 router.post('/clients/:id/offers/:oid/send', offers.sendOffer);
 router.post('/clients/:id/offers/:oid/delete', offers.deleteOffer);
+router.post('/clients/:id/offers/:oid', offers.editOffer);                // edycja oferty (po /send, /delete)
 router.post('/clients/:id/documents', documentUpload, documents.uploadDocument);   // dokument klienta (umowa/NDA/brief)
 router.get('/clients/:id/documents/:docId', documents.downloadDocument);
 router.post('/clients/:id/documents/:docId/toggle', documents.toggleDocument);     // widoczny dla klienta ↔

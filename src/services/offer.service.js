@@ -72,6 +72,41 @@ async function create(clientId, { projectId, title, intro, validUntil, itemsText
   });
 }
 
+// Odwrotność parseItems — pozycje → tekst do prefillu formularza edycji („Etykieta | netto | vat | ilość").
+// netto (grosze) → zł: całkowite bez miejsc po przecinku, inaczej z przecinkiem (parseAmount przyjmie oba).
+function itemsToText(items) {
+  return (items || []).map((it) => {
+    const net = it.amount % 100 === 0 ? String(it.amount / 100) : (it.amount / 100).toFixed(2).replace('.', ',');
+    return [it.label, net, it.vatRate == null ? '' : it.vatRate, it.qty].join(' | ');
+  }).join('\n');
+}
+
+// Edycja oferty (admin). Dozwolona dla KAŻDEJ oferty OPRÓCZ zaakceptowanej (ta ma już pozycje w
+// rozliczeniach). Podmienia pozycje, aktualizuje pola i RESETUJE ofertę do 'open' (ten sam token) —
+// czyści decyzję klienta, by dało się wysłać poprawioną wersję ponownie. Zwraca ofertę albo null.
+async function update(id, { projectId, title, intro, validUntil, itemsText }) {
+  const existing = await prisma.offer.findUnique({ where: { id: Number(id) } });
+  if (!existing || existing.status === 'accepted') return null;
+  const items = parseItems(itemsText);
+  if (!title || !title.trim() || !items.length) return null;
+  await prisma.offerItem.deleteMany({ where: { offerId: Number(id) } });
+  return prisma.offer.update({
+    where: { id: Number(id) },
+    data: {
+      projectId: projectId ? Number(projectId) : null,
+      title: title.trim().slice(0, 200),
+      intro: clean(intro),
+      validUntil: validUntil ? new Date(validUntil) : null,
+      status: 'open',
+      decidedAt: null,
+      decisionName: null,
+      decisionComment: null,
+      items: { create: items },
+    },
+    include: INCLUDE,
+  });
+}
+
 function remove(id) {
   return prisma.offer.delete({ where: { id: Number(id) } });
 }
@@ -144,4 +179,4 @@ async function pipeline(now = new Date()) {
   };
 }
 
-module.exports = { list, getById, getByToken, totals, state, create, remove, decide, parseItems, pipeline };
+module.exports = { list, getById, getByToken, totals, state, create, update, itemsToText, remove, decide, parseItems, pipeline };

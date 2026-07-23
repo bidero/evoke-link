@@ -61,7 +61,7 @@ async function showClient(req, res, next) {
       billing: data.billing,
       charges: data.charges,
       retainers: data.retainers,
-      offers: data.offers.map((o) => ({ ...o, gross: offerService.totals(o.items).gross, st: offerService.state(o) })),
+      offers: data.offers.map((o) => ({ ...o, gross: offerService.totals(o.items).gross, st: offerService.state(o), itemsText: offerService.itemsToText(o.items) })),
       offerBaseUrl: config.appUrl,
       documents: data.documents,
       metrics: data.metrics,

@@ -76,6 +76,59 @@ test('oferty: akceptacja tworzy Charge + rusza projekt lead→active + event', a
   }
 });
 
+test('oferty: itemsToText round-trip przez parseItems', () => {
+  const items = offerService.parseItems('Projekt | 3000 | 23 | 2\nDrobiazg | 12,50\nBezVat | 800 | 0');
+  const text = offerService.itemsToText(items);
+  const back = offerService.parseItems(text);
+  assert.equal(back.length, items.length);
+  assert.deepEqual(back.map((i) => [i.label, i.amount, i.vatRate, i.qty]), items.map((i) => [i.label, i.amount, i.vatRate, i.qty]));
+  assert.match(text, /Projekt \| 3000 \| 23 \| 2/);
+  assert.match(text, /Drobiazg \| 12,50/); // grosze niecałkowite → przecinek
+});
+
+test('oferty: update edytuje odrzuconą i resetuje ją do open (ten sam token)', async () => {
+  const cl = await prisma.client.create({ data: { name: 'Oferta ED ' + Date.now(), token: 'offe_' + Date.now() } });
+  try {
+    const offer = await offerService.create(cl.id, { title: 'Wersja 1', itemsText: 'Poz A | 1000 | 23' });
+    // klient odrzuca
+    await offerService.decide(offer, { decision: 'rejected', name: 'Klient', comment: 'Za drogo' });
+    const rejected = await prisma.offer.findUnique({ where: { id: offer.id } });
+    assert.equal(rejected.status, 'rejected');
+
+    // edycja: nowy tytuł + inne pozycje
+    const updated = await offerService.update(offer.id, { title: 'Wersja 2', itemsText: 'Poz B | 800 | 23\nPoz C | 200' });
+    assert.ok(updated, 'update zwraca ofertę');
+    assert.equal(updated.token, offer.token, 'ten sam link (token)');
+    assert.equal(updated.status, 'open', 'wraca do otwartej');
+    assert.equal(updated.decisionComment, null, 'decyzja wyczyszczona');
+    assert.equal(updated.decidedAt, null);
+    assert.equal(updated.title, 'Wersja 2');
+    assert.equal(updated.items.length, 2, 'stare pozycje podmienione');
+    assert.deepEqual(updated.items.map((i) => i.label).sort(), ['Poz B', 'Poz C']);
+
+    // zaakceptowanej NIE da się edytować
+    await offerService.decide(updated, { decision: 'accepted', name: 'X' });
+    const acc = await prisma.offer.findUnique({ where: { id: offer.id } });
+    assert.equal(acc.status, 'accepted');
+    const noEdit = await offerService.update(offer.id, { title: 'Wersja 3', itemsText: 'Poz D | 500' });
+    assert.equal(noEdit, null, 'zaakceptowanej nie edytujemy');
+
+    // walidacja: bez pozycji → null
+    const cl2 = await prisma.client.create({ data: { name: 'Oferta ED2 ' + Date.now(), token: 'offe2_' + Date.now() } });
+    const o2 = await offerService.create(cl2.id, { title: 'X', itemsText: 'Poz | 100' });
+    assert.equal(await offerService.update(o2.id, { title: 'X', itemsText: '' }), null, 'brak pozycji → null');
+    await prisma.offerItem.deleteMany({ where: { offer: { clientId: cl2.id } } });
+    await prisma.offer.deleteMany({ where: { clientId: cl2.id } });
+    await prisma.client.delete({ where: { id: cl2.id } });
+  } finally {
+    await prisma.charge.deleteMany({ where: { clientId: cl.id } });
+    await prisma.offerItem.deleteMany({ where: { offer: { clientId: cl.id } } });
+    await prisma.offer.deleteMany({ where: { clientId: cl.id } });
+    await prisma.event.deleteMany({ where: { clientId: cl.id } });
+    await prisma.client.delete({ where: { id: cl.id } });
+  }
+});
+
 test('lejek: pipeline agreguje wartość, sortuje po terminie, liczy skuteczność', async () => {
   const cl = await prisma.client.create({ data: { name: 'Lejek ' + Date.now(), token: 'plc_' + Date.now() } });
   const mk = (title, status, validUntil, amount, vat) => prisma.offer.create({

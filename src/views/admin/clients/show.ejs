@@ -52,6 +52,8 @@
   <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Klient nie ma adresu e-mail — uzupełnij go albo wyślij link ręcznie.</div>
 <% } else if (sent === 'off-del') { %>
   <div class="mb-4 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">Usunięto ofertę.</div>
+<% } else if (sent === 'off-edit') { %>
+  <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Zapisano zmiany — oferta znów otwarta. Możesz ją wysłać ponownie.</div>
 <% } else if (sent === 'off-invalid') { %>
   <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Podaj tytuł oferty i co najmniej jedną pozycję.</div>
 <% } else if (sent === 'off-error') { %>
@@ -491,7 +493,10 @@
     </div>
 
     <!-- ===== Oferty ===== -->
-    <div x-show="tab==='oferty'" id="oferty" class="space-y-5">
+    <div x-show="tab==='oferty'" id="oferty" class="space-y-5"
+         x-data="{ editId: null, form: { title: '', projectId: '', intro: '', itemsText: '', validUntil: '' },
+                   startEdit(o) { this.editId = o.id; this.form = { title: o.title, projectId: o.projectId, intro: o.intro, itemsText: o.itemsText, validUntil: o.validUntil }; this.$nextTick(() => document.getElementById('offerForm').scrollIntoView({ behavior: 'smooth', block: 'center' })); },
+                   cancelEdit() { this.editId = null; this.form = { title: '', projectId: '', intro: '', itemsText: '', validUntil: '' }; } }">
       <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <div class="px-5 py-3 border-b border-slate-100">
           <h2 class="text-sm font-medium text-slate-700">Oferty / wyceny</h2>
@@ -520,6 +525,9 @@
                       <span x-show="!copied">Kopiuj link</span><span x-show="copied" x-cloak>Skopiowano ✓</span>
                     </button>
                     <a href="<%= _url %>" target="_blank" class="text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50 transition">Otwórz</a>
+                    <% if (o.st !== 'accepted') { %>
+                      <button type="button" @click="startEdit(<%= JSON.stringify({ id: o.id, title: o.title, projectId: (o.projectId || ''), intro: (o.intro || ''), itemsText: o.itemsText, validUntil: (o.validUntil ? new Date(o.validUntil).toISOString().slice(0, 10) : '') }) %>)" class="text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition">Edytuj</button>
+                    <% } %>
                     <% if (o.st === 'open' && client.email) { %>
                       <form method="POST" action="/admin/clients/<%= client.id %>/offers/<%= o.id %>/send">
                         <button type="submit" class="text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition">Wyślij mailem</button>
@@ -538,17 +546,20 @@
         <% } %>
       </div>
 
-      <!-- Nowa oferta -->
-      <form method="POST" action="/admin/clients/<%= client.id %>/offers" class="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
-        <h2 class="text-sm font-medium text-slate-700">Nowa oferta</h2>
+      <!-- Nowa / edytowana oferta (ta sama forma; action i etykiety zależą od trybu edycji) -->
+      <form id="offerForm" method="POST" :action="editId ? '/admin/clients/<%= client.id %>/offers/' + editId : '/admin/clients/<%= client.id %>/offers'" class="bg-white rounded-2xl border border-slate-200 p-5 space-y-4">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-sm font-medium text-slate-700" x-text="editId ? 'Edytuj ofertę' : 'Nowa oferta'"></h2>
+          <button type="button" x-show="editId" x-cloak @click="cancelEdit()" class="text-xs text-slate-400 hover:text-slate-700 transition">Anuluj edycję</button>
+        </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">Tytuł *</label>
-            <input name="title" type="text" required placeholder="np. Projekt strony www" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+            <input name="title" x-model="form.title" type="text" required placeholder="np. Projekt strony www" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">Projekt (opcjonalnie)</label>
-            <select name="projectId" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 outline-none">
+            <select name="projectId" x-model="form.projectId" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 outline-none">
               <option value="">— bez projektu —</option>
               <% client.projects.forEach(function(p){ %><option value="<%= p.id %>"><%= p.name %></option><% }); %>
             </select>
@@ -556,19 +567,19 @@
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Wstęp / opis (opcjonalnie)</label>
-          <textarea name="intro" rows="2" placeholder="Kilka zdań wprowadzenia dla klienta" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+          <textarea name="intro" x-model="form.intro" rows="2" placeholder="Kilka zdań wprowadzenia dla klienta" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Pozycje — jedna na linię</label>
-          <textarea name="itemsText" rows="4" spellcheck="false" required placeholder="Projekt graficzny | 3000 | 23&#10;Wdrożenie | 2500 | 23&#10;Sesja zdjęciowa | 800 | 23 | 2"
+          <textarea name="itemsText" x-model="form.itemsText" rows="4" spellcheck="false" required placeholder="Projekt graficzny | 3000 | 23&#10;Wdrożenie | 2500 | 23&#10;Sesja zdjęciowa | 800 | 23 | 2"
                     class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
           <p class="text-xs text-slate-400 mt-1">Format: <code>Etykieta | netto | VAT% | ilość</code> (VAT i ilość opcjonalne; netto w zł).</p>
         </div>
         <div class="max-w-xs">
           <label class="block text-xs font-medium text-slate-600 mb-1">Ważna do (opcjonalnie)</label>
-          <input name="validUntil" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 outline-none" />
+          <input name="validUntil" x-model="form.validUntil" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 outline-none" />
         </div>
-        <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 transition">Utwórz ofertę</button>
+        <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 transition" x-text="editId ? 'Zapisz i wznów ofertę' : 'Utwórz ofertę'"></button>
       </form>
     </div>
 

@@ -59,6 +59,27 @@ async function deleteOffer(req, res, next) {
   }
 }
 
+// Edycja oferty (każdej oprócz zaakceptowanej) — resetuje do „otwarta" i pozwala wysłać ponownie.
+async function editOffer(req, res, next) {
+  try {
+    const o = await ownOffer(req);
+    if (!o) return res.redirect(back(req.params.id, 'off-invalid'));
+    // Projekt tylko jeśli należy do tego klienta (ochrona przed obcym id) — jak w createOffer.
+    let projectId = null;
+    if (req.body.projectId) {
+      const p = await projectService.getById(req.body.projectId);
+      if (p && p.clientId === Number(req.params.id)) projectId = p.id;
+    }
+    const updated = await offerService.update(o.id, {
+      projectId, title: req.body.title, intro: req.body.intro,
+      validUntil: req.body.validUntil, itemsText: req.body.itemsText,
+    });
+    res.redirect(back(req.params.id, updated ? 'off-edit' : 'off-invalid'));
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function sendOffer(req, res, next) {
   try {
     const o = await ownOffer(req);
@@ -174,4 +195,4 @@ async function submitDecision(req, res, next) {
   }
 }
 
-module.exports = { showPipeline, createOffer, deleteOffer, sendOffer, showOffer, showMessages, submitMessage, submitDecision };
+module.exports = { showPipeline, createOffer, editOffer, deleteOffer, sendOffer, showOffer, showMessages, submitMessage, submitDecision };
