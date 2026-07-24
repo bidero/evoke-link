@@ -137,6 +137,7 @@ async function updateSettings(req, res, next) {
       style: ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel', 'panel-bg', 'sidebar', 'corner'].includes(b.layoutStyle) ? b.layoutStyle : 'classic',
       card: ['solid', 'glass', 'elevated'].includes(b.layoutCard) ? b.layoutCard : 'solid',
       cardSide: ['left', 'right', 'center'].includes(b.cardSide) ? b.cardSide : 'right',
+      panelWidth: ['sm', 'md', 'lg', 'xl', '2xl'].includes(b.panelWidth) ? b.panelWidth : 'md',
       hideName: b.hideName === 'on',
       hideBgLogo: b.hideBgLogo === 'on',
       heroOnBg: b.heroOnBg === 'on',

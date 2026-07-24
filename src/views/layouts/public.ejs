@@ -67,6 +67,8 @@
   const isPanel = L.style === 'panel';
   const isPanelBg = L.style === 'panel-bg';
   const panelMode = isPanel || isPanelBg; // flush biały panel (reset .evoke-card)
+  // Szerokość panelu (panel / panel-bg). Literalne klasy Tailwind (skaner je łapie). Domyślnie md.
+  const panelWCls = { sm: 'md:max-w-sm', md: 'md:max-w-md', lg: 'md:max-w-lg', xl: 'md:max-w-xl', '2xl': 'md:max-w-2xl' }[L.panelWidth] || 'md:max-w-md';
   const noChrome = panelMode || L.style === 'sidebar'; // własny nagłówek/stopka w środku
   const sticky = !!L.stickyHeader;
   const stickyBg = dark ? 'rgba(15,23,42,0.55)' : 'rgba(255,255,255,0.62)';
@@ -280,7 +282,7 @@
       <%# WeTransfer: pełne tło + flush panel pełnej wysokości (bez marginesów/zaokrągleń); hero po stronie tła %>
       <% const panelRight = L.cardSide === 'right'; const panelCenter = L.cardSide === 'center'; %>
       <main class="flex-1 flex <%= panelCenter ? 'justify-center' : '' %>">
-        <section class="evoke-panel w-full md:max-w-md bg-white min-h-screen flex flex-col px-6 sm:px-9 py-7 shrink-0 <%= panelRight ? 'md:order-2' : '' %>">
+        <section class="evoke-panel w-full <%= panelWCls %> bg-white min-h-screen flex flex-col px-6 sm:px-9 py-7 shrink-0 <%= panelRight ? 'md:order-2' : '' %>">
           <div class="flex items-center gap-2 <%= justify %> mb-6 <%= sticky ? 'sticky top-0 z-20 bg-white py-2 -my-2' : '' %>">
             <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
               <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
@@ -313,7 +315,7 @@
       <%# Panel na tle 2: biały panel z treścią po jednej stronie; LOGO + hero NA TLE po drugiej %>
       <% const pbRight = L.cardSide === 'right'; %>
       <main class="flex-1 flex">
-        <section class="evoke-panel w-full md:max-w-md bg-white min-h-screen flex flex-col px-6 sm:px-9 py-7 shrink-0 <%= pbRight ? 'md:order-2' : '' %>">
+        <section class="evoke-panel w-full <%= panelWCls %> bg-white min-h-screen flex flex-col px-6 sm:px-9 py-7 shrink-0 <%= pbRight ? 'md:order-2' : '' %>">
           <%# Mobile: logo NAD treścią (na tle jest tylko md+). NIE przyklejamy go na mobile — ma
               płynąć z treścią, bez tła (białe tło + odstęp od górnej krawędzi wyglądały źle).
               „Przyklejony nagłówek" działa na DESKTOPIE: przykleja brandowy pas boczny (poniżej). %>

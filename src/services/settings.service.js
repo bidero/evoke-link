@@ -19,7 +19,7 @@ const DEFAULTS = {
   // Układ stron klienta. style: classic (obecny) | centered | split.
   // card: solid | glass | elevated. radius w px. button: rounded | pill.
   // portalNav: nawigacja sekcji portali /c i /p — none (stos) | tabs | side-left | side-right.
-  layout: { style: 'classic', card: 'solid', cardSide: 'right', hideName: false, hideBgLogo: false, heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded', stickyHeader: false, font: 'system', portalNav: 'none' },
+  layout: { style: 'classic', card: 'solid', cardSide: 'right', panelWidth: 'md', hideName: false, hideBgLogo: false, heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded', stickyHeader: false, font: 'system', portalNav: 'none' },
   customCss: '',
   // E-mail: osobne logo + treści + powiadomienie do klienta. Puste pola = domyślne.
   emails: {
@@ -46,6 +46,8 @@ const ALIGNS = ['left', 'center', 'right'];
 const LAYOUT_STYLES = ['classic', 'centered', 'split', 'hero-card', 'minimal', 'banner', 'showcase', 'panel', 'panel-bg', 'sidebar', 'corner'];
 const CARD_STYLES = ['solid', 'glass', 'elevated'];
 const BUTTON_STYLES = ['rounded', 'pill'];
+// Szerokość białego panelu w kompozycjach „Panel na tle" (panel) i „Panel na tle 2" (panel-bg).
+const PANEL_WIDTHS = ['sm', 'md', 'lg', 'xl', '2xl'];
 // W karcie: tabs | side-*. Pływające przy karcie: top (pasek nad kartą) | bar-* (panel obok).
 // W chrome strony: header (menu w nagłówku obok logo) | rail-* (pełnowysoki brandowy pas pionowy).
 const PORTAL_NAVS = ['none', 'tabs', 'side-left', 'side-right', 'top', 'bar-left', 'bar-right', 'header', 'rail-left', 'rail-right'];
@@ -86,6 +88,7 @@ function normLayout(l) {
     style: LAYOUT_STYLES.includes(x.style) ? x.style : DEFAULTS.layout.style,
     card: CARD_STYLES.includes(x.card) ? x.card : DEFAULTS.layout.card,
     cardSide: ['left', 'right', 'center'].includes(x.cardSide) ? x.cardSide : DEFAULTS.layout.cardSide,
+    panelWidth: PANEL_WIDTHS.includes(x.panelWidth) ? x.panelWidth : DEFAULTS.layout.panelWidth,
     hideName: !!x.hideName,
     hideBgLogo: !!x.hideBgLogo,
     heroOnBg: x.heroOnBg === undefined ? DEFAULTS.layout.heroOnBg : !!x.heroOnBg,
