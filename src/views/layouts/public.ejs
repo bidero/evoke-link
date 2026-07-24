@@ -69,6 +69,12 @@
   const panelMode = isPanel || isPanelBg; // flush biały panel (reset .evoke-card)
   // Szerokość panelu (panel / panel-bg). Literalne klasy Tailwind (skaner je łapie). Domyślnie md.
   const panelWCls = { sm: 'md:max-w-sm', md: 'md:max-w-md', lg: 'md:max-w-lg', xl: 'md:max-w-xl', '2xl': 'md:max-w-2xl' }[L.panelWidth] || 'md:max-w-md';
+  // App-shell dla kompozycji panelowych: na DESKTOPIE strona się NIE przewija (pasek przeglądarki
+  // znika), a przewija się sam PANEL (własny scrollbar). Mobile bez zmian (przewija się body).
+  // shellBody = wysokość viewportu + clip na <body>; shellFlex = min-h-0 na łańcuchu flex ancestorów
+  // (żeby scroll „dotarł" do panelu); scroller (sekcja panelu) dostaje overflow-y-auto niżej.
+  const shellBody = panelMode ? 'md:h-screen md:overflow-hidden' : '';
+  const shellFlex = panelMode ? 'md:min-h-0' : '';
   const noChrome = panelMode || L.style === 'sidebar'; // własny nagłówek/stopka w środku
   const sticky = !!L.stickyHeader;
   const stickyBg = dark ? 'rgba(15,23,42,0.55)' : 'rgba(255,255,255,0.62)';
@@ -95,7 +101,7 @@
     ? 'bg-white/15 hover:bg-white/25 text-white'
     : 'bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 text-brand-600 dark:text-slate-100';
 %>
-<body class="client-bg min-h-screen text-slate-800 antialiased <%= panelMode ? 'evoke-panel-mode' : '' %>" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
+<body class="client-bg min-h-screen text-slate-800 antialiased <%= panelMode ? 'evoke-panel-mode' : '' %> <%= shellBody %>" style="<%= typeof bgStyle !== 'undefined' ? bgStyle : '' %>">
   <%# Warstwy tła w kontenerze `data-turbo-permanent`: Turbo przenosi go 1:1 na nową stronę zamiast
       odtwarzać → obraz tła (odsłaniany opacity 0→1 po onload) NIE re-odsłania się przy każdej
       nawigacji, więc znika „błysk" tła przy przejściu między portalami. id musi być stałe. %>
@@ -103,7 +109,7 @@
   <%# railOpen (desktop): zapamiętany wybór (localStorage) ma pierwszeństwo — pas trzyma stan między
       ekranami; bez niego domyślny per-strona (/c zwinięty, /p rozwinięty). Na MOBILE zawsze start
       zwinięty (rozwinięcie = pełnoekranowy overlay) i bez zapisu do pamięci. %>
-  <div class="relative z-10 min-h-screen flex flex-col"
+  <div class="relative z-10 min-h-screen flex flex-col <%= shellBody %> <%= shellFlex %>"
        <% if (pNav) { %>x-data="{ sec: (function(){ var h = location.hash.replace('#',''); var ks = <%= JSON.stringify(pNav.keys) %>; return ks.indexOf(h) >= 0 ? h : '<%= pNav.defaultSec %>'; })(), railOpen: (function(){ if (!window.matchMedia('(min-width: 768px)').matches) return false; try{ var v=localStorage.getItem('evoke-rail'); if(v==='0'||v==='1') return v==='1'; }catch(e){} return <%= pNav.railOpen === false ? 'false' : 'true' %>; })() }" x-init="$watch('railOpen', function(v){ if (!window.matchMedia('(min-width: 768px)').matches) return; try{ localStorage.setItem('evoke-rail', v?'1':'0'); }catch(e){} })"<% } %>>
 
     <% if (!headerNav && !railOwn) { %>
@@ -143,7 +149,7 @@
         Hamburger: WYŚRODKOWANY w zwiniętym pasku (justify-center), po rozwinięciu dosunięty do
         KRAWĘDZI pasa (lewej dla rail-left, PRAWEJ dla rail-right) — zostaje w miejscu przy zwijaniu
         i przy pasie z prawej nie „ucieka" z panelem. %>
-    <div class="relative flex-1 flex">
+    <div class="relative flex-1 flex <%= shellFlex %>">
       <%# PODKŁAD pasa (tylko mobile). Pas ma h-[100dvh] (żeby tryb/moon był na dole WIDOKU), ale na
           iOS `100dvh`/`inset-y` na elemencie `position:fixed` bywa liczone jak mały ekran (svh) —
           przy schowanym pasku URL pas jest KRÓTSZY niż realny widok i pod nim prześwituje baza body
@@ -178,7 +184,7 @@
       </aside>
       <%# Mobile: pas jest FIXED (poza potokiem) → treść dostaje margines na wąski pasek (pl/pr-14).
           Desktop: pas w potoku (sticky), bez marginesu. %>
-      <div class="flex-1 flex flex-col min-w-0 <%= railRight ? 'pr-14 md:pr-0' : 'pl-14 md:pl-0' %>">
+      <div class="flex-1 flex flex-col min-w-0 <%= shellFlex %> <%= railRight ? 'pr-14 md:pr-0' : 'pl-14 md:pl-0' %>">
     <% } %>
 
     <% if (L.style !== 'banner' && !noChrome) { %>
@@ -281,8 +287,8 @@
     <% } else if (isPanel) { %>
       <%# WeTransfer: pełne tło + flush panel pełnej wysokości (bez marginesów/zaokrągleń); hero po stronie tła %>
       <% const panelRight = L.cardSide === 'right'; const panelCenter = L.cardSide === 'center'; %>
-      <main class="flex-1 flex <%= panelCenter ? 'justify-center' : '' %>">
-        <section class="evoke-panel w-full <%= panelWCls %> bg-white min-h-screen flex flex-col px-6 sm:px-9 py-7 shrink-0 <%= panelRight ? 'md:order-2' : '' %>">
+      <main class="flex-1 flex <%= shellFlex %> <%= panelCenter ? 'justify-center' : '' %>">
+        <section class="evoke-panel w-full <%= panelWCls %> bg-white min-h-screen <%= shellFlex %> md:h-full md:overflow-y-auto flex flex-col px-6 sm:px-9 py-7 shrink-0 <%= panelRight ? 'md:order-2' : '' %>">
           <div class="flex items-center gap-2 <%= justify %> mb-6 <%= sticky ? 'sticky top-0 z-20 bg-white py-2 -my-2' : '' %>">
             <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
               <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
@@ -292,7 +298,7 @@
             <% } %>
           </div>
           <% if (headerNav) { %><div class="-mt-2 mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white', withTheme: true, linkBase: pNav.linkBase || null }) %></div><% } %>
-          <div class="flex-1 flex flex-col justify-center">
+          <div class="flex-1 flex flex-col [justify-content:safe_center]">
             <%- body %>
           </div>
         </section>
@@ -311,11 +317,11 @@
         <% } %>
       </main>
 
-    <% } else if (isPanelBg) { %>
+    <% } else if (isPanelBg) { %><%# app-shell: main+section dostają min-h-0 + panel przewija się sam %>
       <%# Panel na tle 2: biały panel z treścią po jednej stronie; LOGO + hero NA TLE po drugiej %>
       <% const pbRight = L.cardSide === 'right'; %>
-      <main class="flex-1 flex">
-        <section class="evoke-panel w-full <%= panelWCls %> bg-white min-h-screen flex flex-col px-6 sm:px-9 py-7 shrink-0 <%= pbRight ? 'md:order-2' : '' %>">
+      <main class="flex-1 flex <%= shellFlex %>">
+        <section class="evoke-panel w-full <%= panelWCls %> bg-white min-h-screen <%= shellFlex %> md:h-full md:overflow-y-auto flex flex-col px-6 sm:px-9 py-7 shrink-0 <%= pbRight ? 'md:order-2' : '' %>">
           <%# Mobile: logo NAD treścią (na tle jest tylko md+). NIE przyklejamy go na mobile — ma
               płynąć z treścią, bez tła (białe tło + odstęp od górnej krawędzi wyglądały źle).
               „Przyklejony nagłówek" działa na DESKTOPIE: przykleja brandowy pas boczny (poniżej). %>
@@ -328,7 +334,7 @@
             <% } %>
           </div>
           <% if (headerNav) { %><div class="mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white', withTheme: true, linkBase: pNav.linkBase || null }) %></div><% } %>
-          <div class="flex-1 flex flex-col justify-center"><%- body %></div>
+          <div class="flex-1 flex flex-col [justify-content:safe_center]"><%- body %></div>
         </section>
         <%# Przyklejony nagłówek na DESKTOPIE (stickyHeader): brandowy pas boczny (logo/hero/stopka)
             zostaje w widoku przy przewijaniu treści panelu (md:sticky top-0 h-screen self-start). %>
