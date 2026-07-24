@@ -469,10 +469,20 @@ async function submitPaidDeclaration(req, res, next) {
     const rows = await chargeService.unpaidForClient(client.id);
     const total = rows.reduce((sum, c) => sum + chargeService.grossOf(c), 0);
     const recent = await prisma.event.findFirst({ where: { clientId: client.id, type: 'paid_declared', createdAt: { gte: new Date(Date.now() - 7 * 86400000) } } });
-    if (!rows.length || recent) return res.redirect(`/c/${client.token}?paid=1#platnosci`); // idempotentnie
+    // Etap 2: Turbo Stream → chip „zgłoszono" + podziękowanie w miejscu, bez reloadu (fallback: redirect).
+    const wantsStream = (req.get('accept') || '').includes('turbo-stream');
+    const paidStream = (declaredAt) => {
+      res.type('text/vnd.turbo-stream.html');
+      return res.render('public/streams/paid', { layout: false, token: client.token, paidDeclaredAt: declaredAt });
+    };
+    if (!rows.length || recent) { // idempotentnie — nic nie loguj, ale pokaż stan „zgłoszone"
+      if (wantsStream) return paidStream(recent ? recent.createdAt : new Date());
+      return res.redirect(`/c/${client.token}?paid=1#platnosci`);
+    }
 
     await events.log({ type: 'paid_declared', message: `Klient zgłosił wpłatę (${rows.length} poz., ${fmt.money(total)})`, clientId: client.id, ip: req.ip });
     mail.sendPaymentDeclared({ client, total, count: rows.length }).catch((e) => console.error('[mail] wpłata:', e.message));
+    if (wantsStream) return paidStream(new Date());
     res.redirect(`/c/${client.token}?paid=1#platnosci`); // hash: przy włączonej nawigacji otwiera sekcję „Do zapłaty"
   } catch (err) {
     next(err);

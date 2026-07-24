@@ -142,9 +142,12 @@
               </div>
             </div>
 
-            <% if (paidFlash) { %>
-              <div class="mt-3 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Dziękujemy! Przekazaliśmy informację o wpłacie — potwierdzimy ją wkrótce.</div>
-            <% } %>
+            <%# #paid-flash: stabilny kontener (podziękowanie po zgłoszeniu — wypełniany streamem bez reloadu). %>
+            <div id="paid-flash">
+              <% if (paidFlash) { %>
+                <div class="mt-3 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Dziękujemy! Przekazaliśmy informację o wpłacie — potwierdzimy ją wkrótce.</div>
+              <% } %>
+            </div>
 
             <% if (seller && seller.bank) { %>
               <div class="mt-3 rounded-xl bg-slate-50 border border-slate-100 px-4 py-3 text-sm space-y-1">
@@ -164,19 +167,8 @@
               </div>
             <% } %>
 
-            <div class="mt-3">
-              <% if (paidDeclaredAt) { %>
-                <span class="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-amber-50 text-amber-700" title="Czekamy na potwierdzenie wpłaty przez agencję">
-                  <%- icon('clock', { size: 13, cls: 'text-amber-500' }) %> Zgłoszono wpłatę <%= fmt.dateOnly(paidDeclaredAt) %> — czekamy na potwierdzenie
-                </span>
-              <% } else { %>
-                <form method="POST" action="/c/<%= portalClient.token %>/paid" data-turbo="false" onsubmit="return confirm('Zgłosić wykonanie przelewu za powyższe pozycje?')">
-                  <button type="submit" class="evoke-btn inline-flex items-center gap-1.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-sm font-medium px-4 py-2 transition">
-                    <%- icon('banknote', { size: 15, cls: '' }) %> Zgłoś wykonanie przelewu
-                  </button>
-                </form>
-              <% } %>
-            </div>
+            <%# #paid-declare: chip „zgłoszono" albo przycisk — podmieniany streamem po zgłoszeniu (Etap 2). %>
+            <div class="mt-3" id="paid-declare"><%- include('_paid_declare', { token: portalClient.token, paidDeclaredAt: paidDeclaredAt, turbo: true }) %></div>
           </div>
         <% } %>
       </div>
