@@ -68,8 +68,8 @@
                     <% }); %>
                   </div>
                   <% if (t.proofing) { %>
-                    <div class="px-3 pb-3">
-                      <%- include('_proofing', { t: t, action: '/p/' + project.clientToken + '/decision/' + t.id }) %>
+                    <div class="px-3 pb-3" id="proofing-<%= t.id %>">
+                      <%- include('_proofing', { t: t, action: '/p/' + project.clientToken + '/decision/' + t.id, turbo: true }) %>
                     </div>
                   <% } %>
                 </div>

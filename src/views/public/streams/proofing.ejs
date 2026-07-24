@@ -1,0 +1,3 @@
+<%# Fragment Turbo Streams po decyzji proofingu w portalu /p (Etap 2). Podmienia blok proofingu
+    danego transferu na stan po decyzji (zatwierdzone / poprawki). Locals: transferId, t, action. %>
+<turbo-stream action="update" target="proofing-<%= transferId %>"><template><%- include('../_proofing', { t: t, action: action, turbo: true }) %></template></turbo-stream>

@@ -333,6 +333,13 @@ async function submitDecision(req, res, next) {
           .sendProofingDecision({ transfer, decision, comment, name, projectName: project.name })
           .catch((e) => console.error('[mail] proofing:', e.message));
       }
+      // Etap 2: Turbo Stream → podmiana bloku proofingu w miejscu, bez reloadu.
+      if (updated && (req.get('accept') || '').includes('turbo-stream')) {
+        res.type('text/vnd.turbo-stream.html');
+        return res.render('public/streams/proofing', {
+          layout: false, transferId: transfer.id, t: updated, action: `/p/${project.clientToken}/decision/${transfer.id}`,
+        });
+      }
     }
     res.redirect(`/p/${project.clientToken}?decided=1`);
   } catch (err) {
