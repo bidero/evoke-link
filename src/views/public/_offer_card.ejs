@@ -1,0 +1,81 @@
+<%# Treść karty oferty /o (stany: podziękowanie/odrzucone/wygasła/otwarta z formularzem decyzji).
+    Reużywana w renderze początkowym (offer.ejs) i w streamie po decyzji (streams/offer.ejs — Etap 2,
+    bez reloadu). Locals: offer, state, totals, done, error, turbo. %>
+<% const decided = state === 'accepted' || state === 'rejected'; %>
+
+<% if (done || decided) { %>
+  <div class="evoke-card p-5 sm:p-8 text-center">
+    <% if (state === 'accepted') { %>
+      <div class="flex justify-center mb-3"><%- icon('check', { size: 44, cls: 'text-green-600' }) %></div>
+      <h1 class="text-2xl font-semibold tracking-tight mb-1">Dziękujemy!</h1>
+      <p class="text-sm text-slate-500">Oferta „<%= offer.title %>" została zaakceptowana. Wkrótce się odezwiemy.</p>
+    <% } else if (state === 'rejected') { %>
+      <div class="flex justify-center mb-3"><%- icon('mail', { size: 40, cls: 'text-brand-500' }) %></div>
+      <h1 class="text-2xl font-semibold tracking-tight mb-1">Dziękujemy za informację</h1>
+      <p class="text-sm text-slate-500">Zapoznamy się z uwagami i wrócimy z poprawioną ofertą.</p>
+    <% } else { %>
+      <h1 class="text-2xl font-semibold tracking-tight mb-1">Oferta niedostępna</h1>
+      <p class="text-sm text-slate-500">Ta oferta została już rozpatrzona albo wygasła.</p>
+    <% } %>
+  </div>
+
+<% } else if (state === 'expired') { %>
+  <div class="evoke-card p-5 sm:p-8 text-center">
+    <div class="flex justify-center mb-3"><%- icon('clock', { size: 40, cls: 'text-slate-400' }) %></div>
+    <h1 class="text-2xl font-semibold tracking-tight mb-1">Oferta wygasła</h1>
+    <p class="text-sm text-slate-500">Termin ważności tej oferty minął. Poproś nas o aktualną wycenę.</p>
+  </div>
+
+<% } else { %>
+  <div class="evoke-card p-5 sm:p-8">
+    <h1 class="text-2xl font-semibold tracking-tight mb-1"><%= offer.title %></h1>
+    <% if (offer.validUntil) { %><p class="text-xs text-slate-400 mb-1">Ważna do <%= fmt.dateOnly(offer.validUntil) %></p><% } %>
+    <% if (offer.intro) { %><p class="text-sm text-slate-500 mb-5 whitespace-pre-line"><%= offer.intro %></p><% } else { %><div class="mb-4"></div><% } %>
+
+    <% if (error) { %>
+      <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
+    <% } %>
+
+    <!-- Pozycje -->
+    <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden text-sm">
+      <% offer.items.forEach(function(it){ const lineNet = it.amount * it.qty; const lineGross = lineNet + (it.vatRate ? Math.round(lineNet * it.vatRate / 100) : 0); %>
+        <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+          <span class="min-w-0">
+            <span class="block text-slate-700"><%= it.label %><%= it.qty > 1 ? ' × ' + it.qty : '' %></span>
+            <% if (it.vatRate) { %><span class="block text-xs text-slate-400"><%= fmt.money(lineNet) %> + <%= it.vatRate %>% VAT</span><% } %>
+          </span>
+          <span class="shrink-0 font-medium text-slate-800"><%= fmt.money(lineGross) %></span>
+        </div>
+      <% }); %>
+      <div class="flex items-center justify-between gap-3 px-4 py-3 bg-slate-50">
+        <span class="min-w-0">
+          <span class="block text-slate-600 font-medium">Razem</span>
+          <% if (totals.vat > 0) { %><span class="block text-xs text-slate-400">w tym VAT <%= fmt.money(totals.vat) %></span><% } %>
+        </span>
+        <span class="shrink-0 text-lg font-semibold text-brand-700"><%= fmt.money(totals.gross) %></span>
+      </div>
+    </div>
+
+    <!-- Decyzja -->
+    <%# Formularz STACKOWANY (jedna kolumna). Kompozycje panel/panel-bg/sidebar pinują kartę do
+        stałej szerokości ~448px NIEZALEŻNIE od viewportu, więc breakpointy `sm:` (viewportowe)
+        wprowadzały w błąd — na szerokim ekranie robiły 2 kolumny w wąskim panelu (ucięte
+        placeholdery, zawijanie „Odrzucam / mam uwagi"). Stos jest bezpieczny przy każdej szerokości.
+        turbo=true (Etap 2): Turbo obsłuży submit i wstawi stream (bez reloadu). Inaczej pełny submit. %>
+    <form method="POST" action="/o/<%= offer.token %>/decision" <%- (typeof turbo !== 'undefined' && turbo) ? '' : 'data-turbo="false"' %> class="mt-5 space-y-3" x-data="{ comment: '', name: '' }">
+      <div class="space-y-3">
+        <input name="name" x-model="name" type="text" placeholder="Imię i nazwisko (opcjonalnie)"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <input name="comment" x-model="comment" type="text" placeholder="Uwagi (wymagane przy odrzuceniu)"
+               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </div>
+      <div class="flex flex-col gap-2">
+        <button type="submit" name="decision" value="accepted"
+                class="evoke-btn w-full rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-medium py-3 transition">Akceptuję ofertę</button>
+        <button type="submit" name="decision" value="rejected" :disabled="!comment.trim()"
+                class="evoke-btn w-full rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-medium py-3 transition">Odrzucam / mam uwagi</button>
+      </div>
+      <p class="text-xs text-slate-400 text-center">Akceptacja jest równoznaczna z potwierdzeniem zakresu i ceny.</p>
+    </form>
+  </div>
+<% } %>

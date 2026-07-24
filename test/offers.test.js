@@ -76,6 +76,50 @@ test('oferty: akceptacja tworzy Charge + rusza projekt lead→active + event', a
   }
 });
 
+test('oferty: decyzja przez Turbo Stream podmienia kartę w miejscu (bez reloadu)', async () => {
+  const cl = await prisma.client.create({ data: { name: 'Oferta TS ' + Date.now(), token: 'offts_' + Date.now() } });
+  try {
+    const offer = await offerService.create(cl.id, { title: 'Wycena TS', itemsText: 'Poz | 1000 | 23' });
+    const stream = (fields) => fetch(`${base}/o/${offer.token}/decision`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'text/vnd.turbo-stream.html' },
+      body: new URLSearchParams(fields), redirect: 'manual',
+    });
+
+    // odrzucenie bez powodu → 422 + stream z formularzem i komunikatem błędu (żadnego redirectu)
+    const bad = await stream({ decision: 'rejected', comment: '' });
+    assert.equal(bad.status, 422);
+    assert.match(bad.headers.get('content-type') || '', /turbo-stream/);
+    const badBody = await bad.text();
+    assert.match(badBody, /turbo-stream action="update" target="offer-card"/);
+    assert.match(badBody, /Podaj krótko powód/);
+    assert.match(badBody, /Akceptuję ofertę/, 'formularz decyzji wciąż widoczny');
+    assert.equal((await prisma.offer.findUnique({ where: { id: offer.id } })).status, 'open', 'nic nie zapisane');
+
+    // akceptacja → 200 + stream „Dziękujemy" (bez redirectu) + Charge utworzone
+    const ok = await stream({ decision: 'accepted', name: 'Jan TS' });
+    assert.equal(ok.status, 200);
+    assert.match(ok.headers.get('content-type') || '', /turbo-stream/);
+    const okBody = await ok.text();
+    assert.match(okBody, /turbo-stream action="update" target="offer-card"/);
+    assert.match(okBody, /Dziękujemy!/);
+    await wait(250);
+    assert.equal((await prisma.offer.findUnique({ where: { id: offer.id } })).status, 'accepted');
+    assert.equal((await prisma.charge.count({ where: { clientId: cl.id } })), 1, 'akceptacja przez stream tworzy Charge');
+
+    // ponowna decyzja przez stream → pokazuje aktualny stan (accepted), status 200, bez błędu
+    const again = await stream({ decision: 'accepted' });
+    assert.equal(again.status, 200);
+    assert.match(await again.text(), /Dziękujemy!/);
+  } finally {
+    await prisma.charge.deleteMany({ where: { clientId: cl.id } });
+    await prisma.offerItem.deleteMany({ where: { offer: { clientId: cl.id } } });
+    await prisma.offer.deleteMany({ where: { clientId: cl.id } });
+    await prisma.event.deleteMany({ where: { clientId: cl.id } });
+    await prisma.client.delete({ where: { id: cl.id } });
+  }
+});
+
 test('oferty: itemsToText round-trip przez parseItems', () => {
   const items = offerService.parseItems('Projekt | 3000 | 23 | 2\nDrobiazg | 12,50\nBezVat | 800 | 0');
   const text = offerService.itemsToText(items);

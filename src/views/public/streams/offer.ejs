@@ -1,0 +1,5 @@
+<%# Fragment Turbo Streams po decyzji oferty w /o (Etap 2 — bez reloadu). Podmienia kartę oferty na
+    stan po decyzji (podziękowanie / odrzucone) albo na formularz z komunikatem błędu walidacji.
+    Renderowany z layout:false + Content-Type text/vnd.turbo-stream.html.
+    Locals: offer, state, totals, done, error. %>
+<turbo-stream action="update" target="offer-card"><template><%- include('../_offer_card', { offer: offer, state: state, totals: totals, done: done, error: error, turbo: true }) %></template></turbo-stream>

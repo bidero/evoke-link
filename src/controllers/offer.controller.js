@@ -176,19 +176,32 @@ async function submitDecision(req, res, next) {
     const decision = req.body.decision === 'accepted' ? 'accepted' : (req.body.decision === 'rejected' ? 'rejected' : null);
     if (!decision) return res.redirect(`/o/${offer.token}`);
 
+    // Etap 2: Turbo Stream → podmiana karty oferty w miejscu, bez reloadu (fallback: redirect/render).
+    const wantsStream = (req.get('accept') || '').includes('turbo-stream');
+    const totals = offerService.totals(offer.items);
+    const offerStream = ({ state, done, error, status }) => {
+      res.status(status || 200).type('text/vnd.turbo-stream.html');
+      return res.render('public/streams/offer', { layout: false, offer, state, totals, done: !!done, error: error || null });
+    };
+
     // Odrzucenie wymaga powodu (żeby wiedzieć, co poprawić).
     if (decision === 'rejected' && !(req.body.comment || '').trim()) {
+      const error = 'Podaj krótko powód — pomoże nam poprawić ofertę.';
+      if (wantsStream) return offerStream({ state: offerService.state(offer), error, status: 422 });
       return res.status(400).render('public/offer', {
         title: offer.title, layout: PUBLIC_LAYOUT, offer, state: offerService.state(offer),
-        totals: offerService.totals(offer.items), done: false,
-        error: 'Podaj krótko powód — pomoże nam poprawić ofertę.',
+        totals, done: false, error,
       });
     }
 
     const r = await offerService.decide(offer, { decision, name: req.body.name, comment: req.body.comment });
-    if (!r.ok) return res.redirect(`/o/${offer.token}`); // już zdecydowana/wygasła → pokaż stan
-    mail.sendOfferDecision({ offer, decision, comment: req.body.comment, name: req.body.name, total: offerService.totals(offer.items).gross })
+    if (!r.ok) { // już zdecydowana/wygasła → pokaż aktualny stan
+      if (wantsStream) return offerStream({ state: offerService.state(offer) });
+      return res.redirect(`/o/${offer.token}`);
+    }
+    mail.sendOfferDecision({ offer, decision, comment: req.body.comment, name: req.body.name, total: totals.gross })
       .catch((e) => console.error('[mail] oferta decyzja:', e.message));
+    if (wantsStream) return offerStream({ state: decision, done: true });
     res.redirect(`/o/${offer.token}?done=1`);
   } catch (err) {
     next(err);
