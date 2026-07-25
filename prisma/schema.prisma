@@ -40,6 +40,7 @@ model Client {
   tags      String?                       // wolny tekst, oddzielone przecinkami
   token     String    @unique
   note      String?
+  contactEveryDays Int?                    // rytm kontaktu: przypominaj o kontakcie co N dni (null = brak rytmu)
   onboardingToken       String?   @unique  // jednorazowy link /onboard/:token (regeneracja wymienia)
   onboardingExpiresAt   DateTime?          // ważny 7 dni od wygenerowania
   onboardingCompletedAt DateTime?          // kiedy klient wypełnił formularz (null = jeszcze nie)

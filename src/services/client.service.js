@@ -187,7 +187,13 @@ async function tagCloud(limit = 20) {
 
 const clean = (v) => (v && v.trim() ? v.trim() : null);
 
-function create({ name, firstName, lastName, email, note, company, phone, nip, address, status, tags }) {
+// Rytm kontaktu: liczba dni 1..365 albo null (brak rytmu). Podpowiedzi w formularzu — patrz new/edit.ejs.
+function normEvery(v) {
+  const n = parseInt(v, 10);
+  return Number.isFinite(n) && n >= 1 && n <= 365 ? n : null;
+}
+
+function create({ name, firstName, lastName, email, note, company, phone, nip, address, status, tags, contactEveryDays }) {
   return prisma.client.create({
     data: {
       name: name.trim(),
@@ -201,12 +207,13 @@ function create({ name, firstName, lastName, email, note, company, phone, nip, a
       address: clean(address),
       status: normStatus(status),
       tags: clean(tags),
+      contactEveryDays: normEvery(contactEveryDays),
       token: makeToken(),
     },
   });
 }
 
-function update(id, { name, firstName, lastName, email, note, company, phone, nip, address, status, tags }) {
+function update(id, { name, firstName, lastName, email, note, company, phone, nip, address, status, tags, contactEveryDays }) {
   return prisma.client.update({
     where: { id: Number(id) },
     data: {
@@ -221,17 +228,20 @@ function update(id, { name, firstName, lastName, email, note, company, phone, ni
       address: clean(address),
       status: normStatus(status),
       tags: clean(tags),
+      contactEveryDays: normEvery(contactEveryDays),
     },
   });
 }
 
-// ---- „Do odezwania się" — klienci bez żadnej aktywności od `days` dni ----
+// ---- „Do odezwania się" — klienci, którym minął rytm kontaktu ----
 // Ostatni kontakt = najnowsze zdarzenie (Event) lub wiadomość (Message) klienta,
 // wprost (clientId) albo przez jego projekty; brak czegokolwiek = data założenia kartoteki.
+// Próg per klient = jego `contactEveryDays` (rytm), a gdy brak — `days` (domyślnie 30).
+// Czerwień (`overdue`) = 2× próg — uogólnia dawne „60+ dni" (dla progu 30 wypada dokładnie 60).
 // Pomijamy klientów ze statusem 'inactive' (celowo uśpieni).
 async function staleClients({ days = 30, limit = 6 } = {}) {
   const [clients, evByClient, msgByClient, projects, openReminders] = await Promise.all([
-    prisma.client.findMany({ where: { status: { not: 'inactive' } }, select: { id: true, name: true, createdAt: true } }),
+    prisma.client.findMany({ where: { status: { not: 'inactive' } }, select: { id: true, name: true, createdAt: true, contactEveryDays: true } }),
     prisma.event.groupBy({ by: ['clientId'], where: { clientId: { not: null } }, _max: { createdAt: true } }),
     prisma.message.groupBy({ by: ['clientId'], where: { clientId: { not: null } }, _max: { createdAt: true } }),
     prisma.project.findMany({
@@ -258,10 +268,13 @@ async function staleClients({ days = 30, limit = 6 } = {}) {
   return clients
     .map((c) => {
       const lastAt = last[c.id] || c.createdAt;
-      return { id: c.id, name: c.name, lastAt, days: Math.floor((now - new Date(lastAt).getTime()) / 86400000), planned: planned.has(c.id) };
+      const daysSince = Math.floor((now - new Date(lastAt).getTime()) / 86400000);
+      const every = c.contactEveryDays || null; // ustawiony rytm klienta (albo brak → fallback `days`)
+      const threshold = every || days;
+      return { id: c.id, name: c.name, lastAt, days: daysSince, every, planned: planned.has(c.id), over: daysSince - threshold, overdue: daysSince >= threshold * 2 };
     })
-    .filter((c) => c.days >= days)
-    .sort((a, b) => b.days - a.days)
+    .filter((c) => c.over >= 0) // minął próg (rytm klienta albo domyślny)
+    .sort((a, b) => b.over - a.over) // najbardziej zaległy wg WŁASNEGO rytmu pierwszy
     .slice(0, limit);
 }
 

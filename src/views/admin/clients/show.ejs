@@ -82,6 +82,7 @@
         <% if (client.email) { %><span class="inline-flex items-center gap-1.5"><%- icon('mail', { size: 14 }) %><a href="mailto:<%= client.email %>" class="hover:underline"><%= client.email %></a></span><% } %>
         <% if (client.phone) { %><span class="inline-flex items-center gap-1.5">tel. <a href="tel:<%= client.phone.replace(/\s/g, '') %>" class="hover:underline"><%= client.phone %></a></span><% } %>
         <span class="inline-flex items-center gap-1.5"><%- icon('folder', { size: 14 }) %><%= client.projects.length %> projekt(ów)</span>
+        <% if (client.contactEveryDays) { %><span class="inline-flex items-center gap-1.5" title="Rytm kontaktu — klient trafia do „Do odezwania się" po tylu dniach bez kontaktu"><%- icon('phone', { size: 14 }) %>rytm co <%= client.contactEveryDays %> dni</span><% } %>
       </div>
       <% if (client.tags) { %>
         <div class="mt-3 flex flex-wrap gap-1.5">

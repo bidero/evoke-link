@@ -37,6 +37,51 @@ test('staleClients: dawny kontakt na liście, świeży i nieaktywni poza nią', 
   }
 });
 
+test('rytm kontaktu: próg per klient (contactEveryDays) + fallback 30 dni + „czerwony" 2×', async () => {
+  const d = (n) => new Date(Date.now() - n * 86400000);
+  const weekly    = await prisma.client.create({ data: { name: 'Rytm Weekly ' + Date.now(),  token: 'rw_' + Date.now(), contactEveryDays: 7,  createdAt: d(200) } });
+  const weeklyRed = await prisma.client.create({ data: { name: 'Rytm WeekRed ' + Date.now(), token: 'wr_' + Date.now(), contactEveryDays: 7,  createdAt: d(200) } });
+  const quarterly = await prisma.client.create({ data: { name: 'Rytm Quarter ' + Date.now(), token: 'rq_' + Date.now(), contactEveryDays: 90, createdAt: d(200) } });
+  const noRhythm  = await prisma.client.create({ data: { name: 'Rytm None ' + Date.now(),    token: 'rn_' + Date.now(),                       createdAt: d(200) } });
+  const all = [weekly, weeklyRed, quarterly, noRhythm];
+  try {
+    await prisma.event.create({ data: { type: 'viewed', clientId: weekly.id,    createdAt: d(10) } }); // rytm 7, 10 dni temu
+    await prisma.event.create({ data: { type: 'viewed', clientId: weeklyRed.id, createdAt: d(20) } }); // rytm 7, 20 dni temu
+    await prisma.event.create({ data: { type: 'viewed', clientId: quarterly.id, createdAt: d(40) } }); // rytm 90, 40 dni temu
+    await prisma.event.create({ data: { type: 'viewed', clientId: noRhythm.id,  createdAt: d(40) } }); // bez rytmu, 40 dni temu
+
+    const stale = await clientService.staleClients({ days: 30, limit: 1000 });
+    const by = (id) => stale.find((s) => s.id === id);
+
+    assert.ok(by(weekly.id), 'rytm 7d / 10d temu → zaległy');
+    assert.equal(by(weekly.id).every, 7);
+    assert.equal(by(weekly.id).overdue, false, '10 < 2×7 → nie „czerwony"');
+
+    assert.ok(by(weeklyRed.id), 'rytm 7d / 20d temu → zaległy');
+    assert.equal(by(weeklyRed.id).overdue, true, '20 ≥ 2×7 → „czerwony"');
+
+    assert.ok(!by(quarterly.id), 'rytm 90d / 40d temu → jeszcze nie zaległy (mimo >30)');
+
+    assert.ok(by(noRhythm.id), 'bez rytmu / 40d temu → zaległy przez fallback 30');
+    assert.equal(by(noRhythm.id).every, null);
+  } finally {
+    await prisma.event.deleteMany({ where: { clientId: { in: all.map((c) => c.id) } } });
+    await prisma.client.deleteMany({ where: { id: { in: all.map((c) => c.id) } } });
+  }
+});
+
+test('rytm kontaktu: normalizacja w create/update (clamp 1..365, puste → null)', async () => {
+  const cl = await clientService.create({ name: 'Rytm Norm ' + Date.now(), contactEveryDays: '30' });
+  try {
+    assert.equal(cl.contactEveryDays, 30, 'string „30" → 30');
+    assert.equal((await clientService.update(cl.id, { name: cl.name, contactEveryDays: '' })).contactEveryDays, null, 'puste → null (bez rytmu)');
+    assert.equal((await clientService.update(cl.id, { name: cl.name, contactEveryDays: '9999' })).contactEveryDays, null, 'poza zakresem → null');
+    assert.equal((await clientService.update(cl.id, { name: cl.name, contactEveryDays: '14' })).contactEveryDays, 14);
+  } finally {
+    await prisma.client.delete({ where: { id: cl.id } });
+  }
+});
+
 test('wskaźniki 360°: LTV, śr. czas płatności, seria 12 miesięcy', () => {
   const now = new Date(2026, 5, 15); // czerwiec 2026
   const charges = [
