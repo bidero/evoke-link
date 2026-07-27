@@ -21,15 +21,18 @@ function iconType(p) {
   return 'image/png';
 }
 
-// Zastępcza ikona: brandowy kwadrat z inicjałem nazwy (skalowalny SVG, zawsze instalowalny).
+// Zastępcza ikona: brandowy PEŁNOKWADRATOWY SVG z inicjałem nazwy. Full-bleed (bez zaokrągleń,
+// bez przezroczystych rogów) → poprawny jako `maskable` (system sam nakłada maskę koła/squircle,
+// a inicjał siedzi w strefie bezpiecznej ~font 260/512, więc nic się nie obcina). Używany też do
+// auto-splash. Zawsze instalowalny bez uploadu.
 function iconSvg(s) {
   const color = themeColor(s);
   const fg = readableText(color) || '#ffffff';
   const initial = esc((appName(s).trim()[0] || 'E').toUpperCase());
   return `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img">`
-    + `<rect width="512" height="512" rx="96" fill="${esc(color)}"/>`
+    + `<rect width="512" height="512" fill="${esc(color)}"/>`
     + `<text x="256" y="256" dy=".07em" text-anchor="middle" dominant-baseline="middle" `
-    + `font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="280" font-weight="700" fill="${esc(fg)}">${initial}</text>`
+    + `font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="260" font-weight="700" fill="${esc(fg)}">${initial}</text>`
     + `</svg>`;
 }
 
@@ -42,13 +45,16 @@ function manifest(s) {
     if (type === 'image/svg+xml') {
       icons.push({ src: uploaded, sizes: 'any', type, purpose: 'any' });
     } else {
+      // TYLKO `any` (NIE maskable): kształtu wgranej ikony nie znamy — deklaracja maskable kazałaby
+      // systemowi przyciąć ją do koła/squircle (obcięte logo, zgłoszone przez usera). Maskable
+      // dostarcza pełnokwadratowy fallback SVG niżej (bezpieczny).
       icons.push({ src: uploaded, sizes: '192x192', type, purpose: 'any' });
       icons.push({ src: uploaded, sizes: '512x512', type, purpose: 'any' });
-      icons.push({ src: uploaded, sizes: '512x512', type, purpose: 'maskable' });
     }
   }
-  // Zawsze dołóż skalowalny fallback — gwarantuje instalowalność nawet bez wgranej ikony.
-  icons.push({ src: '/pwa/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' });
+  // Fallback zawsze obecny (instalowalność bez uploadu) + jedyny `maskable` (pełnokwadratowy, bezpieczny)
+  // + źródło ikony auto-splash (Android/desktop/macOS: ikona na `background_color` + nazwa).
+  icons.push({ src: '/pwa/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' });
   return {
     name: appName(s),
     short_name: shortName(s),

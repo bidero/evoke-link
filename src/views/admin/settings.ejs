@@ -1115,7 +1115,7 @@
           <input name="pwaThemeColor" type="color" value="<%= settings.pwa.themeColor || settings.colors.primary %>" class="h-10 w-full rounded-lg border border-slate-300 cursor-pointer" />
         </div>
         <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Tło startowe</label>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Tło ekranu startowego <span class="text-slate-400 font-normal">(splash)</span></label>
           <input name="pwaBackground" type="color" value="<%= settings.pwa.background || '#ffffff' %>" class="h-10 w-full rounded-lg border border-slate-300 cursor-pointer" />
         </div>
         <div>
@@ -1133,13 +1133,13 @@
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Ikona aplikacji <span class="text-slate-400 font-normal">(kwadrat, najlepiej 512×512 PNG)</span></label>
         <div class="flex items-center gap-3">
-          <img src="<%= settings.pwa.iconPath || '/pwa/icon.svg' %>" alt="Ikona aplikacji" class="h-12 w-12 shrink-0 rounded-xl border border-slate-200 bg-white object-cover" />
+          <img src="<%= settings.pwa.iconPath || '/pwa/icon.svg' %>" alt="Ikona aplikacji" class="h-12 w-12 shrink-0 rounded-xl border border-slate-200 bg-white object-contain" />
           <input name="pwaIcon" type="file" accept="image/*,.svg" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm" />
           <% if (settings.pwa.iconPath) { %>
             <label class="inline-flex items-center gap-1.5 text-xs text-slate-500 shrink-0"><input type="checkbox" name="removePwaIcon" class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" /> Usuń</label>
           <% } %>
         </div>
-        <p class="text-[11px] text-slate-400 mt-1">Bez wgranej ikony używamy zastępczej (inicjał nazwy na kolorze motywu). Dla najlepszego efektu wgraj kwadratowy PNG 512×512.</p>
+        <p class="text-[11px] text-slate-400 mt-1">Bez wgranej ikony używamy zastępczej (inicjał nazwy na kolorze motywu — też jako ekran startowy). Wgraj <strong>kwadratowy</strong> obraz (najlepiej 512×512 PNG) z niewielkim marginesem — szerokie logo zostanie na telefonie przycięte do kwadratu.</p>
       </div>
     </div>
 

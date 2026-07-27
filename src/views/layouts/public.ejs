@@ -105,7 +105,13 @@
   <%# Warstwy tła w kontenerze `data-turbo-permanent`: Turbo przenosi go 1:1 na nową stronę zamiast
       odtwarzać → obraz tła (odsłaniany opacity 0→1 po onload) NIE re-odsłania się przy każdej
       nawigacji, więc znika „błysk" tła przy przejściu między portalami. id musi być stałe. %>
-  <div id="evoke-bg" data-turbo-permanent aria-hidden="true"><%- typeof bgSlideshow !== 'undefined' ? bgSlideshow : '' %><%- typeof bgOverlay !== 'undefined' ? bgOverlay : '' %></div>
+  <%# isolation:isolate — KLUCZOWE dla ziarna: ziarno to warstwa `mix-blend-mode:soft-light`, a
+      `mix-blend-mode` + `backdrop-filter` panelu = nawracający artefakt „nieświeżej próbki" w Chrome
+      (prostokąt za szkłem, tylko przy włączonym ziarnie). Izolacja spłaszcza cały stos tła (baza +
+      obraz + ziarno) w JEDNĄ grupę PRZED próbkowaniem przez backdrop-filter → stabilna próbka.
+      Fixed-dzieci NIE są łapane przez isolation jako containing block (tylko transform/filter są),
+      więc warstwy dalej kryją viewport. %>
+  <div id="evoke-bg" data-turbo-permanent aria-hidden="true" style="isolation:isolate"><%- typeof bgSlideshow !== 'undefined' ? bgSlideshow : '' %><%- typeof bgOverlay !== 'undefined' ? bgOverlay : '' %></div>
   <%# railOpen (desktop): zapamiętany wybór (localStorage) ma pierwszeństwo — pas trzyma stan między
       ekranami; bez niego domyślny per-strona (/c zwinięty, /p rozwinięty). Na MOBILE zawsze start
       zwinięty (rozwinięcie = pełnoekranowy overlay) i bez zapisu do pamięci. %>

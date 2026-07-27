@@ -209,6 +209,14 @@ function overlayHtml(bg) {
   // karty (artefakt „gradientu" przy tytule, do repaintu przy scroll/resize).
   // Slideshow ma własne warstwy (rotacja).
   const preloader = () => `<img src="${img}" alt="" aria-hidden="true" decoding="async" style="position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;z-index:-1;" onload="var l=this.previousElementSibling;if(l)l.style.opacity=1;" onerror="var l=this.previousElementSibling;if(l)l.style.opacity=1;" />`;
+  // Baza (gradient/kolor) jako warstwa WEWNĄTRZ #evoke-bg — potrzebna tylko gdy ziarno jest włączone
+  // dla tła NIE-obrazkowego. Dzięki temu ziarno (mix-blend) miesza się z bazą w odizolowanej grupie
+  // (#evoke-bg ma isolation:isolate), a backdrop-filter panelu próbkuje płaski wynik → bez artefaktu.
+  // Bez ziarna nie ruszamy niczego (baza zostaje na <body>, zero regresji). Obraz ma bazę już tutaj.
+  if (b.grain && b.grainStrength > 0 && b.type !== 'image') {
+    const baseCss = b.type === 'solid' ? b.color : (b.type === 'custom' ? customCss(b.custom) : (PRESETS[b.preset] || PRESETS[DEFAULT_PRESET]).css);
+    html += `<div aria-hidden="true" style="position:${pos};inset:0;z-index:0;pointer-events:none;background:${baseCss};"></div>`;
+  }
   if (b.type === 'image' && img && !slideshowActive) {
     let inner = `<div style="position:absolute;inset:0;background:#0f172a url('${img}') center/cover no-repeat;"></div>`;
     if (b.imageGradient) inner += `<div style="position:absolute;inset:0;background:${imageGradientCss(b.imageGrad)};"></div>`;

@@ -36,13 +36,15 @@ test('manifest: struktura + wartości z ustawień + typ MIME', async () => {
   assert.ok(m.icons.some((i) => i.src === '/pwa/icon.svg'), 'fallback SVG zawsze w icons');
 });
 
-test('manifest: wgrana ikona PNG deklaruje 192/512 + maskable', async () => {
+test('manifest: wgrana ikona PNG = 192/512 „any" (bez maskable), maskable na fallbacku', async () => {
   await settingsService.update({ pwa: { enabled: true, name: '', shortName: '', themeColor: '', background: '', display: 'minimal-ui', iconPath: '/branding/pwa_abc.png' } });
   const m = await (await fetch(`${base}/manifest.webmanifest`)).json();
   const png = m.icons.filter((i) => i.src === '/branding/pwa_abc.png');
-  assert.equal(png.length, 3, '192 + 512 + maskable');
-  assert.ok(png.some((i) => i.purpose === 'maskable'));
+  assert.equal(png.length, 2, '192 + 512 (any)');
+  assert.ok(png.every((i) => i.purpose === 'any'), 'wgrana ikona bez maskable → system jej nie przycina');
   assert.ok(png.every((i) => i.type === 'image/png'));
+  const fallback = m.icons.find((i) => i.src === '/pwa/icon.svg');
+  assert.ok(fallback && /maskable/.test(fallback.purpose), 'maskable dostarcza bezpieczny fallback');
   assert.equal(m.display, 'minimal-ui');
 });
 
