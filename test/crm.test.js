@@ -70,6 +70,33 @@ test('rytm kontaktu: próg per klient (contactEveryDays) + fallback 30 dni + „
   }
 });
 
+test('do odezwania: zaplanowany follow-up (świeży kontakt + otwarte przypomnienie) zostaje w widżecie', async () => {
+  const d = (n) => new Date(Date.now() - n * 86400000);
+  // świeży kontakt (2 dni temu) — sam z siebie NIE jest zaległy…
+  const planned = await prisma.client.create({ data: { name: 'FU Planned ' + Date.now(), token: 'fup_' + Date.now(), createdAt: d(200) } });
+  // …i drugi taki sam, ale bez przypomnienia (kontrolny) — poza listą
+  const freshOnly = await prisma.client.create({ data: { name: 'FU Fresh ' + Date.now(), token: 'fuf_' + Date.now(), createdAt: d(200) } });
+  const both = [planned, freshOnly];
+  try {
+    await prisma.event.create({ data: { type: 'note', clientId: planned.id, createdAt: d(2) } });   // świeży kontakt
+    await prisma.event.create({ data: { type: 'note', clientId: freshOnly.id, createdAt: d(2) } });
+    await prisma.reminder.create({ data: { title: 'Follow-up: X', dueAt: d(-3), clientId: planned.id } }); // zaplanowany follow-up
+
+    const stale = await clientService.staleClients({ days: 30, limit: 1000 });
+    const by = (id) => stale.find((s) => s.id === id);
+
+    const p = by(planned.id);
+    assert.ok(p, 'świeży kontakt z otwartym przypomnieniem widoczny (zaplanowane)');
+    assert.equal(p.planned, true, 'oznaczony jako zaplanowany');
+    assert.ok(p.over < 0, 'nie jest zaległy wg progu — trafił tu przez przypomnienie');
+    assert.ok(!by(freshOnly.id), 'świeży bez przypomnienia poza listą');
+  } finally {
+    await prisma.reminder.deleteMany({ where: { clientId: { in: both.map((c) => c.id) } } });
+    await prisma.event.deleteMany({ where: { clientId: { in: both.map((c) => c.id) } } });
+    await prisma.client.deleteMany({ where: { id: { in: both.map((c) => c.id) } } });
+  }
+});
+
 test('rytm kontaktu: normalizacja w create/update (clamp 1..365, puste → null)', async () => {
   const cl = await clientService.create({ name: 'Rytm Norm ' + Date.now(), contactEveryDays: '30' });
   try {

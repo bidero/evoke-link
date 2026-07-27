@@ -273,8 +273,11 @@ async function staleClients({ days = 30, limit = 6 } = {}) {
       const threshold = every || days;
       return { id: c.id, name: c.name, lastAt, days: daysSince, every, planned: planned.has(c.id), over: daysSince - threshold, overdue: daysSince >= threshold * 2 };
     })
-    .filter((c) => c.over >= 0) // minął próg (rytm klienta albo domyślny)
-    .sort((a, b) => b.over - a.over) // najbardziej zaległy wg WŁASNEGO rytmu pierwszy
+    // Widoczny gdy minął próg (rytm klienta albo domyślny) LUB ma otwarte przypomnienie —
+    // dzięki temu zaplanowany follow-up (który zapisuje Event i zeruje licznik kontaktu)
+    // nie znika z widżetu, tylko pokazuje się jako „zaplanowane".
+    .filter((c) => c.over >= 0 || c.planned)
+    .sort((a, b) => b.over - a.over) // najbardziej zaległy wg WŁASNEGO rytmu pierwszy (zaplanowani-świeży na końcu)
     .slice(0, limit);
 }
 

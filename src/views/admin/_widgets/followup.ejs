@@ -11,7 +11,11 @@
         <li class="px-5 py-2.5 flex items-center gap-3">
           <span class="min-w-0 flex-1">
             <a href="/admin/clients/<%= c.id %>" class="block text-sm font-medium text-slate-700 hover:text-brand-700 truncate"><%= c.name %></a>
-            <span class="block text-xs mt-0.5 <%= c.overdue ? 'text-red-600' : 'text-slate-400' %>"><%= c.days %> dni bez kontaktu<% if (c.every) { %> · rytm co <%= c.every %> dni<% } %></span>
+            <% if (c.over >= 0) { %>
+              <span class="block text-xs mt-0.5 <%= c.overdue ? 'text-red-600' : 'text-slate-400' %>"><%= c.days %> dni bez kontaktu<% if (c.every) { %> · rytm co <%= c.every %> dni<% } %></span>
+            <% } else { %>
+              <span class="block text-xs mt-0.5 text-slate-400">ostatni kontakt <%= c.days %> dni temu</span>
+            <% } %>
           </span>
           <% if (c.planned) { %>
             <a href="/admin/calendar" class="shrink-0 text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition" title="Jest otwarte przypomnienie — zobacz kalendarz">zaplanowane</a>
