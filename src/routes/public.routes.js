@@ -6,11 +6,16 @@ const receive = require('../controllers/receive.controller');
 const portal = require('../controllers/portal.controller');
 const clientCtrl = require('../controllers/client.controller');
 const onboarding = require('../controllers/onboarding.controller');
+const pwaCtrl = require('../controllers/pwa.controller');
 const { chunkParser, receiveChunk, receiveUpload } = require('../middleware/chunkUpload');
 const messageUpload = require('../middleware/messageUpload');
 const { passwordLimiter, messageLimiter } = require('../middleware/rateLimit');
 
 const router = express.Router();
+
+// PWA (instalowalna aplikacja): manifest + zastępcza ikona. Publiczne (przeglądarka pobiera sama).
+router.get('/manifest.webmanifest', pwaCtrl.manifest);
+router.get('/pwa/icon.svg', pwaCtrl.icon);
 
 // Strona główna — w MVP przekierowuje do panelu.
 // Docelowo (Etap 6) może to być brandowana strona-wizytówka.

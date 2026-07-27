@@ -176,6 +176,17 @@ async function updateSettings(req, res, next) {
       dashboard: current.panel.dashboard, // układ pulpitu zapisywany osobno (z pulpitu)
     };
 
+    // --- PWA (instalowalna aplikacja) — ikona dołożona niżej przy uploadzie/usuwaniu ---
+    const pwa = {
+      enabled: b.pwaEnabled === 'on',
+      name: (b.pwaName || '').trim(),
+      shortName: (b.pwaShortName || '').trim(),
+      themeColor: safeHex(b.pwaThemeColor, '') || '',
+      background: safeHex(b.pwaBackground, '') || '',
+      display: ['standalone', 'minimal-ui', 'fullscreen', 'browser'].includes(b.pwaDisplay) ? b.pwaDisplay : 'standalone',
+      iconPath: current.pwa.iconPath || null,
+    };
+
     const data = {
       appName: b.appName && b.appName.trim() ? b.appName.trim() : null,
       colors,
@@ -185,6 +196,7 @@ async function updateSettings(req, res, next) {
       layout,
       pdf,
       panel,
+      pwa,
       customCss: sanitizeCss(b.customCss || ''),
       emails: {
         logoPath: current.emails.logoPath || null,
@@ -277,6 +289,11 @@ async function updateSettings(req, res, next) {
     const mailLogo = uploadedFile(req, 'mailLogo');
     if (mailLogo) { sanitizeIfSvg(mailLogo); data.emails.logoPath = `/branding/${mailLogo.filename}`; }
     else if (b.removeMailLogo === 'on') data.emails.logoPath = null;
+
+    // --- Plik: ikona aplikacji (PWA) ---
+    const pwaIcon = uploadedFile(req, 'pwaIcon');
+    if (pwaIcon) { sanitizeIfSvg(pwaIcon); data.pwa.iconPath = `/branding/${pwaIcon.filename}`; }
+    else if (b.removePwaIcon === 'on') data.pwa.iconPath = null;
 
     await settingsService.update(data);
     await events.log({ type: 'updated', message: 'Zmieniono ustawienia / branding', ip: req.ip });

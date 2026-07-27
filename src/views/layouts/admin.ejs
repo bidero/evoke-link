@@ -8,6 +8,7 @@
   <title><%= typeof title !== 'undefined' ? title + ' — ' + appName : appName %></title>
   <link rel="stylesheet" href="/css/app.css?v=<%= assetVer %>" />
   <% if (typeof settings !== 'undefined' && settings && settings.faviconPath) { %><link rel="icon" href="<%= settings.faviconPath %>" /><% } %>
+  <%- typeof pwaHead !== 'undefined' ? pwaHead : '' %>
   <%- typeof adminStyleTag !== 'undefined' ? adminStyleTag : '' %>
   <%- typeof darkStyleTag !== 'undefined' ? darkStyleTag : '' %>
   <%- typeof customStyleTag !== 'undefined' ? customStyleTag : '' %>

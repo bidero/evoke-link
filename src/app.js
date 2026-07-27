@@ -17,6 +17,7 @@ const color = require('./utils/color');
 const bg = require('./utils/background');
 const fonts = require('./utils/fonts');
 const { sanitizeCss } = require('./utils/css');
+const pwa = require('./utils/pwa');
 const settingsService = require('./services/settings.service');
 const { injectUser } = require('./middleware/auth');
 const { notFound, errorHandler } = require('./middleware/error');
@@ -219,8 +220,12 @@ app.use(async (req, res, next) => {
 
     // Własny CSS admina (escape hatch) — wstrzykiwany do wszystkich layoutów.
     res.locals.customStyleTag = s.customCss ? `<style>${sanitizeCss(s.customCss)}</style>` : '';
+
+    // PWA — tagi <head> (manifest + apple-meta + rejestracja SW); pusty string gdy wyłączone.
+    res.locals.pwaHead = pwa.headTags(s);
   } catch (_) {
     res.locals.settings = settingsService.DEFAULTS;
+    res.locals.pwaHead = '';
     res.locals.brandStyleTag = '';
     res.locals.adminStyleTag = '';
     res.locals.darkStyleTag = '';

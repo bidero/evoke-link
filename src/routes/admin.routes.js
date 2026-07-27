@@ -183,6 +183,7 @@ router.post(
     { name: 'bg', maxCount: 6 },
     { name: 'loginBgImage', maxCount: 1 },
     { name: 'mailLogo', maxCount: 1 },
+    { name: 'pwaIcon', maxCount: 1 },
   ]),
   settings.updateSettings
 );

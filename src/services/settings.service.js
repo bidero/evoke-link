@@ -40,6 +40,9 @@ const DEFAULTS = {
   pdf: { template: 'standard', docType: 'rozliczenie', logoHeight: 48, portalBilling: true, hideSeller: false, seller: { name: '', address: '', nip: '', bank: '' } },
   // Układ panelu admina: kolejność/ukrywanie pozycji menu i widżetów pulpitu (delty, puste = domyślnie).
   panel: { menu: [], dashboard: [] },
+  // Instalowalna aplikacja (PWA): manifest budowany z tych pól. enabled = emituj <link manifest> + SW.
+  // Puste name/themeColor/background = dziedziczy appName / colors.primary / biel. iconPath = wgrana ikona.
+  pwa: { enabled: false, name: '', shortName: '', themeColor: '', background: '', display: 'standalone', iconPath: null },
 };
 
 const ALIGNS = ['left', 'center', 'right'];
@@ -53,6 +56,22 @@ const PANEL_WIDTHS = ['sm', 'md', 'lg', 'xl', '2xl'];
 const PORTAL_NAVS = ['none', 'tabs', 'side-left', 'side-right', 'top', 'bar-left', 'bar-right', 'header', 'rail-left', 'rail-right'];
 const PDF_TEMPLATES = ['standard', 'band', 'accent', 'proforma', 'accent-card', 'accent-band', 'accent-min', 'clean'];
 const PDF_DOCTYPES = ['rozliczenie', 'proforma'];
+const PWA_DISPLAYS = ['standalone', 'minimal-ui', 'fullscreen', 'browser'];
+
+function normPwa(p) {
+  const x = p && typeof p === 'object' ? p : {};
+  const str = (v) => (typeof v === 'string' ? v.trim() : '');
+  const hex = (v) => { const s = str(v); return /^#[0-9a-fA-F]{3,8}$/.test(s) ? s : ''; };
+  return {
+    enabled: !!x.enabled,
+    name: str(x.name).slice(0, 60),
+    shortName: str(x.shortName).slice(0, 30),
+    themeColor: hex(x.themeColor),   // puste = colors.primary
+    background: hex(x.background),    // puste = biel
+    display: PWA_DISPLAYS.includes(x.display) ? x.display : DEFAULTS.pwa.display,
+    iconPath: x.iconPath || null,
+  };
+}
 
 function normPdf(p) {
   const x = p && typeof p === 'object' ? p : {};
@@ -120,6 +139,8 @@ function normalize(row) {
   try { pdf = row.pdf ? JSON.parse(row.pdf) : {}; } catch (_) {}
   let panel = {};
   try { panel = row.panel ? JSON.parse(row.panel) : {}; } catch (_) {}
+  let pwa = {};
+  try { pwa = row.pwa ? JSON.parse(row.pwa) : {}; } catch (_) {}
   return {
     appName: row.appName || DEFAULTS.appName,
     logoPath: row.logoPath || null,
@@ -135,6 +156,7 @@ function normalize(row) {
     emails: { ...DEFAULTS.emails, ...emails },
     pdf: normPdf(pdf),
     panel: { menu: panelUi.sanitizeMenu(panel.menu), dashboard: panelUi.sanitizeWidgets(panel.dashboard) },
+    pwa: normPwa(pwa),
   };
 }
 
@@ -168,6 +190,7 @@ async function update(data) {
   if (data.emails !== undefined) patch.emails = JSON.stringify(data.emails);
   if (data.pdf !== undefined) patch.pdf = JSON.stringify(data.pdf);
   if (data.panel !== undefined) patch.panel = JSON.stringify({ menu: panelUi.sanitizeMenu(data.panel.menu), dashboard: panelUi.sanitizeWidgets(data.panel.dashboard) });
+  if (data.pwa !== undefined) patch.pwa = JSON.stringify(normPwa(data.pwa));
 
   const row = await prisma.settings.upsert({
     where: { id: 1 },
