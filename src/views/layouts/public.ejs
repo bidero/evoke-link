@@ -288,18 +288,23 @@
       <%# WeTransfer: pełne tło + flush panel pełnej wysokości (bez marginesów/zaokrągleń); hero po stronie tła %>
       <% const panelRight = L.cardSide === 'right'; const panelCenter = L.cardSide === 'center'; %>
       <main class="flex-1 flex <%= shellFlex %> <%= panelCenter ? 'justify-center' : '' %>">
-        <section class="evoke-panel w-full <%= panelWCls %> bg-white min-h-screen <%= shellFlex %> md:h-full md:overflow-y-auto flex flex-col px-6 sm:px-9 py-7 shrink-0 <%= panelRight ? 'md:order-2' : '' %>">
-          <div class="flex items-center gap-2 <%= justify %> mb-6 <%= sticky ? 'sticky top-0 z-20 bg-white py-2 -my-2' : '' %>">
-            <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
-              <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
-            <% } else if (!L.hideName) { %>
-              <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
-              <span class="font-semibold tracking-tight text-slate-800"><%= appName %></span>
-            <% } %>
-          </div>
-          <% if (headerNav) { %><div class="-mt-2 mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white', withTheme: true, linkBase: pNav.linkBase || null }) %></div><% } %>
-          <div class="flex-1 flex flex-col [justify-content:safe_center]">
-            <%- body %>
+        <section class="evoke-panel w-full <%= panelWCls %> bg-white min-h-screen <%= shellFlex %> md:h-full flex flex-col shrink-0 <%= panelRight ? 'md:order-2' : '' %>">
+          <%# GOTCHA (fix v0.99.39): scroll NA WEWNĘTRZNYM wrapperze, NIE na `.evoke-panel` (glass).
+              backdrop-filter + własny overflow nad tłem position:fixed = nieświeża próbka backdropu
+              w Chrome (artefakt „szkła" po repaintcie/hoverze). Szkło stoi, przewija się wnętrze. %>
+          <div class="flex-1 min-h-0 md:overflow-y-auto flex flex-col px-6 sm:px-9 py-7">
+            <div class="flex items-center gap-2 <%= justify %> mb-6 <%= sticky ? 'sticky top-0 z-20 bg-white py-2 -my-2' : '' %>">
+              <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
+                <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
+              <% } else if (!L.hideName) { %>
+                <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
+                <span class="font-semibold tracking-tight text-slate-800"><%= appName %></span>
+              <% } %>
+            </div>
+            <% if (headerNav) { %><div class="-mt-2 mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white', withTheme: true, linkBase: pNav.linkBase || null }) %></div><% } %>
+            <div class="flex-1 flex flex-col [justify-content:safe_center]">
+              <%- body %>
+            </div>
           </div>
         </section>
         <% if (!panelCenter) { %>
@@ -321,20 +326,28 @@
       <%# Panel na tle 2: biały panel z treścią po jednej stronie; LOGO + hero NA TLE po drugiej %>
       <% const pbRight = L.cardSide === 'right'; %>
       <main class="flex-1 flex <%= shellFlex %>">
-        <section class="evoke-panel w-full <%= panelWCls %> bg-white min-h-screen <%= shellFlex %> md:h-full md:overflow-y-auto flex flex-col px-6 sm:px-9 py-7 shrink-0 <%= pbRight ? 'md:order-2' : '' %>">
-          <%# Mobile: logo NAD treścią (na tle jest tylko md+). NIE przyklejamy go na mobile — ma
-              płynąć z treścią, bez tła (białe tło + odstęp od górnej krawędzi wyglądały źle).
-              „Przyklejony nagłówek" działa na DESKTOPIE: przykleja brandowy pas boczny (poniżej). %>
-          <div class="md:hidden flex items-center gap-2 <%= justify %> mb-6">
-            <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
-              <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
-            <% } else if (!L.hideName) { %>
-              <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
-              <span class="font-semibold tracking-tight text-slate-800"><%= appName %></span>
-            <% } %>
+        <section class="evoke-panel w-full <%= panelWCls %> bg-white min-h-screen <%= shellFlex %> md:h-full flex flex-col shrink-0 <%= pbRight ? 'md:order-2' : '' %>">
+          <%# GOTCHA (fix v0.99.39): scroll NA WEWNĘTRZNYM wrapperze, NIE na `.evoke-panel`.
+              Element z `backdrop-filter`, który jest ZARAZEM kontenerem przewijania (`overflow-y-auto`)
+              nad tłem `position:fixed`, daje w Chrome NIEŚWIEŻĄ próbkę backdropu — prostokątny artefakt
+              „szkła" pojawiający się po repaintcie/hoverze (GPU-zależny, „nie zawsze"). Rozdzielenie:
+              szkło (`.evoke-panel`) stoi w miejscu, przewija się przezroczyste wnętrze → backdrop
+              próbkowany stabilnie. App-shell (panel przewija się sam, pasek przeglądarki znika) bez zmian. %>
+          <div class="flex-1 min-h-0 md:overflow-y-auto flex flex-col px-6 sm:px-9 py-7">
+            <%# Mobile: logo NAD treścią (na tle jest tylko md+). NIE przyklejamy go na mobile — ma
+                płynąć z treścią, bez tła (białe tło + odstęp od górnej krawędzi wyglądały źle).
+                „Przyklejony nagłówek" działa na DESKTOPIE: przykleja brandowy pas boczny (poniżej). %>
+            <div class="md:hidden flex items-center gap-2 <%= justify %> mb-6">
+              <% if (typeof settings !== 'undefined' && settings && settings.logoPath) { %>
+                <%- logoTag(settings, { appName, imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
+              <% } else if (!L.hideName) { %>
+                <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
+                <span class="font-semibold tracking-tight text-slate-800"><%= appName %></span>
+              <% } %>
+            </div>
+            <% if (headerNav) { %><div class="mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white', withTheme: true, linkBase: pNav.linkBase || null }) %></div><% } %>
+            <div class="flex-1 flex flex-col [justify-content:safe_center]"><%- body %></div>
           </div>
-          <% if (headerNav) { %><div class="mb-6"><%- include('../public/_portal_nav', { sections: pNav.sections, navMode: pMode, part: 'chrome-top', tone: 'white', withTheme: true, linkBase: pNav.linkBase || null }) %></div><% } %>
-          <div class="flex-1 flex flex-col [justify-content:safe_center]"><%- body %></div>
         </section>
         <%# Przyklejony nagłówek na DESKTOPIE (stickyHeader): brandowy pas boczny (logo/hero/stopka)
             zostaje w widoku przy przewijaniu treści panelu (md:sticky top-0 h-screen self-start). %>
