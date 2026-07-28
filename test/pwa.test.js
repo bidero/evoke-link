@@ -92,6 +92,22 @@ test('splash: overlay + skrypt gdy włączone i splashMs>0; brak gdy 0/wyłączo
   assert.equal(pwaUtil.splashHtml({ ...base, pwa: { enabled: false, splashMs: 1500 } }), '', 'wyłączone → brak');
 });
 
+test('splash: tryb zawartości (icon / logo / name)', () => {
+  const base = { appName: 'Evoke', colors: { primary: '#6e00a5' }, faviconPath: null, logoPath: '/branding/logo.svg', logo: { darkPath: '/branding/logo_dark.svg' } };
+  const icon = pwaUtil.splashHtml({ ...base, pwa: { enabled: true, splashMs: 1200, iconPath: null, background: '#ffffff', splashMode: 'icon' } });
+  assert.match(icon, /pwa\/icon\.svg/, 'icon: ikona zastępcza');
+  assert.match(icon, />Evoke</, 'icon: + nazwa');
+
+  const name = pwaUtil.splashHtml({ ...base, pwa: { enabled: true, splashMs: 1200, background: '#ffffff', splashMode: 'name' } });
+  assert.ok(!/<img/.test(name), 'name: bez żadnego obrazka');
+  assert.match(name, />Evoke</);
+
+  const logoLight = pwaUtil.splashHtml({ ...base, pwa: { enabled: true, splashMs: 1200, background: '#ffffff', splashMode: 'logo' } });
+  assert.match(logoLight, /\/branding\/logo\.svg/, 'logo na jasnym tle: logoPath');
+  const logoDark = pwaUtil.splashHtml({ ...base, pwa: { enabled: true, splashMs: 1200, background: '#101018', splashMode: 'logo' } });
+  assert.match(logoDark, /\/branding\/logo_dark\.svg/, 'logo na ciemnym tle: wariant darkPath');
+});
+
 test('normalizacja splashMs: clamp 0..5000, brak → domyślne 1200', () => {
   return settingsService.update({ pwa: { enabled: true, splashMs: 99999 } }).then((s) => {
     assert.equal(s.pwa.splashMs, 5000, 'clamp do 5000');

@@ -2,6 +2,8 @@
 // Wszystko sterowane z Settings (utils bez zależności od Express — czyste funkcje).
 const { readableText } = require('./color');
 
+const PWA_SPLASH_MODES = ['icon', 'logo', 'name'];
+
 const esc = (s) => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -21,16 +23,16 @@ function iconType(p) {
   return 'image/png';
 }
 
-// Zastępcza ikona: brandowy PEŁNOKWADRATOWY SVG z inicjałem nazwy. Full-bleed (bez zaokrągleń,
-// bez przezroczystych rogów) → poprawny jako `maskable` (system sam nakłada maskę koła/squircle,
-// a inicjał siedzi w strefie bezpiecznej ~font 260/512, więc nic się nie obcina). Używany też do
-// auto-splash. Zawsze instalowalny bez uploadu.
+// Zastępcza ikona: brandowy kwadrat z ZAOKRĄGLONYMI rogami (rx=96) + inicjał nazwy. Deklarowana
+// tylko jako `purpose:'any'` (maskable usunięty w v0.99.41), więc zaokrąglenie jest bezpieczne
+// i pożądane — full-bleed z v0.99.40 dawał w Chrome na desktopie ostre, kanciaste rogi. Używana
+// też do auto-splash. Zawsze instalowalna bez uploadu.
 function iconSvg(s) {
   const color = themeColor(s);
   const fg = readableText(color) || '#ffffff';
   const initial = esc((appName(s).trim()[0] || 'E').toUpperCase());
   return `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img">`
-    + `<rect width="512" height="512" fill="${esc(color)}"/>`
+    + `<rect width="512" height="512" rx="96" fill="${esc(color)}"/>`
     + `<text x="256" y="256" dy=".07em" text-anchor="middle" dominant-baseline="middle" `
     + `font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="260" font-weight="700" fill="${esc(fg)}">${initial}</text>`
     + `</svg>`;
@@ -101,10 +103,23 @@ function splashHtml(s) {
   if (!p.enabled || !ms) return '';
   const bg = bgColor(s);
   const fg = readableText(bg) || '#0f172a';
-  const iconSrc = p.iconPath ? esc(p.iconPath) : '/pwa/icon.svg';
+  const nameHtml = `<div style="font:600 19px/1.2 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:-.01em;color:${esc(fg)};">${esc(appName(s))}</div>`;
+  // Zawartość: logo brandingu / sama nazwa / ikona+nazwa (domyślnie). Na ciemnym tle bierzemy ciemny
+  // wariant logo (logo.darkPath — zwykle jasny), żeby było widoczne.
+  const mode = PWA_SPLASH_MODES.includes(p.splashMode) ? p.splashMode : 'icon';
+  const dark = readableText(bg) === '#ffffff';
+  const logoSrc = (dark && s.logo && s.logo.darkPath) ? s.logo.darkPath : s.logoPath;
+  let inner;
+  if (mode === 'name') {
+    inner = `<div style="font:700 34px/1.15 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:-.02em;color:${esc(fg)};text-align:center;padding:0 24px;">${esc(appName(s))}</div>`;
+  } else if (mode === 'logo' && logoSrc) {
+    inner = `<img src="${esc(logoSrc)}" alt="" style="max-width:66%;max-height:140px;object-fit:contain;" />`;
+  } else { // icon (+ nazwa)
+    const iconSrc = p.iconPath ? esc(p.iconPath) : '/pwa/icon.svg';
+    inner = `<img src="${iconSrc}" alt="" style="width:104px;height:104px;border-radius:24px;object-fit:contain;" />${nameHtml}`;
+  }
   return `<div id="evoke-splash" aria-hidden="true" style="position:fixed;inset:0;z-index:2147483646;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:${esc(bg)};">`
-    + `<img src="${iconSrc}" alt="" style="width:104px;height:104px;border-radius:24px;object-fit:contain;" />`
-    + `<div style="font:600 19px/1.2 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:-.01em;color:${esc(fg)};">${esc(appName(s))}</div>`
+    + inner
     + `</div>`
     + `<script>(function(){var e=document.getElementById('evoke-splash');if(!e)return;`
     + `var sa=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;var seen;`

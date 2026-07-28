@@ -42,8 +42,9 @@ const DEFAULTS = {
   panel: { menu: [], dashboard: [] },
   // Instalowalna aplikacja (PWA): manifest budowany z tych pól. enabled = emituj <link manifest> + SW.
   // Puste name/themeColor/background = dziedziczy appName / colors.primary / biel. iconPath = wgrana ikona.
-  // splashMs = własny ekran startowy (ikona+nazwa na tle) po otwarciu zainstalowanej aplikacji; 0 = wyłącz.
-  pwa: { enabled: false, name: '', shortName: '', themeColor: '', background: '', display: 'standalone', iconPath: null, splashMs: 1200 },
+  // splashMs = własny ekran startowy po otwarciu zainstalowanej aplikacji (0 = wyłącz);
+  // splashMode = jego zawartość: icon (ikona+nazwa) | logo (logo brandingu) | name (sama nazwa).
+  pwa: { enabled: false, name: '', shortName: '', themeColor: '', background: '', display: 'standalone', iconPath: null, splashMs: 1200, splashMode: 'icon' },
 };
 
 const ALIGNS = ['left', 'center', 'right'];
@@ -58,6 +59,7 @@ const PORTAL_NAVS = ['none', 'tabs', 'side-left', 'side-right', 'top', 'bar-left
 const PDF_TEMPLATES = ['standard', 'band', 'accent', 'proforma', 'accent-card', 'accent-band', 'accent-min', 'clean'];
 const PDF_DOCTYPES = ['rozliczenie', 'proforma'];
 const PWA_DISPLAYS = ['standalone', 'minimal-ui', 'fullscreen', 'browser'];
+const PWA_SPLASH_MODES = ['icon', 'logo', 'name'];
 
 function normPwa(p) {
   const x = p && typeof p === 'object' ? p : {};
@@ -73,6 +75,7 @@ function normPwa(p) {
     display: PWA_DISPLAYS.includes(x.display) ? x.display : DEFAULTS.pwa.display,
     iconPath: x.iconPath || null,
     splashMs: Number.isFinite(ms) ? Math.min(5000, Math.max(0, ms)) : DEFAULTS.pwa.splashMs, // 0..5000; 0 = wyłącz
+    splashMode: PWA_SPLASH_MODES.includes(x.splashMode) ? x.splashMode : DEFAULTS.pwa.splashMode,
   };
 }
 
