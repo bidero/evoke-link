@@ -1130,23 +1130,28 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Ekran startowy (splash) — czas <span class="text-slate-400 font-normal">(ms, 0 = wyłącz)</span></label>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Splash — czas <span class="text-slate-400 font-normal">(ms, 0 = wył.)</span></label>
           <input name="pwaSplashMs" type="number" min="0" max="5000" step="100" value="<%= settings.pwa.splashMs %>"
                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
         </div>
         <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Zawartość ekranu startowego</label>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Zawartość splashu</label>
           <% const _sm = settings.pwa.splashMode || 'icon'; %>
           <select name="pwaSplashMode" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
             <option value="icon" <%= _sm === 'icon' ? 'selected' : '' %>>Ikona + nazwa</option>
-            <option value="logo" <%= _sm === 'logo' ? 'selected' : '' %>>Logo (z brandingu)</option>
+            <option value="logo" <%= _sm === 'logo' ? 'selected' : '' %>>Logo aplikacji</option>
             <option value="name" <%= _sm === 'name' ? 'selected' : '' %>>Sama nazwa</option>
           </select>
         </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Wielkość grafiki <span class="text-slate-400 font-normal">(px)</span></label>
+          <input name="pwaSplashSize" type="number" min="48" max="280" step="4" value="<%= settings.pwa.splashSize %>"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </div>
       </div>
-      <p class="text-[11px] text-slate-400 -mt-1">Po otwarciu <strong>zainstalowanej</strong> aplikacji pokazuje wybraną treść na „tle startowym" przez podany czas, potem znika. Raz na uruchomienie; w przeglądarce nie działa. „Logo" bierze logo z zakładki Branding (na ciemnym tle — wariant dla trybu ciemnego, jeśli ustawiony).</p>
+      <p class="text-[11px] text-slate-400 -mt-1">Po otwarciu <strong>zainstalowanej</strong> aplikacji pokazuje wybraną treść na „tle startowym" przez podany czas, potem znika. Raz na uruchomienie; w przeglądarce nie działa. „Wielkość grafiki" dotyczy ikony/logo. „Logo aplikacji" bierze logo PWA (poniżej), a gdy go brak — logo z Brandingu.</p>
 
       <%# Cache-bust podglądu: zmienia się z logo/rozmiarem/kolorem, więc po zapisie img się odświeża
           (trasa /pwa/icon.svg jest no-cache i generowana z ustawień). %>
@@ -1154,7 +1159,8 @@
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Logo aplikacji (PWA) <span class="text-slate-400 font-normal">— złożymy z niego ikonę z maską</span></label>
         <div class="flex items-center gap-3">
-          <img src="/pwa/icon.svg?v=<%= _iconV %>" alt="Podgląd ikony" class="h-12 w-12 shrink-0 rounded-xl border border-slate-200" />
+          <%# Podgląd = finalna ikona: gotowa ikona (override) jeśli wgrana, inaczej złożona z logo. %>
+          <img src="<%= settings.pwa.iconPath ? settings.pwa.iconPath : '/pwa/icon.svg?v=' + _iconV %>" alt="Podgląd ikony" class="h-12 w-12 shrink-0 rounded-xl border border-slate-200 bg-white object-contain" />
           <input name="pwaLogo" type="file" accept="image/*,.svg" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm" />
           <% if (settings.pwa.logoPath) { %>
             <label class="inline-flex items-center gap-1.5 text-xs text-slate-500 shrink-0"><input type="checkbox" name="removePwaLogo" class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" /> Usuń</label>
@@ -1171,7 +1177,7 @@
       </div>
 
       <details class="text-xs">
-        <summary class="cursor-pointer text-slate-500 hover:text-slate-700">Zaawansowane: gotowa ikona (użyjemy bez zmian, gdy brak logo powyżej)</summary>
+        <summary class="cursor-pointer text-slate-500 hover:text-slate-700">Zaawansowane: gotowa ikona (nadpisuje logo powyżej)</summary>
         <div class="mt-3">
           <div class="flex items-center gap-3">
             <% if (settings.pwa.iconPath) { %><img src="<%= settings.pwa.iconPath %>" alt="Gotowa ikona" class="h-12 w-12 shrink-0 rounded-xl border border-slate-200 bg-white object-contain" /><% } %>
@@ -1180,7 +1186,7 @@
               <label class="inline-flex items-center gap-1.5 text-xs text-slate-500 shrink-0"><input type="checkbox" name="removePwaIcon" class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" /> Usuń</label>
             <% } %>
           </div>
-          <p class="text-[11px] text-slate-400 mt-1">Kompletna, kwadratowa ikona (512×512 PNG) użyta 1:1 — bez tła marki, bez maski. Ignorowana, jeśli wgrasz logo powyżej.</p>
+          <p class="text-[11px] text-slate-400 mt-1">Kompletna, kwadratowa ikona (512×512 PNG) użyta 1:1 — bez tła marki, bez maski. <strong>Nadpisuje</strong> logo powyżej, gdy wgrana.</p>
         </div>
       </details>
     </div>

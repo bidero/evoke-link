@@ -189,6 +189,7 @@ async function updateSettings(req, res, next) {
       logoScale: clampInt(b.pwaLogoScale, 30, 90, 62),
       splashMs: clampInt(b.pwaSplashMs, 0, 5000, 1200),
       splashMode: ['icon', 'logo', 'name'].includes(b.pwaSplashMode) ? b.pwaSplashMode : 'icon',
+      splashSize: clampInt(b.pwaSplashSize, 48, 280, 120),
     };
 
     const data = {

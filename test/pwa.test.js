@@ -50,14 +50,20 @@ test('manifest: wgrana ikona PNG = 192/512 „any", bez SVG-fallbacku i bez mask
   assert.equal(m.display, 'minimal-ui');
 });
 
-test('manifest: osobne logo → składana ikona (any + maskable), logo wygrywa z gotową ikoną', async () => {
+test('manifest: gotowa ikona NADPISUJE logo; samo logo → składana ikona (any + maskable)', async () => {
+  // override: iconPath wygrywa z logoPath → użyta bez zmian, bez ikony składanej
   await settingsService.update({ pwa: { enabled: true, name: '', themeColor: '', background: '', display: 'standalone', iconPath: '/branding/ready.png', logoPath: '/branding/mark.png', logoScale: 60 } });
-  const m = await (await fetch(`${base}/manifest.webmanifest`)).json();
+  let m = await (await fetch(`${base}/manifest.webmanifest`)).json();
+  assert.ok(m.icons.some((i) => i.src === '/branding/ready.png'), 'gotowa ikona użyta (override)');
+  assert.ok(!m.icons.some((i) => i.src.split('?')[0] === '/pwa/icon.svg'), 'brak ikony składanej, gdy jest gotowa');
+
+  // samo logo (bez gotowej ikony) → dwa warianty składanej ikony
+  await settingsService.update({ pwa: { enabled: true, iconPath: null, logoPath: '/branding/mark.png', logoScale: 60 } });
+  m = await (await fetch(`${base}/manifest.webmanifest`)).json();
   const svgs = m.icons.filter((i) => i.src.split('?')[0] === '/pwa/icon.svg');
   assert.equal(svgs.length, 2, 'dwa warianty: any + maskable');
   assert.ok(svgs.some((i) => i.purpose === 'any' && i.src === '/pwa/icon.svg'), 'any (zaokrąglony)');
   assert.ok(svgs.some((i) => i.purpose === 'maskable' && /mask=1/.test(i.src)), 'maskable (osobny wpis, ?mask=1)');
-  assert.ok(!m.icons.some((i) => i.src === '/branding/ready.png'), 'gotowa ikona ignorowana, gdy jest logo');
 });
 
 test('ikona składana: /pwa/icon.svg osadza logo (data URI); maskable=full-bleed, any=zaokrąglony', async () => {
@@ -147,6 +153,26 @@ test('splash: tryb zawartości (icon / logo / name)', () => {
   assert.match(logoLight, /\/branding\/logo\.svg/, 'logo na jasnym tle: logoPath');
   const logoDark = pwaUtil.splashHtml({ ...base, pwa: { enabled: true, splashMs: 1200, background: '#101018', splashMode: 'logo' } });
   assert.match(logoDark, /\/branding\/logo_dark\.svg/, 'logo na ciemnym tle: wariant darkPath');
+});
+
+test('splash: wielkość grafiki (splashSize) w px — ikona i logo', () => {
+  const b = { appName: 'A', colors: { primary: '#6e00a5' }, faviconPath: null, logoPath: '/branding/l.svg' };
+  const icon = pwaUtil.splashHtml({ ...b, pwa: { enabled: true, splashMs: 1200, background: '#fff', splashMode: 'icon', splashSize: 200 } });
+  assert.match(icon, /width:200px;height:200px/, 'ikona w zadanym rozmiarze');
+  const logo = pwaUtil.splashHtml({ ...b, pwa: { enabled: true, splashMs: 1200, background: '#fff', splashMode: 'logo', splashSize: 180 } });
+  assert.match(logo, /max-height:180px/, 'logo w zadanym rozmiarze');
+});
+
+test('normalizacja splashSize: clamp 48..280, brak → 120', () => {
+  return settingsService.update({ pwa: { enabled: true, splashSize: 9999 } }).then((s) => {
+    assert.equal(s.pwa.splashSize, 280);
+    return settingsService.update({ pwa: { enabled: true, splashSize: 1 } });
+  }).then((s) => {
+    assert.equal(s.pwa.splashSize, 48);
+    return settingsService.update({ pwa: { enabled: true, splashSize: 'z' } });
+  }).then((s) => {
+    assert.equal(s.pwa.splashSize, 120);
+  });
 });
 
 test('normalizacja splashMs: clamp 0..5000, brak → domyślne 1200', () => {

@@ -78,8 +78,8 @@ function iconSvg(s, opts) {
 function manifest(s) {
   const p = s.pwa || {};
   const icons = [];
-  // „Gotowa ikona" (iconPath) użyta bez zmian TYLKO gdy nie ma logo do złożenia (logoPath wygrywa).
-  if (p.iconPath && !p.logoPath) {
+  // „Gotowa ikona" (iconPath) NADPISUJE logo — użyta bez zmian, gdy wgrana (override).
+  if (p.iconPath) {
     const type = iconType(p.iconPath);
     if (type === 'image/svg+xml') {
       icons.push({ src: p.iconPath, sizes: 'any', type, purpose: 'any' });
@@ -149,14 +149,15 @@ function splashHtml(s) {
   // Logo splashu: najpierw osobne logo PWA, potem logo brandingu (na ciemnym tle wariant dark).
   const brandLogo = (dark && s.logo && s.logo.darkPath) ? s.logo.darkPath : s.logoPath;
   const logoSrc = p.logoPath || brandLogo;
+  const sz = Math.min(280, Math.max(48, parseInt(p.splashSize, 10) || 120)); // wielkość grafiki (px)
   let inner;
   if (mode === 'name') {
     inner = `<div style="font:700 34px/1.15 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:-.02em;color:${esc(fg)};text-align:center;padding:0 24px;">${esc(appName(s))}</div>`;
   } else if (mode === 'logo' && logoSrc) {
-    inner = `<img src="${esc(logoSrc)}" alt="" style="max-width:66%;max-height:140px;object-fit:contain;" />`;
-  } else { // icon (+ nazwa)
+    inner = `<img src="${esc(logoSrc)}" alt="" style="max-width:80%;max-height:${sz}px;object-fit:contain;" />`;
+  } else { // icon (+ nazwa); gotowa ikona (override) albo składana
     const iconSrc = p.iconPath ? esc(p.iconPath) : '/pwa/icon.svg';
-    inner = `<img src="${iconSrc}" alt="" style="width:104px;height:104px;border-radius:24px;object-fit:contain;" />${nameHtml}`;
+    inner = `<img src="${iconSrc}" alt="" style="width:${sz}px;height:${sz}px;border-radius:${Math.round(sz * 0.22)}px;object-fit:contain;" />${nameHtml}`;
   }
   return `<div id="evoke-splash" aria-hidden="true" style="position:fixed;inset:0;z-index:2147483646;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:${esc(bg)};">`
     + inner
