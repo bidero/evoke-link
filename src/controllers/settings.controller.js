@@ -186,10 +186,10 @@ async function updateSettings(req, res, next) {
       display: ['standalone', 'minimal-ui', 'fullscreen', 'browser'].includes(b.pwaDisplay) ? b.pwaDisplay : 'standalone',
       iconPath: current.pwa.iconPath || null,
       logoPath: current.pwa.logoPath || null, // nadpisywane niżej przy uploadzie/usuwaniu
-      logoScale: clampInt(b.pwaLogoScale, 30, 90, 62),
+      logoScale: clampInt(b.pwaLogoScale, 30, 100, 62),
       splashMs: clampInt(b.pwaSplashMs, 0, 5000, 1200),
       splashMode: ['icon', 'logo', 'name'].includes(b.pwaSplashMode) ? b.pwaSplashMode : 'icon',
-      splashSize: clampInt(b.pwaSplashSize, 48, 280, 120),
+      splashSize: Math.max(48, parseInt(b.pwaSplashSize, 10) || 120), // bez górnego limitu
     };
 
     const data = {

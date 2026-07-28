@@ -1146,8 +1146,8 @@
           </select>
         </div>
         <div>
-          <label class="block text-xs font-medium text-slate-600 mb-1">Wielkość grafiki <span class="text-slate-400 font-normal">(px)</span></label>
-          <input name="pwaSplashSize" type="number" min="48" max="280" step="4" value="<%= settings.pwa.splashSize %>"
+          <label class="block text-xs font-medium text-slate-600 mb-1">Wielkość grafiki <span class="text-slate-400 font-normal">(px, bez limitu)</span></label>
+          <input name="pwaSplashSize" type="number" min="48" step="4" value="<%= settings.pwa.splashSize %>"
                  class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
         </div>
       </div>
@@ -1170,8 +1170,8 @@
       </div>
 
       <div>
-        <label class="block text-xs font-medium text-slate-600 mb-1">Rozmiar logo w ikonie <span class="text-slate-400 font-normal">(30–90%)</span></label>
-        <input name="pwaLogoScale" type="number" min="30" max="90" step="2" value="<%= settings.pwa.logoScale %>"
+        <label class="block text-xs font-medium text-slate-600 mb-1">Rozmiar logo w ikonie <span class="text-slate-400 font-normal">(30–100%)</span></label>
+        <input name="pwaLogoScale" type="number" min="30" max="100" step="2" value="<%= settings.pwa.logoScale %>"
                class="w-full sm:w-48 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
         <p class="text-[11px] text-slate-400 mt-1">Ile miejsca w kafelku zajmuje logo. Mniejsza wartość = więcej marginesu (bezpieczniejsze pod maskę na telefonie).</p>
       </div>

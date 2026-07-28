@@ -149,15 +149,17 @@ function splashHtml(s) {
   // Logo splashu: najpierw osobne logo PWA, potem logo brandingu (na ciemnym tle wariant dark).
   const brandLogo = (dark && s.logo && s.logo.darkPath) ? s.logo.darkPath : s.logoPath;
   const logoSrc = p.logoPath || brandLogo;
-  const sz = Math.min(280, Math.max(48, parseInt(p.splashSize, 10) || 120)); // wielkość grafiki (px)
+  const sz = Math.max(48, parseInt(p.splashSize, 10) || 120); // wielkość grafiki (px) — bez górnego limitu
+  // Caps na viewport: dowolnie duży px nie wyleje się poza ekran (object-fit zachowuje proporcje).
+  const cap = 'max-width:88vw;max-height:74vh;';
   let inner;
   if (mode === 'name') {
     inner = `<div style="font:700 34px/1.15 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:-.02em;color:${esc(fg)};text-align:center;padding:0 24px;">${esc(appName(s))}</div>`;
   } else if (mode === 'logo' && logoSrc) {
-    inner = `<img src="${esc(logoSrc)}" alt="" style="max-width:80%;max-height:${sz}px;object-fit:contain;" />`;
+    inner = `<img src="${esc(logoSrc)}" alt="" style="width:auto;height:${sz}px;${cap}object-fit:contain;" />`;
   } else { // icon (+ nazwa); gotowa ikona (override) albo składana
     const iconSrc = p.iconPath ? esc(p.iconPath) : '/pwa/icon.svg';
-    inner = `<img src="${iconSrc}" alt="" style="width:${sz}px;height:${sz}px;border-radius:${Math.round(sz * 0.22)}px;object-fit:contain;" />${nameHtml}`;
+    inner = `<img src="${iconSrc}" alt="" style="width:${sz}px;height:${sz}px;${cap}border-radius:${Math.round(sz * 0.22)}px;object-fit:contain;" />${nameHtml}`;
   }
   return `<div id="evoke-splash" aria-hidden="true" style="position:fixed;inset:0;z-index:2147483646;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:${esc(bg)};">`
     + inner

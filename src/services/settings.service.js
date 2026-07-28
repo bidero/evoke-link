@@ -80,10 +80,10 @@ function normPwa(p) {
     display: PWA_DISPLAYS.includes(x.display) ? x.display : DEFAULTS.pwa.display,
     iconPath: x.iconPath || null,    // gotowa ikona — NADPISUJE logo (override)
     logoPath: x.logoPath || null,    // osobne logo składane w ikonę (gdy brak gotowej ikony)
-    logoScale: Number.isFinite(scale) ? Math.min(90, Math.max(30, scale)) : DEFAULTS.pwa.logoScale, // % rozmiaru logo w ikonie
+    logoScale: Number.isFinite(scale) ? Math.min(100, Math.max(30, scale)) : DEFAULTS.pwa.logoScale, // % rozmiaru logo w ikonie (30..100)
     splashMs: Number.isFinite(ms) ? Math.min(5000, Math.max(0, ms)) : DEFAULTS.pwa.splashMs, // 0..5000; 0 = wyłącz
     splashMode: PWA_SPLASH_MODES.includes(x.splashMode) ? x.splashMode : DEFAULTS.pwa.splashMode,
-    splashSize: Number.isFinite(ssz) ? Math.min(280, Math.max(48, ssz)) : DEFAULTS.pwa.splashSize, // px grafiki na splashu
+    splashSize: Number.isFinite(ssz) ? Math.max(48, ssz) : DEFAULTS.pwa.splashSize, // px grafiki na splashu — bez górnego limitu
   };
 }
 

@@ -84,9 +84,9 @@ test('ikona składana: /pwa/icon.svg osadza logo (data URI); maskable=full-bleed
   }
 });
 
-test('normalizacja logoScale: clamp 30..90, brak → 62', () => {
+test('normalizacja logoScale: clamp 30..100, brak → 62', () => {
   return settingsService.update({ pwa: { enabled: true, logoScale: 999 } }).then((s) => {
-    assert.equal(s.pwa.logoScale, 90, 'clamp do 90');
+    assert.equal(s.pwa.logoScale, 100, 'clamp do 100');
     return settingsService.update({ pwa: { enabled: true, logoScale: 5 } });
   }).then((s) => {
     assert.equal(s.pwa.logoScale, 30, 'clamp do 30');
@@ -160,18 +160,18 @@ test('splash: wielkość grafiki (splashSize) w px — ikona i logo', () => {
   const icon = pwaUtil.splashHtml({ ...b, pwa: { enabled: true, splashMs: 1200, background: '#fff', splashMode: 'icon', splashSize: 200 } });
   assert.match(icon, /width:200px;height:200px/, 'ikona w zadanym rozmiarze');
   const logo = pwaUtil.splashHtml({ ...b, pwa: { enabled: true, splashMs: 1200, background: '#fff', splashMode: 'logo', splashSize: 180 } });
-  assert.match(logo, /max-height:180px/, 'logo w zadanym rozmiarze');
+  assert.match(logo, /height:180px/, 'logo w zadanym rozmiarze');
 });
 
-test('normalizacja splashSize: clamp 48..280, brak → 120', () => {
+test('normalizacja splashSize: min 48, BEZ górnego limitu, brak → 120', () => {
   return settingsService.update({ pwa: { enabled: true, splashSize: 9999 } }).then((s) => {
-    assert.equal(s.pwa.splashSize, 280);
+    assert.equal(s.pwa.splashSize, 9999, 'bez górnego limitu');
     return settingsService.update({ pwa: { enabled: true, splashSize: 1 } });
   }).then((s) => {
-    assert.equal(s.pwa.splashSize, 48);
+    assert.equal(s.pwa.splashSize, 48, 'min 48');
     return settingsService.update({ pwa: { enabled: true, splashSize: 'z' } });
   }).then((s) => {
-    assert.equal(s.pwa.splashSize, 120);
+    assert.equal(s.pwa.splashSize, 120, 'brak → 120');
   });
 });
 
