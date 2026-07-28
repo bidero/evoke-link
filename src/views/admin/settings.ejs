@@ -1166,7 +1166,7 @@
             <label class="inline-flex items-center gap-1.5 text-xs text-slate-500 shrink-0"><input type="checkbox" name="removePwaLogo" class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" /> Usuń</label>
           <% } %>
         </div>
-        <p class="text-[11px] text-slate-400 mt-1">Wyśrodkujemy je na kolorze motywu i zrobimy ikonę: <strong>zaokrągloną</strong> na komputerze i z <strong>maską</strong> (adaptacyjną, bez obcinania) na telefonie. Najlepiej PNG/SVG z przezroczystym tłem. Podgląd po lewej. <strong>Po zmianie ikony odinstaluj i zainstaluj aplikację ponownie</strong> — system mocno cache'uje ikonę.</p>
+        <p class="text-[11px] text-slate-400 mt-1">Wyśrodkujemy je na kolorze motywu i zrobimy ikonę: <strong>zaokrągloną</strong> na komputerze i z <strong>maską</strong> (adaptacyjną, bez obcinania) na telefonie. Najlepiej PNG/SVG z przezroczystym tłem. Podgląd po lewej.</p>
       </div>
 
       <div>
@@ -1176,19 +1176,17 @@
         <p class="text-[11px] text-slate-400 mt-1">Ile miejsca w kafelku zajmuje logo. Mniejsza wartość = więcej marginesu (bezpieczniejsze pod maskę na telefonie).</p>
       </div>
 
-      <%# Auto-otwarte, gdy gotowa ikona jest ustawiona — inaczej po zapisie sekcja zwija się i wygląda
-          jakby ikona „się nie zapisała" (zapisuje się poprawnie, tylko miniatura była schowana). %>
-      <details class="text-xs" <%= settings.pwa.iconPath ? 'open' : '' %>>
-        <summary class="cursor-pointer text-slate-500 hover:text-slate-700">Zaawansowane: gotowa ikona (nadpisuje logo powyżej)<% if (settings.pwa.iconPath) { %> <span class="text-green-600 font-medium">· wgrana</span><% } %></summary>
+      <details class="text-xs">
+        <summary class="cursor-pointer text-slate-500 hover:text-slate-700">Zaawansowane: gotowa ikona (nadpisuje logo powyżej)</summary>
         <div class="mt-3">
           <div class="flex items-center gap-3">
-            <% if (settings.pwa.iconPath) { %><img src="<%= settings.pwa.iconPath %>?v=<%= _iconV %>" alt="Gotowa ikona" class="h-12 w-12 shrink-0 rounded-xl border border-slate-200 bg-white object-contain" /><% } %>
+            <% if (settings.pwa.iconPath) { %><img src="<%= settings.pwa.iconPath %>" alt="Gotowa ikona" class="h-12 w-12 shrink-0 rounded-xl border border-slate-200 bg-white object-contain" /><% } %>
             <input name="pwaIcon" type="file" accept="image/*,.svg" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm" />
             <% if (settings.pwa.iconPath) { %>
               <label class="inline-flex items-center gap-1.5 text-xs text-slate-500 shrink-0"><input type="checkbox" name="removePwaIcon" class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" /> Usuń</label>
             <% } %>
           </div>
-          <p class="text-[11px] text-slate-400 mt-1">Kompletna, kwadratowa ikona (512×512 PNG) użyta 1:1 dla wariantu „any" (m.in. desktop). Maska (mobile/adaptacyjna) i tak jest składana. Zostaw puste, jeśli chcesz tylko ikonę z logo powyżej.</p>
+          <p class="text-[11px] text-slate-400 mt-1">Kompletna, kwadratowa ikona (512×512 PNG) użyta 1:1 — bez tła marki, bez maski. <strong>Nadpisuje</strong> logo powyżej, gdy wgrana.</p>
         </div>
       </details>
     </div>

@@ -37,31 +37,34 @@ test('manifest: struktura + wartości z ustawień + typ MIME', async () => {
   assert.ok(m.icons.some((i) => i.src === '/pwa/icon.svg'), 'fallback SVG zawsze w icons');
 });
 
-test('manifest: gotowa ikona = ANY (override 192/512), maskable ZAWSZE osobno', async () => {
+test('manifest: gotowa ikona = 192/512 „any" (override), maskable ZAWSZE osobno', async () => {
   await settingsService.update({ pwa: { enabled: true, name: '', shortName: '', themeColor: '', background: '', display: 'minimal-ui', iconPath: '/branding/pwa_abc.png' } });
   const m = await (await fetch(`${base}/manifest.webmanifest`)).json();
   const png = m.icons.filter((i) => i.src === '/branding/pwa_abc.png');
   assert.equal(png.length, 2, '192 + 512 (any)');
-  assert.ok(png.every((i) => i.purpose === 'any' && i.type === 'image/png'), 'gotowa ikona jako any (bez przycinania)');
-  assert.ok(!m.icons.some((i) => i.src === '/pwa/icon.svg'), 'brak składanej ANY, gdy jest gotowa ikona');
+  assert.ok(png.every((i) => i.purpose === 'any' && i.type === 'image/png'), 'gotowa ikona jako any');
+  assert.ok(!m.icons.some((i) => i.src === '/pwa/icon.svg'), 'brak składanej ANY obok gotowej ikony');
   const mask = m.icons.filter((i) => /maskable/.test(i.purpose || ''));
-  assert.equal(mask.length, 1, 'maskable ZAWSZE obecny (był gubiony przy gotowej ikonie → „brak maski")');
-  assert.equal(mask[0].src, '/pwa/icon-maskable.svg', 'osobna ścieżka, nie query');
+  assert.equal(mask.length, 1, 'maskable ZAWSZE obecny (dodana maska)');
+  assert.ok(/mask=1/.test(mask[0].src), 'maskable = /pwa/icon.svg?mask=1');
   assert.equal(m.display, 'minimal-ui');
 });
 
 test('manifest: maskable zawsze; samo logo → any składany + maskable', async () => {
-  // override: gotowa ikona jako any + maskable składany (z gotowej ikony)
+  // override: gotowa ikona jako any + maskable składany
   await settingsService.update({ pwa: { enabled: true, name: '', themeColor: '', background: '', display: 'standalone', iconPath: '/branding/ready.png', logoPath: '/branding/mark.png', logoScale: 60 } });
   let m = await (await fetch(`${base}/manifest.webmanifest`)).json();
   assert.ok(m.icons.some((i) => i.src === '/branding/ready.png' && i.purpose === 'any'), 'gotowa ikona = any (override)');
-  assert.ok(m.icons.some((i) => i.src === '/pwa/icon-maskable.svg' && i.purpose === 'maskable'), 'maskable obecny mimo gotowej ikony');
+  assert.ok(!m.icons.some((i) => i.src === '/pwa/icon.svg'), 'brak składanej ANY gdy jest gotowa');
+  assert.ok(m.icons.some((i) => i.src === '/pwa/icon.svg?mask=1' && i.purpose === 'maskable'), 'maskable ZAWSZE obecny');
 
-  // samo logo (bez gotowej ikony) → any składany zaokrąglony + maskable składany
+  // samo logo (bez gotowej ikony) → any składany + maskable składany
   await settingsService.update({ pwa: { enabled: true, iconPath: null, logoPath: '/branding/mark.png', logoScale: 60 } });
   m = await (await fetch(`${base}/manifest.webmanifest`)).json();
-  assert.ok(m.icons.some((i) => i.src === '/pwa/icon.svg' && i.purpose === 'any'), 'any składany (zaokrąglony)');
-  assert.ok(m.icons.some((i) => i.src === '/pwa/icon-maskable.svg' && i.purpose === 'maskable'), 'maskable składany');
+  const svgs = m.icons.filter((i) => i.src.split('?')[0] === '/pwa/icon.svg');
+  assert.equal(svgs.length, 2, 'any + maskable');
+  assert.ok(svgs.some((i) => i.purpose === 'any' && i.src === '/pwa/icon.svg'), 'any (zaokrąglony)');
+  assert.ok(svgs.some((i) => i.purpose === 'maskable' && /mask=1/.test(i.src)), 'maskable (osobny wpis)');
 });
 
 test('ikona składana: /pwa/icon.svg osadza logo (data URI); maskable=full-bleed, any=zaokrąglony', async () => {
@@ -74,7 +77,7 @@ test('ikona składana: /pwa/icon.svg osadza logo (data URI); maskable=full-bleed
     const any = await (await fetch(`${base}/pwa/icon.svg`)).text();
     assert.match(any, /<image[^>]+data:image\/png;base64,/, 'logo osadzone jako data URI');
     assert.match(any, /rx="96"/, 'any: zaokrąglone rogi');
-    const mask = await (await fetch(`${base}/pwa/icon-maskable.svg`)).text();
+    const mask = await (await fetch(`${base}/pwa/icon.svg?mask=1`)).text();
     assert.match(mask, /rx="0"/, 'maskable: full-bleed (bez zaokrągleń, OS nakłada maskę)');
     assert.match(mask, /<image/, 'maskable też ma logo');
   } finally {

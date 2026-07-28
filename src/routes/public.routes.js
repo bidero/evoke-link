@@ -16,7 +16,6 @@ const router = express.Router();
 // PWA (instalowalna aplikacja): manifest + zastępcza ikona. Publiczne (przeglądarka pobiera sama).
 router.get('/manifest.webmanifest', pwaCtrl.manifest);
 router.get('/pwa/icon.svg', pwaCtrl.icon);
-router.get('/pwa/icon-maskable.svg', pwaCtrl.icon); // wariant maskable (full-bleed) — rozpoznawany po ścieżce
 
 // Strona główna — w MVP przekierowuje do panelu.
 // Docelowo (Etap 6) może to być brandowana strona-wizytówka.
