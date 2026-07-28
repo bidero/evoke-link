@@ -19,9 +19,9 @@ async function icon(req, res, next) {
     const s = await settingsService.get();
     res.type('image/svg+xml');
     // no-cache: ikona jest generowana z ustawień (logo/kolor/rozmiar) — podgląd i instalacja mają
-    // odzwierciedlać bieżący stan po zapisie. Wariant maskable przez ?mask=1.
+    // odzwierciedlać bieżący stan po zapisie. Wariant maskable = trasa /pwa/icon-maskable.svg.
     res.set('Cache-Control', 'no-cache');
-    res.send(pwa.iconSvg(s, { maskable: req.query.mask === '1' }));
+    res.send(pwa.iconSvg(s, { maskable: /maskable/.test(req.path) || req.query.mask === '1' }));
   } catch (err) {
     next(err);
   }

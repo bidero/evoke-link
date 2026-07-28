@@ -56,7 +56,8 @@ function iconSvg(s, opts) {
   const maskable = !!(opts && opts.maskable);
   const color = themeColor(s);
   const rx = maskable ? 0 : 96;
-  const logo = logoDataUri(s.pwa && s.pwa.logoPath);
+  // Źródło grafiki ikony: osobne logo PWA, a gdy go brak — gotowa ikona (żeby maskable też ją miał).
+  const logo = logoDataUri(s.pwa && (s.pwa.logoPath || s.pwa.iconPath));
   let inner;
   if (logo) {
     const eff = (logoScale(s) / 100) * (maskable ? 0.8 : 1); // maskable: margines na maskę
@@ -78,24 +79,23 @@ function iconSvg(s, opts) {
 function manifest(s) {
   const p = s.pwa || {};
   const icons = [];
-  // „Gotowa ikona" (iconPath) NADPISUJE logo — użyta bez zmian, gdy wgrana (override).
+  // ANY (m.in. desktop): gotowa ikona 1:1 (override), a gdy jej brak — składana zaokrąglona.
   if (p.iconPath) {
     const type = iconType(p.iconPath);
     if (type === 'image/svg+xml') {
       icons.push({ src: p.iconPath, sizes: 'any', type, purpose: 'any' });
     } else {
-      // Bez `maskable` — kształtu gotowej ikony nie znamy, maskable mógłby ją przyciąć.
       icons.push({ src: p.iconPath, sizes: '192x192', type, purpose: 'any' });
       icons.push({ src: p.iconPath, sizes: '512x512', type, purpose: 'any' });
     }
   } else {
-    // Ikona SKŁADANA (logo na kolorze marki, albo inicjał): dwa OSOBNE wpisy (nie łączony purpose —
-    // Safari używa `any`, ignoruje `maskable`): `any` = zaokrąglone rogi (desktop), `maskable` =
-    // pełnokwadratowe, OS nakłada maskę (mobile). Logo ma margines/safe-zone → maska nic nie tnie.
-    // Logo osadzone w SVG (data URI) → nie ma konkurencji z rastrem (Chrome nie podmieni na wektor).
     icons.push({ src: '/pwa/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' });
-    icons.push({ src: '/pwa/icon.svg?mask=1', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' });
   }
+  // MASKABLE — ZAWSZE (to była przyczyna „znowu nie ma maski": przy gotowej ikonie manifest go gubił).
+  // Składany, pełnokwadratowy, z grafiki usera (logo albo gotowa ikona) w strefie bezpiecznej → OS
+  // nakłada maskę (Android + desktopowy Chrome), nic nie tnie. OSOBNA ŚCIEŻKA (nie query — pewniejsze
+  // parsowanie) i OSOBNY wpis purpose (Safari używa `any`, ignoruje `maskable`).
+  icons.push({ src: '/pwa/icon-maskable.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' });
   return {
     name: appName(s),
     short_name: shortName(s),

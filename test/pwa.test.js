@@ -37,33 +37,31 @@ test('manifest: struktura + wartości z ustawień + typ MIME', async () => {
   assert.ok(m.icons.some((i) => i.src === '/pwa/icon.svg'), 'fallback SVG zawsze w icons');
 });
 
-test('manifest: wgrana ikona PNG = 192/512 „any", bez SVG-fallbacku i bez maskable', async () => {
+test('manifest: gotowa ikona = ANY (override 192/512), maskable ZAWSZE osobno', async () => {
   await settingsService.update({ pwa: { enabled: true, name: '', shortName: '', themeColor: '', background: '', display: 'minimal-ui', iconPath: '/branding/pwa_abc.png' } });
   const m = await (await fetch(`${base}/manifest.webmanifest`)).json();
   const png = m.icons.filter((i) => i.src === '/branding/pwa_abc.png');
   assert.equal(png.length, 2, '192 + 512 (any)');
-  assert.ok(png.every((i) => i.purpose === 'any'), 'wgrana ikona bez maskable → system jej nie przycina');
-  assert.ok(png.every((i) => i.type === 'image/png'));
-  // KLUCZOWE: przy wgranej ikonie NIE dokładamy SVG (skalowalny SVG wygrywał z PNG w Chrome → ikona usera znikała)
-  assert.ok(!m.icons.some((i) => i.src === '/pwa/icon.svg'), 'brak SVG-fallbacku obok wgranej ikony');
-  assert.ok(!m.icons.some((i) => /maskable/.test(i.purpose || '')), 'zero maskable (bez przycinania i bez problemów z parsowaniem w Safari)');
+  assert.ok(png.every((i) => i.purpose === 'any' && i.type === 'image/png'), 'gotowa ikona jako any (bez przycinania)');
+  assert.ok(!m.icons.some((i) => i.src === '/pwa/icon.svg'), 'brak składanej ANY, gdy jest gotowa ikona');
+  const mask = m.icons.filter((i) => /maskable/.test(i.purpose || ''));
+  assert.equal(mask.length, 1, 'maskable ZAWSZE obecny (był gubiony przy gotowej ikonie → „brak maski")');
+  assert.equal(mask[0].src, '/pwa/icon-maskable.svg', 'osobna ścieżka, nie query');
   assert.equal(m.display, 'minimal-ui');
 });
 
-test('manifest: gotowa ikona NADPISUJE logo; samo logo → składana ikona (any + maskable)', async () => {
-  // override: iconPath wygrywa z logoPath → użyta bez zmian, bez ikony składanej
+test('manifest: maskable zawsze; samo logo → any składany + maskable', async () => {
+  // override: gotowa ikona jako any + maskable składany (z gotowej ikony)
   await settingsService.update({ pwa: { enabled: true, name: '', themeColor: '', background: '', display: 'standalone', iconPath: '/branding/ready.png', logoPath: '/branding/mark.png', logoScale: 60 } });
   let m = await (await fetch(`${base}/manifest.webmanifest`)).json();
-  assert.ok(m.icons.some((i) => i.src === '/branding/ready.png'), 'gotowa ikona użyta (override)');
-  assert.ok(!m.icons.some((i) => i.src.split('?')[0] === '/pwa/icon.svg'), 'brak ikony składanej, gdy jest gotowa');
+  assert.ok(m.icons.some((i) => i.src === '/branding/ready.png' && i.purpose === 'any'), 'gotowa ikona = any (override)');
+  assert.ok(m.icons.some((i) => i.src === '/pwa/icon-maskable.svg' && i.purpose === 'maskable'), 'maskable obecny mimo gotowej ikony');
 
-  // samo logo (bez gotowej ikony) → dwa warianty składanej ikony
+  // samo logo (bez gotowej ikony) → any składany zaokrąglony + maskable składany
   await settingsService.update({ pwa: { enabled: true, iconPath: null, logoPath: '/branding/mark.png', logoScale: 60 } });
   m = await (await fetch(`${base}/manifest.webmanifest`)).json();
-  const svgs = m.icons.filter((i) => i.src.split('?')[0] === '/pwa/icon.svg');
-  assert.equal(svgs.length, 2, 'dwa warianty: any + maskable');
-  assert.ok(svgs.some((i) => i.purpose === 'any' && i.src === '/pwa/icon.svg'), 'any (zaokrąglony)');
-  assert.ok(svgs.some((i) => i.purpose === 'maskable' && /mask=1/.test(i.src)), 'maskable (osobny wpis, ?mask=1)');
+  assert.ok(m.icons.some((i) => i.src === '/pwa/icon.svg' && i.purpose === 'any'), 'any składany (zaokrąglony)');
+  assert.ok(m.icons.some((i) => i.src === '/pwa/icon-maskable.svg' && i.purpose === 'maskable'), 'maskable składany');
 });
 
 test('ikona składana: /pwa/icon.svg osadza logo (data URI); maskable=full-bleed, any=zaokrąglony', async () => {
@@ -76,7 +74,7 @@ test('ikona składana: /pwa/icon.svg osadza logo (data URI); maskable=full-bleed
     const any = await (await fetch(`${base}/pwa/icon.svg`)).text();
     assert.match(any, /<image[^>]+data:image\/png;base64,/, 'logo osadzone jako data URI');
     assert.match(any, /rx="96"/, 'any: zaokrąglone rogi');
-    const mask = await (await fetch(`${base}/pwa/icon.svg?mask=1`)).text();
+    const mask = await (await fetch(`${base}/pwa/icon-maskable.svg`)).text();
     assert.match(mask, /rx="0"/, 'maskable: full-bleed (bez zaokrągleń, OS nakłada maskę)');
     assert.match(mask, /<image/, 'maskable też ma logo');
   } finally {
