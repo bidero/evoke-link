@@ -44,7 +44,9 @@ const DEFAULTS = {
   // Puste name/themeColor/background = dziedziczy appName / colors.primary / biel. iconPath = wgrana ikona.
   // splashMs = własny ekran startowy po otwarciu zainstalowanej aplikacji (0 = wyłącz);
   // splashMode = jego zawartość: icon (ikona+nazwa) | logo (logo brandingu) | name (sama nazwa).
-  pwa: { enabled: false, name: '', shortName: '', themeColor: '', background: '', display: 'standalone', iconPath: null, splashMs: 1200, splashMode: 'icon' },
+  // logoPath = osobne logo PWA składane w ikonę (na kolorze marki); logoScale = jego rozmiar (%).
+  // iconPath = gotowa ikona użyta bez zmian (alternatywa, gdy brak logoPath).
+  pwa: { enabled: false, name: '', shortName: '', themeColor: '', background: '', display: 'standalone', iconPath: null, logoPath: null, logoScale: 62, splashMs: 1200, splashMode: 'icon' },
 };
 
 const ALIGNS = ['left', 'center', 'right'];
@@ -66,6 +68,7 @@ function normPwa(p) {
   const str = (v) => (typeof v === 'string' ? v.trim() : '');
   const hex = (v) => { const s = str(v); return /^#[0-9a-fA-F]{3,8}$/.test(s) ? s : ''; };
   const ms = parseInt(x.splashMs, 10);
+  const scale = parseInt(x.logoScale, 10);
   return {
     enabled: !!x.enabled,
     name: str(x.name).slice(0, 60),
@@ -74,6 +77,8 @@ function normPwa(p) {
     background: hex(x.background),    // puste = biel
     display: PWA_DISPLAYS.includes(x.display) ? x.display : DEFAULTS.pwa.display,
     iconPath: x.iconPath || null,
+    logoPath: x.logoPath || null,    // osobne logo składane w ikonę (wygrywa z iconPath)
+    logoScale: Number.isFinite(scale) ? Math.min(90, Math.max(30, scale)) : DEFAULTS.pwa.logoScale, // % rozmiaru logo w ikonie
     splashMs: Number.isFinite(ms) ? Math.min(5000, Math.max(0, ms)) : DEFAULTS.pwa.splashMs, // 0..5000; 0 = wyłącz
     splashMode: PWA_SPLASH_MODES.includes(x.splashMode) ? x.splashMode : DEFAULTS.pwa.splashMode,
   };

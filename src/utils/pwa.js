@@ -1,8 +1,29 @@
-// PWA (instalowalna aplikacja): manifest, ikona zastępcza (SVG) i tagi <head>.
-// Wszystko sterowane z Settings (utils bez zależności od Express — czyste funkcje).
+// PWA (instalowalna aplikacja): manifest, generowana ikona (SVG) i tagi <head>.
+// Sterowane z Settings. Ikona składana z logo (pwa.logoPath) na kolorze marki — dwa warianty:
+// zaokrąglony (any, desktop) i pełnokwadratowy (maskable, mobile — logo w strefie bezpiecznej).
+const fs = require('fs');
+const path = require('path');
 const { readableText } = require('./color');
 
 const PWA_SPLASH_MODES = ['icon', 'logo', 'name'];
+const BRANDING_DIR = path.join(__dirname, '..', '..', 'public', 'branding');
+const LOGO_EMBED_MAX = 1.5 * 1024 * 1024; // powyżej — nie osadzamy (byłaby ogromna ikona-SVG)
+
+// Wgrany plik z public/branding/ → data URI (osadzenie w SVG ikony; brak zależności od zewn. ref).
+// basename = ochrona przed path traversal (nazwy plików generuje multer, ale trzymamy się bezpiecznie).
+function logoDataUri(p) {
+  if (!p) return null;
+  try {
+    const file = path.join(BRANDING_DIR, path.basename(String(p)));
+    const buf = fs.readFileSync(file);
+    if (buf.length > LOGO_EMBED_MAX) return null;
+    const ext = path.extname(file).toLowerCase();
+    const mime = ext === '.svg' ? 'image/svg+xml' : ext === '.png' ? 'image/png'
+      : (ext === '.jpg' || ext === '.jpeg') ? 'image/jpeg' : ext === '.webp' ? 'image/webp'
+      : ext === '.gif' ? 'image/gif' : null;
+    return mime ? `data:${mime};base64,${buf.toString('base64')}` : null;
+  } catch (e) { return null; }
+}
 
 const esc = (s) => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -23,42 +44,57 @@ function iconType(p) {
   return 'image/png';
 }
 
-// Zastępcza ikona: brandowy kwadrat z ZAOKRĄGLONYMI rogami (rx=96) + inicjał nazwy. Deklarowana
-// tylko jako `purpose:'any'` (maskable usunięty w v0.99.41), więc zaokrąglenie jest bezpieczne
-// i pożądane — full-bleed z v0.99.40 dawał w Chrome na desktopie ostre, kanciaste rogi. Używana
-// też do auto-splash. Zawsze instalowalna bez uploadu.
-function iconSvg(s) {
+function logoScale(s) {
+  const n = parseInt(s.pwa && s.pwa.logoScale, 10);
+  return Number.isFinite(n) ? Math.min(90, Math.max(30, n)) : 62;
+}
+
+// Generowana ikona (512×512): kolor marki + wyśrodkowane logo (pwa.logoPath, osadzone) albo inicjał.
+// maskable=true → full-bleed (rx=0), OS nakłada maskę; logo dodatkowo zmniejszone (×0.8) do strefy
+// bezpiecznej, żeby maska nic nie ucięła. maskable=false → zaokrąglone rogi (rx=96) dla „any".
+function iconSvg(s, opts) {
+  const maskable = !!(opts && opts.maskable);
   const color = themeColor(s);
-  const fg = readableText(color) || '#ffffff';
-  const initial = esc((appName(s).trim()[0] || 'E').toUpperCase());
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img">`
-    + `<rect width="512" height="512" rx="96" fill="${esc(color)}"/>`
-    + `<text x="256" y="256" dy=".07em" text-anchor="middle" dominant-baseline="middle" `
-    + `font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="260" font-weight="700" fill="${esc(fg)}">${initial}</text>`
-    + `</svg>`;
+  const rx = maskable ? 0 : 96;
+  const logo = logoDataUri(s.pwa && s.pwa.logoPath);
+  let inner;
+  if (logo) {
+    const eff = (logoScale(s) / 100) * (maskable ? 0.8 : 1); // maskable: margines na maskę
+    const size = Math.round(512 * eff);
+    const off = Math.round((512 - size) / 2);
+    // href + xlink:href — dla starszych rasteryzerów SVG. preserveAspectRatio zachowuje proporcje logo.
+    inner = `<image href="${logo}" xlink:href="${logo}" x="${off}" y="${off}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>`;
+  } else {
+    const fg = readableText(color) || '#ffffff';
+    const initial = esc((appName(s).trim()[0] || 'E').toUpperCase());
+    inner = `<text x="256" y="256" dy=".07em" text-anchor="middle" dominant-baseline="middle" `
+      + `font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif" font-size="${maskable ? 220 : 260}" font-weight="700" fill="${esc(fg)}">${initial}</text>`;
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="512" height="512" viewBox="0 0 512 512" role="img">`
+    + `<rect width="512" height="512" rx="${rx}" fill="${esc(color)}"/>${inner}</svg>`;
 }
 
 // Obiekt manifestu (serwowany jako /manifest.webmanifest).
 function manifest(s) {
+  const p = s.pwa || {};
   const icons = [];
-  const uploaded = s.pwa && s.pwa.iconPath;
-  if (uploaded) {
-    const type = iconType(uploaded);
+  // „Gotowa ikona" (iconPath) użyta bez zmian TYLKO gdy nie ma logo do złożenia (logoPath wygrywa).
+  if (p.iconPath && !p.logoPath) {
+    const type = iconType(p.iconPath);
     if (type === 'image/svg+xml') {
-      icons.push({ src: uploaded, sizes: 'any', type, purpose: 'any' });
+      icons.push({ src: p.iconPath, sizes: 'any', type, purpose: 'any' });
     } else {
-      // Wyłącznie `purpose: 'any'` — bez `maskable`. Kształtu wgranej ikony nie znamy, a maskable
-      // kazałby systemowi przyciąć ją do koła/squircle (obcięte logo — pierwsze zgłoszenie usera).
-      icons.push({ src: uploaded, sizes: '192x192', type, purpose: 'any' });
-      icons.push({ src: uploaded, sizes: '512x512', type, purpose: 'any' });
+      // Bez `maskable` — kształtu gotowej ikony nie znamy, maskable mógłby ją przyciąć.
+      icons.push({ src: p.iconPath, sizes: '192x192', type, purpose: 'any' });
+      icons.push({ src: p.iconPath, sizes: '512x512', type, purpose: 'any' });
     }
   } else {
-    // Fallback (inicjał na kolorze marki) DOPIERO gdy nie ma wgranej ikony. GOTCHA: skalowalny SVG
-    // POTRAFI wygrać z wgranym PNG w Chrome (przeglądarka woli wektor) i podmienić ikonę usera na
-    // generyczny inicjał („ikona przestała działać"), więc przy wgranej ikonie NIE dokładamy fallbacku.
-    // `purpose:'any'` (bez `maskable`): łączony „any maskable" bywał ignorowany przez Safari (nie zna
-    // maskable) → brak ikony. Pełnokwadratowy SVG i tak wypełnia obszar, więc nic nie jest przycięte.
+    // Ikona SKŁADANA (logo na kolorze marki, albo inicjał): dwa OSOBNE wpisy (nie łączony purpose —
+    // Safari używa `any`, ignoruje `maskable`): `any` = zaokrąglone rogi (desktop), `maskable` =
+    // pełnokwadratowe, OS nakłada maskę (mobile). Logo ma margines/safe-zone → maska nic nie tnie.
+    // Logo osadzone w SVG (data URI) → nie ma konkurencji z rastrem (Chrome nie podmieni na wektor).
     icons.push({ src: '/pwa/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' });
+    icons.push({ src: '/pwa/icon.svg?mask=1', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' });
   }
   return {
     name: appName(s),
@@ -79,7 +115,9 @@ function manifest(s) {
 // albo favicon (iOS ignoruje SVG jako apple-touch — SVG zostaje w manifeście dla reszty).
 function headTags(s) {
   if (!(s.pwa && s.pwa.enabled)) return '';
-  const appleIcon = (s.pwa.iconPath && !/\.svg$/i.test(s.pwa.iconPath)) ? s.pwa.iconPath : (s.faviconPath && !/\.svg$/i.test(s.faviconPath) ? s.faviconPath : '');
+  // apple-touch wymaga rastra (iOS ignoruje SVG). Kolejność: gotowa ikona → logo PWA → favicon.
+  const raster = (v) => (v && !/\.svg$/i.test(v)) ? v : '';
+  const appleIcon = raster(s.pwa.iconPath) || raster(s.pwa.logoPath) || raster(s.faviconPath) || '';
   return [
     '<link rel="manifest" href="/manifest.webmanifest">',
     `<meta name="theme-color" content="${esc(themeColor(s))}">`,
@@ -108,7 +146,9 @@ function splashHtml(s) {
   // wariant logo (logo.darkPath — zwykle jasny), żeby było widoczne.
   const mode = PWA_SPLASH_MODES.includes(p.splashMode) ? p.splashMode : 'icon';
   const dark = readableText(bg) === '#ffffff';
-  const logoSrc = (dark && s.logo && s.logo.darkPath) ? s.logo.darkPath : s.logoPath;
+  // Logo splashu: najpierw osobne logo PWA, potem logo brandingu (na ciemnym tle wariant dark).
+  const brandLogo = (dark && s.logo && s.logo.darkPath) ? s.logo.darkPath : s.logoPath;
+  const logoSrc = p.logoPath || brandLogo;
   let inner;
   if (mode === 'name') {
     inner = `<div style="font:700 34px/1.15 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:-.02em;color:${esc(fg)};text-align:center;padding:0 24px;">${esc(appName(s))}</div>`;

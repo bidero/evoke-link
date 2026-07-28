@@ -18,8 +18,10 @@ async function icon(req, res, next) {
   try {
     const s = await settingsService.get();
     res.type('image/svg+xml');
-    res.set('Cache-Control', 'public, max-age=300');
-    res.send(pwa.iconSvg(s));
+    // no-cache: ikona jest generowana z ustawień (logo/kolor/rozmiar) — podgląd i instalacja mają
+    // odzwierciedlać bieżący stan po zapisie. Wariant maskable przez ?mask=1.
+    res.set('Cache-Control', 'no-cache');
+    res.send(pwa.iconSvg(s, { maskable: req.query.mask === '1' }));
   } catch (err) {
     next(err);
   }

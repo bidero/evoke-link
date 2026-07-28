@@ -3,6 +3,7 @@
 // settingsService.update({ pwa }) patchuje TYLKO kolumnę pwa (reszta ustawień nietknięta).
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
+const fs = require('fs');
 const path = require('path');
 process.chdir(path.join(__dirname, '..'));
 const app = require('../src/app');
@@ -47,6 +48,46 @@ test('manifest: wgrana ikona PNG = 192/512 „any", bez SVG-fallbacku i bez mask
   assert.ok(!m.icons.some((i) => i.src === '/pwa/icon.svg'), 'brak SVG-fallbacku obok wgranej ikony');
   assert.ok(!m.icons.some((i) => /maskable/.test(i.purpose || '')), 'zero maskable (bez przycinania i bez problemów z parsowaniem w Safari)');
   assert.equal(m.display, 'minimal-ui');
+});
+
+test('manifest: osobne logo → składana ikona (any + maskable), logo wygrywa z gotową ikoną', async () => {
+  await settingsService.update({ pwa: { enabled: true, name: '', themeColor: '', background: '', display: 'standalone', iconPath: '/branding/ready.png', logoPath: '/branding/mark.png', logoScale: 60 } });
+  const m = await (await fetch(`${base}/manifest.webmanifest`)).json();
+  const svgs = m.icons.filter((i) => i.src.split('?')[0] === '/pwa/icon.svg');
+  assert.equal(svgs.length, 2, 'dwa warianty: any + maskable');
+  assert.ok(svgs.some((i) => i.purpose === 'any' && i.src === '/pwa/icon.svg'), 'any (zaokrąglony)');
+  assert.ok(svgs.some((i) => i.purpose === 'maskable' && /mask=1/.test(i.src)), 'maskable (osobny wpis, ?mask=1)');
+  assert.ok(!m.icons.some((i) => i.src === '/branding/ready.png'), 'gotowa ikona ignorowana, gdy jest logo');
+});
+
+test('ikona składana: /pwa/icon.svg osadza logo (data URI); maskable=full-bleed, any=zaokrąglony', async () => {
+  const dir = path.join(__dirname, '..', 'public', 'branding');
+  const file = path.join(dir, '_pwatest.png');
+  // 1×1 czerwony PNG
+  fs.writeFileSync(file, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'));
+  try {
+    await settingsService.update({ pwa: { enabled: true, name: '', themeColor: '#6e00a5', background: '', display: 'standalone', iconPath: null, logoPath: '/branding/_pwatest.png', logoScale: 60 } });
+    const any = await (await fetch(`${base}/pwa/icon.svg`)).text();
+    assert.match(any, /<image[^>]+data:image\/png;base64,/, 'logo osadzone jako data URI');
+    assert.match(any, /rx="96"/, 'any: zaokrąglone rogi');
+    const mask = await (await fetch(`${base}/pwa/icon.svg?mask=1`)).text();
+    assert.match(mask, /rx="0"/, 'maskable: full-bleed (bez zaokrągleń, OS nakłada maskę)');
+    assert.match(mask, /<image/, 'maskable też ma logo');
+  } finally {
+    try { fs.unlinkSync(file); } catch (e) {}
+  }
+});
+
+test('normalizacja logoScale: clamp 30..90, brak → 62', () => {
+  return settingsService.update({ pwa: { enabled: true, logoScale: 999 } }).then((s) => {
+    assert.equal(s.pwa.logoScale, 90, 'clamp do 90');
+    return settingsService.update({ pwa: { enabled: true, logoScale: 5 } });
+  }).then((s) => {
+    assert.equal(s.pwa.logoScale, 30, 'clamp do 30');
+    return settingsService.update({ pwa: { enabled: true, logoScale: 'x' } });
+  }).then((s) => {
+    assert.equal(s.pwa.logoScale, 62, 'brak → domyślne 62');
+  });
 });
 
 test('ikona zastępcza: SVG z inicjałem nazwy', async () => {

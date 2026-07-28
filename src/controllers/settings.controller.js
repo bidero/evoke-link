@@ -185,6 +185,8 @@ async function updateSettings(req, res, next) {
       background: safeHex(b.pwaBackground, '') || '',
       display: ['standalone', 'minimal-ui', 'fullscreen', 'browser'].includes(b.pwaDisplay) ? b.pwaDisplay : 'standalone',
       iconPath: current.pwa.iconPath || null,
+      logoPath: current.pwa.logoPath || null, // nadpisywane niżej przy uploadzie/usuwaniu
+      logoScale: clampInt(b.pwaLogoScale, 30, 90, 62),
       splashMs: clampInt(b.pwaSplashMs, 0, 5000, 1200),
       splashMode: ['icon', 'logo', 'name'].includes(b.pwaSplashMode) ? b.pwaSplashMode : 'icon',
     };
@@ -292,7 +294,11 @@ async function updateSettings(req, res, next) {
     if (mailLogo) { sanitizeIfSvg(mailLogo); data.emails.logoPath = `/branding/${mailLogo.filename}`; }
     else if (b.removeMailLogo === 'on') data.emails.logoPath = null;
 
-    // --- Plik: ikona aplikacji (PWA) ---
+    // --- Pliki: ikona aplikacji (PWA) — osobne logo składane + gotowa ikona ---
+    const pwaLogo = uploadedFile(req, 'pwaLogo');
+    if (pwaLogo) { sanitizeIfSvg(pwaLogo); data.pwa.logoPath = `/branding/${pwaLogo.filename}`; }
+    else if (b.removePwaLogo === 'on') data.pwa.logoPath = null;
+
     const pwaIcon = uploadedFile(req, 'pwaIcon');
     if (pwaIcon) { sanitizeIfSvg(pwaIcon); data.pwa.iconPath = `/branding/${pwaIcon.filename}`; }
     else if (b.removePwaIcon === 'on') data.pwa.iconPath = null;
