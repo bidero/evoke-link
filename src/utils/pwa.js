@@ -49,14 +49,15 @@ function logoScale(s) {
   return Number.isFinite(n) ? Math.min(90, Math.max(30, n)) : 62;
 }
 
-// Generowana ikona (512×512): kolor marki + wyśrodkowane logo (pwa.logoPath, osadzone) albo inicjał.
-// maskable=true → full-bleed (rx=0), OS nakłada maskę; logo dodatkowo zmniejszone (×0.8) do strefy
-// bezpiecznej, żeby maska nic nie ucięła. maskable=false → zaokrąglone rogi (rx=96) dla „any".
+// Generowana ikona (512×512): kolor marki + wyśrodkowana IKONA (pwa.iconPath, osadzona) albo inicjał.
+// UWAGA: źródłem ikony jest `iconPath` (osobne pole „Ikona aplikacji") — NIE `logoPath` (to jest
+// logo splashu, działa niezależnie). maskable=true → full-bleed (rx=0), OS nakłada maskę; grafika
+// zmniejszona (×0.8) do strefy bezpiecznej. maskable=false → zaokrąglone rogi (rx=96) dla „any".
 function iconSvg(s, opts) {
   const maskable = !!(opts && opts.maskable);
   const color = themeColor(s);
   const rx = maskable ? 0 : 96;
-  const logo = logoDataUri(s.pwa && s.pwa.logoPath);
+  const logo = logoDataUri(s.pwa && s.pwa.iconPath);
   let inner;
   if (logo) {
     const eff = (logoScale(s) / 100) * (maskable ? 0.8 : 1); // maskable: margines na maskę
@@ -76,23 +77,14 @@ function iconSvg(s, opts) {
 
 // Obiekt manifestu (serwowany jako /manifest.webmanifest).
 function manifest(s) {
-  const p = s.pwa || {};
-  const icons = [];
-  // ANY: gotowa ikona 1:1 (override), a gdy jej brak — składana zaokrąglona.
-  if (p.iconPath) {
-    const type = iconType(p.iconPath);
-    if (type === 'image/svg+xml') {
-      icons.push({ src: p.iconPath, sizes: 'any', type, purpose: 'any' });
-    } else {
-      icons.push({ src: p.iconPath, sizes: '192x192', type, purpose: 'any' });
-      icons.push({ src: p.iconPath, sizes: '512x512', type, purpose: 'any' });
-    }
-  } else {
-    icons.push({ src: '/pwa/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' });
-  }
-  // MASKA — ZAWSZE (osobny wpis; Safari używa `any`, ignoruje `maskable`). Składana, pełnokwadratowa,
-  // logo/inicjał w strefie bezpiecznej → OS nakłada maskę i nic nie tnie. Osadzone jako data URI (SVG).
-  icons.push({ src: '/pwa/icon.svg?mask=1', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' });
+  // Ikona ZAWSZE składana z `iconPath` (kolor marki + grafika w strefie bezpiecznej) — dwa OSOBNE
+  // wpisy (nie łączony purpose; Safari używa `any`, ignoruje `maskable`): `any` = zaokrąglone rogi
+  // (desktop), `maskable` = full-bleed, OS nakłada maskę (mobile). Osadzone jako data URI → brak
+  // konkurencji z rastrem. Logo splashu (`logoPath`) NIE wpływa na ikonę.
+  const icons = [
+    { src: '/pwa/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+    { src: '/pwa/icon.svg?mask=1', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
+  ];
   return {
     name: appName(s),
     short_name: shortName(s),
@@ -112,9 +104,10 @@ function manifest(s) {
 // albo favicon (iOS ignoruje SVG jako apple-touch — SVG zostaje w manifeście dla reszty).
 function headTags(s) {
   if (!(s.pwa && s.pwa.enabled)) return '';
-  // apple-touch wymaga rastra (iOS ignoruje SVG). Kolejność: gotowa ikona → logo PWA → favicon.
+  // apple-touch wymaga rastra (iOS ignoruje SVG). Ikona aplikacji (raster) → favicon.
+  // (logoPath to logo splashu — NIE ikona — więc go tu nie używamy.)
   const raster = (v) => (v && !/\.svg$/i.test(v)) ? v : '';
-  const appleIcon = raster(s.pwa.iconPath) || raster(s.pwa.logoPath) || raster(s.faviconPath) || '';
+  const appleIcon = raster(s.pwa.iconPath) || raster(s.faviconPath) || '';
   return [
     '<link rel="manifest" href="/manifest.webmanifest">',
     `<meta name="theme-color" content="${esc(themeColor(s))}">`,
@@ -153,10 +146,10 @@ function splashHtml(s) {
   if (mode === 'name') {
     inner = `<div style="font:700 34px/1.15 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:-.02em;color:${esc(fg)};text-align:center;padding:0 24px;">${esc(appName(s))}</div>`;
   } else if (mode === 'logo' && logoSrc) {
+    // tryb „logo" = osobne logo splashu (pwa.logoPath) — niezależne od ikony aplikacji
     inner = `<img src="${esc(logoSrc)}" alt="" style="width:auto;height:${sz}px;${cap}object-fit:contain;" />`;
-  } else { // icon (+ nazwa); gotowa ikona (override) albo składana
-    const iconSrc = p.iconPath ? esc(p.iconPath) : '/pwa/icon.svg';
-    inner = `<img src="${iconSrc}" alt="" style="width:${sz}px;height:${sz}px;${cap}border-radius:${Math.round(sz * 0.22)}px;object-fit:contain;" />${nameHtml}`;
+  } else { // tryb „ikona + nazwa" = złożona ikona aplikacji (/pwa/icon.svg, z iconPath)
+    inner = `<img src="/pwa/icon.svg" alt="" style="width:${sz}px;height:${sz}px;${cap}border-radius:${Math.round(sz * 0.22)}px;object-fit:contain;" />${nameHtml}`;
   }
   return `<div id="evoke-splash" aria-hidden="true" style="position:fixed;inset:0;z-index:2147483646;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:${esc(bg)};">`
     + inner
