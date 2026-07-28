@@ -36,15 +36,16 @@ test('manifest: struktura + wartości z ustawień + typ MIME', async () => {
   assert.ok(m.icons.some((i) => i.src === '/pwa/icon.svg'), 'fallback SVG zawsze w icons');
 });
 
-test('manifest: wgrana ikona PNG = 192/512 „any" (bez maskable), maskable na fallbacku', async () => {
+test('manifest: wgrana ikona PNG = 192/512 „any", bez SVG-fallbacku i bez maskable', async () => {
   await settingsService.update({ pwa: { enabled: true, name: '', shortName: '', themeColor: '', background: '', display: 'minimal-ui', iconPath: '/branding/pwa_abc.png' } });
   const m = await (await fetch(`${base}/manifest.webmanifest`)).json();
   const png = m.icons.filter((i) => i.src === '/branding/pwa_abc.png');
   assert.equal(png.length, 2, '192 + 512 (any)');
   assert.ok(png.every((i) => i.purpose === 'any'), 'wgrana ikona bez maskable → system jej nie przycina');
   assert.ok(png.every((i) => i.type === 'image/png'));
-  const fallback = m.icons.find((i) => i.src === '/pwa/icon.svg');
-  assert.ok(fallback && /maskable/.test(fallback.purpose), 'maskable dostarcza bezpieczny fallback');
+  // KLUCZOWE: przy wgranej ikonie NIE dokładamy SVG (skalowalny SVG wygrywał z PNG w Chrome → ikona usera znikała)
+  assert.ok(!m.icons.some((i) => i.src === '/pwa/icon.svg'), 'brak SVG-fallbacku obok wgranej ikony');
+  assert.ok(!m.icons.some((i) => /maskable/.test(i.purpose || '')), 'zero maskable (bez przycinania i bez problemów z parsowaniem w Safari)');
   assert.equal(m.display, 'minimal-ui');
 });
 
@@ -78,6 +79,26 @@ test('tagi <head>: emitowane tylko gdy włączone', () => {
   assert.match(on, /serviceWorker/);
   const off = pwaUtil.headTags({ appName: 'A', colors: { primary: '#6e00a5' }, faviconPath: null, pwa: { enabled: false } });
   assert.equal(off, '', 'wyłączone = brak tagów');
+});
+
+test('splash: overlay + skrypt gdy włączone i splashMs>0; brak gdy 0/wyłączone', () => {
+  const base = { appName: 'A', colors: { primary: '#6e00a5' }, faviconPath: null };
+  const on = pwaUtil.splashHtml({ ...base, pwa: { enabled: true, splashMs: 1500, iconPath: null, background: '#101018' } });
+  assert.match(on, /id="evoke-splash"/);
+  assert.match(on, /display-mode: standalone/, 'pokazywany tylko w zainstalowanej aplikacji');
+  assert.match(on, /sessionStorage/, 'raz na uruchomienie');
+  assert.match(on, /1500/, 'użyty czas splashMs');
+  assert.equal(pwaUtil.splashHtml({ ...base, pwa: { enabled: true, splashMs: 0 } }), '', 'splashMs=0 → brak');
+  assert.equal(pwaUtil.splashHtml({ ...base, pwa: { enabled: false, splashMs: 1500 } }), '', 'wyłączone → brak');
+});
+
+test('normalizacja splashMs: clamp 0..5000, brak → domyślne 1200', () => {
+  return settingsService.update({ pwa: { enabled: true, splashMs: 99999 } }).then((s) => {
+    assert.equal(s.pwa.splashMs, 5000, 'clamp do 5000');
+    return settingsService.update({ pwa: { enabled: true, splashMs: 'abc' } });
+  }).then((s) => {
+    assert.equal(s.pwa.splashMs, 1200, 'nieprawidłowe → domyślne 1200');
+  });
 });
 
 test('service worker serwowany z roota (scope /)', async () => {

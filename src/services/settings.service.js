@@ -42,7 +42,8 @@ const DEFAULTS = {
   panel: { menu: [], dashboard: [] },
   // Instalowalna aplikacja (PWA): manifest budowany z tych pól. enabled = emituj <link manifest> + SW.
   // Puste name/themeColor/background = dziedziczy appName / colors.primary / biel. iconPath = wgrana ikona.
-  pwa: { enabled: false, name: '', shortName: '', themeColor: '', background: '', display: 'standalone', iconPath: null },
+  // splashMs = własny ekran startowy (ikona+nazwa na tle) po otwarciu zainstalowanej aplikacji; 0 = wyłącz.
+  pwa: { enabled: false, name: '', shortName: '', themeColor: '', background: '', display: 'standalone', iconPath: null, splashMs: 1200 },
 };
 
 const ALIGNS = ['left', 'center', 'right'];
@@ -62,6 +63,7 @@ function normPwa(p) {
   const x = p && typeof p === 'object' ? p : {};
   const str = (v) => (typeof v === 'string' ? v.trim() : '');
   const hex = (v) => { const s = str(v); return /^#[0-9a-fA-F]{3,8}$/.test(s) ? s : ''; };
+  const ms = parseInt(x.splashMs, 10);
   return {
     enabled: !!x.enabled,
     name: str(x.name).slice(0, 60),
@@ -70,6 +72,7 @@ function normPwa(p) {
     background: hex(x.background),    // puste = biel
     display: PWA_DISPLAYS.includes(x.display) ? x.display : DEFAULTS.pwa.display,
     iconPath: x.iconPath || null,
+    splashMs: Number.isFinite(ms) ? Math.min(5000, Math.max(0, ms)) : DEFAULTS.pwa.splashMs, // 0..5000; 0 = wyłącz
   };
 }
 

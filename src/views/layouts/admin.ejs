@@ -16,6 +16,7 @@
   <script defer src="/js/alpine.min.js"></script>
 </head>
 <body class="bg-[var(--admin-bg)] antialiased" style="color: var(--admin-text)" x-data="{ nav: false }">
+<%- typeof pwaSplash !== 'undefined' ? pwaSplash : '' %>
   <%# Desktop = „app shell" przez STICKY (NIE overflow): strona przewija się normalnie (body), a
       sidebar i nagłówek są `md:sticky` → zostają widoczne. Świadomie NIE robimy `overflow-y-auto`
       na kolumnie treści — kontener przewijania/klipujący wokół elementów z `backdrop-filter`

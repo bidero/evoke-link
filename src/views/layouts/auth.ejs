@@ -18,6 +18,7 @@
   <script defer src="/js/alpine.min.js"></script>
 </head>
 <body class="client-bg min-h-screen text-slate-800 antialiased" style="<%= typeof loginBgStyle !== 'undefined' ? loginBgStyle : (typeof bgStyle !== 'undefined' ? bgStyle : '') %>">
+<%- typeof pwaSplash !== 'undefined' ? pwaSplash : '' %>
   <%- typeof loginBgSlideshow !== 'undefined' ? loginBgSlideshow : '' %>
   <%- typeof loginBgOverlay !== 'undefined' ? loginBgOverlay : '' %>
   <button type="button" onclick="window.toggleTheme&&window.toggleTheme()" title="Tryb jasny/ciemny" aria-label="Przełącz tryb"

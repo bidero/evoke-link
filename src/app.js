@@ -223,9 +223,12 @@ app.use(async (req, res, next) => {
 
     // PWA — tagi <head> (manifest + apple-meta + rejestracja SW); pusty string gdy wyłączone.
     res.locals.pwaHead = pwa.headTags(s);
+    // PWA — własny ekran startowy (overlay w <body>); pusty gdy wyłączone / splashMs=0.
+    res.locals.pwaSplash = pwa.splashHtml(s);
   } catch (_) {
     res.locals.settings = settingsService.DEFAULTS;
     res.locals.pwaHead = '';
+    res.locals.pwaSplash = '';
     res.locals.brandStyleTag = '';
     res.locals.adminStyleTag = '';
     res.locals.darkStyleTag = '';

@@ -45,16 +45,19 @@ function manifest(s) {
     if (type === 'image/svg+xml') {
       icons.push({ src: uploaded, sizes: 'any', type, purpose: 'any' });
     } else {
-      // TYLKO `any` (NIE maskable): kształtu wgranej ikony nie znamy — deklaracja maskable kazałaby
-      // systemowi przyciąć ją do koła/squircle (obcięte logo, zgłoszone przez usera). Maskable
-      // dostarcza pełnokwadratowy fallback SVG niżej (bezpieczny).
+      // Wyłącznie `purpose: 'any'` — bez `maskable`. Kształtu wgranej ikony nie znamy, a maskable
+      // kazałby systemowi przyciąć ją do koła/squircle (obcięte logo — pierwsze zgłoszenie usera).
       icons.push({ src: uploaded, sizes: '192x192', type, purpose: 'any' });
       icons.push({ src: uploaded, sizes: '512x512', type, purpose: 'any' });
     }
+  } else {
+    // Fallback (inicjał na kolorze marki) DOPIERO gdy nie ma wgranej ikony. GOTCHA: skalowalny SVG
+    // POTRAFI wygrać z wgranym PNG w Chrome (przeglądarka woli wektor) i podmienić ikonę usera na
+    // generyczny inicjał („ikona przestała działać"), więc przy wgranej ikonie NIE dokładamy fallbacku.
+    // `purpose:'any'` (bez `maskable`): łączony „any maskable" bywał ignorowany przez Safari (nie zna
+    // maskable) → brak ikony. Pełnokwadratowy SVG i tak wypełnia obszar, więc nic nie jest przycięte.
+    icons.push({ src: '/pwa/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' });
   }
-  // Fallback zawsze obecny (instalowalność bez uploadu) + jedyny `maskable` (pełnokwadratowy, bezpieczny)
-  // + źródło ikony auto-splash (Android/desktop/macOS: ikona na `background_color` + nazwa).
-  icons.push({ src: '/pwa/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' });
   return {
     name: appName(s),
     short_name: shortName(s),
@@ -87,4 +90,29 @@ function headTags(s) {
   ].filter(Boolean).join('\n  ');
 }
 
-module.exports = { manifest, iconSvg, headTags, appName, shortName, themeColor };
+// Własny ekran startowy (splash): ikona + nazwa na tle startowym, pokazywany PO otwarciu
+// ZAINSTALOWANEJ aplikacji przez zadany czas (pwa.splashMs), potem znika (fade). Natywny splash
+// z manifestu bywa błyskiem przy szybkim starcie — to daje kontrolowany, brandowy ekran.
+// Pokazywany TYLKO w trybie standalone (zainstalowana apka) i RAZ na uruchomienie (sessionStorage) —
+// w przeglądarce natychmiast usuwany (bez błysku), przy kolejnych nawigacjach się nie powtarza.
+function splashHtml(s) {
+  const p = s.pwa || {};
+  const ms = Math.min(5000, Math.max(0, parseInt(p.splashMs, 10) || 0));
+  if (!p.enabled || !ms) return '';
+  const bg = bgColor(s);
+  const fg = readableText(bg) || '#0f172a';
+  const iconSrc = p.iconPath ? esc(p.iconPath) : '/pwa/icon.svg';
+  return `<div id="evoke-splash" aria-hidden="true" style="position:fixed;inset:0;z-index:2147483646;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:${esc(bg)};">`
+    + `<img src="${iconSrc}" alt="" style="width:104px;height:104px;border-radius:24px;object-fit:contain;" />`
+    + `<div style="font:600 19px/1.2 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;letter-spacing:-.01em;color:${esc(fg)};">${esc(appName(s))}</div>`
+    + `</div>`
+    + `<script>(function(){var e=document.getElementById('evoke-splash');if(!e)return;`
+    + `var sa=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;var seen;`
+    + `try{seen=sessionStorage.getItem('evoke-splash');}catch(x){}`
+    + `if(!sa||seen){if(e.parentNode)e.parentNode.removeChild(e);return;}`
+    + `try{sessionStorage.setItem('evoke-splash','1');}catch(x){}`
+    + `e.style.display='flex';e.style.transition='opacity .45s ease';`
+    + `setTimeout(function(){e.style.opacity='0';setTimeout(function(){if(e.parentNode)e.parentNode.removeChild(e);},480);},${ms});})();</script>`;
+}
+
+module.exports = { manifest, iconSvg, headTags, splashHtml, appName, shortName, themeColor };

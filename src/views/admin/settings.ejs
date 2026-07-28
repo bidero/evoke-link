@@ -1131,6 +1131,13 @@
       </div>
 
       <div>
+        <label class="block text-xs font-medium text-slate-600 mb-1">Ekran startowy (splash) — czas wyświetlania <span class="text-slate-400 font-normal">(ms, 0 = wyłącz)</span></label>
+        <input name="pwaSplashMs" type="number" min="0" max="5000" step="100" value="<%= settings.pwa.splashMs %>"
+               class="w-full sm:w-48 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <p class="text-[11px] text-slate-400 mt-1">Po otwarciu <strong>zainstalowanej</strong> aplikacji pokazuje ikonę i nazwę na „tle startowym" przez ten czas, potem znika. Raz na uruchomienie; w przeglądarce nie działa.</p>
+      </div>
+
+      <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Ikona aplikacji <span class="text-slate-400 font-normal">(kwadrat, najlepiej 512×512 PNG)</span></label>
         <div class="flex items-center gap-3">
           <img src="<%= settings.pwa.iconPath || '/pwa/icon.svg' %>" alt="Ikona aplikacji" class="h-12 w-12 shrink-0 rounded-xl border border-slate-200 bg-white object-contain" />

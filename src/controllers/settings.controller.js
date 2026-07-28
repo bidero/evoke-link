@@ -185,6 +185,7 @@ async function updateSettings(req, res, next) {
       background: safeHex(b.pwaBackground, '') || '',
       display: ['standalone', 'minimal-ui', 'fullscreen', 'browser'].includes(b.pwaDisplay) ? b.pwaDisplay : 'standalone',
       iconPath: current.pwa.iconPath || null,
+      splashMs: clampInt(b.pwaSplashMs, 0, 5000, 1200),
     };
 
     const data = {
