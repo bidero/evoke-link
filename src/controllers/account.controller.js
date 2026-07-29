@@ -2,18 +2,29 @@
 const fs = require('fs');
 const config = require('../config');
 const { verifyCredentials, setAdminPassword, hasDbPassword } = require('../services/auth.service');
+const authService = require('../services/auth.service');
+const totp = require('../utils/totp');
+const qr = require('../utils/qr');
 const settingsService = require('../services/settings.service');
 const { sanitizeSvg, looksLikeSvg } = require('../utils/svgSanitize');
 const events = require('../services/event.service');
 
-async function baseLocals(extra) {
+async function baseLocals(req, extra) {
   const settings = await settingsService.get();
+  const me = (req && req.session && req.session.user) || {};
+  // Stan 2FA bieżącego konta (gdy sesja pochodzi jeszcze z bootstrapu .env — brak id).
+  let user = null;
+  if (me.id) user = await authService.findByEmail(me.email);
   return {
     title: 'Mój profil',
     active: 'account',
-    email: config.admin.email,
+    email: me.email || config.admin.email,
     profile: settings.profile,
     usingDbPassword: await hasDbPassword(),
+    canUse2fa: !!me.id,                                  // 2FA wymaga konta w bazie
+    twoFaOn: authService.has2fa(user),
+    recoveryLeft: authService.recoveryCodesLeft(user),
+    setupSecret: null, setupUri: null, setupQr: null, newCodes: null,
     saved: false,
     savedProfile: false,
     error: null,
@@ -23,14 +34,14 @@ async function baseLocals(extra) {
 
 async function showAccount(req, res, next) {
   try {
-    res.render('admin/account', await baseLocals({ saved: req.query.saved === '1', savedProfile: req.query.profile === '1' }));
+    res.render('admin/account', await baseLocals(req, { saved: req.query.saved === '1', savedProfile: req.query.profile === '1' }));
   } catch (err) {
     next(err);
   }
 }
 
-async function render(res, status, extra) {
-  res.status(status).render('admin/account', await baseLocals(extra));
+async function render(req, res, status, extra) {
+  res.status(status).render('admin/account', await baseLocals(req, extra));
 }
 
 // Jeśli avatar to SVG — oczyść na dysku (XSS/XXE), jak reszta brandingu.
@@ -69,19 +80,24 @@ async function updateProfile(req, res, next) {
 async function changePassword(req, res, next) {
   try {
     const { currentPassword, newPassword, confirmPassword } = req.body;
+    const me = (req.session && req.session.user) || {};
+    const email = me.email || config.admin.email;
 
-    if (!(await verifyCredentials(config.admin.email, currentPassword))) {
-      return render(res, 401, { error: 'Obecne hasło jest nieprawidłowe.' });
+    // WAŻNE (multi-user): sprawdzamy i zmieniamy hasło ZALOGOWANEGO konta,
+    // nie konta z .env — inaczej pracownik zmieniłby hasło administratorowi.
+    if (!(await verifyCredentials(email, currentPassword))) {
+      return render(req, res, 401, { error: 'Obecne hasło jest nieprawidłowe.' });
     }
     if (!newPassword || newPassword.length < 8) {
-      return render(res, 400, { error: 'Nowe hasło musi mieć co najmniej 8 znaków.' });
+      return render(req, res, 400, { error: 'Nowe hasło musi mieć co najmniej 8 znaków.' });
     }
     if (newPassword !== confirmPassword) {
-      return render(res, 400, { error: 'Powtórzone hasło nie zgadza się.' });
+      return render(req, res, 400, { error: 'Powtórzone hasło nie zgadza się.' });
     }
 
-    await setAdminPassword(newPassword);
-    await events.log({ type: 'updated', message: 'Zmieniono hasło administratora', ip: req.ip });
+    if (me.id) await authService.updateUser(me.id, { password: newPassword });
+    else await setAdminPassword(newPassword); // sesja z bootstrapu .env — zakłada konto admina
+    await events.log({ type: 'updated', message: `Zmieniono hasło konta: ${email}`, ip: req.ip });
 
     res.redirect('/admin/account?saved=1');
   } catch (err) {
@@ -89,4 +105,69 @@ async function changePassword(req, res, next) {
   }
 }
 
-module.exports = { showAccount, updateProfile, changePassword };
+// ── 2FA (TOTP) ───────────────────────────────────────────────────────────────
+// Krok 1: wygeneruj sekret i pokaż QR (jeszcze nieaktywne).
+async function start2fa(req, res, next) {
+  try {
+    const me = (req.session && req.session.user) || {};
+    if (!me.id) return res.redirect('/admin/account');
+    const secret = await authService.begin2fa(me.id);
+    const settings = await settingsService.get();
+    const uri = totp.otpauthUri({ secret, account: me.email, issuer: settings.appName || 'Evoke LINK' });
+    res.render('admin/account', await baseLocals(req, { setupSecret: secret, setupUri: uri, setupQr: qr.svg(uri, { cell: 4, margin: 2 }) }));
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Krok 2: potwierdź kodem z aplikacji → włącz 2FA i pokaż kody zapasowe (jedyny raz).
+async function confirm2fa(req, res, next) {
+  try {
+    const me = (req.session && req.session.user) || {};
+    if (!me.id) return res.redirect('/admin/account');
+    const codes = await authService.confirm2fa(me.id, req.body.token);
+    if (!codes) {
+      const user = await authService.findByEmail(me.email);
+      const settings = await settingsService.get();
+      const uri = user && user.totpSecret ? totp.otpauthUri({ secret: user.totpSecret, account: me.email, issuer: settings.appName || 'Evoke LINK' }) : null;
+      return render(req, res, 400, {
+        error: 'Nieprawidłowy kod — sprawdź, czy zegar telefonu jest zsynchronizowany.',
+        setupSecret: user ? user.totpSecret : null, setupUri: uri, setupQr: uri ? qr.svg(uri, { cell: 4, margin: 2 }) : null,
+      });
+    }
+    await events.log({ type: 'updated', message: `Włączono 2FA: ${me.email}`, ip: req.ip });
+    res.render('admin/account', await baseLocals(req, { newCodes: codes }));
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function disable2fa(req, res, next) {
+  try {
+    const me = (req.session && req.session.user) || {};
+    if (!me.id) return res.redirect('/admin/account');
+    // Wyłączenie wymaga potwierdzenia hasłem (2FA to zabezpieczenie konta).
+    if (!(await verifyCredentials(me.email, req.body.password))) {
+      return render(req, res, 401, { error: 'Aby wyłączyć 2FA, podaj poprawne hasło.' });
+    }
+    await authService.disable2fa(me.id);
+    await events.log({ type: 'updated', message: `Wyłączono 2FA: ${me.email}`, ip: req.ip });
+    res.redirect('/admin/account');
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function newRecoveryCodes(req, res, next) {
+  try {
+    const me = (req.session && req.session.user) || {};
+    if (!me.id) return res.redirect('/admin/account');
+    const codes = await authService.regenerateRecoveryCodes(me.id);
+    if (!codes) return res.redirect('/admin/account');
+    res.render('admin/account', await baseLocals(req, { newCodes: codes }));
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { showAccount, updateProfile, changePassword, start2fa, confirm2fa, disable2fa, newRecoveryCodes };

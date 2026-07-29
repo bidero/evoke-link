@@ -21,6 +21,10 @@ model User {
   role         String     @default("admin") // admin (wszystko) | staff (bez ustawień, rozliczeń, kont)
   active       Boolean    @default(true)    // wyłączone konto nie może się zalogować
   lastLoginAt  DateTime?
+  // 2FA (TOTP): sekret base32 + moment włączenia; kody zapasowe jako HASHE (JSON []).
+  totpSecret    String?
+  totpEnabledAt DateTime?
+  recoveryCodes String?
   createdAt    DateTime   @default(now())
   transfers    Transfer[]
 }

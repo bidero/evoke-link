@@ -103,14 +103,80 @@
       <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Zmień hasło</button>
     </form>
 
-    <div class="border-t border-slate-100 mt-6 pt-5 flex items-center justify-between gap-3">
-      <div>
-        <div class="text-sm font-medium text-slate-700">Uwierzytelnianie dwuetapowe (2FA)</div>
-        <div class="text-xs text-slate-400">Dodatkowy kod / klucz przy logowaniu. <span class="text-brand-600">Wkrótce (Etap 4).</span></div>
+    <%# ── 2FA (TOTP) ─────────────────────────────────────────────────────── %>
+    <div class="border-t border-slate-100 mt-6 pt-5">
+      <div class="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <div class="text-sm font-medium text-slate-700">Uwierzytelnianie dwuetapowe (2FA)</div>
+          <div class="text-xs text-slate-400">
+            <% if (twoFaOn) { %>
+              Włączone — przy logowaniu poprosimy o kod z aplikacji.
+              <span class="text-slate-500">Kody zapasowe: <%= recoveryLeft %></span>
+            <% } else if (!canUse2fa) { %>
+              Wymaga konta w bazie. Ustaw hasło w panelu (powyżej) — wtedy 2FA stanie się dostępne.
+            <% } else { %>
+              Dodatkowy kod z aplikacji (Apple Passwords, Google Authenticator, 1Password) przy logowaniu.
+            <% } %>
+          </div>
+        </div>
+        <% if (canUse2fa && !twoFaOn && !setupSecret) { %>
+          <form method="POST" action="/admin/account/2fa/start">
+            <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">Włącz 2FA</button>
+          </form>
+        <% } %>
+        <% if (twoFaOn) { %>
+          <span class="inline-flex items-center gap-1.5 text-xs font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded-full"><%- icon('check', { size: 13, cls: '' }) %> Aktywne</span>
+        <% } %>
       </div>
-      <span class="inline-flex items-center h-6 w-11 rounded-full bg-slate-200 p-0.5 cursor-not-allowed opacity-60" title="Wkrótce">
-        <span class="w-5 h-5 rounded-full bg-white shadow"></span>
-      </span>
+
+      <% if (setupSecret) { %>
+        <%# Krok konfiguracji: QR + sekret + potwierdzenie kodem. %>
+        <div class="mt-4 rounded-xl border border-slate-200 p-4">
+          <p class="text-sm text-slate-600 mb-3">1. Zeskanuj kod w aplikacji uwierzytelniającej (albo wpisz sekret ręcznie). 2. Przepisz wygenerowany 6-cyfrowy kod, żeby potwierdzić.</p>
+          <div class="flex items-start gap-5 flex-wrap">
+            <%# QR skalowany do kontenera — `qr.svg` ma naturalny rozmiar (util współdzielony z QR przelewu). %>
+            <div class="shrink-0 rounded-lg border border-slate-200 p-2 bg-white w-44 [&>svg]:w-full [&>svg]:h-auto [&>svg]:block"><%- setupQr %></div>
+            <div class="min-w-0 flex-1">
+              <div class="text-[11px] font-medium text-slate-500 mb-1">Sekret (gdy nie możesz zeskanować)</div>
+              <code class="block text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 break-all"><%= setupSecret %></code>
+              <form method="POST" action="/admin/account/2fa/confirm" class="mt-3 flex items-end gap-2 flex-wrap">
+                <label class="block">
+                  <span class="block text-[11px] font-medium text-slate-500 mb-1">Kod z aplikacji</span>
+                  <input name="token" required autofocus inputmode="numeric" autocomplete="one-time-code" placeholder="123456"
+                         class="w-36 rounded-lg border border-slate-300 px-3 py-2 text-sm tracking-widest focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                </label>
+                <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">Potwierdź i włącz</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      <% } %>
+
+      <% if (newCodes && newCodes.length) { %>
+        <%# Kody zapasowe — pokazywane JEDEN raz (w bazie tylko hashe). %>
+        <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div class="text-sm font-semibold text-amber-900">Zapisz kody zapasowe</div>
+          <p class="text-xs text-amber-800 mt-1 mb-3">Pokazujemy je tylko teraz. Każdy działa raz — użyj, gdy nie masz dostępu do aplikacji (np. zgubiony telefon).</p>
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
+            <% newCodes.forEach(function(c){ %><code class="text-center text-sm bg-white border border-amber-200 rounded-lg px-2 py-1.5 tracking-wider"><%= c %></code><% }); %>
+          </div>
+        </div>
+      <% } %>
+
+      <% if (twoFaOn) { %>
+        <div class="mt-4 flex items-center gap-3 flex-wrap">
+          <form method="POST" action="/admin/account/2fa/recovery" onsubmit="return confirm('Wygenerować nowe kody zapasowe? Poprzednie przestaną działać.');">
+            <button type="submit" class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm px-4 py-2 transition">Nowe kody zapasowe</button>
+          </form>
+          <form method="POST" action="/admin/account/2fa/disable" class="flex items-end gap-2" onsubmit="return confirm('Wyłączyć uwierzytelnianie dwuetapowe?');">
+            <label class="block">
+              <span class="block text-[11px] font-medium text-slate-500 mb-1">Hasło (potwierdzenie)</span>
+              <input name="password" type="password" required autocomplete="current-password" class="w-44 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+            </label>
+            <button type="submit" class="rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-sm px-4 py-2 transition">Wyłącz 2FA</button>
+          </form>
+        </div>
+      <% } %>
     </div>
   </div>
 
