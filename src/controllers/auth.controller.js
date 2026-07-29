@@ -1,6 +1,5 @@
 // Obsługa requestów logowania/wylogowania (cienka warstwa — logika w auth.service).
-const { verifyCredentials } = require('../services/auth.service');
-const config = require('../config');
+const { authenticate, touchLogin } = require('../services/auth.service');
 
 function showLogin(req, res) {
   if (req.session && req.session.user) {
@@ -18,8 +17,10 @@ async function doLogin(req, res, next) {
   try {
     const { email, password } = req.body;
 
-    if (await verifyCredentials(email, password)) {
-      req.session.user = { email: config.admin.email, name: 'Administrator' };
+    const user = await authenticate(email, password);
+    if (user) {
+      req.session.user = user; // { id, email, name, role }
+      touchLogin(user.id);     // best-effort — nie blokuje logowania
       return res.redirect('/admin');
     }
 

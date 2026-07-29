@@ -110,7 +110,10 @@
                 <% if (_prof && _prof.name && _email) { %><div class="text-xs text-slate-400 truncate"><%= _email %></div><% } %>
               </div>
               <a href="/admin/account" class="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"><%- icon('userCheck', { size: 16, cls: 'opacity-70' }) %> Mój profil</a>
-              <a href="/admin/settings" class="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"><%- icon('cog', { size: 16, cls: 'opacity-70' }) %> Ustawienia</a>
+              <% if (typeof isAdmin === 'undefined' || isAdmin) { %>
+                <a href="/admin/users" class="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"><%- icon('users', { size: 16, cls: 'opacity-70' }) %> Konta</a>
+                <a href="/admin/settings" class="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"><%- icon('cog', { size: 16, cls: 'opacity-70' }) %> Ustawienia</a>
+              <% } %>
               <div class="border-t border-slate-100 my-1"></div>
               <form method="POST" action="/admin/logout">
                 <button type="submit" class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left transition"><%- icon('arrowRight', { size: 16, cls: 'opacity-70' }) %> Wyloguj</button>

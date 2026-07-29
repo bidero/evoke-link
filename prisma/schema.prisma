@@ -18,7 +18,9 @@ model User {
   email        String     @unique
   passwordHash String
   name         String?
-  role         String     @default("admin")
+  role         String     @default("admin") // admin (wszystko) | staff (bez ustawień, rozliczeń, kont)
+  active       Boolean    @default(true)    // wyłączone konto nie może się zalogować
+  lastLoginAt  DateTime?
   createdAt    DateTime   @default(now())
   transfers    Transfer[]
 }

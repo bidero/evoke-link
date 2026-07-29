@@ -1,7 +1,7 @@
 // Trasy panelu — wszystkie chronione logowaniem (requireAuth).
 // Kolejne sekcje (projekty, transfery, ustawienia) dojdą w następnych etapach.
 const express = require('express');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { chunkParser, receiveChunk, receiveUpload } = require('../middleware/chunkUpload');
 const { showDashboard, saveDashboardLayout } = require('../controllers/dashboard.controller');
 const transfers = require('../controllers/transfer.controller');
@@ -170,6 +170,18 @@ router.post('/update/check', updates.check);
 router.post('/update/run', updates.run);
 router.get('/update/status', updates.status);
 router.post('/update/notify', updates.toggleNotify);
+
+// ── Sekcje TYLKO dla admina (rola staff dostaje 403) ─────────────────────────
+// Ustawienia, aktualizacje, kopie zapasowe i konta użytkowników. Bramka prefiksowa,
+// żeby żadna pod-trasa nie umknęła (także te dodane w przyszłości).
+router.use(['/settings', '/update', '/users'], requireAdmin);
+
+// Konta użytkowników (admin + pracownik).
+const users = require('../controllers/users.controller');
+router.get('/users', users.index);
+router.post('/users', users.create);
+router.post('/users/:id', users.update);
+router.post('/users/:id/delete', users.remove);
 
 // Customizacja (Etap 5 + 6: kolory panelu, tło stron klienta).
 router.get('/settings', settings.showSettings);

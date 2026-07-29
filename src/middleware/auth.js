@@ -8,10 +8,23 @@ function requireAuth(req, res, next) {
 }
 
 // Udostępnia dane zalogowanego użytkownika wszystkim szablonom (jako res.locals.currentUser),
-// żeby nie przekazywać ich ręcznie przy każdym renderze.
+// żeby nie przekazywać ich ręcznie przy każdym renderze. `isAdmin` = bramka w widokach.
 function injectUser(req, res, next) {
-  res.locals.currentUser = req.session ? req.session.user : null;
+  const u = req.session ? req.session.user : null;
+  res.locals.currentUser = u;
+  res.locals.isAdmin = !u || u.role !== 'staff'; // brak roli (stare sesje) = admin
   next();
 }
 
-module.exports = { requireAuth, injectUser };
+// Strażnik tras tylko dla admina (Ustawienia, rozliczenia, konta).
+// Pracownik dostaje 403 zamiast cichego przekierowania — jasny komunikat.
+function requireAdmin(req, res, next) {
+  const u = req.session ? req.session.user : null;
+  if (!u) return res.redirect('/admin/login');
+  if (u.role === 'staff') {
+    return res.status(403).render('errors/403', { title: 'Brak dostępu', layout: 'layouts/admin', active: '' });
+  }
+  return next();
+}
+
+module.exports = { requireAuth, requireAdmin, injectUser };

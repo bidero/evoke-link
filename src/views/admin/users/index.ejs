@@ -1,0 +1,110 @@
+<%
+  const ERR = {
+    weak: 'Hasło musi mieć co najmniej 8 znaków.',
+    dup: 'Konto z tym e-mailem już istnieje.',
+    self: 'Nie możesz usunąć własnego konta.',
+    lastadmin: 'To jedyny aktywny administrator — nie można go usunąć.',
+  };
+  const MSG = { created: 'Konto dodane.', saved: 'Zmiany zapisane.', deleted: 'Konto usunięte.' };
+  const meId = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : null;
+%>
+<div class="max-w-4xl space-y-6">
+  <% if (msg && MSG[msg]) { %>
+    <div class="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> <%= MSG[msg] %></div>
+  <% } %>
+  <% if (error && ERR[error]) { %>
+    <div class="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= ERR[error] %></div>
+  <% } %>
+
+  <!-- LISTA KONT -->
+  <div class="bg-white rounded-2xl border border-slate-200 p-6">
+    <h2 class="text-base font-semibold text-slate-800 mb-1">Konta użytkowników</h2>
+    <p class="text-xs text-slate-400 mb-5"><strong>Administrator</strong> ma dostęp do wszystkiego. <strong>Pracownik</strong> pracuje na projektach, klientach, transferach i kalendarzu — bez Ustawień, aktualizacji i kont.</p>
+
+    <div class="space-y-3">
+      <% if (!users.length) { %>
+        <p class="text-sm text-slate-400">Brak kont w bazie — logujesz się danymi z pliku <code>.env</code>. Dodaj konto poniżej, aby zarządzać dostępem z panelu.</p>
+      <% } %>
+      <% users.forEach(function(u){ %>
+        <form method="POST" action="/admin/users/<%= u.id %>" class="rounded-xl border border-slate-200 p-4">
+          <div class="flex items-start gap-3 flex-wrap">
+            <span class="w-9 h-9 shrink-0 rounded-full bg-brand-50 text-brand-700 inline-flex items-center justify-center text-sm font-semibold"><%= ((u.name || u.email || '?').trim().charAt(0) || '?').toUpperCase() %></span>
+            <div class="min-w-0 flex-1">
+              <div class="text-sm font-medium text-slate-800 truncate">
+                <%= u.email %>
+                <% if (u.id === meId) { %><span class="ml-1 text-[11px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">to Ty</span><% } %>
+                <% if (u.email === envEmail) { %><span class="ml-1 text-[11px] px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">.env</span><% } %>
+                <% if (u.active === false) { %><span class="ml-1 text-[11px] px-1.5 py-0.5 rounded-full bg-red-50 text-red-600">wyłączone</span><% } %>
+              </div>
+              <div class="text-xs text-slate-400 mt-0.5">
+                <%= u.role === 'staff' ? 'Pracownik' : 'Administrator' %>
+                <% if (u.lastLoginAt) { %><span class="text-slate-300">·</span> ostatnie logowanie <%= fmt.date(u.lastLoginAt) %><% } %>
+              </div>
+            </div>
+            <% if (u.id !== meId) { %>
+              <button type="button" form="del-<%= u.id %>" class="text-slate-300 hover:text-red-600 p-1 shrink-0" title="Usuń konto"><%- icon('trash', { size: 15, cls: '' }) %></button>
+            <% } %>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-3">
+            <label class="block">
+              <span class="block text-[11px] font-medium text-slate-500 mb-1">Nazwa</span>
+              <input name="name" value="<%= u.name || '' %>" maxlength="120" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+            </label>
+            <label class="block">
+              <span class="block text-[11px] font-medium text-slate-500 mb-1">Rola</span>
+              <select name="role" <%= u.id === meId ? 'disabled' : '' %> class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none disabled:bg-slate-50 disabled:text-slate-400">
+                <option value="admin" <%= u.role !== 'staff' ? 'selected' : '' %>>Administrator</option>
+                <option value="staff" <%= u.role === 'staff' ? 'selected' : '' %>>Pracownik</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="block text-[11px] font-medium text-slate-500 mb-1">Nowe hasło <span class="text-slate-400 font-normal">(opc.)</span></span>
+              <input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="min. 8 znaków" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+            </label>
+            <div class="flex items-end gap-2">
+              <% if (u.id !== meId) { %>
+                <label class="inline-flex items-center gap-1.5 text-xs text-slate-600 pb-2">
+                  <input type="checkbox" name="active" <%= u.active !== false ? 'checked' : '' %> class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" /> Aktywne
+                </label>
+              <% } %>
+              <button type="submit" class="ml-auto rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">Zapisz</button>
+            </div>
+          </div>
+        </form>
+        <% if (u.id !== meId) { %>
+          <form id="del-<%= u.id %>" method="POST" action="/admin/users/<%= u.id %>/delete" onsubmit="return confirm('Usunąć konto <%= u.email %>?');" class="hidden"></form>
+        <% } %>
+      <% }); %>
+    </div>
+  </div>
+
+  <!-- NOWE KONTO -->
+  <div class="bg-white rounded-2xl border border-slate-200 p-6">
+    <h2 class="text-base font-semibold text-slate-800 mb-4">Dodaj konto</h2>
+    <form method="POST" action="/admin/users" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <label class="block">
+        <span class="block text-[11px] font-medium text-slate-500 mb-1">E-mail *</span>
+        <input name="email" type="email" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </label>
+      <label class="block">
+        <span class="block text-[11px] font-medium text-slate-500 mb-1">Nazwa</span>
+        <input name="name" maxlength="120" placeholder="np. Anna Kowalska" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </label>
+      <label class="block">
+        <span class="block text-[11px] font-medium text-slate-500 mb-1">Hasło * <span class="text-slate-400 font-normal">(min. 8 znaków)</span></span>
+        <input name="password" type="password" required minlength="8" autocomplete="new-password" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </label>
+      <label class="block">
+        <span class="block text-[11px] font-medium text-slate-500 mb-1">Rola</span>
+        <select name="role" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+          <option value="staff" selected>Pracownik</option>
+          <option value="admin">Administrator</option>
+        </select>
+      </label>
+      <div class="sm:col-span-2">
+        <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Dodaj konto</button>
+      </div>
+    </form>
+  </div>
+</div>
