@@ -49,6 +49,8 @@ const DEFAULTS = {
   // iconPath = gotowa ikona NADPISUJĄCA logo (override — użyta bez zmian, gdy wgrana).
   // splashSize = wielkość grafiki (ikona/logo) na ekranie startowym (px).
   pwa: { enabled: false, name: '', shortName: '', themeColor: '', background: '', display: 'standalone', iconPath: null, logoPath: null, logoScale: 62, splashMs: 1200, splashMode: 'icon', splashSize: 120 },
+  // Strona logowania (niezależna od stron klienta). Puste teksty = domyślne z widoku.
+  login: { style: 'card', side: 'left', title: '', subtitle: '', heroTitle: '', heroSubtitle: '', hideName: false, footer: '' },
 };
 
 const ALIGNS = ['left', 'center', 'right'];
@@ -86,6 +88,24 @@ function normPwa(p) {
     splashMs: Number.isFinite(ms) ? Math.min(5000, Math.max(0, ms)) : DEFAULTS.pwa.splashMs, // 0..5000; 0 = wyłącz
     splashMode: PWA_SPLASH_MODES.includes(x.splashMode) ? x.splashMode : DEFAULTS.pwa.splashMode,
     splashSize: Number.isFinite(ssz) ? Math.max(48, ssz) : DEFAULTS.pwa.splashSize, // px grafiki na splashu — bez górnego limitu
+  };
+}
+
+// Strona logowania — niezależna od stron klienta. `style`: card (wyśrodkowana karta,
+// dotychczasowy wygląd) | split (formularz obok brandowego panelu z hero).
+const LOGIN_STYLES = ['card', 'split'];
+function normLogin(l) {
+  const x = l && typeof l === 'object' ? l : {};
+  const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
+  return {
+    style: LOGIN_STYLES.includes(x.style) ? x.style : DEFAULTS.login.style,
+    side: x.side === 'right' ? 'right' : 'left', // po której stronie FORMULARZ (split)
+    title: str(x.title, 80),
+    subtitle: str(x.subtitle, 160),
+    heroTitle: str(x.heroTitle, 120),
+    heroSubtitle: str(x.heroSubtitle, 240),
+    hideName: !!x.hideName,
+    footer: str(x.footer, 200),
   };
 }
 
@@ -172,6 +192,8 @@ function normalize(row) {
   try { pwa = row.pwa ? JSON.parse(row.pwa) : {}; } catch (_) {}
   let profile = {};
   try { profile = row.profile ? JSON.parse(row.profile) : {}; } catch (_) {}
+  let login = {};
+  try { login = row.login ? JSON.parse(row.login) : {}; } catch (_) {}
   return {
     appName: row.appName || DEFAULTS.appName,
     logoPath: row.logoPath || null,
@@ -189,6 +211,7 @@ function normalize(row) {
     panel: { menu: panelUi.sanitizeMenu(panel.menu), dashboard: panelUi.sanitizeWidgets(panel.dashboard), actions: panelUi.sanitizeActions(panel.actions) },
     pwa: normPwa(pwa),
     profile: normProfile(profile),
+    login: normLogin(login),
   };
 }
 
@@ -224,6 +247,7 @@ async function update(data) {
   if (data.panel !== undefined) patch.panel = JSON.stringify({ menu: panelUi.sanitizeMenu(data.panel.menu), dashboard: panelUi.sanitizeWidgets(data.panel.dashboard), actions: panelUi.sanitizeActions(data.panel.actions) });
   if (data.pwa !== undefined) patch.pwa = JSON.stringify(normPwa(data.pwa));
   if (data.profile !== undefined) patch.profile = JSON.stringify(normProfile(data.profile));
+  if (data.login !== undefined) patch.login = JSON.stringify(normLogin(data.login));
 
   const row = await prisma.settings.upsert({
     where: { id: 1 },

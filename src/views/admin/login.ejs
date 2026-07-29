@@ -4,43 +4,66 @@
   const logoCfg = (typeof settings !== 'undefined' && settings && settings.logo) ? settings.logo : { size: 36, align: 'left' };
   const justify = { left: 'justify-start', center: 'justify-center', right: 'justify-end' }[logoCfg.align] || 'justify-start';
   const useLayout = (typeof uiLayout !== 'undefined' && uiLayout && uiLayout.applyToLogin);
+  // Personalizacja logowania (Settings.login) — niezależna od stron klienta.
+  const lg = (typeof settings !== 'undefined' && settings && settings.login) ? settings.login : { style: 'card', side: 'left', title: '', subtitle: '', heroTitle: '', heroSubtitle: '', hideName: false, footer: '' };
+  const lTitle = lg.title || 'Zaloguj się';
+  const lSub = lg.subtitle || 'Panel administracyjny agencji.';
+  const lFooter = lg.footer || ((typeof settings !== 'undefined' && settings && settings.texts.footer) ? settings.texts.footer : (appName + ' · prywatny system wymiany plików'));
+  const isSplit = lg.style === 'split';
+  const hasHero = !!(lg.heroTitle || lg.heroSubtitle);
 %>
-<div class="w-full max-w-sm">
-  <div class="<%= useLayout ? 'evoke-card' : 'bg-white rounded-2xl shadow-xl shadow-slate-900/10' %> p-8">
-    <div class="flex items-center gap-2 mb-6 <%= justify %>">
-      <% if (typeof settings !== 'undefined' && settings && hasLogo(settings, 'login')) { %>
-        <%- logoTag(settings, { appName, surface: 'login', imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
+<% if (isSplit) { %>
+  <%# Układ „split": formularz obok brandowego panelu z hero. Kolejność przez md:order-*. %>
+  <div class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 rounded-2xl overflow-hidden shadow-xl shadow-slate-900/10">
+    <div class="bg-white p-8 sm:p-10 <%= lg.side === 'right' ? 'md:order-2' : 'md:order-1' %>">
+      <div class="flex items-center gap-2 mb-6 <%= justify %>">
+        <% if (typeof settings !== 'undefined' && settings && hasLogo(settings, 'login')) { %>
+          <%- logoTag(settings, { appName, surface: 'login', imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
+        <% } else { %>
+          <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
+          <% if (!lg.hideName) { %><span class="font-semibold text-lg tracking-tight"><%= appName %></span><% } %>
+        <% } %>
+      </div>
+      <h1 class="text-xl font-semibold mb-1"><%= lTitle %></h1>
+      <p class="text-sm text-slate-500 mb-6"><%= lSub %></p>
+      <% if (error) { %><div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div><% } %>
+      <%- include('_login_form', { email: email, useLayout: useLayout }) %>
+    </div>
+    <%# Panel brandowy z hero (na kolorze marki). %>
+    <div class="hidden md:flex flex-col justify-center gap-3 bg-brand-600 text-white p-10 <%= lg.side === 'right' ? 'md:order-1' : 'md:order-2' %>">
+      <% if (hasHero) { %>
+        <% if (lg.heroTitle) { %><h2 class="text-2xl font-semibold tracking-tight leading-snug"><%= lg.heroTitle %></h2><% } %>
+        <% if (lg.heroSubtitle) { %><p class="text-white/80 text-sm leading-relaxed"><%= lg.heroSubtitle %></p><% } %>
       <% } else { %>
-        <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
-        <span class="font-semibold text-lg tracking-tight"><%= appName %></span>
+        <h2 class="text-2xl font-semibold tracking-tight"><%= appName %></h2>
+        <p class="text-white/80 text-sm">Bezpieczna wymiana plików z klientami.</p>
       <% } %>
     </div>
-
-    <h1 class="text-xl font-semibold mb-1">Zaloguj się</h1>
-    <p class="text-sm text-slate-500 mb-6">Panel administracyjny agencji.</p>
-
-    <% if (error) { %>
-      <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">
-        <%= error %>
-      </div>
-    <% } %>
-
-    <form method="POST" action="/admin/login" class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1" for="email">E-mail</label>
-        <input id="email" name="email" type="email" required value="<%= email %>"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1" for="password">Hasło</label>
-        <input id="password" name="password" type="password" required
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-      </div>
-      <button type="submit"
-              class="<%= useLayout ? 'evoke-btn' : '' %> w-full rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 text-sm transition">
-        Zaloguj się
-      </button>
-    </form>
   </div>
-  <p class="text-center text-xs mt-6 <%= dark ? 'text-white/80' : 'text-slate-500' %>"><%= (typeof settings !== 'undefined' && settings && settings.texts.footer) ? settings.texts.footer : (appName + ' · prywatny system wymiany plików') %></p>
-</div>
+<% } else { %>
+  <%# Układ „card" — dotychczasowy wygląd (wyśrodkowana karta). %>
+  <div class="w-full max-w-sm">
+    <div class="<%= useLayout ? 'evoke-card' : 'bg-white rounded-2xl shadow-xl shadow-slate-900/10' %> p-8">
+      <div class="flex items-center gap-2 mb-6 <%= justify %>">
+        <% if (typeof settings !== 'undefined' && settings && hasLogo(settings, 'login')) { %>
+          <%- logoTag(settings, { appName, surface: 'login', imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
+        <% } else { %>
+          <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
+          <% if (!lg.hideName) { %><span class="font-semibold text-lg tracking-tight"><%= appName %></span><% } %>
+        <% } %>
+      </div>
+
+      <h1 class="text-xl font-semibold mb-1"><%= lTitle %></h1>
+      <p class="text-sm text-slate-500 mb-6"><%= lSub %></p>
+
+      <% if (error) { %>
+        <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">
+          <%= error %>
+        </div>
+      <% } %>
+
+      <%- include('_login_form', { email: email, useLayout: useLayout }) %>
+    </div>
+    <p class="text-center text-xs mt-6 <%= dark ? 'text-white/80' : 'text-slate-500' %>"><%= lFooter %></p>
+  </div>
+<% } %>

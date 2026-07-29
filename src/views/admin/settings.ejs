@@ -758,6 +758,70 @@
       </div>
     </div>
 
+    <!-- Strona logowania: układ i teksty (niezależne od stron klienta) -->
+    <% const LG = settings.login; %>
+    <div x-show="tab==='wyglad'" x-cloak class="bg-white rounded-2xl border border-slate-200 p-6 space-y-4"
+         x-data="{ lStyle: '<%= LG.style %>' }">
+      <h2 class="text-sm font-semibold text-slate-700">Strona logowania — układ i teksty</h2>
+      <p class="text-xs text-slate-400 -mt-2">Niezależne od stron klienta. Puste pola = teksty domyślne.</p>
+
+      <div>
+        <span class="block text-xs font-medium text-slate-500 mb-1">Układ</span>
+        <div class="grid grid-cols-2 gap-2 text-sm max-w-md">
+          <% [['card','Karta (wyśrodkowana)'],['split','Formularz + panel marki']].forEach(function(o){ %>
+            <label class="cursor-pointer">
+              <input type="radio" name="loginStyle" value="<%= o[0] %>" <%= LG.style === o[0] ? 'checked' : '' %> @change="lStyle=$event.target.value" class="peer sr-only" />
+              <span class="block rounded-lg border border-slate-300 px-3 py-1.5 text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
+            </label>
+          <% }); %>
+        </div>
+      </div>
+
+      <div x-show="lStyle==='split'" x-cloak>
+        <span class="block text-xs font-medium text-slate-500 mb-1">Formularz po stronie</span>
+        <div class="grid grid-cols-2 gap-2 text-sm max-w-md">
+          <% [['left','Lewej'],['right','Prawej']].forEach(function(o){ %>
+            <label class="cursor-pointer">
+              <input type="radio" name="loginSide" value="<%= o[0] %>" <%= LG.side === o[0] ? 'checked' : '' %> class="peer sr-only" />
+              <span class="block rounded-lg border border-slate-300 px-3 py-1.5 text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
+            </label>
+          <% }); %>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <label class="block">
+          <span class="block text-xs font-medium text-slate-500 mb-1">Nagłówek</span>
+          <input name="loginTitle" value="<%= LG.title %>" maxlength="80" placeholder="Zaloguj się" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </label>
+        <label class="block">
+          <span class="block text-xs font-medium text-slate-500 mb-1">Podpis pod nagłówkiem</span>
+          <input name="loginSubtitle" value="<%= LG.subtitle %>" maxlength="160" placeholder="Panel administracyjny agencji." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </label>
+      </div>
+
+      <div x-show="lStyle==='split'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <label class="block">
+          <span class="block text-xs font-medium text-slate-500 mb-1">Hero — tytuł <span class="text-slate-400 font-normal">(panel marki)</span></span>
+          <input name="loginHeroTitle" value="<%= LG.heroTitle %>" maxlength="120" placeholder="<%= settings.appName %>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </label>
+        <label class="block">
+          <span class="block text-xs font-medium text-slate-500 mb-1">Hero — podpis</span>
+          <input name="loginHeroSubtitle" value="<%= LG.heroSubtitle %>" maxlength="240" placeholder="Bezpieczna wymiana plików z klientami." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </label>
+      </div>
+
+      <label class="block max-w-md">
+        <span class="block text-xs font-medium text-slate-500 mb-1">Stopka <span class="text-slate-400 font-normal">(puste = jak na stronach klienta)</span></span>
+        <input name="loginFooter" value="<%= LG.footer %>" maxlength="200" placeholder="<%= settings.texts.footer || (settings.appName + ' · prywatny system wymiany plików') %>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      </label>
+
+      <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+        <input type="checkbox" name="loginHideName" <%= LG.hideName ? 'checked' : '' %> class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" />
+        Ukryj nazwę aplikacji przy logo
+      </label>
+    </div>
+
     <!-- Strona logowania: własne tło (null = dziedziczy tło stron klienta) -->
     <% const LB = settings.loginBackground; %>
     <div x-show="tab==='wyglad'" x-cloak class="bg-white rounded-2xl border border-slate-200 p-6 space-y-4"

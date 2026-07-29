@@ -180,6 +180,18 @@ async function updateSettings(req, res, next) {
       actions: panelUi.ACTIONS.map((a) => ({ key: a.key, hidden: b['actionShow_' + a.key] !== 'on' })), // szybkie akcje (widoczność)
     };
 
+    // --- Strona logowania (niezależna personalizacja) ---
+    const login = {
+      style: ['card', 'split'].includes(b.loginStyle) ? b.loginStyle : 'card',
+      side: b.loginSide === 'right' ? 'right' : 'left',
+      title: b.loginTitle || '',
+      subtitle: b.loginSubtitle || '',
+      heroTitle: b.loginHeroTitle || '',
+      heroSubtitle: b.loginHeroSubtitle || '',
+      hideName: b.loginHideName === 'on',
+      footer: b.loginFooter || '',
+    };
+
     // --- PWA (instalowalna aplikacja) — ikona dołożona niżej przy uploadzie/usuwaniu ---
     const pwa = {
       enabled: b.pwaEnabled === 'on',
@@ -206,6 +218,7 @@ async function updateSettings(req, res, next) {
       pdf,
       panel,
       pwa,
+      login,
       customCss: sanitizeCss(b.customCss || ''),
       emails: {
         logoPath: current.emails.logoPath || null,

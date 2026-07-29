@@ -286,6 +286,7 @@ model Settings {
   panel        String?  // JSON: { menu: [{key,hidden,label}], dashboard: [{key,hidden}] } — układ panelu admina
   pwa          String?  // JSON: { enabled, name, shortName, themeColor, background, display, iconPath } — instalowalna aplikacja (PWA)
   profile      String?  // JSON: { name, role, phone, avatarPath } — profil administratora (nagłówek panelu)
+  login        String?  // JSON: { style, side, title, subtitle, heroTitle, heroSubtitle, hideName, footer } — wygląd strony logowania
   updatedAt    DateTime @updatedAt
 }
 
