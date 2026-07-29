@@ -1,0 +1,73 @@
+<%
+  const COLS = [
+    { key: 'zalegle', label: 'Zaległe', dot: 'bg-red-400', head: 'text-red-600' },
+    { key: 'dzis', label: 'Dziś', dot: 'bg-brand-400', head: 'text-brand-700' },
+    { key: 'tydzien', label: 'Ten tydzień', dot: 'bg-sky-400', head: 'text-sky-700' },
+    { key: 'pozniej', label: 'Później', dot: 'bg-slate-400', head: 'text-slate-600' },
+  ];
+%>
+<div>
+  <%# Szybkie dodanie zadania (tytuł + kubełek + priorytet). %>
+  <form method="POST" action="/admin/tasks" class="mb-4 flex items-center gap-2 flex-wrap bg-white rounded-2xl border border-slate-200 p-3">
+    <input name="title" required maxlength="200" placeholder="Nowe zadanie…" class="flex-1 min-w-[180px] rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+    <select name="bucket" class="rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+      <option value="dzis">Dziś</option>
+      <option value="tydzien">Ten tydzień</option>
+      <option value="pozniej">Później</option>
+    </select>
+    <select name="priority" class="rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+      <option value="low">Niski</option><option value="normal" selected>Normalny</option><option value="high">Wysoki</option>
+    </select>
+    <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 inline-flex items-center gap-1.5 transition"><%- icon('plus', { size: 15, cls: '' }) %> Dodaj</button>
+  </form>
+
+  <%# Kanban: 4 kubełki czasowe + „Zrobione". Drag&drop = zmiana terminu / oznaczenie. %>
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+    <% COLS.forEach(function(col){ %>
+      <div class="bg-slate-50 rounded-2xl border border-slate-200 p-3 flex flex-col">
+        <div class="flex items-center justify-between mb-2 px-1">
+          <span class="text-sm font-semibold <%= col.head %> inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full <%= col.dot %>"></span> <%= col.label %></span>
+          <span class="text-xs text-slate-400"><%= counts[col.key] %></span>
+        </div>
+        <div class="task-col space-y-2 flex-1 min-h-[80px]" data-bucket="<%= col.key %>">
+          <% cols[col.key].forEach(function(t){ %><%- include('_task_card', { t: t }) %><% }); %>
+          <% if (!cols[col.key].length) { %><p class="text-xs text-slate-300 text-center py-6">Pusto</p><% } %>
+        </div>
+      </div>
+    <% }); %>
+    <div class="bg-slate-50 rounded-2xl border border-slate-200 p-3 flex flex-col">
+      <div class="flex items-center justify-between mb-2 px-1">
+        <span class="text-sm font-semibold text-green-700 inline-flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-green-400"></span> Zrobione</span>
+        <span class="text-xs text-slate-400"><%= counts.done %></span>
+      </div>
+      <div class="task-col space-y-2 flex-1 min-h-[80px]" data-bucket="done">
+        <% done.forEach(function(t){ %><%- include('_task_card', { t: t, isDone: true }) %><% }); %>
+        <% if (!done.length) { %><p class="text-xs text-slate-300 text-center py-6">Nic jeszcze</p><% } %>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-[11px] text-slate-400 mt-3">Przeciągnij kartę między kolumnami, aby zmienić termin. „Zrobione" oznacza wykonanie. Pełną edycję (godzina, długość, cykl, kolor) zrobisz w kalendarzu.</p>
+</div>
+
+<script src="/js/sortable.min.js"></script>
+<script>
+  (function () {
+    if (!window.Sortable) return;
+    document.querySelectorAll('.task-col').forEach(function (col) {
+      Sortable.create(col, {
+        group: 'tasks',
+        animation: 150,
+        ghostClass: 'opacity-50',
+        filter: 'a, button',          // klik w link/przycisk karty nie startuje przeciągania
+        preventOnFilter: false,       // …i nie blokuje kliknięcia (submit/nawigacja działają)
+        onAdd: function (evt) {
+          var id = evt.item.getAttribute('data-id');
+          var bucket = evt.to.getAttribute('data-bucket');
+          fetch('/admin/tasks/' + id + '/move', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bucket: bucket }) })
+            .then(function () { location.reload(); }).catch(function () { location.reload(); });
+        },
+      });
+    });
+  })();
+</script>

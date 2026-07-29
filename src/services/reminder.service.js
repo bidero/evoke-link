@@ -107,6 +107,16 @@ async function moveToDay(id, day) {
 }
 function getById(id) { return prisma.reminder.findUnique({ where: { id: Number(id) } }); }
 
+// Zadania (kanban): otwarte (wszystkie, do bucketowania) + ostatnio zrobione.
+async function forTasks() {
+  const inc = { client: { select: { id: true, name: true } }, project: { select: { id: true, name: true } } };
+  const [open, done] = await Promise.all([
+    prisma.reminder.findMany({ where: { done: false }, orderBy: { dueAt: 'asc' }, take: 300, include: inc }),
+    prisma.reminder.findMany({ where: { done: true }, orderBy: [{ doneAt: 'desc' }, { dueAt: 'desc' }], take: 40, include: inc }),
+  ]);
+  return { open, done };
+}
+
 // Przełożenie na konkretny termin (data + godzina) — drag na siatce godzin (tydzień/dzień).
 function reschedule(id, dueAt) {
   const d = new Date(dueAt);
@@ -129,4 +139,4 @@ function dueCount() {
   return prisma.reminder.count({ where: { done: false, dueAt: { lte: end } } });
 }
 
-module.exports = { create, update, toggleDone, remove, removeSeries, moveToDay, reschedule, getById, inRange, dueCount, PRIORITIES, REPEATS, COLORS };
+module.exports = { create, update, toggleDone, remove, removeSeries, moveToDay, reschedule, getById, forTasks, inRange, dueCount, PRIORITIES, REPEATS, COLORS };

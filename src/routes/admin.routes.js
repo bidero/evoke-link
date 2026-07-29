@@ -67,6 +67,14 @@ router.post('/calendar/reminders/:id/move', calendar.moveReminder);
 router.post('/calendar/reminders/:id/reschedule', calendar.rescheduleReminder);
 router.post('/calendar/reminders/:id/delete', calendar.deleteReminder);
 
+// Zadania (kanban) — widok Reminder w kubełkach czasowych.
+const tasks = require('../controllers/tasks.controller');
+router.get('/tasks', tasks.index);
+router.post('/tasks', tasks.create);
+router.post('/tasks/:id/move', tasks.move);
+router.post('/tasks/:id/toggle', tasks.toggle);
+router.post('/tasks/:id/delete', tasks.remove);
+
 router.get('/messages', messages.listMessages); // dwupanel: ?client=<id|none> = wybrana rozmowa
 router.post('/messages/read-all', messages.markAllRead);
 router.get('/messages/:id/attachment', messages.downloadAttachment); // :id = id wiadomości

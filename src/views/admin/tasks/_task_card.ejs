@@ -1,0 +1,22 @@
+<% const _done = (typeof isDone !== 'undefined' && isDone); %>
+<div class="task-card bg-white rounded-lg border border-slate-200 p-2.5 shadow-sm cursor-grab" data-id="<%= t.id %>">
+  <div class="flex items-start gap-2">
+    <span class="mt-1 shrink-0 w-2 h-2 rounded-full <%= t.priority === 'high' ? 'bg-red-400' : (t.priority === 'low' ? 'bg-slate-300' : 'bg-brand-400') %>"></span>
+    <div class="min-w-0 flex-1">
+      <div class="text-sm text-slate-800 break-words <%= _done ? 'line-through text-slate-400' : '' %>"><%= t.title %></div>
+      <div class="mt-1 flex items-center gap-1.5 flex-wrap text-[11px] text-slate-400">
+        <span><%= fmt.date(t.dueAt) %></span>
+        <% if (t.project) { %><span class="text-slate-300">·</span><a href="/admin/projects/<%= t.project.id %>" class="hover:text-brand-700 truncate max-w-[130px]"><%= t.project.name %></a>
+        <% } else if (t.client) { %><span class="text-slate-300">·</span><a href="/admin/clients/<%= t.client.id %>" class="hover:text-brand-700 truncate max-w-[130px]"><%= t.client.name %></a><% } %>
+      </div>
+    </div>
+  </div>
+  <div class="flex items-center justify-end gap-1 mt-2">
+    <form method="POST" action="/admin/tasks/<%= t.id %>/toggle">
+      <button type="submit" class="text-[11px] px-2 py-0.5 rounded-full <%= _done ? 'text-slate-500 hover:bg-slate-100' : 'text-brand-700 hover:bg-brand-50' %> transition"><%= _done ? 'Przywróć' : '✓ Zrobione' %></button>
+    </form>
+    <form method="POST" action="/admin/tasks/<%= t.id %>/delete" onsubmit="return confirm('Usunąć zadanie?');">
+      <button type="submit" class="text-slate-300 hover:text-red-600 p-1" title="Usuń"><%- icon('trash', { size: 13, cls: '' }) %></button>
+    </form>
+  </div>
+</div>
