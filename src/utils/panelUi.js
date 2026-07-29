@@ -37,8 +37,24 @@ const WIDGETS = [
   { key: 'followup', label: 'Do odezwania się', span: 4, icon: 'phone' },
 ];
 
+// Szybkie akcje (widżet pulpitu „Szybkie akcje"). `on` = domyślnie widoczna.
+// `primary` = wyróżniony przycisk (brand). Konfiguracja: Settings.panel.actions (delty hidden).
+const ACTIONS = [
+  { key: 'transfer', label: 'Wyślij pliki klientowi', href: '/admin/transfers/new', icon: 'send', primary: true, on: true },
+  { key: 'upload', label: 'Utwórz link uploadu', href: '/admin/transfers/new-upload', icon: 'cloudUpload', on: true },
+  { key: 'project', label: 'Nowy projekt', href: '/admin/projects/new', icon: 'folder', on: true },
+  { key: 'client', label: 'Nowy klient', href: '/admin/clients/new', icon: 'users', on: true },
+  { key: 'calendar', label: 'Kalendarz / zadanie', href: '/admin/calendar', icon: 'calendarDays', on: false },
+  { key: 'sales', label: 'Sprzedaż i oferty', href: '/admin/sales', icon: 'funnel', on: false },
+  { key: 'messages', label: 'Wiadomości', href: '/admin/messages', icon: 'mail', on: false },
+  { key: 'board', label: 'Tablica projektów', href: '/admin/projects/board', icon: 'grip', on: false },
+  { key: 'templates', label: 'Szablony projektów', href: '/admin/projects/templates', icon: 'copy', on: false },
+  { key: 'pulse', label: 'Puls agencji', href: '/admin/pulse', icon: 'activity', on: false },
+];
+
 const MENU_KEYS = MENU.map((m) => m.key);
 const WIDGET_KEYS = WIDGETS.map((w) => w.key);
+const ACTION_KEYS = ACTIONS.map((a) => a.key);
 
 // Scala zapisaną konfigurację z listą kanoniczną. Zwraca pełne pozycje w docelowej
 // kolejności z flagą hidden; „Ustawienia" zawsze widoczne (droga powrotna).
@@ -101,4 +117,26 @@ function sanitizeWidgets(raw) {
   return out;
 }
 
-module.exports = { MENU, WIDGETS, SPANS, mergeMenu, mergeWidgets, sanitizeMenu, sanitizeWidgets };
+// Szybkie akcje: pełna lista z flagą hidden (kolejność rejestru). Domyślnie widoczne = `on`.
+function mergeActions(cfg) {
+  const saved = Array.isArray(cfg) ? cfg : [];
+  const byKey = Object.fromEntries(saved.filter((s) => s && s.key).map((s) => [s.key, s]));
+  return ACTIONS.map((a) => {
+    const s = byKey[a.key];
+    return { ...a, hidden: s ? !!s.hidden : !a.on };
+  });
+}
+
+function sanitizeActions(raw) {
+  const arr = Array.isArray(raw) ? raw : [];
+  const seen = new Set();
+  const out = [];
+  for (const s of arr) {
+    if (!s || !ACTION_KEYS.includes(s.key) || seen.has(s.key)) continue;
+    seen.add(s.key);
+    out.push({ key: s.key, hidden: !!s.hidden });
+  }
+  return out;
+}
+
+module.exports = { MENU, WIDGETS, ACTIONS, SPANS, mergeMenu, mergeWidgets, mergeActions, sanitizeMenu, sanitizeWidgets, sanitizeActions };

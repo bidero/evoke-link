@@ -186,7 +186,7 @@ function normalize(row) {
     customCss: row.customCss || '',
     emails: { ...DEFAULTS.emails, ...emails },
     pdf: normPdf(pdf),
-    panel: { menu: panelUi.sanitizeMenu(panel.menu), dashboard: panelUi.sanitizeWidgets(panel.dashboard) },
+    panel: { menu: panelUi.sanitizeMenu(panel.menu), dashboard: panelUi.sanitizeWidgets(panel.dashboard), actions: panelUi.sanitizeActions(panel.actions) },
     pwa: normPwa(pwa),
     profile: normProfile(profile),
   };
@@ -221,7 +221,7 @@ async function update(data) {
   if (data.customCss !== undefined) patch.customCss = data.customCss;
   if (data.emails !== undefined) patch.emails = JSON.stringify(data.emails);
   if (data.pdf !== undefined) patch.pdf = JSON.stringify(data.pdf);
-  if (data.panel !== undefined) patch.panel = JSON.stringify({ menu: panelUi.sanitizeMenu(data.panel.menu), dashboard: panelUi.sanitizeWidgets(data.panel.dashboard) });
+  if (data.panel !== undefined) patch.panel = JSON.stringify({ menu: panelUi.sanitizeMenu(data.panel.menu), dashboard: panelUi.sanitizeWidgets(data.panel.dashboard), actions: panelUi.sanitizeActions(data.panel.actions) });
   if (data.pwa !== undefined) patch.pwa = JSON.stringify(normPwa(data.pwa));
   if (data.profile !== undefined) patch.profile = JSON.stringify(normProfile(data.profile));
 

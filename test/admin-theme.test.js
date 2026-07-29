@@ -81,12 +81,23 @@ test('zwijane lewe menu: markery paska + przełącznik toggleRail w layoucie', a
   const cookie = await login();
   if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
 
-  const html = await (await fetch(`${base}/admin`, { headers: { Cookie: cookie } })).text();
-  // pasek i pozycje mają markery używane przez CSS zwijania (html.rail-collapsed)
-  assert.match(html, /data-admin-sidebar/, 'aside ma data-admin-sidebar');
-  assert.match(html, /data-rail-item/, 'pozycje menu mają data-rail-item');
-  assert.match(html, /data-rail-label/, 'etykiety mają data-rail-label (chowane po zwinięciu)');
-  // inline-skrypt inicjuje stan bez migotania + globalny przełącznik
-  assert.match(html, /rail-collapsed/, 'init klasy rail-collapsed w <head>');
-  assert.match(html, /window\.toggleRail\s*=/, 'globalny toggleRail zdefiniowany');
+  const snap = await prisma.settings.findUnique({ where: { id: 1 }, select: { panel: true } });
+  try {
+    // Zapewnij co najmniej jedną widoczną pozycję paska (Pulpit) — „Ustawienia"/„Konto"
+    // są teraz w menu profilu (prawy górny róg) i celowo pominięte w pasku.
+    const cur = (await settingsService.get()).panel;
+    await settingsService.update({ panel: { menu: [{ key: 'dashboard', hidden: false }], dashboard: cur.dashboard, actions: cur.actions } });
+
+    const html = await (await fetch(`${base}/admin`, { headers: { Cookie: cookie } })).text();
+    assert.match(html, /data-admin-sidebar/, 'aside ma data-admin-sidebar');
+    assert.match(html, /data-rail-item/, 'pozycje menu mają data-rail-item');
+    assert.match(html, /data-rail-label/, 'etykiety mają data-rail-label (chowane po zwinięciu)');
+    assert.match(html, /rail-collapsed/, 'init klasy rail-collapsed w <head>');
+    assert.match(html, /window\.toggleRail\s*=/, 'globalny toggleRail zdefiniowany');
+    // Ustawienia/Wyloguj przeniesione do menu profilu w nagłówku
+    assert.match(html, /Menu konta/, 'przycisk menu profilu w nagłówku');
+  } finally {
+    await prisma.settings.update({ where: { id: 1 }, data: { panel: snap ? snap.panel : null } });
+    await settingsService.get();
+  }
 });

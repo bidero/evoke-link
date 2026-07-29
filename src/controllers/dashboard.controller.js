@@ -15,9 +15,11 @@ const panelUi = require('../utils/panelUi');
 async function showDashboard(req, res, next) {
   try {
     let widgets = panelUi.mergeWidgets([]);
+    let quickActions = panelUi.mergeActions([]).filter((a) => !a.hidden);
     try {
       const s = await settingsService.get();
       widgets = panelUi.mergeWidgets(s.panel.dashboard);
+      quickActions = panelUi.mergeActions(s.panel.actions).filter((a) => !a.hidden);
     } catch (_) { /* domyślny układ */ }
     const visible = new Set(widgets.filter((w) => !w.hidden).map((w) => w.key));
 
@@ -56,6 +58,7 @@ async function showDashboard(req, res, next) {
       title: 'Pulpit',
       active: 'dashboard',
       widgets,
+      quickActions,
       hiddenMap: Object.fromEntries(widgets.map((w) => [w.key, w.hidden])),
       spansMap: Object.fromEntries(widgets.map((w) => [w.key, w.span])),
       stats,

@@ -43,6 +43,7 @@ async function showSettings(req, res, next) {
       placeholders: mail.PLACEHOLDERS,
       placeholderSupport: mail.PLACEHOLDER_SUPPORT,
       panelMenuFull: panelUi.mergeMenu(settings.panel.menu), // edytor menu (też ukryte pozycje)
+      quickActionsFull: panelUi.mergeActions(settings.panel.actions), // edytor szybkich akcji (też ukryte)
       test: req.query.test || null, // sent | dev | error
     });
   } catch (err) {
@@ -176,6 +177,7 @@ async function updateSettings(req, res, next) {
         label: (b['menuLabel_' + key] || '').trim(),
       })),
       dashboard: current.panel.dashboard, // układ pulpitu zapisywany osobno (z pulpitu)
+      actions: panelUi.ACTIONS.map((a) => ({ key: a.key, hidden: b['actionShow_' + a.key] !== 'on' })), // szybkie akcje (widoczność)
     };
 
     // --- PWA (instalowalna aplikacja) — ikona dołożona niżej przy uploadzie/usuwaniu ---
