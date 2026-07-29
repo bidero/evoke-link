@@ -14,27 +14,39 @@
 <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-3">Finanse</h2>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
   <div class="bg-white rounded-2xl border border-slate-200 p-5">
-    <div class="text-sm text-slate-500">Przychód w tym miesiącu</div>
+    <div class="flex items-start justify-between gap-2">
+      <div class="text-sm text-slate-500">Przychód w tym miesiącu</div>
+      <span data-stat-icon class="shrink-0 text-slate-300"><%- icon('trendingUp', { size: 18, cls: '' }) %></span>
+    </div>
     <div class="mt-1 flex items-baseline gap-2 flex-wrap">
       <span class="text-2xl font-bold text-slate-800"><%= zl(M.paidThisMonth) %></span>
       <% if (delta !== null) { %>
         <span class="text-xs font-medium px-1.5 py-0.5 rounded-full <%= delta >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' %>"><%= delta >= 0 ? '▲' : '▼' %> <%= Math.abs(delta) %>%</span>
       <% } %>
     </div>
-    <div class="text-xs text-slate-400 mt-1">poprzedni miesiąc: <%= zl(M.paidPrevMonth) %></div>
+    <div class="text-xs text-slate-400 mt-1"><% if (delta !== null) { %>od zeszłego miesiąca (<%= zl(M.paidPrevMonth) %>)<% } else { %>poprzedni miesiąc: <%= zl(M.paidPrevMonth) %><% } %></div>
   </div>
   <div class="bg-white rounded-2xl border border-slate-200 p-5">
-    <div class="text-sm text-slate-500">Do zapłaty (wszystkie)</div>
+    <div class="flex items-start justify-between gap-2">
+      <div class="text-sm text-slate-500">Do zapłaty (wszystkie)</div>
+      <span data-stat-icon class="shrink-0 text-slate-300"><%- icon('banknote', { size: 18, cls: '' }) %></span>
+    </div>
     <div class="mt-1 text-2xl font-bold text-slate-800"><%= zl(M.outstanding) %></div>
     <div class="text-xs text-slate-400 mt-1">nierozliczone pozycje</div>
   </div>
   <div class="bg-white rounded-2xl border <%= M.overdue > 0 ? 'border-red-200' : 'border-slate-200' %> p-5">
-    <div class="text-sm text-slate-500">Przeterminowane</div>
+    <div class="flex items-start justify-between gap-2">
+      <div class="text-sm text-slate-500">Przeterminowane</div>
+      <span data-stat-icon class="shrink-0 text-slate-300"><%- icon('clock', { size: 18, cls: '' }) %></span>
+    </div>
     <div class="mt-1 text-2xl font-bold <%= M.overdue > 0 ? 'text-red-600' : 'text-slate-800' %>"><%= zl(M.overdue) %></div>
     <div class="text-xs text-slate-400 mt-1">po terminie płatności</div>
   </div>
   <div class="bg-white rounded-2xl border border-slate-200 p-5">
-    <div class="text-sm text-slate-500">Stały przychód (MRR)</div>
+    <div class="flex items-start justify-between gap-2">
+      <div class="text-sm text-slate-500">Stały przychód (MRR)</div>
+      <span data-stat-icon class="shrink-0 text-slate-300"><%- icon('activity', { size: 18, cls: '' }) %></span>
+    </div>
     <div class="mt-1 text-2xl font-bold text-slate-800"><%= zl(R.mrr) %><span class="text-sm font-medium text-slate-400">/mc</span></div>
     <div class="text-xs text-slate-400 mt-1"><%= R.count %> aktywnych retainerów</div>
   </div>
