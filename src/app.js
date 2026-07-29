@@ -178,6 +178,12 @@ app.use(async (req, res, next) => {
     ].filter(Boolean).join(';');
     res.locals.adminStyleTag = `<style>:root{${adminVars}}</style>`;
 
+    // Motyw panelu + ukrycie scrollbarów → klasy na <html> layoutu admina (warstwa CSS w input.css).
+    res.locals.adminBodyClass = [
+      (s.layout && s.layout.adminTheme === 'modern') ? 'theme-modern' : '',
+      (s.layout && s.layout.hideScroll) ? 'hide-scrollbars' : '',
+    ].filter(Boolean).join(' ');
+
     // Dark mode: kolory ciemne z ustawień (puste → wartości domyślne z input.css).
     const darkBg = color.safeHex(c.darkBg, '#0f172a');
     const darkSurface = color.safeHex(c.darkSurface, '#1e293b');
@@ -229,6 +235,7 @@ app.use(async (req, res, next) => {
     res.locals.settings = settingsService.DEFAULTS;
     res.locals.pwaHead = '';
     res.locals.pwaSplash = '';
+    res.locals.adminBodyClass = '';
     res.locals.brandStyleTag = '';
     res.locals.adminStyleTag = '';
     res.locals.darkStyleTag = '';

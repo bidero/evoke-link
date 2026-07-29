@@ -147,6 +147,8 @@ async function updateSettings(req, res, next) {
       stickyHeader: b.stickyHeader === 'on',
       font: fonts.PAIRS[b.layoutFont] ? b.layoutFont : 'system',
       portalNav: ['none', 'tabs', 'side-left', 'side-right', 'top', 'bar-left', 'bar-right', 'header', 'rail-left', 'rail-right'].includes(b.portalNav) ? b.portalNav : 'none',
+      adminTheme: ['classic', 'modern'].includes(b.adminTheme) ? b.adminTheme : 'classic',
+      hideScroll: b.hideScroll === 'on',
     };
 
     // --- Wydruk PDF rozliczenia ---

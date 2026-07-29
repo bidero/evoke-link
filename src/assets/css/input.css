@@ -156,3 +156,46 @@ html.dark input::placeholder,
 html.dark textarea::placeholder { color: var(--dk-muted-2); }
 html.dark .hover\:bg-slate-50:hover,
 html.dark .hover\:bg-slate-100:hover { background-color: var(--dk-surface-2) !important; }
+
+/* ── Motyw panelu „modern" (styl TailAdmin) ─────────────────────────────────
+   Warstwa nadpisań pod klasą .theme-modern (na <html> layoutu admina). Klasyczny
+   wygląd BEZ zmian. Czyta te same zmienne kolorów (--admin-*, brand-*), więc
+   personalizacja kolorów działa jak dotąd. Współistnieje z .dark. */
+
+/* Sidebar: zaokrąglone pozycje + wyraźna aktywna pigułka w kolorze marki. */
+.theme-modern aside nav a { border-radius: 10px; margin-bottom: 2px; }
+.theme-modern aside nav a.bg-brand-50 {
+  background: rgb(var(--brand-600)) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 18px -8px rgb(var(--brand-600) / 0.55);
+}
+.theme-modern aside nav a.bg-brand-50 * { color: #fff !important; opacity: 1 !important; }
+
+/* Nagłówek: czystsza linia + zaokrąglona szukajka. */
+.theme-modern header { border-bottom-color: rgba(15, 23, 42, 0.06); }
+.theme-modern header input { border-radius: 10px; }
+
+/* Karty treści (widżety, sekcje): miękki, czysty cień + spójna ramka. */
+.theme-modern main .rounded-2xl {
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 1px 3px rgba(16, 24, 40, 0.08);
+  border-color: #e5e7eb;
+}
+
+/* Tabele: nagłówek na slate + hover wierszy. */
+.theme-modern main table thead { background: #f8fafc; }
+.theme-modern main table thead th { color: #64748b; font-weight: 600; }
+.theme-modern main table tbody tr:hover { background: rgb(var(--brand-600) / 0.04); }
+
+/* Dark mode + modern: karty i tabele na ciemno (pigułka brand zostaje). */
+html.dark.theme-modern main .rounded-2xl {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  border-color: var(--dk-border);
+}
+html.dark.theme-modern main table thead { background: var(--dk-surface-2); }
+html.dark.theme-modern main table thead th { color: var(--dk-muted); }
+
+/* ── Ukrycie pasków przewijania (opcja, niezależna od motywu) ────────────────
+   Działa też w „classic". Firefox: scrollbar-width; WebKit: ::-webkit-scrollbar. */
+.hide-scrollbars { scrollbar-width: none; -ms-overflow-style: none; }
+.hide-scrollbars ::-webkit-scrollbar,
+.hide-scrollbars::-webkit-scrollbar { display: none; width: 0; height: 0; }

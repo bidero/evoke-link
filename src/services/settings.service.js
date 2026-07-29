@@ -19,7 +19,8 @@ const DEFAULTS = {
   // Układ stron klienta. style: classic (obecny) | centered | split.
   // card: solid | glass | elevated. radius w px. button: rounded | pill.
   // portalNav: nawigacja sekcji portali /c i /p — none (stos) | tabs | side-left | side-right.
-  layout: { style: 'classic', card: 'solid', cardSide: 'right', panelWidth: 'md', hideName: false, hideBgLogo: false, heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded', stickyHeader: false, font: 'system', portalNav: 'none' },
+  // adminTheme = wygląd PANELU admina: classic (obecny) | modern (styl TailAdmin, warstwa CSS). hideScroll = ukryj paski przewijania.
+  layout: { style: 'classic', card: 'solid', cardSide: 'right', panelWidth: 'md', hideName: false, hideBgLogo: false, heroOnBg: true, applyToLogin: false, radius: 24, button: 'rounded', stickyHeader: false, font: 'system', portalNav: 'none', adminTheme: 'classic', hideScroll: false },
   customCss: '',
   // E-mail: osobne logo + treści + powiadomienie do klienta. Puste pola = domyślne.
   emails: {
@@ -59,6 +60,7 @@ const PANEL_WIDTHS = ['sm', 'md', 'lg', 'xl', '2xl'];
 // W karcie: tabs | side-*. Pływające przy karcie: top (pasek nad kartą) | bar-* (panel obok).
 // W chrome strony: header (menu w nagłówku obok logo) | rail-* (pełnowysoki brandowy pas pionowy).
 const PORTAL_NAVS = ['none', 'tabs', 'side-left', 'side-right', 'top', 'bar-left', 'bar-right', 'header', 'rail-left', 'rail-right'];
+const ADMIN_THEMES = ['classic', 'modern']; // wygląd panelu admina (modern = warstwa CSS .theme-modern)
 const PDF_TEMPLATES = ['standard', 'band', 'accent', 'proforma', 'accent-card', 'accent-band', 'accent-min', 'clean'];
 const PDF_DOCTYPES = ['rozliczenie', 'proforma'];
 const PWA_DISPLAYS = ['standalone', 'minimal-ui', 'fullscreen', 'browser'];
@@ -131,6 +133,8 @@ function normLayout(l) {
     stickyHeader: !!x.stickyHeader,
     font: fonts.PAIRS[x.font] ? x.font : DEFAULTS.layout.font,
     portalNav: PORTAL_NAVS.includes(x.portalNav) ? x.portalNav : DEFAULTS.layout.portalNav,
+    adminTheme: ADMIN_THEMES.includes(x.adminTheme) ? x.adminTheme : DEFAULTS.layout.adminTheme,
+    hideScroll: !!x.hideScroll,
   };
 }
 
