@@ -6,7 +6,7 @@
   <% if (!msgThreads.length) { %>
     <div class="flex-1 flex items-center justify-center px-5 py-8 text-center text-sm text-slate-400">Wszystko przeczytane.</div>
   <% } else { %>
-    <ul class="divide-y divide-slate-100">
+    <ul class="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100">
       <% msgThreads.forEach(function(t){ %>
         <% const last = t.messages[t.messages.length - 1]; %>
         <% const who = (t.client && t.client.name) || (last && last.senderName) || 'Klient'; %>

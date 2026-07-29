@@ -1,6 +1,6 @@
 <%# Kafelek KPI. Kompozycja jak w referencji (TailAdmin): badge ikony u góry, pod nim
-    etykieta i wartość. Kafelek ma NATURALNĄ wysokość (grid: `self-start` w dashboard.ejs),
-    więc nie rozciąga się do wysokości sąsiedniego, wysokiego widżetu. %>
+    etykieta i wartość — treść zawsze przy GÓRNEJ krawędzi (żadnego centrowania w pionie),
+    więc kafelek wygląda tak samo przy każdej wysokości ustawionej w siatce pulpitu. %>
 <% const _ic = typeof wicon !== 'undefined' && wicon ? wicon : null; %>
 <% const _inner = `
     ${_ic ? `<span data-stat-icon class="text-slate-300 group-hover:text-brand-400 transition">${icon(_ic, { size: 18, cls: '' })}</span>` : ''}
@@ -10,7 +10,7 @@
       <div class="mt-1 text-xs text-slate-400">${tile.hint}</div>
     </div>` %>
 <% if (tile.href) { %>
-  <a href="<%= tile.href %>" class="block bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-sm transition group"><%- _inner %></a>
+  <a href="<%= tile.href %>" class="block h-full bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-sm transition group"><%- _inner %></a>
 <% } else { %>
-  <div class="bg-white rounded-2xl border border-slate-200 p-5"><%- _inner %></div>
+  <div class="h-full bg-white rounded-2xl border border-slate-200 p-5"><%- _inner %></div>
 <% } %>

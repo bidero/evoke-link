@@ -6,7 +6,7 @@
   <% if (!upcoming.length) { %>
     <div class="flex-1 flex items-center justify-center px-5 py-8 text-center text-sm text-slate-400">Nic pilnego — czysto na 14 dni.</div>
   <% } else { %>
-    <ul class="divide-y divide-slate-100">
+    <ul class="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100">
       <% upcoming.forEach(function(e){ %>
         <li class="px-5 py-2.5">
           <% if (e.href) { %><a href="<%= e.href %>" class="block group"><% } else { %><span class="block"><% } %>

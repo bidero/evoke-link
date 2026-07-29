@@ -61,6 +61,7 @@ async function showDashboard(req, res, next) {
       quickActions,
       hiddenMap: Object.fromEntries(widgets.map((w) => [w.key, w.hidden])),
       spansMap: Object.fromEntries(widgets.map((w) => [w.key, w.span])),
+      rowsMap: Object.fromEntries(widgets.map((w) => [w.key, w.rows])),
       stats,
       recent,
       upcoming,
@@ -73,13 +74,15 @@ async function showDashboard(req, res, next) {
   }
 }
 
-// Zapis układu pulpitu (fetch z trybu „Dostosuj"): body.layout = JSON [{key,hidden}].
+// Zapis układu pulpitu (fetch z trybu „Dostosuj"): body.layout = JSON [{key,hidden,span,rows}].
+// UWAGA: `panel` jest zapisywany CAŁY (menu+dashboard+actions), więc pozostałe gałęzie
+// trzeba przenieść z bieżących ustawień — inaczej zapis pulpitu wyzerowałby szybkie akcje.
 async function saveDashboardLayout(req, res, next) {
   try {
     let layout = [];
     try { layout = JSON.parse(req.body.layout || '[]'); } catch (_) {}
     const current = await settingsService.get();
-    await settingsService.update({ panel: { menu: current.panel.menu, dashboard: layout } });
+    await settingsService.update({ panel: { menu: current.panel.menu, dashboard: layout, actions: current.panel.actions } });
     res.status(204).end();
   } catch (err) {
     next(err);

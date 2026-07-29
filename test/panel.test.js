@@ -47,6 +47,29 @@ test('panelUi: scalanie i sanityzacja menu/widżetów', () => {
   assert.deepEqual(w, [{ key: 'activity', hidden: true }]);
 });
 
+test('panelUi: wysokość widżetu (rows) przechodzi przez scalanie i sanityzację', () => {
+  // sanityzacja: rows z whitelisty zapisane, poza listą pomijane (zostanie domyślne)
+  const s = panelUi.sanitizeWidgets([
+    { key: 'activity', span: 6, rows: 6 },
+    { key: 'tasks', span: 4, rows: 5 },   // 5 nie jest w ROWS
+    { key: 'revenue', span: 4, rows: '3' }, // string → Number()
+  ]);
+  assert.deepEqual(s[0], { key: 'activity', hidden: false, span: 6, rows: 6 });
+  assert.deepEqual(s[1], { key: 'tasks', hidden: false, span: 4 }, 'nieznana wysokość pomijana');
+  assert.equal(s[2].rows, 3, 'wartość liczbowa ze stringa');
+
+  // scalanie: zapisana wysokość wygrywa, nieznana wraca do domyślnej z rejestru
+  const m = panelUi.mergeWidgets(s);
+  const byKey = Object.fromEntries(m.map((w) => [w.key, w]));
+  const def = Object.fromEntries(panelUi.WIDGETS.map((w) => [w.key, w]));
+  assert.equal(byKey.activity.rows, 6);
+  assert.equal(byKey.tasks.rows, def.tasks.rows, 'brak zapisu → domyślna wysokość');
+  assert.equal(byKey.revenue.rows, 3);
+  // widżety bez wpisu w konfiguracji dostają wysokość z rejestru
+  assert.equal(byKey['stat-transfers'].rows, def['stat-transfers'].rows);
+  assert.ok(panelUi.WIDGETS.every((w) => panelUi.ROWS.includes(w.rows)), 'domyślne rows z whitelisty');
+});
+
 test('pulpit: tryb Dostosuj zapisuje układ (snapshot+restore Settings)', async (t) => {
   const cookie = await login();
   if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
@@ -59,8 +82,8 @@ test('pulpit: tryb Dostosuj zapisuje układ (snapshot+restore Settings)', async 
     assert.match(html, /Szybkie akcje/);
     assert.match(html, /Nadchodzące zadania/);
 
-    // zapis układu: aktywność na początku, akcje ukryte
-    const layout = [{ key: 'activity', hidden: false }, { key: 'actions', hidden: true }];
+    // zapis układu: aktywność na początku (½ szerokości, XL wysokości), akcje ukryte
+    const layout = [{ key: 'activity', hidden: false, span: 6, rows: 6 }, { key: 'actions', hidden: true }];
     const r = await fetch(`${base}/admin/dashboard/layout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookie },
@@ -72,6 +95,9 @@ test('pulpit: tryb Dostosuj zapisuje układ (snapshot+restore Settings)', async 
     html = await (await fetch(`${base}/admin`, { headers: { Cookie: cookie } })).text();
     assert.match(html, /ukryty — dane po włączeniu/);
     assert.ok(html.indexOf('Ostatnia aktywność') < html.indexOf('Aktywne transfery'), 'kolejność zapisana');
+    // szerokość i WYSOKOŚĆ z zapisu trafiają na klasy siatki
+    assert.match(html, /lg:col-span-6 lg:row-span-6/, 'zapisana wysokość na elemencie siatki');
+    assert.match(html, /lg:auto-rows-\[96px\]/, 'jednostka wysokości siatki');
 
     // menu boczne: edytor w ustawieniach obecny
     const sHtml = await (await fetch(`${base}/admin/settings`, { headers: { Cookie: cookie } })).text();

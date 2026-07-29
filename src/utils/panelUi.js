@@ -20,22 +20,27 @@ const MENU = [
 ];
 
 // Widżety pulpitu. span = szerokość na lg w jednostkach siatki 12-kolumnowej
-// (3 = ¼, 4 = ⅓, 6 = ½, 8 = ⅔, 12 = pełna) — użytkownik zmienia ją przełącznikiem w trybie edycji.
+// (3 = ¼, 4 = ⅓, 6 = ½, 8 = ⅔, 12 = pełna); rows = WYSOKOŚĆ w jednostkach siatki
+// (`auto-rows-[96px]` + gap 20px → 2=212px, 3=328px, 4=444px, 6=676px). Obie wartości
+// użytkownik zmienia przełącznikami w trybie edycji pulpitu.
+// Dzięki `rows` da się złożyć układ „dwa niskie kafelki obok jednego wysokiego" —
+// CSS Grid sam pakuje elementy w kolumnach (auto-placement wg kolejności DOM).
 // Renderery: views/admin/_widgets/<key>.ejs.
 const SPANS = [3, 4, 6, 8, 12];
+const ROWS = [2, 3, 4, 6];
 const WIDGETS = [
-  { key: 'stat-transfers', label: 'Aktywne transfery', span: 4, icon: 'send' },
-  { key: 'stat-projects', label: 'Aktywne projekty', span: 4, icon: 'folder' },
-  { key: 'stat-uploads', label: 'Oczekujące uploady', span: 4, icon: 'cloudUpload' },
-  { key: 'stat-outstanding', label: 'Do rozliczenia', span: 4, icon: 'banknote' },
-  { key: 'stat-overdue', label: 'Przeterminowane', span: 4, icon: 'clock' },
-  { key: 'stat-storage', label: 'Wykorzystane miejsce', span: 4, icon: 'archive' },
-  { key: 'actions', label: 'Szybkie akcje', span: 4, icon: 'plus' },
-  { key: 'activity', label: 'Ostatnia aktywność', span: 8, icon: 'activity' },
-  { key: 'tasks', label: 'Nadchodzące zadania', span: 4, icon: 'calendarDays' },
-  { key: 'revenue', label: 'Przychód i top klienci', span: 4, icon: 'trendingUp' },
-  { key: 'messages', label: 'Nieprzeczytane wiadomości', span: 4, icon: 'mail' },
-  { key: 'followup', label: 'Do odezwania się', span: 4, icon: 'phone' },
+  { key: 'stat-transfers', label: 'Aktywne transfery', span: 4, rows: 2, icon: 'send' },
+  { key: 'stat-projects', label: 'Aktywne projekty', span: 4, rows: 2, icon: 'folder' },
+  { key: 'stat-uploads', label: 'Oczekujące uploady', span: 4, rows: 2, icon: 'cloudUpload' },
+  { key: 'stat-outstanding', label: 'Do rozliczenia', span: 4, rows: 2, icon: 'banknote' },
+  { key: 'stat-overdue', label: 'Przeterminowane', span: 4, rows: 2, icon: 'clock' },
+  { key: 'stat-storage', label: 'Wykorzystane miejsce', span: 4, rows: 2, icon: 'archive' },
+  { key: 'actions', label: 'Szybkie akcje', span: 4, rows: 4, icon: 'plus' },
+  { key: 'activity', label: 'Ostatnia aktywność', span: 8, rows: 4, icon: 'activity' },
+  { key: 'tasks', label: 'Nadchodzące zadania', span: 4, rows: 4, icon: 'calendarDays' },
+  { key: 'revenue', label: 'Przychód i top klienci', span: 4, rows: 4, icon: 'trendingUp' },
+  { key: 'messages', label: 'Nieprzeczytane wiadomości', span: 4, rows: 4, icon: 'mail' },
+  { key: 'followup', label: 'Do odezwania się', span: 4, rows: 4, icon: 'phone' },
 ];
 
 // Szybkie akcje (widżet pulpitu „Szybkie akcje"). `on` = domyślnie widoczna.
@@ -85,7 +90,12 @@ function mergeWidgets(cfg) {
     const base = s && byKey[s.key];
     if (!base || seen.has(s.key)) continue;
     seen.add(s.key);
-    out.push({ ...base, hidden: !!s.hidden, span: SPANS.includes(s.span) ? s.span : base.span });
+    out.push({
+      ...base,
+      hidden: !!s.hidden,
+      span: SPANS.includes(s.span) ? s.span : base.span,
+      rows: ROWS.includes(s.rows) ? s.rows : base.rows,
+    });
   }
   for (const w of WIDGETS) if (!seen.has(w.key)) out.push({ ...w, hidden: false });
   return out;
@@ -114,7 +124,13 @@ function sanitizeWidgets(raw) {
     if (!s || !WIDGET_KEYS.includes(s.key) || seen.has(s.key)) continue;
     seen.add(s.key);
     const span = Number(s.span);
-    out.push({ key: s.key, hidden: !!s.hidden, ...(SPANS.includes(span) ? { span } : {}) });
+    const rows = Number(s.rows);
+    out.push({
+      key: s.key,
+      hidden: !!s.hidden,
+      ...(SPANS.includes(span) ? { span } : {}),
+      ...(ROWS.includes(rows) ? { rows } : {}),
+    });
   }
   return out;
 }
@@ -141,4 +157,4 @@ function sanitizeActions(raw) {
   return out;
 }
 
-module.exports = { MENU, WIDGETS, ACTIONS, SPANS, mergeMenu, mergeWidgets, mergeActions, sanitizeMenu, sanitizeWidgets, sanitizeActions };
+module.exports = { MENU, WIDGETS, ACTIONS, SPANS, ROWS, mergeMenu, mergeWidgets, mergeActions, sanitizeMenu, sanitizeWidgets, sanitizeActions };

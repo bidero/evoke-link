@@ -6,7 +6,9 @@
   <% if (!recent.length) { %>
     <div class="flex-1 flex items-center justify-center px-5 py-8 text-center text-sm text-slate-400">Brak aktywności. Utwórz pierwszy transfer.</div>
   <% } else { %>
-    <ul class="divide-y divide-slate-100">
+    <%# Wysokość widżetu jest ustawiana w siatce pulpitu → lista musi przewijać się WEWNĄTRZ
+        (min-h-0 jest konieczne: bez niego dziecko flexa nie skraca się i scroll nie działa). %>
+    <ul class="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100">
       <% recent.forEach(function(e){ %>
         <li class="px-5 py-3 flex gap-3 items-start">
           <span class="mt-0.5"><%- eventIcon(e.type) %></span>
