@@ -109,3 +109,27 @@ test('przypomnienie cykliczne: seria (repeat/repeatUntil, wspólny seriesId) + u
     await prisma.reminder.deleteMany({ where: { OR: [{ title: tag }, { title: tag + '_one' }] } });
   }
 });
+
+test('przypomnienie: koniec→długość, kolor, reschedule (drag)', async (t) => {
+  const cookie = await login();
+  if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
+  let id;
+  try {
+    // endAt → durationMin (10:00–11:30 = 90 min) + kolor z presetu
+    const r = await reminderService.create({ title: 'ENDCOL_' + Date.now(), dueAt: '2026-07-15T10:00', endAt: '2026-07-15T11:30', color: 'emerald' });
+    id = r.id;
+    assert.equal(r.durationMin, 90, 'koniec 11:30 − start 10:00 = 90 min');
+    assert.equal(r.color, 'emerald', 'kolor z presetu zapisany');
+    // zły kolor → null; endAt ≤ start → null (domyślnie 60)
+    const r2 = await reminderService.update(id, { dueAt: '2026-07-15T10:00', endAt: '2026-07-15T09:00', color: 'zmyslony' });
+    assert.equal(r2.durationMin, null, 'koniec ≤ start = null (domyślnie 60)');
+    assert.equal(r2.color, null, 'nieznany kolor = null (wg priorytetu)');
+    // reschedule (drag) → nowy termin
+    await reminderService.reschedule(id, '2026-07-15T14:15');
+    const r3 = await prisma.reminder.findUnique({ where: { id } });
+    assert.equal(new Date(r3.dueAt).getHours(), 14, 'reschedule ustawia godzinę');
+    assert.equal(new Date(r3.dueAt).getMinutes(), 15, 'reschedule ustawia minuty');
+  } finally {
+    if (id) await prisma.reminder.deleteMany({ where: { id } });
+  }
+});

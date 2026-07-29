@@ -4,6 +4,8 @@ const prisma = require('../db/client');
 
 const PRIORITIES = ['low', 'normal', 'high'];
 const DURATION_UNITS = ['min', 'hour', 'day'];
+const COLORS = ['sky', 'emerald', 'amber', 'rose', 'violet', 'slate']; // presety; null = wg priorytetu
+const normColor = (c) => (COLORS.includes(c) ? c : null);
 const REPEATS = ['daily', 'weekly', 'monthly'];
 const MAX_OCCURRENCES = 200; // twardy limit materializacji serii
 
@@ -26,12 +28,25 @@ function parseDurationMin(value, unit) {
   return Math.min(n * mult, 1440 * 30); // twardy cap 30 dni
 }
 
-async function create({ title, note, dueAt, priority, clientId, projectId, durationValue, durationUnit, repeat, repeatUntil }) {
+// Długość z godziny ZAKOŃCZENIA: (koniec − start) w minutach. Puste/≤start = null (domyślnie 60).
+function durationFromEnd(dueAt, endAt) {
+  if (!endAt || !dueAt) return null;
+  const s = new Date(dueAt).getTime(), e = new Date(endAt).getTime();
+  if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s) return null;
+  return Math.min(Math.round((e - s) / 60000), 1440 * 30);
+}
+// Długość z formularza: preferuj `endAt` (nowy modal); wstecznie `durationValue`/`durationUnit`.
+function durationFromForm(dueAt, { endAt, durationValue, durationUnit }) {
+  if (endAt !== undefined) return durationFromEnd(dueAt, endAt);
+  return parseDurationMin(durationValue, durationUnit);
+}
+
+async function create({ title, note, dueAt, priority, clientId, projectId, durationValue, durationUnit, endAt, color, repeat, repeatUntil }) {
   const t = (title || '').trim();
   if (!t || !dueAt) return null;
   const base = {
-    title: t.slice(0, 200), note: clean(note), durationMin: parseDurationMin(durationValue, durationUnit),
-    priority: normPriority(priority), clientId: num(clientId), projectId: num(projectId),
+    title: t.slice(0, 200), note: clean(note), durationMin: durationFromForm(dueAt, { endAt, durationValue, durationUnit }),
+    color: normColor(color), priority: normPriority(priority), clientId: num(clientId), projectId: num(projectId),
   };
   const rep = REPEATS.includes(repeat) ? repeat : null;
   if (!rep) return prisma.reminder.create({ data: { ...base, dueAt: new Date(dueAt) } });
@@ -51,12 +66,14 @@ async function create({ title, note, dueAt, priority, clientId, projectId, durat
   return { seriesId, count: rows.length };
 }
 
-function update(id, { title, note, dueAt, priority, clientId, projectId, durationValue, durationUnit }) {
+function update(id, { title, note, dueAt, priority, clientId, projectId, durationValue, durationUnit, endAt, color }) {
   const data = {};
   if (title !== undefined) data.title = ((title || '').trim().slice(0, 200)) || 'Bez tytułu';
   if (note !== undefined) data.note = clean(note);
   if (dueAt) data.dueAt = new Date(dueAt);
-  if (durationValue !== undefined) data.durationMin = parseDurationMin(durationValue, durationUnit);
+  if (endAt !== undefined) data.durationMin = durationFromEnd(dueAt, endAt);
+  else if (durationValue !== undefined) data.durationMin = parseDurationMin(durationValue, durationUnit);
+  if (color !== undefined) data.color = normColor(color);
   if (priority !== undefined) data.priority = normPriority(priority);
   if (clientId !== undefined) data.clientId = num(clientId);
   if (projectId !== undefined) data.projectId = num(projectId);
@@ -90,6 +107,13 @@ async function moveToDay(id, day) {
 }
 function getById(id) { return prisma.reminder.findUnique({ where: { id: Number(id) } }); }
 
+// Przełożenie na konkretny termin (data + godzina) — drag na siatce godzin (tydzień/dzień).
+function reschedule(id, dueAt) {
+  const d = new Date(dueAt);
+  if (isNaN(d.getTime())) return Promise.resolve(null);
+  return prisma.reminder.update({ where: { id: Number(id) }, data: { dueAt: d } });
+}
+
 // Przypomnienia w zakresie dat (do siatki miesiąca).
 function inRange(from, to) {
   return prisma.reminder.findMany({
@@ -105,4 +129,4 @@ function dueCount() {
   return prisma.reminder.count({ where: { done: false, dueAt: { lte: end } } });
 }
 
-module.exports = { create, update, toggleDone, remove, removeSeries, moveToDay, getById, inRange, dueCount, PRIORITIES, REPEATS };
+module.exports = { create, update, toggleDone, remove, removeSeries, moveToDay, reschedule, getById, inRange, dueCount, PRIORITIES, REPEATS, COLORS };

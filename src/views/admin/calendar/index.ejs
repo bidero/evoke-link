@@ -1,13 +1,30 @@
 <%
   const pad = (n) => String(n).padStart(2, '0');
   const dtLocal = (d) => { const x = new Date(d); return `${x.getFullYear()}-${pad(x.getMonth() + 1)}-${pad(x.getDate())}T${pad(x.getHours())}:${pad(x.getMinutes())}`; };
+  function colorCls(c) {
+    switch (c) {
+      case 'sky': return 'bg-sky-50 text-sky-700';
+      case 'emerald': return 'bg-emerald-50 text-emerald-700';
+      case 'amber': return 'bg-amber-50 text-amber-700';
+      case 'rose': return 'bg-rose-50 text-rose-700';
+      case 'violet': return 'bg-violet-50 text-violet-700';
+      case 'slate': return 'bg-slate-100 text-slate-600';
+      default: return null;
+    }
+  }
   function chipCls(e) {
     if (e.done) return 'bg-slate-100 text-slate-400 line-through';
-    if (e.kind === 'reminder') return e.priority === 'high' ? 'bg-red-50 text-red-700' : (e.priority === 'low' ? 'bg-slate-100 text-slate-600' : 'bg-brand-50 text-brand-700');
+    if (e.kind === 'reminder') {
+      var cc = colorCls(e.color); // własny kolor przypomnienia ma pierwszeństwo
+      if (cc) return cc;
+      return e.priority === 'high' ? 'bg-red-50 text-red-700' : (e.priority === 'low' ? 'bg-slate-100 text-slate-600' : 'bg-brand-50 text-brand-700');
+    }
     if (e.kind === 'charge') return 'bg-amber-50 text-amber-700';
     if (e.kind === 'transfer') return 'bg-sky-50 text-sky-700';
     return 'bg-slate-100 text-slate-600';
   }
+  // Swatche kolorów w modalu (wartość → klasa tła kółka).
+  var COLOR_SWATCH = { sky: 'bg-sky-500', emerald: 'bg-emerald-500', amber: 'bg-amber-500', rose: 'bg-rose-500', violet: 'bg-violet-500', slate: 'bg-slate-400' };
   // Wszystkie renderowane dni (miesiąc = weeks, tydzień/dzień = days) w jedną listę.
   const allDays = [];
   if (typeof weeks !== 'undefined' && weeks) weeks.forEach((w) => w.forEach((d) => allDays.push(d)));
@@ -18,7 +35,7 @@
   upcoming.forEach((e) => { if (e.kind === 'reminder') remAll.push(e); });
   doneReminders.forEach((e) => remAll.push(e));
   const remindersMap = {};
-  remAll.forEach((e) => { remindersMap[e.id] = { id: e.id, title: e.title, note: e.note || '', dueAt: dtLocal(e.date), durationMin: e.durationMin == null ? '' : e.durationMin, priority: e.priority || 'normal', clientId: e.clientId == null ? '' : e.clientId, projectId: e.projectId == null ? '' : e.projectId, href: e.href || '', done: !!e.done, seriesId: e.seriesId || '' }; });
+  remAll.forEach((e) => { remindersMap[e.id] = { id: e.id, title: e.title, note: e.note || '', dueAt: dtLocal(e.date), endAt: e.durationMin ? dtLocal(new Date(new Date(e.date).getTime() + e.durationMin * 60000)) : '', priority: e.priority || 'normal', color: e.color || '', clientId: e.clientId == null ? '' : e.clientId, projectId: e.projectId == null ? '' : e.projectId, href: e.href || '', done: !!e.done, seriesId: e.seriesId || '' }; });
   const eventsByDayMap = {};
   allDays.forEach((d) => { if (d.events.length) eventsByDayMap[d.key] = d.events.map((e) => ({ kind: e.kind, id: e.id, title: e.title, done: !!e.done, href: e.href || '', priority: e.priority || 'normal' })); });
   const jsonJs = (x) => JSON.stringify(x).replace(/</g, '\\u003c');
@@ -103,18 +120,18 @@
         </div>
       <% } %>
       <div class="overflow-y-auto max-h-[560px]" x-init="$el.scrollTop = 7 * 44">
-        <div class="grid relative" style="grid-template-columns: 3rem repeat(7, minmax(0,1fr))">
+        <div data-timegrid class="grid relative" style="grid-template-columns: 3rem repeat(7, minmax(0,1fr))">
           <div class="relative border-r border-slate-100" style="height: 1056px">
             <% for (var h = 1; h < 24; h++) { %><div class="absolute right-1 text-[10px] text-slate-400 -translate-y-1/2" style="top: <%= h * 44 %>px"><%= (h < 10 ? '0' : '') + h %>:00</div><% } %>
           </div>
           <% days.forEach(function(day){ %>
-            <div class="relative border-r border-slate-100 last:border-r-0 <%= day.isToday ? 'bg-brand-600/[0.03]' : '' %>" style="height: 1056px"
+            <div data-daycol data-daykey="<%= day.key %>" class="relative border-r border-slate-100 last:border-r-0 <%= day.isToday ? 'bg-brand-600/[0.03]' : '' %>" style="height: 1056px"
                  @click="openAt('<%= day.key %>', $event)" @contextmenu.prevent="openMenu($event, { type: 'day', key: '<%= day.key %>' })">
               <% for (var h = 1; h < 24; h++) { %><div class="absolute left-0 right-0 border-t border-slate-100/70" style="top: <%= h * 44 %>px"></div><% } %>
               <% if (day.isToday) { %><div class="absolute left-0 right-0 border-t-2 border-red-400 z-20 pointer-events-none" x-bind:style="'top:'+nowTop()+'px'"></div><% } %>
               <% day.timed.forEach(function(e){ var w = 100 / e.colCount; %>
-                <button type="button" @click.stop="openEdit(REM[<%= e.id %>])" @contextmenu.prevent.stop="openMenu($event, { type: 'reminder', id: <%= e.id %> })" title="<%= e.title %>"
-                        class="cal-chip absolute rounded px-1 py-0.5 text-[10px] leading-tight overflow-hidden text-left z-10 <%= chipCls(e) %>"
+                <button type="button" data-remid="<%= e.id %>" data-timed @click.stop="openEdit(REM[<%= e.id %>])" @contextmenu.prevent.stop="openMenu($event, { type: 'reminder', id: <%= e.id %> })" title="<%= e.title %>"
+                        class="cal-chip absolute rounded px-1 py-0.5 text-[10px] leading-tight overflow-hidden text-left z-10 cursor-grab active:cursor-grabbing <%= chipCls(e) %>"
                         style="top: <%= e.top %>px; height: <%= e.height %>px; left: calc(<%= e.colIndex * w %>% + 2px); width: calc(<%= w %>% - 4px);">
                   <span class="opacity-60"><%= evTime(e.date) %></span> <%= e.title %>
                 </button>
@@ -142,18 +159,18 @@
         </div>
       <% } %>
       <div class="overflow-y-auto max-h-[560px]" x-init="$el.scrollTop = 7 * 44">
-        <div class="grid relative" style="grid-template-columns: 3.5rem minmax(0,1fr)">
+        <div data-timegrid class="grid relative" style="grid-template-columns: 3.5rem minmax(0,1fr)">
           <div class="relative border-r border-slate-100" style="height: 1056px">
             <% for (var h = 1; h < 24; h++) { %><div class="absolute right-1 text-[10px] text-slate-400 -translate-y-1/2" style="top: <%= h * 44 %>px"><%= (h < 10 ? '0' : '') + h %>:00</div><% } %>
           </div>
-          <div class="relative" style="height: 1056px"
+          <div data-daycol data-daykey="<%= d0.key %>" class="relative" style="height: 1056px"
                @click="openAt('<%= d0.key %>', $event)" @contextmenu.prevent="openMenu($event, { type: 'day', key: '<%= d0.key %>' })">
             <% for (var h = 1; h < 24; h++) { %><div class="absolute left-0 right-0 border-t border-slate-100/70" style="top: <%= h * 44 %>px"></div><% } %>
             <% if (d0.isToday) { %><div class="absolute left-0 right-0 border-t-2 border-red-400 z-20 pointer-events-none" x-bind:style="'top:'+nowTop()+'px'"></div><% } %>
             <% if (!d0.timed.length && !d0.allDay.length) { %><div class="absolute inset-x-0 top-[300px] text-center text-sm text-slate-400 pointer-events-none">Brak wydarzeń — kliknij godzinę, aby dodać.</div><% } %>
             <% d0.timed.forEach(function(e){ var w = 100 / e.colCount; %>
-              <button type="button" @click.stop="openEdit(REM[<%= e.id %>])" @contextmenu.prevent.stop="openMenu($event, { type: 'reminder', id: <%= e.id %> })" title="<%= e.title %>"
-                      class="cal-chip absolute rounded px-2 py-1 text-[11px] leading-tight overflow-hidden text-left z-10 <%= chipCls(e) %>"
+              <button type="button" data-remid="<%= e.id %>" data-timed @click.stop="openEdit(REM[<%= e.id %>])" @contextmenu.prevent.stop="openMenu($event, { type: 'reminder', id: <%= e.id %> })" title="<%= e.title %>"
+                      class="cal-chip absolute rounded px-2 py-1 text-[11px] leading-tight overflow-hidden text-left z-10 cursor-grab active:cursor-grabbing <%= chipCls(e) %>"
                       style="top: <%= e.top %>px; height: <%= e.height %>px; left: calc(<%= e.colIndex * w %>% + 3px); width: calc(<%= w %>% - 6px);">
                 <span class="font-medium"><%= evTime(e.date) %></span> <%= e.title %>
               </button>
@@ -235,54 +252,79 @@
 
   <!-- MODAL: dodaj / edytuj przypomnienie -->
   <div x-show="formOpen" x-cloak x-transition.opacity @keydown.escape.window="formOpen=false" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" @click.self="formOpen=false">
-    <form method="POST" :action="form.id ? '/admin/calendar/reminders/' + form.id : '/admin/calendar/reminders'" class="bg-white rounded-2xl w-full max-w-md p-5 shadow-2xl">
+    <form method="POST" :action="form.id ? '/admin/calendar/reminders/' + form.id : '/admin/calendar/reminders'" class="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
       <input type="hidden" name="month" value="<%= curMonth %>" /><input type="hidden" name="view" value="<%= view %>" /><input type="hidden" name="date" value="<%= viewDate %>" />
-      <div class="text-sm font-semibold text-slate-700 mb-3" x-text="form.id ? 'Edytuj przypomnienie' : 'Nowe przypomnienie'"></div>
+      <div class="text-base font-semibold text-slate-800 mb-4" x-text="form.id ? 'Edytuj przypomnienie' : 'Nowe przypomnienie'"></div>
       <input name="title" x-model="form.title" required maxlength="200" placeholder="Co zrobić?" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-      <div class="grid grid-cols-2 gap-2 mt-2">
-        <input name="dueAt" type="datetime-local" x-model="form.dueAt" required class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-        <select name="priority" x-model="form.priority" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
-          <option value="low">Niski</option><option value="normal">Normalny</option><option value="high">Wysoki</option>
-        </select>
+
+      <%# Początek + koniec (koniec puste = 1 godz.). %>
+      <div class="grid grid-cols-2 gap-3 mt-3">
+        <label class="block">
+          <span class="block text-[11px] font-medium text-slate-500 mb-1">Początek</span>
+          <input name="dueAt" type="datetime-local" x-model="form.dueAt" required class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </label>
+        <label class="block">
+          <span class="block text-[11px] font-medium text-slate-500 mb-1">Koniec <span class="text-slate-400 font-normal">· puste = 1 godz.</span></span>
+          <input name="endAt" type="datetime-local" x-model="form.endAt" :min="form.dueAt" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </label>
       </div>
-      <%# Długość (blok na siatce godzin). Puste = 60 min. %>
-      <div class="flex items-center gap-2 mt-2">
-        <label class="text-xs text-slate-500 shrink-0">Długość:</label>
-        <input name="durationValue" x-model="form.durationValue" type="number" min="1" placeholder="60" class="w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-        <select name="durationUnit" x-model="form.durationUnit" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
-          <option value="min">minut</option><option value="hour">godzin</option><option value="day">dni</option>
-        </select>
-        <span class="text-[11px] text-slate-400">puste = 60 min</span>
-      </div>
-      <%# Powtarzanie — tylko przy tworzeniu (seria materializowana). %>
-      <div x-show="!form.id" class="flex items-center gap-2 mt-2 flex-wrap">
-        <label class="text-xs text-slate-500 shrink-0">Powtarzaj:</label>
-        <select name="repeat" x-model="form.repeat" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
-          <option value="none">Nie</option>
-          <option value="daily">Codziennie</option>
-          <option value="weekly">Co tydzień</option>
-          <option value="monthly">Co miesiąc</option>
-        </select>
-        <template x-if="form.repeat !== 'none'">
-          <div class="flex items-center gap-1.5">
-            <span class="text-xs text-slate-500">do</span>
-            <input name="repeatUntil" type="date" x-model="form.repeatUntil" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-            <span class="text-[11px] text-slate-400">puste = 6 mies.</span>
+
+      <%# Priorytet + kolor (kolor pusty = wg priorytetu). %>
+      <div class="grid grid-cols-2 gap-3 mt-3">
+        <label class="block">
+          <span class="block text-[11px] font-medium text-slate-500 mb-1">Priorytet</span>
+          <select name="priority" x-model="form.priority" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+            <option value="low">Niski</option><option value="normal">Normalny</option><option value="high">Wysoki</option>
+          </select>
+        </label>
+        <div>
+          <span class="block text-[11px] font-medium text-slate-500 mb-1">Kolor <span class="text-slate-400 font-normal">· auto = priorytet</span></span>
+          <input type="hidden" name="color" :value="form.color" />
+          <div class="flex items-center gap-1.5 h-[34px]">
+            <button type="button" @click="form.color=''" :class="!form.color ? 'ring-2 ring-offset-1 ring-brand-400' : ''" class="w-6 h-6 rounded-full border border-slate-300 bg-white inline-flex items-center justify-center" title="Auto (wg priorytetu)"><span class="text-[9px] text-slate-400">A</span></button>
+            <% Object.keys(COLOR_SWATCH).forEach(function(cname){ %>
+              <button type="button" @click="form.color='<%= cname %>'" :class="form.color==='<%= cname %>' ? 'ring-2 ring-offset-1 ring-brand-400' : ''" class="w-6 h-6 rounded-full <%= COLOR_SWATCH[cname] %>" title="<%= cname %>"></button>
+            <% }); %>
           </div>
-        </template>
+        </div>
+      </div>
+
+      <%# Powtarzanie — tylko przy tworzeniu (seria materializowana). %>
+      <div x-show="!form.id" class="mt-3">
+        <span class="block text-[11px] font-medium text-slate-500 mb-1">Powtarzaj</span>
+        <div class="flex items-center gap-2 flex-wrap">
+          <select name="repeat" x-model="form.repeat" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+            <option value="none">Nie</option><option value="daily">Codziennie</option><option value="weekly">Co tydzień</option><option value="monthly">Co miesiąc</option>
+          </select>
+          <template x-if="form.repeat !== 'none'">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs text-slate-500">do</span>
+              <input name="repeatUntil" type="date" x-model="form.repeatUntil" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+              <span class="text-[11px] text-slate-400">puste = 6 mies.</span>
+            </div>
+          </template>
+        </div>
       </div>
       <div x-show="form.id && form.seriesId" x-cloak class="mt-2 text-[11px] text-slate-400">Część serii powtórzeń — zmiany dotyczą tylko tego wystąpienia.</div>
-      <div class="grid grid-cols-2 gap-2 mt-2">
-        <select name="clientId" x-model="form.clientId" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
-          <option value="">— klient —</option>
-          <% clients.forEach(function(c){ %><option value="<%= c.id %>"><%= c.name %></option><% }); %>
-        </select>
-        <select name="projectId" x-model="form.projectId" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
-          <option value="">— projekt —</option>
-          <% projects.forEach(function(p){ %><option value="<%= p.id %>"><%= p.name %></option><% }); %>
-        </select>
+
+      <%# Powiązania. %>
+      <div class="grid grid-cols-2 gap-3 mt-3">
+        <label class="block">
+          <span class="block text-[11px] font-medium text-slate-500 mb-1">Klient</span>
+          <select name="clientId" x-model="form.clientId" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+            <option value="">—</option>
+            <% clients.forEach(function(c){ %><option value="<%= c.id %>"><%= c.name %></option><% }); %>
+          </select>
+        </label>
+        <label class="block">
+          <span class="block text-[11px] font-medium text-slate-500 mb-1">Projekt</span>
+          <select name="projectId" x-model="form.projectId" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+            <option value="">—</option>
+            <% projects.forEach(function(p){ %><option value="<%= p.id %>"><%= p.name %></option><% }); %>
+          </select>
+        </label>
       </div>
-      <textarea name="note" x-model="form.note" rows="2" placeholder="Notatka (opcjonalnie)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mt-2 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+      <textarea name="note" x-model="form.note" rows="2" placeholder="Notatka (opcjonalnie)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mt-3 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
       <div class="flex items-center gap-2 mt-3">
         <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">Zapisz</button>
         <button type="button" @click="formOpen=false" class="text-sm text-slate-500 hover:text-slate-700 px-2">Anuluj</button>
@@ -346,13 +388,13 @@
       VIEW: '<%= view %>',
       VDATE: '<%= viewDate %>',
       formOpen: false,
-      form: { id: null, title: '', note: '', dueAt: '', durationValue: '', durationUnit: 'min', priority: 'normal', clientId: '', projectId: '', repeat: 'none', repeatUntil: '', seriesId: '' },
+      form: { id: null, title: '', note: '', dueAt: '', endAt: '', priority: 'normal', color: '', clientId: '', projectId: '', repeat: 'none', repeatUntil: '', seriesId: '' },
       dayOpen: false, dayKey: null,
       menuOpen: false, menuX: 0, menuY: 0, menu: { type: null, id: null, key: null, href: '' },
 
       openNew(key, time) {
         var d = key || calTodayKey();
-        this.form = { id: null, title: '', note: '', dueAt: d + 'T' + (time || '09:00'), durationValue: '', durationUnit: 'min', priority: 'normal', clientId: '', projectId: '', repeat: 'none', repeatUntil: '', seriesId: '' };
+        this.form = { id: null, title: '', note: '', dueAt: d + 'T' + (time || '09:00'), endAt: '', priority: 'normal', color: '', clientId: '', projectId: '', repeat: 'none', repeatUntil: '', seriesId: '' };
         this.formOpen = true; this.menuOpen = false; this.dayOpen = false;
       },
       // Klik w siatkę godzin (tydzień/dzień): oblicz godzinę z pozycji Y → nowe przypomnienie.
@@ -365,9 +407,7 @@
       nowTop() { var d = new Date(); return Math.round(((d.getHours() * 60 + d.getMinutes()) / 60) * 44); },
       openEdit(r) {
         if (!r) return;
-        var dv = '', du = 'min';
-        if (r.durationMin) { if (r.durationMin % 1440 === 0) { dv = r.durationMin / 1440; du = 'day'; } else if (r.durationMin % 60 === 0) { dv = r.durationMin / 60; du = 'hour'; } else { dv = r.durationMin; du = 'min'; } }
-        this.form = { id: r.id, title: r.title, note: r.note || '', dueAt: r.dueAt, durationValue: dv, durationUnit: du, priority: r.priority || 'normal', clientId: r.clientId != null ? String(r.clientId) : '', projectId: r.projectId != null ? String(r.projectId) : '', repeat: 'none', repeatUntil: '', seriesId: r.seriesId || '' };
+        this.form = { id: r.id, title: r.title, note: r.note || '', dueAt: r.dueAt, endAt: r.endAt || '', priority: r.priority || 'normal', color: r.color || '', clientId: r.clientId != null ? String(r.clientId) : '', projectId: r.projectId != null ? String(r.projectId) : '', repeat: 'none', repeatUntil: '', seriesId: r.seriesId || '' };
         this.formOpen = true; this.menuOpen = false; this.dayOpen = false;
       },
       openDay(key) { this.dayKey = key; this.dayOpen = true; this.menuOpen = false; },
@@ -411,6 +451,55 @@
           }).then(function () { location.reload(); }).catch(function () { location.reload(); });
         },
       });
+    });
+  })();
+</script>
+<script>
+  // Drag na siatce godzin (tydzień/dzień): pionowo = godzina (snap 15 min), poziomo = inny dzień.
+  (function () {
+    var HOUR_PX = 44, STEP = HOUR_PX / 4; // 15 min
+    var pad2 = function (n) { return String(n).padStart(2, '0'); };
+    var grid = document.querySelector('[data-timegrid]');
+    if (!grid) return;
+    var cols = Array.prototype.slice.call(grid.querySelectorAll('[data-daycol]'));
+    if (!cols.length) return;
+    var drag = null;
+    grid.querySelectorAll('[data-timed]').forEach(function (el) {
+      el.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        var rect = el.getBoundingClientRect();
+        drag = { el: el, id: el.getAttribute('data-remid'), grabY: e.clientY - rect.top, height: el.offsetHeight, moved: false, top: el.offsetTop, col: el.parentNode };
+        el.style.opacity = '0.85'; el.style.zIndex = '40';
+      });
+    });
+    document.addEventListener('mousemove', function (e) {
+      if (!drag) return;
+      drag.moved = true;
+      var col = drag.col;
+      cols.forEach(function (c) { var r = c.getBoundingClientRect(); if (e.clientX >= r.left && e.clientX < r.right) col = c; });
+      if (col !== drag.el.parentNode) { col.appendChild(drag.el); drag.col = col; }
+      var r = col.getBoundingClientRect();
+      var top = Math.round((e.clientY - r.top - drag.grabY) / STEP) * STEP;
+      top = Math.max(0, Math.min(top, 24 * HOUR_PX - drag.height));
+      drag.el.style.top = top + 'px';
+      drag.top = top;
+    });
+    document.addEventListener('mouseup', function () {
+      if (!drag) return;
+      var d = drag; drag = null;
+      d.el.style.opacity = ''; d.el.style.zIndex = '';
+      if (!d.moved) return; // to był klik, nie drag → zostaw openEdit
+      // zablokuj klik, który padnie zaraz po drag (inaczej otworzy się modal edycji)
+      var block = function (ev) { ev.stopPropagation(); ev.preventDefault(); document.removeEventListener('click', block, true); };
+      document.addEventListener('click', block, true);
+      setTimeout(function () { document.removeEventListener('click', block, true); }, 60);
+      var mins = Math.round(d.top / STEP) * 15;
+      var dueAt = d.col.getAttribute('data-daykey') + 'T' + pad2(Math.floor(mins / 60)) + ':' + pad2(mins % 60);
+      fetch('/admin/calendar/reminders/' + d.id + '/reschedule', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dueAt: dueAt }),
+      }).then(function () { location.reload(); }).catch(function () { location.reload(); });
     });
   })();
 </script>

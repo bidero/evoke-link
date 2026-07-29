@@ -173,6 +173,16 @@ async function moveReminder(req, res, next) {
   }
 }
 
+// Drag na siatce godzin: nowy termin (data + godzina). Zwraca JSON.
+async function rescheduleReminder(req, res, next) {
+  try {
+    const updated = await reminderService.reschedule(req.params.id, (req.body && req.body.dueAt) || '');
+    res.json({ ok: !!updated });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function toggleReminder(req, res, next) {
   try { await reminderService.toggleDone(req.params.id); res.redirect(back(req)); } catch (err) { next(err); }
 }
@@ -184,4 +194,4 @@ async function deleteReminder(req, res, next) {
   } catch (err) { next(err); }
 }
 
-module.exports = { index, createReminder, updateReminder, toggleReminder, moveReminder, deleteReminder };
+module.exports = { index, createReminder, updateReminder, toggleReminder, moveReminder, rescheduleReminder, deleteReminder };

@@ -64,6 +64,7 @@ router.post('/calendar/reminders', calendar.createReminder);
 router.post('/calendar/reminders/:id', calendar.updateReminder);
 router.post('/calendar/reminders/:id/toggle', calendar.toggleReminder);
 router.post('/calendar/reminders/:id/move', calendar.moveReminder);
+router.post('/calendar/reminders/:id/reschedule', calendar.rescheduleReminder);
 router.post('/calendar/reminders/:id/delete', calendar.deleteReminder);
 
 router.get('/messages', messages.listMessages); // dwupanel: ?client=<id|none> = wybrana rozmowa

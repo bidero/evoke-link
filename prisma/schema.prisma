@@ -329,6 +329,7 @@ model Reminder {
   repeat      String?   // daily | weekly | monthly (null = jednorazowe); seria materializowana
   repeatUntil DateTime? // opcjonalny koniec serii
   seriesId    String?   // wspólny id wygenerowanych powtórzeń (usuń/edytuj serię)
+  color       String?   // preset koloru na kalendarzu (null = wg priorytetu)
   client    Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
   clientId  Int?
   project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
