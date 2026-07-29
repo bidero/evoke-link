@@ -8,31 +8,47 @@
     if (e.kind === 'transfer') return 'bg-sky-50 text-sky-700';
     return 'bg-slate-100 text-slate-600';
   }
+  // Wszystkie renderowane dni (miesiąc = weeks, tydzień/dzień = days) w jedną listę.
+  const allDays = [];
+  if (typeof weeks !== 'undefined' && weeks) weeks.forEach((w) => w.forEach((d) => allDays.push(d)));
+  if (typeof days !== 'undefined' && days) days.forEach((d) => allDays.push(d));
   // Mapy dla klienta (Alpine): przypomnienia (do edycji) + wydarzenia po dniu (panel dnia).
   const remAll = [];
-  weeks.forEach((w) => w.forEach((d) => d.events.forEach((e) => { if (e.kind === 'reminder') remAll.push(e); })));
+  allDays.forEach((d) => d.events.forEach((e) => { if (e.kind === 'reminder') remAll.push(e); }));
   upcoming.forEach((e) => { if (e.kind === 'reminder') remAll.push(e); });
   doneReminders.forEach((e) => remAll.push(e));
   const remindersMap = {};
   remAll.forEach((e) => { remindersMap[e.id] = { id: e.id, title: e.title, note: e.note || '', dueAt: dtLocal(e.date), priority: e.priority || 'normal', clientId: e.clientId == null ? '' : e.clientId, projectId: e.projectId == null ? '' : e.projectId, href: e.href || '', done: !!e.done }; });
   const eventsByDayMap = {};
-  weeks.forEach((w) => w.forEach((d) => { if (d.events.length) eventsByDayMap[d.key] = d.events.map((e) => ({ kind: e.kind, id: e.id, title: e.title, done: !!e.done, href: e.href || '', priority: e.priority || 'normal' })); }));
+  allDays.forEach((d) => { if (d.events.length) eventsByDayMap[d.key] = d.events.map((e) => ({ kind: e.kind, id: e.id, title: e.title, done: !!e.done, href: e.href || '', priority: e.priority || 'normal' })); });
   const jsonJs = (x) => JSON.stringify(x).replace(/</g, '\\u003c');
+  // Czas HH:MM zdarzenia (widok dnia/tygodnia).
+  const evTime = (d) => { const x = new Date(d); return `${pad(x.getHours())}:${pad(x.getMinutes())}`; };
+  // Hidden inputy zachowujące widok po zapisie (miesiąc/tydzień/dzień).
 %>
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6" x-data="calendar()">
 
   <!-- KALENDARZ -->
   <div class="lg:col-span-2">
-    <div class="flex items-center justify-between mb-3 gap-2">
+    <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
       <div class="flex items-center gap-2">
-        <a href="/admin/calendar?month=<%= prevMonth %>" class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50" aria-label="Poprzedni"><%- icon('arrowLeft', { size: 16, cls: '' }) %></a>
-        <h2 class="text-base font-semibold text-slate-800 capitalize min-w-[140px] text-center"><%= monthLabel %></h2>
-        <a href="/admin/calendar?month=<%= nextMonth %>" class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50" aria-label="Następny"><%- icon('arrowRight', { size: 16, cls: '' }) %></a>
-        <% if (curMonth !== thisMonth) { %><a href="/admin/calendar" class="ml-1 text-sm text-brand-700 hover:underline">Dziś</a><% } %>
+        <a href="<%= prevLink %>" class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50" aria-label="Poprzedni"><%- icon('arrowLeft', { size: 16, cls: '' }) %></a>
+        <h2 class="text-base font-semibold text-slate-800 capitalize min-w-[150px] text-center"><%= label %></h2>
+        <a href="<%= nextLink %>" class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50" aria-label="Następny"><%- icon('arrowRight', { size: 16, cls: '' }) %></a>
+        <% if (!isToday) { %><a href="<%= todayLink %>" class="ml-1 text-sm text-brand-700 hover:underline">Dziś</a><% } %>
       </div>
-      <button type="button" @click="openNew()" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-3 py-1.5 transition inline-flex items-center gap-1.5"><%- icon('plus', { size: 15, cls: '' }) %> Przypomnienie</button>
+      <div class="flex items-center gap-2">
+        <%# Przełącznik widoku: miesiąc / tydzień / dzień (data referencyjna = viewDate). %>
+        <div class="inline-flex rounded-lg border border-slate-300 overflow-hidden text-sm">
+          <a href="/admin/calendar?month=<%= curMonth %>" class="px-3 py-1.5 <%= view === 'month' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50' %>">Miesiąc</a>
+          <a href="/admin/calendar?view=week&date=<%= viewDate %>" class="px-3 py-1.5 border-l border-slate-300 <%= view === 'week' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50' %>">Tydzień</a>
+          <a href="/admin/calendar?view=day&date=<%= viewDate %>" class="px-3 py-1.5 border-l border-slate-300 <%= view === 'day' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50' %>">Dzień</a>
+        </div>
+        <button type="button" @click="openNew('<%= viewDate %>')" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-3 py-1.5 transition inline-flex items-center gap-1.5"><%- icon('plus', { size: 15, cls: '' }) %> <span class="hidden sm:inline">Przypomnienie</span></button>
+      </div>
     </div>
 
+    <% if (view === 'month') { %>
     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
       <div data-cal-head class="grid grid-cols-7 text-center text-[11px] font-medium text-slate-400 border-b border-slate-100">
         <% ['Pn','Wt','Śr','Cz','Pt','So','Nd'].forEach(function(d){ %><div class="py-2"><%= d %></div><% }); %>
@@ -61,6 +77,60 @@
       <% }); %>
     </div>
 
+    <% } else if (view === 'week') { %>
+    <%# Widok TYGODNIA: 7 kolumn (pn–nd), każda z nagłówkiem dnia i wszystkimi wydarzeniami. %>
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div class="grid grid-cols-7">
+        <% days.forEach(function(day){ %>
+          <div data-cal-cell <%= day.isToday ? 'data-today' : '' %> class="min-h-[460px] border-r border-b border-slate-100 last:border-r-0 flex flex-col">
+            <div data-cal-head class="px-2 py-2 border-b border-slate-100 flex items-center justify-between">
+              <span class="text-[11px] font-medium text-slate-400"><%= day.dowLabel %></span>
+              <span @click.stop="openDay('<%= day.key %>')" class="text-xs inline-flex items-center justify-center w-6 h-6 rounded-full cursor-pointer <%= day.isToday ? 'bg-brand-600 text-white font-semibold' : 'text-slate-600 hover:bg-slate-100' %>"><%= day.day %></span>
+            </div>
+            <div class="p-1.5 flex-1 cursor-pointer hover:bg-slate-50/40" @click="openNew('<%= day.key %>')" @contextmenu.prevent="openMenu($event, { type: 'day', key: '<%= day.key %>' })">
+              <div class="space-y-1 cal-events min-h-[380px]" data-day="<%= day.key %>">
+                <% day.events.forEach(function(e){ %>
+                  <% if (e.kind === 'reminder') { %>
+                    <button type="button" title="<%= e.title %>" data-remid="<%= e.id %>" @click.stop="openEdit(REM[<%= e.id %>])" @contextmenu.prevent.stop="openMenu($event, { type: 'reminder', id: <%= e.id %> })" class="cal-chip block w-full text-left truncate rounded px-1.5 py-1 text-[11px] leading-tight cursor-grab <%= chipCls(e) %>"><span class="opacity-60"><%= evTime(e.date) %></span> <%= e.title %></button>
+                  <% } else { %>
+                    <a href="<%= e.href %>" title="<%= e.title %>" @click.stop @contextmenu.prevent.stop="openMenu($event, { type: '<%= e.kind %>', id: <%= e.id %>, href: '<%= e.href %>' })" class="cal-chip block truncate rounded px-1.5 py-1 text-[11px] leading-tight <%= chipCls(e) %>"><span class="opacity-60"><%= evTime(e.date) %></span> <%= e.title %></a>
+                  <% } %>
+                <% }); %>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+
+    <% } else { %>
+    <%# Widok DNIA: agenda chronologiczna. %>
+    <% var d0 = days[0]; %>
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <span class="text-sm font-semibold text-slate-700 capitalize"><%= d0.dowLabel %></span>
+        <button type="button" @click="openNew('<%= d0.key %>')" class="text-brand-700 hover:underline text-sm inline-flex items-center gap-1"><%- icon('plus', { size: 14, cls: '' }) %> Dodaj</button>
+      </div>
+      <div class="p-3 space-y-1.5 cal-events min-h-[420px]" data-day="<%= d0.key %>"
+           @contextmenu.prevent="openMenu($event, { type: 'day', key: '<%= d0.key %>' })">
+        <% if (!d0.events.length) { %>
+          <button type="button" @click="openNew('<%= d0.key %>')" class="w-full text-sm text-slate-400 py-10 text-center hover:text-brand-600">Brak wydarzeń — kliknij, aby dodać przypomnienie.</button>
+        <% } %>
+        <% d0.events.forEach(function(e){ %>
+          <div class="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2 hover:border-brand-200 transition">
+            <span class="shrink-0 text-xs font-medium text-slate-500 w-12 tabular-nums"><%= evTime(e.date) %></span>
+            <span class="shrink-0 w-1.5 h-8 rounded-full <%= (e.kind === 'reminder' ? (e.priority === 'high' ? 'bg-red-400' : (e.priority === 'low' ? 'bg-slate-300' : 'bg-brand-400')) : (e.kind === 'charge' ? 'bg-amber-400' : 'bg-sky-400')) %>"></span>
+            <% if (e.kind === 'reminder') { %>
+              <button type="button" data-remid="<%= e.id %>" @click.stop="openEdit(REM[<%= e.id %>])" @contextmenu.prevent.stop="openMenu($event, { type: 'reminder', id: <%= e.id %> })" class="flex-1 min-w-0 text-left text-sm text-slate-800 truncate hover:text-brand-700 cursor-grab <%= e.done ? 'line-through text-slate-400' : '' %>"><%= e.title %></button>
+            <% } else { %>
+              <a href="<%= e.href %>" @contextmenu.prevent.stop="openMenu($event, { type: '<%= e.kind %>', id: <%= e.id %>, href: '<%= e.href %>' })" class="flex-1 min-w-0 text-sm text-slate-800 truncate hover:text-brand-700"><%= e.title %></a>
+            <% } %>
+          </div>
+        <% }); %>
+      </div>
+    </div>
+    <% } %>
+
     <div class="flex items-center gap-4 mt-2 text-[11px] text-slate-400">
       <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-brand-400"></span> Przypomnienie</span>
       <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Płatność</span>
@@ -80,7 +150,7 @@
           <% upcoming.forEach(function(e){ %>
             <div class="px-4 py-2.5 flex items-start gap-2">
               <% if (e.kind === 'reminder') { %>
-                <form method="POST" action="/admin/calendar/reminders/<%= e.id %>/toggle" class="shrink-0 mt-0.5"><input type="hidden" name="month" value="<%= curMonth %>" />
+                <form method="POST" action="/admin/calendar/reminders/<%= e.id %>/toggle" class="shrink-0 mt-0.5"><input type="hidden" name="month" value="<%= curMonth %>" /><input type="hidden" name="view" value="<%= view %>" /><input type="hidden" name="date" value="<%= viewDate %>" />
                   <button type="submit" class="w-4 h-4 rounded border <%= e.done ? 'bg-brand-600 border-brand-600' : 'border-slate-300 hover:border-brand-500' %> inline-flex items-center justify-center" title="Zrobione"><% if (e.done) { %><%- icon('check', { size: 12, cls: 'text-white' }) %><% } %></button>
                 </form>
               <% } else { %>
@@ -97,7 +167,7 @@
               <div class="flex items-center gap-1 shrink-0">
                 <% if (e.kind === 'reminder') { %>
                   <button type="button" @click="openEdit(REM[<%= e.id %>])" class="text-slate-400 hover:text-brand-700 p-1" title="Edytuj"><%- icon('pencil', { size: 14, cls: '' }) %></button>
-                  <form method="POST" action="/admin/calendar/reminders/<%= e.id %>/delete" onsubmit="return confirm('Usunąć przypomnienie?');"><input type="hidden" name="month" value="<%= curMonth %>" /><button type="submit" class="text-slate-400 hover:text-red-600 p-1" title="Usuń"><%- icon('trash', { size: 14, cls: '' }) %></button></form>
+                  <form method="POST" action="/admin/calendar/reminders/<%= e.id %>/delete" onsubmit="return confirm('Usunąć przypomnienie?');"><input type="hidden" name="month" value="<%= curMonth %>" /><input type="hidden" name="view" value="<%= view %>" /><input type="hidden" name="date" value="<%= viewDate %>" /><button type="submit" class="text-slate-400 hover:text-red-600 p-1" title="Usuń"><%- icon('trash', { size: 14, cls: '' }) %></button></form>
                 <% } else if (e.href) { %>
                   <a href="<%= e.href %>" class="text-slate-400 hover:text-brand-700 p-1" title="Otwórz"><%- icon('externalLink', { size: 14, cls: '' }) %></a>
                 <% } %>
@@ -121,8 +191,8 @@
               <div class="text-sm text-slate-400 line-through truncate"><%= e.title %></div>
               <div class="text-xs text-slate-400"><%= fmt.date(e.date) %><% if (e.sub) { %> · <%= e.sub %><% } %></div>
             </div>
-            <form method="POST" action="/admin/calendar/reminders/<%= e.id %>/toggle"><input type="hidden" name="month" value="<%= curMonth %>" /><button type="submit" class="text-xs text-brand-700 hover:underline px-1 shrink-0" title="Oznacz jako niezrobione">Przywróć</button></form>
-            <form method="POST" action="/admin/calendar/reminders/<%= e.id %>/delete" onsubmit="return confirm('Usunąć przypomnienie?');"><input type="hidden" name="month" value="<%= curMonth %>" /><button type="submit" class="text-slate-400 hover:text-red-600 p-1 shrink-0" title="Usuń"><%- icon('trash', { size: 14, cls: '' }) %></button></form>
+            <form method="POST" action="/admin/calendar/reminders/<%= e.id %>/toggle"><input type="hidden" name="month" value="<%= curMonth %>" /><input type="hidden" name="view" value="<%= view %>" /><input type="hidden" name="date" value="<%= viewDate %>" /><button type="submit" class="text-xs text-brand-700 hover:underline px-1 shrink-0" title="Oznacz jako niezrobione">Przywróć</button></form>
+            <form method="POST" action="/admin/calendar/reminders/<%= e.id %>/delete" onsubmit="return confirm('Usunąć przypomnienie?');"><input type="hidden" name="month" value="<%= curMonth %>" /><input type="hidden" name="view" value="<%= view %>" /><input type="hidden" name="date" value="<%= viewDate %>" /><button type="submit" class="text-slate-400 hover:text-red-600 p-1 shrink-0" title="Usuń"><%- icon('trash', { size: 14, cls: '' }) %></button></form>
           </div>
         <% }); %>
       </div>
@@ -133,7 +203,7 @@
   <!-- MODAL: dodaj / edytuj przypomnienie -->
   <div x-show="formOpen" x-cloak x-transition.opacity @keydown.escape.window="formOpen=false" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" @click.self="formOpen=false">
     <form method="POST" :action="form.id ? '/admin/calendar/reminders/' + form.id : '/admin/calendar/reminders'" class="bg-white rounded-2xl w-full max-w-md p-5 shadow-2xl">
-      <input type="hidden" name="month" value="<%= curMonth %>" />
+      <input type="hidden" name="month" value="<%= curMonth %>" /><input type="hidden" name="view" value="<%= view %>" /><input type="hidden" name="date" value="<%= viewDate %>" />
       <div class="text-sm font-semibold text-slate-700 mb-3" x-text="form.id ? 'Edytuj przypomnienie' : 'Nowe przypomnienie'"></div>
       <input name="title" x-model="form.title" required maxlength="200" placeholder="Co zrobić?" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
       <div class="grid grid-cols-2 gap-2 mt-2">
@@ -211,6 +281,8 @@
       REM: <%- jsonJs(remindersMap) %>,
       EVBYDAY: <%- jsonJs(eventsByDayMap) %>,
       MONTH: '<%= curMonth %>',
+      VIEW: '<%= view %>',
+      VDATE: '<%= viewDate %>',
       formOpen: false,
       form: { id: null, title: '', note: '', dueAt: '', priority: 'normal', clientId: '', projectId: '' },
       dayOpen: false, dayKey: null,
@@ -235,7 +307,8 @@
       },
       action(url) {
         var f = document.createElement('form'); f.method = 'POST'; f.action = url;
-        var m = document.createElement('input'); m.type = 'hidden'; m.name = 'month'; m.value = this.MONTH; f.appendChild(m);
+        var add = function (n, v) { var i = document.createElement('input'); i.type = 'hidden'; i.name = n; i.value = v; f.appendChild(i); };
+        add('month', this.MONTH); add('view', this.VIEW); add('date', this.VDATE);
         document.body.appendChild(f); f.submit();
       },
       dayEvents() { return this.EVBYDAY[this.dayKey] || []; },
