@@ -20,6 +20,38 @@ function weekLabel(mon, sun) {
 }
 const dayLabel = (d) => `${DOW_FULL[dow0(d)]}, ${d.getDate()} ${MONTHS_GEN[d.getMonth()]} ${d.getFullYear()}`;
 
+// Siatka godzin (widok tydzień/dzień): 44px na godzinę, doba 0–24.
+const HOUR_PX = 44;
+// Rozmieszczenie wydarzeń CZASOWYCH (przypomnień) w kolumnie dnia: top/height wg
+// początku i długości, kolumny przy nakładaniu (proste zachłanne przydzielanie).
+function layoutTimed(events) {
+  const evs = events.map((e) => {
+    const d = new Date(e.date);
+    const start = d.getHours() * 60 + d.getMinutes();
+    const dur = Math.max(e.durationMin || 60, 20);
+    return Object.assign({}, e, { _start: start, _end: Math.min(start + dur, 24 * 60) });
+  }).sort((a, b) => a._start - b._start || a._end - b._end);
+  const colEnds = [];
+  evs.forEach((e) => {
+    let col = colEnds.findIndex((end) => end <= e._start);
+    if (col === -1) { col = colEnds.length; colEnds.push(e._end); } else colEnds[col] = e._end;
+    e.colIndex = col;
+  });
+  const colCount = Math.max(1, colEnds.length);
+  evs.forEach((e) => {
+    e.top = Math.round((e._start / 60) * HOUR_PX);
+    e.height = Math.max(18, Math.round((e._end / 60) * HOUR_PX) - e.top);
+    e.colCount = colCount;
+  });
+  return evs;
+}
+// Dzień → { timed: przypomnienia na siatce, allDay: terminy/wygasania (górny pasek) }.
+function splitDay(events) {
+  const timed = layoutTimed(events.filter((e) => e.kind === 'reminder'));
+  const allDay = events.filter((e) => e.kind !== 'reminder');
+  return { timed, allDay };
+}
+
 async function index(req, res, next) {
   try {
     const now = new Date();
@@ -90,12 +122,13 @@ async function index(req, res, next) {
       for (let i = 0; i < 7; i++) {
         const cur = addDays(rangeStart, i);
         const k = ymd(cur);
-        days.push({ key: k, day: cur.getDate(), isToday: k === todayKey, dowLabel: DOW[dow0(cur)], dateLabel: `${cur.getDate()}.${pad2(cur.getMonth() + 1)}`, events: byDay[k] || [] });
+        const evs = byDay[k] || [];
+        days.push(Object.assign({ key: k, day: cur.getDate(), isToday: k === todayKey, dowLabel: DOW[dow0(cur)], dateLabel: `${cur.getDate()}.${pad2(cur.getMonth() + 1)}`, events: evs }, splitDay(evs)));
       }
     } else {
       const k = ymd(rangeStart);
       const evs = (byDay[k] || []).slice().sort((a, b) => new Date(a.date) - new Date(b.date));
-      days = [{ key: k, day: rangeStart.getDate(), isToday: k === todayKey, dowLabel: DOW_FULL[dow0(rangeStart)], dateLabel: label, events: evs }];
+      days = [Object.assign({ key: k, day: rangeStart.getDate(), isToday: k === todayKey, dowLabel: DOW_FULL[dow0(rangeStart)], dateLabel: label, events: evs }, splitDay(evs))];
     }
 
     res.render('admin/calendar/index', {

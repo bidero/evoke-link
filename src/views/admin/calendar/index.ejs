@@ -18,7 +18,7 @@
   upcoming.forEach((e) => { if (e.kind === 'reminder') remAll.push(e); });
   doneReminders.forEach((e) => remAll.push(e));
   const remindersMap = {};
-  remAll.forEach((e) => { remindersMap[e.id] = { id: e.id, title: e.title, note: e.note || '', dueAt: dtLocal(e.date), priority: e.priority || 'normal', clientId: e.clientId == null ? '' : e.clientId, projectId: e.projectId == null ? '' : e.projectId, href: e.href || '', done: !!e.done }; });
+  remAll.forEach((e) => { remindersMap[e.id] = { id: e.id, title: e.title, note: e.note || '', dueAt: dtLocal(e.date), durationMin: e.durationMin == null ? '' : e.durationMin, priority: e.priority || 'normal', clientId: e.clientId == null ? '' : e.clientId, projectId: e.projectId == null ? '' : e.projectId, href: e.href || '', done: !!e.done }; });
   const eventsByDayMap = {};
   allDays.forEach((d) => { if (d.events.length) eventsByDayMap[d.key] = d.events.map((e) => ({ kind: e.kind, id: e.id, title: e.title, done: !!e.done, href: e.href || '', priority: e.priority || 'normal' })); });
   const jsonJs = (x) => JSON.stringify(x).replace(/</g, '\\u003c');
@@ -78,55 +78,88 @@
     </div>
 
     <% } else if (view === 'week') { %>
-    <%# Widok TYGODNIA: 7 kolumn (pn–nd), każda z nagłówkiem dnia i wszystkimi wydarzeniami. %>
+    <%# Widok TYGODNIA z siatką godzin (0–24). Przypomnienia = bloki wg godziny/długości;
+        terminy/wygasania = pasek „cały dzień". %>
     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-      <div class="grid grid-cols-7">
+      <div class="grid" style="grid-template-columns: 3rem repeat(7, minmax(0,1fr))">
+        <div class="border-b border-r border-slate-100"></div>
         <% days.forEach(function(day){ %>
-          <div data-cal-cell <%= day.isToday ? 'data-today' : '' %> class="min-h-[460px] border-r border-b border-slate-100 last:border-r-0 flex flex-col">
-            <div data-cal-head class="px-2 py-2 border-b border-slate-100 flex items-center justify-between">
-              <span class="text-[11px] font-medium text-slate-400"><%= day.dowLabel %></span>
-              <span @click.stop="openDay('<%= day.key %>')" class="text-xs inline-flex items-center justify-center w-6 h-6 rounded-full cursor-pointer <%= day.isToday ? 'bg-brand-600 text-white font-semibold' : 'text-slate-600 hover:bg-slate-100' %>"><%= day.day %></span>
-            </div>
-            <div class="p-1.5 flex-1 cursor-pointer hover:bg-slate-50/40" @click="openNew('<%= day.key %>')" @contextmenu.prevent="openMenu($event, { type: 'day', key: '<%= day.key %>' })">
-              <div class="space-y-1 cal-events min-h-[380px]" data-day="<%= day.key %>">
-                <% day.events.forEach(function(e){ %>
-                  <% if (e.kind === 'reminder') { %>
-                    <button type="button" title="<%= e.title %>" data-remid="<%= e.id %>" @click.stop="openEdit(REM[<%= e.id %>])" @contextmenu.prevent.stop="openMenu($event, { type: 'reminder', id: <%= e.id %> })" class="cal-chip block w-full text-left truncate rounded px-1.5 py-1 text-[11px] leading-tight cursor-grab <%= chipCls(e) %>"><span class="opacity-60"><%= evTime(e.date) %></span> <%= e.title %></button>
-                  <% } else { %>
-                    <a href="<%= e.href %>" title="<%= e.title %>" @click.stop @contextmenu.prevent.stop="openMenu($event, { type: '<%= e.kind %>', id: <%= e.id %>, href: '<%= e.href %>' })" class="cal-chip block truncate rounded px-1.5 py-1 text-[11px] leading-tight <%= chipCls(e) %>"><span class="opacity-60"><%= evTime(e.date) %></span> <%= e.title %></a>
-                  <% } %>
-                <% }); %>
-              </div>
-            </div>
+          <div data-cal-head data-cal-cell <%= day.isToday ? 'data-today' : '' %> class="px-1 py-2 text-center border-b border-r border-slate-100 last:border-r-0">
+            <div class="text-[11px] font-medium text-slate-400"><%= day.dowLabel %></div>
+            <div @click.stop="openDay('<%= day.key %>')" class="mx-auto mt-0.5 text-xs inline-flex items-center justify-center w-6 h-6 rounded-full cursor-pointer <%= day.isToday ? 'bg-brand-600 text-white font-semibold' : 'text-slate-600 hover:bg-slate-100' %>"><%= day.day %></div>
           </div>
         <% }); %>
+      </div>
+      <% if (days.some(function(d){ return d.allDay.length; })) { %>
+        <div class="grid border-b border-slate-100" style="grid-template-columns: 3rem repeat(7, minmax(0,1fr))">
+          <div class="text-[9px] text-slate-400 pr-1 py-1 text-right leading-tight border-r border-slate-100 self-center">cały<br>dzień</div>
+          <% days.forEach(function(day){ %>
+            <div class="p-1 border-r border-slate-100 last:border-r-0 space-y-0.5 min-h-[1.5rem]">
+              <% day.allDay.forEach(function(e){ %>
+                <a href="<%= e.href %>" title="<%= e.title %>" @contextmenu.prevent.stop="openMenu($event, { type: '<%= e.kind %>', id: <%= e.id %>, href: '<%= e.href %>' })" class="cal-chip block truncate rounded px-1 py-0.5 text-[10px] leading-tight <%= chipCls(e) %>"><%= e.title %></a>
+              <% }); %>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+      <div class="overflow-y-auto max-h-[560px]" x-init="$el.scrollTop = 7 * 44">
+        <div class="grid relative" style="grid-template-columns: 3rem repeat(7, minmax(0,1fr))">
+          <div class="relative border-r border-slate-100" style="height: 1056px">
+            <% for (var h = 1; h < 24; h++) { %><div class="absolute right-1 text-[10px] text-slate-400 -translate-y-1/2" style="top: <%= h * 44 %>px"><%= (h < 10 ? '0' : '') + h %>:00</div><% } %>
+          </div>
+          <% days.forEach(function(day){ %>
+            <div class="relative border-r border-slate-100 last:border-r-0 <%= day.isToday ? 'bg-brand-600/[0.03]' : '' %>" style="height: 1056px"
+                 @click="openAt('<%= day.key %>', $event)" @contextmenu.prevent="openMenu($event, { type: 'day', key: '<%= day.key %>' })">
+              <% for (var h = 1; h < 24; h++) { %><div class="absolute left-0 right-0 border-t border-slate-100/70" style="top: <%= h * 44 %>px"></div><% } %>
+              <% if (day.isToday) { %><div class="absolute left-0 right-0 border-t-2 border-red-400 z-20 pointer-events-none" x-bind:style="'top:'+nowTop()+'px'"></div><% } %>
+              <% day.timed.forEach(function(e){ var w = 100 / e.colCount; %>
+                <button type="button" @click.stop="openEdit(REM[<%= e.id %>])" @contextmenu.prevent.stop="openMenu($event, { type: 'reminder', id: <%= e.id %> })" title="<%= e.title %>"
+                        class="cal-chip absolute rounded px-1 py-0.5 text-[10px] leading-tight overflow-hidden text-left z-10 <%= chipCls(e) %>"
+                        style="top: <%= e.top %>px; height: <%= e.height %>px; left: calc(<%= e.colIndex * w %>% + 2px); width: calc(<%= w %>% - 4px);">
+                  <span class="opacity-60"><%= evTime(e.date) %></span> <%= e.title %>
+                </button>
+              <% }); %>
+            </div>
+          <% }); %>
+        </div>
       </div>
     </div>
 
     <% } else { %>
-    <%# Widok DNIA: agenda chronologiczna. %>
+    <%# Widok DNIA z siatką godzin. %>
     <% var d0 = days[0]; %>
     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
       <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
         <span class="text-sm font-semibold text-slate-700 capitalize"><%= d0.dowLabel %></span>
         <button type="button" @click="openNew('<%= d0.key %>')" class="text-brand-700 hover:underline text-sm inline-flex items-center gap-1"><%- icon('plus', { size: 14, cls: '' }) %> Dodaj</button>
       </div>
-      <div class="p-3 space-y-1.5 cal-events min-h-[420px]" data-day="<%= d0.key %>"
-           @contextmenu.prevent="openMenu($event, { type: 'day', key: '<%= d0.key %>' })">
-        <% if (!d0.events.length) { %>
-          <button type="button" @click="openNew('<%= d0.key %>')" class="w-full text-sm text-slate-400 py-10 text-center hover:text-brand-600">Brak wydarzeń — kliknij, aby dodać przypomnienie.</button>
-        <% } %>
-        <% d0.events.forEach(function(e){ %>
-          <div class="flex items-center gap-3 rounded-lg border border-slate-100 px-3 py-2 hover:border-brand-200 transition">
-            <span class="shrink-0 text-xs font-medium text-slate-500 w-12 tabular-nums"><%= evTime(e.date) %></span>
-            <span class="shrink-0 w-1.5 h-8 rounded-full <%= (e.kind === 'reminder' ? (e.priority === 'high' ? 'bg-red-400' : (e.priority === 'low' ? 'bg-slate-300' : 'bg-brand-400')) : (e.kind === 'charge' ? 'bg-amber-400' : 'bg-sky-400')) %>"></span>
-            <% if (e.kind === 'reminder') { %>
-              <button type="button" data-remid="<%= e.id %>" @click.stop="openEdit(REM[<%= e.id %>])" @contextmenu.prevent.stop="openMenu($event, { type: 'reminder', id: <%= e.id %> })" class="flex-1 min-w-0 text-left text-sm text-slate-800 truncate hover:text-brand-700 cursor-grab <%= e.done ? 'line-through text-slate-400' : '' %>"><%= e.title %></button>
-            <% } else { %>
-              <a href="<%= e.href %>" @contextmenu.prevent.stop="openMenu($event, { type: '<%= e.kind %>', id: <%= e.id %>, href: '<%= e.href %>' })" class="flex-1 min-w-0 text-sm text-slate-800 truncate hover:text-brand-700"><%= e.title %></a>
-            <% } %>
+      <% if (d0.allDay.length) { %>
+        <div class="flex items-start gap-2 px-4 py-2 border-b border-slate-100">
+          <span class="text-[10px] text-slate-400 pt-0.5 shrink-0">cały dzień</span>
+          <div class="flex flex-wrap gap-1">
+            <% d0.allDay.forEach(function(e){ %><a href="<%= e.href %>" title="<%= e.title %>" @contextmenu.prevent.stop="openMenu($event, { type: '<%= e.kind %>', id: <%= e.id %>, href: '<%= e.href %>' })" class="cal-chip rounded px-1.5 py-0.5 text-[11px] <%= chipCls(e) %>"><%= e.title %></a><% }); %>
           </div>
-        <% }); %>
+        </div>
+      <% } %>
+      <div class="overflow-y-auto max-h-[560px]" x-init="$el.scrollTop = 7 * 44">
+        <div class="grid relative" style="grid-template-columns: 3.5rem minmax(0,1fr)">
+          <div class="relative border-r border-slate-100" style="height: 1056px">
+            <% for (var h = 1; h < 24; h++) { %><div class="absolute right-1 text-[10px] text-slate-400 -translate-y-1/2" style="top: <%= h * 44 %>px"><%= (h < 10 ? '0' : '') + h %>:00</div><% } %>
+          </div>
+          <div class="relative" style="height: 1056px"
+               @click="openAt('<%= d0.key %>', $event)" @contextmenu.prevent="openMenu($event, { type: 'day', key: '<%= d0.key %>' })">
+            <% for (var h = 1; h < 24; h++) { %><div class="absolute left-0 right-0 border-t border-slate-100/70" style="top: <%= h * 44 %>px"></div><% } %>
+            <% if (d0.isToday) { %><div class="absolute left-0 right-0 border-t-2 border-red-400 z-20 pointer-events-none" x-bind:style="'top:'+nowTop()+'px'"></div><% } %>
+            <% if (!d0.timed.length && !d0.allDay.length) { %><div class="absolute inset-x-0 top-[300px] text-center text-sm text-slate-400 pointer-events-none">Brak wydarzeń — kliknij godzinę, aby dodać.</div><% } %>
+            <% d0.timed.forEach(function(e){ var w = 100 / e.colCount; %>
+              <button type="button" @click.stop="openEdit(REM[<%= e.id %>])" @contextmenu.prevent.stop="openMenu($event, { type: 'reminder', id: <%= e.id %> })" title="<%= e.title %>"
+                      class="cal-chip absolute rounded px-2 py-1 text-[11px] leading-tight overflow-hidden text-left z-10 <%= chipCls(e) %>"
+                      style="top: <%= e.top %>px; height: <%= e.height %>px; left: calc(<%= e.colIndex * w %>% + 3px); width: calc(<%= w %>% - 6px);">
+                <span class="font-medium"><%= evTime(e.date) %></span> <%= e.title %>
+              </button>
+            <% }); %>
+          </div>
+        </div>
       </div>
     </div>
     <% } %>
@@ -135,7 +168,7 @@
       <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-brand-400"></span> Przypomnienie</span>
       <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Płatność</span>
       <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span> Wygasa transfer</span>
-      <span class="hidden sm:inline text-slate-300">· klik dnia = dodaj · prawy‑klik = menu · przeciągnij przypomnienie = zmiana terminu</span>
+      <span class="hidden sm:inline text-slate-300">· klik = dodaj (w tydz./dniu: o klikniętej godzinie) · prawy‑klik = menu · w miesiącu: przeciągnij = zmiana dnia</span>
     </div>
   </div>
 
@@ -212,6 +245,15 @@
           <option value="low">Niski</option><option value="normal">Normalny</option><option value="high">Wysoki</option>
         </select>
       </div>
+      <%# Długość (blok na siatce godzin). Puste = 60 min. %>
+      <div class="flex items-center gap-2 mt-2">
+        <label class="text-xs text-slate-500 shrink-0">Długość:</label>
+        <input name="durationValue" x-model="form.durationValue" type="number" min="1" placeholder="60" class="w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <select name="durationUnit" x-model="form.durationUnit" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+          <option value="min">minut</option><option value="hour">godzin</option><option value="day">dni</option>
+        </select>
+        <span class="text-[11px] text-slate-400">puste = 60 min</span>
+      </div>
       <div class="grid grid-cols-2 gap-2 mt-2">
         <select name="clientId" x-model="form.clientId" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
           <option value="">— klient —</option>
@@ -284,18 +326,28 @@
       VIEW: '<%= view %>',
       VDATE: '<%= viewDate %>',
       formOpen: false,
-      form: { id: null, title: '', note: '', dueAt: '', priority: 'normal', clientId: '', projectId: '' },
+      form: { id: null, title: '', note: '', dueAt: '', durationValue: '', durationUnit: 'min', priority: 'normal', clientId: '', projectId: '' },
       dayOpen: false, dayKey: null,
       menuOpen: false, menuX: 0, menuY: 0, menu: { type: null, id: null, key: null, href: '' },
 
-      openNew(key) {
+      openNew(key, time) {
         var d = key || calTodayKey();
-        this.form = { id: null, title: '', note: '', dueAt: d + 'T09:00', priority: 'normal', clientId: '', projectId: '' };
+        this.form = { id: null, title: '', note: '', dueAt: d + 'T' + (time || '09:00'), durationValue: '', durationUnit: 'min', priority: 'normal', clientId: '', projectId: '' };
         this.formOpen = true; this.menuOpen = false; this.dayOpen = false;
       },
+      // Klik w siatkę godzin (tydzień/dzień): oblicz godzinę z pozycji Y → nowe przypomnienie.
+      openAt(key, ev) {
+        var rect = ev.currentTarget.getBoundingClientRect();
+        var h = Math.max(0, Math.min(23, Math.floor((ev.clientY - rect.top) / 44)));
+        this.openNew(key, (h < 10 ? '0' : '') + h + ':00');
+      },
+      // Pozycja linii „teraz" (px) na siatce godzin.
+      nowTop() { var d = new Date(); return Math.round(((d.getHours() * 60 + d.getMinutes()) / 60) * 44); },
       openEdit(r) {
         if (!r) return;
-        this.form = { id: r.id, title: r.title, note: r.note || '', dueAt: r.dueAt, priority: r.priority || 'normal', clientId: r.clientId != null ? String(r.clientId) : '', projectId: r.projectId != null ? String(r.projectId) : '' };
+        var dv = '', du = 'min';
+        if (r.durationMin) { if (r.durationMin % 1440 === 0) { dv = r.durationMin / 1440; du = 'day'; } else if (r.durationMin % 60 === 0) { dv = r.durationMin / 60; du = 'hour'; } else { dv = r.durationMin; du = 'min'; } }
+        this.form = { id: r.id, title: r.title, note: r.note || '', dueAt: r.dueAt, durationValue: dv, durationUnit: du, priority: r.priority || 'normal', clientId: r.clientId != null ? String(r.clientId) : '', projectId: r.projectId != null ? String(r.projectId) : '' };
         this.formOpen = true; this.menuOpen = false; this.dayOpen = false;
       },
       openDay(key) { this.dayKey = key; this.dayOpen = true; this.menuOpen = false; },

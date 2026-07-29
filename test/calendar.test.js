@@ -58,3 +58,31 @@ test('kalendarz: strona + dodanie/licznik/zrobione/usuń przypomnienia', async (
     if (id) await prisma.reminder.deleteMany({ where: { id } });
   }
 });
+
+test('przypomnienie: długość (durationValue/unit → durationMin) + widoki tydzień/dzień', async (t) => {
+  const cookie = await login();
+  if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
+  const ids = [];
+  try {
+    const r1 = await reminderService.create({ title: 'DUR_min_' + Date.now(), dueAt: '2026-07-15T09:00', durationValue: '90', durationUnit: 'min' });
+    const r2 = await reminderService.create({ title: 'DUR_h_' + Date.now(), dueAt: '2026-07-15T09:00', durationValue: '2', durationUnit: 'hour' });
+    const r3 = await reminderService.create({ title: 'DUR_d_' + Date.now(), dueAt: '2026-07-15T09:00', durationValue: '1', durationUnit: 'day' });
+    const r4 = await reminderService.create({ title: 'DUR_none_' + Date.now(), dueAt: '2026-07-15T09:00', durationValue: '', durationUnit: 'min' });
+    ids.push(r1.id, r2.id, r3.id, r4.id);
+    assert.equal(r1.durationMin, 90, '90 min');
+    assert.equal(r2.durationMin, 120, '2 godz = 120 min');
+    assert.equal(r3.durationMin, 1440, '1 dzień = 1440 min');
+    assert.equal(r4.durationMin, null, 'puste = null (domyślnie 60)');
+    const u = await reminderService.update(r1.id, { durationValue: '3', durationUnit: 'hour' });
+    assert.equal(u.durationMin, 180, 'update długości → 180 min');
+
+    // Widoki tydzień/dzień renderują siatkę godzin (marker openAt) i status 200.
+    const wk = await fetch(`${base}/admin/calendar?view=week&date=2026-07-15`, { headers: { Cookie: cookie } });
+    assert.equal(wk.status, 200, 'widok tygodnia 200');
+    const dy = await fetch(`${base}/admin/calendar?view=day&date=2026-07-15`, { headers: { Cookie: cookie } });
+    assert.equal(dy.status, 200, 'widok dnia 200');
+    assert.match(await dy.text(), /openAt\(/, 'siatka godzin (klik → openAt) obecna');
+  } finally {
+    if (ids.length) await prisma.reminder.deleteMany({ where: { id: { in: ids } } });
+  }
+});

@@ -321,7 +321,8 @@ model Reminder {
   id        Int       @id @default(autoincrement())
   title     String
   note      String?
-  dueAt     DateTime  // termin (data + godzina)
+  dueAt     DateTime  // termin (data + godzina) = początek
+  durationMin Int?    // długość w minutach (blok na siatce godzin; null = domyślnie 60)
   done      Boolean   @default(false)
   doneAt    DateTime?
   priority  String    @default("normal") // low | normal | high
