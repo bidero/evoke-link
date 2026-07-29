@@ -8,7 +8,7 @@ const fmt = require('../utils/format');
 function mapReminder(r) {
   return {
     kind: 'reminder', id: r.id, date: r.dueAt, title: r.title, note: r.note, done: r.done, priority: r.priority,
-    durationMin: r.durationMin,
+    durationMin: r.durationMin, seriesId: r.seriesId,
     clientId: r.clientId, projectId: r.projectId,
     href: r.projectId ? `/admin/projects/${r.projectId}` : (r.clientId ? `/admin/clients/${r.clientId}` : null),
     sub: r.project ? r.project.name : (r.client ? r.client.name : null),

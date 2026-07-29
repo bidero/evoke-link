@@ -18,7 +18,7 @@
   upcoming.forEach((e) => { if (e.kind === 'reminder') remAll.push(e); });
   doneReminders.forEach((e) => remAll.push(e));
   const remindersMap = {};
-  remAll.forEach((e) => { remindersMap[e.id] = { id: e.id, title: e.title, note: e.note || '', dueAt: dtLocal(e.date), durationMin: e.durationMin == null ? '' : e.durationMin, priority: e.priority || 'normal', clientId: e.clientId == null ? '' : e.clientId, projectId: e.projectId == null ? '' : e.projectId, href: e.href || '', done: !!e.done }; });
+  remAll.forEach((e) => { remindersMap[e.id] = { id: e.id, title: e.title, note: e.note || '', dueAt: dtLocal(e.date), durationMin: e.durationMin == null ? '' : e.durationMin, priority: e.priority || 'normal', clientId: e.clientId == null ? '' : e.clientId, projectId: e.projectId == null ? '' : e.projectId, href: e.href || '', done: !!e.done, seriesId: e.seriesId || '' }; });
   const eventsByDayMap = {};
   allDays.forEach((d) => { if (d.events.length) eventsByDayMap[d.key] = d.events.map((e) => ({ kind: e.kind, id: e.id, title: e.title, done: !!e.done, href: e.href || '', priority: e.priority || 'normal' })); });
   const jsonJs = (x) => JSON.stringify(x).replace(/</g, '\\u003c');
@@ -254,6 +254,24 @@
         </select>
         <span class="text-[11px] text-slate-400">puste = 60 min</span>
       </div>
+      <%# Powtarzanie — tylko przy tworzeniu (seria materializowana). %>
+      <div x-show="!form.id" class="flex items-center gap-2 mt-2 flex-wrap">
+        <label class="text-xs text-slate-500 shrink-0">Powtarzaj:</label>
+        <select name="repeat" x-model="form.repeat" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+          <option value="none">Nie</option>
+          <option value="daily">Codziennie</option>
+          <option value="weekly">Co tydzień</option>
+          <option value="monthly">Co miesiąc</option>
+        </select>
+        <template x-if="form.repeat !== 'none'">
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs text-slate-500">do</span>
+            <input name="repeatUntil" type="date" x-model="form.repeatUntil" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+            <span class="text-[11px] text-slate-400">puste = 6 mies.</span>
+          </div>
+        </template>
+      </div>
+      <div x-show="form.id && form.seriesId" x-cloak class="mt-2 text-[11px] text-slate-400">Część serii powtórzeń — zmiany dotyczą tylko tego wystąpienia.</div>
       <div class="grid grid-cols-2 gap-2 mt-2">
         <select name="clientId" x-model="form.clientId" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
           <option value="">— klient —</option>
@@ -268,6 +286,7 @@
       <div class="flex items-center gap-2 mt-3">
         <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">Zapisz</button>
         <button type="button" @click="formOpen=false" class="text-sm text-slate-500 hover:text-slate-700 px-2">Anuluj</button>
+        <button type="button" x-show="form.id && form.seriesId" x-cloak @click="if(confirm('Usunąć CAŁĄ serię powtórzeń?')) action('/admin/calendar/reminders/' + form.id + '/delete', { series: 1 })" class="ml-auto text-sm text-red-600 hover:underline">Usuń serię</button>
       </div>
     </form>
   </div>
@@ -307,6 +326,7 @@
         <button type="button" @click="action('/admin/calendar/reminders/' + menu.id + '/toggle')" class="w-full text-left px-3 py-1.5 hover:bg-slate-50"><span x-text="(REM[menu.id] && REM[menu.id].done) ? 'Cofnij (niezrobione)' : 'Oznacz zrobione'"></span></button>
         <template x-if="REM[menu.id] && REM[menu.id].href"><a :href="REM[menu.id].href" class="block px-3 py-1.5 hover:bg-slate-50">Otwórz źródło</a></template>
         <button type="button" @click="if (confirm('Usunąć przypomnienie?')) action('/admin/calendar/reminders/' + menu.id + '/delete')" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-red-600">Usuń</button>
+        <template x-if="REM[menu.id] && REM[menu.id].seriesId"><button type="button" @click="if (confirm('Usunąć CAŁĄ serię powtórzeń?')) action('/admin/calendar/reminders/' + menu.id + '/delete', { series: 1 })" class="w-full text-left px-3 py-1.5 hover:bg-slate-50 text-red-600">Usuń serię</button></template>
       </div>
     </template>
     <template x-if="menu.type === 'charge' || menu.type === 'transfer'">
@@ -326,13 +346,13 @@
       VIEW: '<%= view %>',
       VDATE: '<%= viewDate %>',
       formOpen: false,
-      form: { id: null, title: '', note: '', dueAt: '', durationValue: '', durationUnit: 'min', priority: 'normal', clientId: '', projectId: '' },
+      form: { id: null, title: '', note: '', dueAt: '', durationValue: '', durationUnit: 'min', priority: 'normal', clientId: '', projectId: '', repeat: 'none', repeatUntil: '', seriesId: '' },
       dayOpen: false, dayKey: null,
       menuOpen: false, menuX: 0, menuY: 0, menu: { type: null, id: null, key: null, href: '' },
 
       openNew(key, time) {
         var d = key || calTodayKey();
-        this.form = { id: null, title: '', note: '', dueAt: d + 'T' + (time || '09:00'), durationValue: '', durationUnit: 'min', priority: 'normal', clientId: '', projectId: '' };
+        this.form = { id: null, title: '', note: '', dueAt: d + 'T' + (time || '09:00'), durationValue: '', durationUnit: 'min', priority: 'normal', clientId: '', projectId: '', repeat: 'none', repeatUntil: '', seriesId: '' };
         this.formOpen = true; this.menuOpen = false; this.dayOpen = false;
       },
       // Klik w siatkę godzin (tydzień/dzień): oblicz godzinę z pozycji Y → nowe przypomnienie.
@@ -347,7 +367,7 @@
         if (!r) return;
         var dv = '', du = 'min';
         if (r.durationMin) { if (r.durationMin % 1440 === 0) { dv = r.durationMin / 1440; du = 'day'; } else if (r.durationMin % 60 === 0) { dv = r.durationMin / 60; du = 'hour'; } else { dv = r.durationMin; du = 'min'; } }
-        this.form = { id: r.id, title: r.title, note: r.note || '', dueAt: r.dueAt, durationValue: dv, durationUnit: du, priority: r.priority || 'normal', clientId: r.clientId != null ? String(r.clientId) : '', projectId: r.projectId != null ? String(r.projectId) : '' };
+        this.form = { id: r.id, title: r.title, note: r.note || '', dueAt: r.dueAt, durationValue: dv, durationUnit: du, priority: r.priority || 'normal', clientId: r.clientId != null ? String(r.clientId) : '', projectId: r.projectId != null ? String(r.projectId) : '', repeat: 'none', repeatUntil: '', seriesId: r.seriesId || '' };
         this.formOpen = true; this.menuOpen = false; this.dayOpen = false;
       },
       openDay(key) { this.dayKey = key; this.dayOpen = true; this.menuOpen = false; },
@@ -357,10 +377,11 @@
         this.menuY = Math.min(ev.clientY, window.innerHeight - 170);
         this.menuOpen = true;
       },
-      action(url) {
+      action(url, extra) {
         var f = document.createElement('form'); f.method = 'POST'; f.action = url;
         var add = function (n, v) { var i = document.createElement('input'); i.type = 'hidden'; i.name = n; i.value = v; f.appendChild(i); };
         add('month', this.MONTH); add('view', this.VIEW); add('date', this.VDATE);
+        if (extra) Object.keys(extra).forEach(function (k) { add(k, extra[k]); });
         document.body.appendChild(f); f.submit();
       },
       dayEvents() { return this.EVBYDAY[this.dayKey] || []; },

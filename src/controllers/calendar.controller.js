@@ -177,7 +177,11 @@ async function toggleReminder(req, res, next) {
   try { await reminderService.toggleDone(req.params.id); res.redirect(back(req)); } catch (err) { next(err); }
 }
 async function deleteReminder(req, res, next) {
-  try { await reminderService.remove(req.params.id); res.redirect(back(req)); } catch (err) { next(err); }
+  try {
+    if (req.body.series) await reminderService.removeSeries(req.params.id);
+    else await reminderService.remove(req.params.id);
+    res.redirect(back(req));
+  } catch (err) { next(err); }
 }
 
 module.exports = { index, createReminder, updateReminder, toggleReminder, moveReminder, deleteReminder };

@@ -86,3 +86,26 @@ test('przypomnienie: długość (durationValue/unit → durationMin) + widoki ty
     if (ids.length) await prisma.reminder.deleteMany({ where: { id: { in: ids } } });
   }
 });
+
+test('przypomnienie cykliczne: seria (repeat/repeatUntil, wspólny seriesId) + usuń serię', async (t) => {
+  const cookie = await login();
+  if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
+  const tag = 'SERIES_' + Date.now();
+  try {
+    const res = await reminderService.create({ title: tag, dueAt: '2026-08-01T09:00', repeat: 'weekly', repeatUntil: '2026-08-29' });
+    assert.ok(res && res.seriesId, 'create serii zwraca seriesId');
+    const rows = await prisma.reminder.findMany({ where: { title: tag } });
+    assert.equal(rows.length, 5, 'co tydzień 01→29.08 = 5 wystąpień');
+    assert.ok(rows.every((r) => r.seriesId === res.seriesId), 'wspólny seriesId');
+    assert.ok(rows.every((r) => r.repeat === 'weekly'), 'repeat zapisany na wystąpieniach');
+    // repeat:none = pojedyncze (bez serii)
+    const single = await reminderService.create({ title: tag + '_one', dueAt: '2026-08-01T09:00', repeat: 'none' });
+    assert.equal(single.seriesId, null, 'repeat none = zwykłe przypomnienie (bez seriesId)');
+    await prisma.reminder.deleteMany({ where: { title: tag + '_one' } });
+    // usuń serię — kasuje wszystkie wystąpienia
+    await reminderService.removeSeries(rows[0].id);
+    assert.equal(await prisma.reminder.count({ where: { title: tag } }), 0, 'removeSeries kasuje całą serię');
+  } finally {
+    await prisma.reminder.deleteMany({ where: { OR: [{ title: tag }, { title: tag + '_one' }] } });
+  }
+});

@@ -326,6 +326,9 @@ model Reminder {
   done      Boolean   @default(false)
   doneAt    DateTime?
   priority  String    @default("normal") // low | normal | high
+  repeat      String?   // daily | weekly | monthly (null = jednorazowe); seria materializowana
+  repeatUntil DateTime? // opcjonalny koniec serii
+  seriesId    String?   // wspólny id wygenerowanych powtórzeń (usuń/edytuj serię)
   client    Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
   clientId  Int?
   project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
@@ -336,4 +339,5 @@ model Reminder {
   @@index([dueAt])
   @@index([clientId])
   @@index([projectId])
+  @@index([seriesId])
 }
