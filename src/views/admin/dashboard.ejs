@@ -13,8 +13,12 @@
   // Literalne klasy (skanuje je Tailwind): lg:col-span-3 lg:col-span-4 lg:col-span-6 lg:col-span-8 lg:col-span-12
   const SPAN_CLS = { 3: 'lg:col-span-3', 4: 'lg:col-span-4', 6: 'lg:col-span-6', 8: 'lg:col-span-8', 12: 'lg:col-span-12' };
   function spanCls(w){
-    const mobile = w.key.indexOf('stat-') === 0 ? 'col-span-1' : 'col-span-2';
-    return mobile + ' ' + (SPAN_CLS[w.span] || 'lg:col-span-4');
+    const isStat = w.key.indexOf('stat-') === 0;
+    const mobile = isStat ? 'col-span-1' : 'col-span-2';
+    // Kafelki KPI NIE rozciągają się do wysokości rzędu (`self-start`) — inaczej wysoki
+    // widżet obok (aktywność, wykres) robił z nich wysokie ramki z treścią pływającą
+    // w środku. Widżety treściowe dalej wypełniają rząd.
+    return mobile + ' ' + (isStat ? 'self-start ' : '') + (SPAN_CLS[w.span] || 'lg:col-span-4');
   }
 %>
 

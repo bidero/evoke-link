@@ -155,15 +155,44 @@ async function board() {
     orderBy: [{ position: 'asc' }, { updatedAt: 'desc' }],
   });
   if (projects.length) {
+    const now = new Date();
+    const ids = projects.map((p) => p.id);
     const rows = await prisma.charge.findMany({
-      where: { paidAt: null, projectId: { in: projects.map((p) => p.id) } },
-      select: { projectId: true, amount: true, vatRate: true },
+      where: { paidAt: null, projectId: { in: ids } },
+      select: { projectId: true, amount: true, vatRate: true, dueDate: true },
     });
     const map = {};
-    rows.forEach((c) => { map[c.projectId] = (map[c.projectId] || 0) + charges.grossOf(c); }); // brutto (z VAT)
-    projects.forEach((p) => { p.outstanding = map[p.id] || 0; });
+    const over = {};
+    rows.forEach((c) => {
+      const g = charges.grossOf(c); // brutto (z VAT)
+      map[c.projectId] = (map[c.projectId] || 0) + g;
+      if (c.dueDate && new Date(c.dueDate) < now) over[c.projectId] = (over[c.projectId] || 0) + g;
+    });
+    // Nieprzeczytane wiadomości per projekt — sygnał „klient czeka na odpowiedź".
+    const msgs = await prisma.message.groupBy({
+      by: ['projectId'],
+      where: { projectId: { in: ids }, direction: 'in', isRead: false },
+      _count: { _all: true },
+    }).catch(() => []);
+    const unread = {};
+    msgs.forEach((m) => { if (m.projectId != null) unread[m.projectId] = m._count._all; });
+    projects.forEach((p) => {
+      p.outstanding = map[p.id] || 0;
+      p.overdue = over[p.id] || 0;
+      p.unreadMessages = unread[p.id] || 0;
+    });
   }
-  const cols = STAGES.map((s) => ({ stage: s, label: STAGE_LABELS[s], projects: projects.filter((p) => (STAGES.includes(p.stage) ? p.stage : 'active') === s) }));
+  // Kolumny z podsumowaniem: liczba projektów + suma „do zapłaty" (brutto) w etapie.
+  const cols = STAGES.map((s) => {
+    const inStage = projects.filter((p) => (STAGES.includes(p.stage) ? p.stage : 'active') === s);
+    return {
+      stage: s,
+      label: STAGE_LABELS[s],
+      projects: inStage,
+      outstanding: inStage.reduce((sum, p) => sum + (p.outstanding || 0), 0),
+      overdue: inStage.reduce((sum, p) => sum + (p.overdue || 0), 0),
+    };
+  });
   return cols;
 }
 
