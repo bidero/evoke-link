@@ -219,6 +219,10 @@ html.dark.theme-modern [data-stat-icon] { background: rgb(var(--brand-600) / 0.2
    Przełącznik: hamburger w nagłówku (desktop = zwiń/rozwiń, mobile = offcanvas).
    Mobile (< md) bez zmian — pasek jako offcanvas w pełnej szerokości. */
 [data-admin-sidebar] { transition: transform .3s ease, width .3s ease; }
+/* Stała wysokość pozycji paska — inaczej zwinięty wiersz (sama ikona 16px) jest
+   niższy niż rozwinięty (ikona + tekst, line-height 20px) → „skok" wysokości przy
+   zwijaniu. 2.25rem = tyle, ile daje py-2 + tekst; równa oba stany (jak h-9 w portalu). */
+[data-admin-sidebar] [data-rail-item] { min-height: 2.25rem; }
 @media (min-width: 768px) {
   html.rail-collapsed [data-admin-sidebar] { width: 4rem; }
   html.rail-collapsed [data-admin-sidebar] [data-rail-label] { display: none; }
