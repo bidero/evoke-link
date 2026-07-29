@@ -216,6 +216,17 @@ html.dark.theme-modern [data-avatar] { background: rgb(var(--brand-600) / 0.28);
    classic i modern (to naprawa kontrastu, nie zmiana jasnego motywu). */
 html.dark [data-conv-list] a.bg-brand-50 { background: rgb(var(--brand-600) / 0.22) !important; }
 
+/* Kalendarz (modern): nagłówek dni na slate + wersaliki; kafle wydarzeń jako pigułki
+   z akcentem po lewej (kolor = tekst kafla); delikatne podświetlenie „dziś". */
+.theme-modern [data-cal-head] { background: #f8fafc; text-transform: uppercase; letter-spacing: .04em; }
+.theme-modern .cal-chip { border-left: 3px solid currentColor; padding-left: 5px; }
+.theme-modern [data-cal-cell][data-today] { background: rgb(var(--brand-600) / 0.05); }
+html.dark.theme-modern [data-cal-head] { background: var(--dk-surface-2); }
+/* Dark (classic+modern): komórki spoza miesiąca to `bg-slate-50/60` — modyfikator
+   krycia NIE łapie override'u `.bg-slate-50`, więc świeciły jasnym blokiem na ciemno.
+   Stonuj do ledwie widocznego. */
+html.dark .bg-slate-50\/60 { background-color: rgba(255, 255, 255, 0.03) !important; }
+
 /* Dark mode + modern: karty i tabele na ciemno (pigułka brand zostaje). */
 html.dark.theme-modern main .rounded-2xl {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);

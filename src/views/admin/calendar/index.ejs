@@ -34,13 +34,13 @@
     </div>
 
     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-      <div class="grid grid-cols-7 text-center text-[11px] font-medium text-slate-400 border-b border-slate-100">
+      <div data-cal-head class="grid grid-cols-7 text-center text-[11px] font-medium text-slate-400 border-b border-slate-100">
         <% ['Pn','Wt','Śr','Cz','Pt','So','Nd'].forEach(function(d){ %><div class="py-2"><%= d %></div><% }); %>
       </div>
       <% weeks.forEach(function(week){ %>
         <div class="grid grid-cols-7">
           <% week.forEach(function(day){ %>
-            <div class="min-h-[92px] border-r border-b border-slate-100 last:border-r-0 p-1.5 cursor-pointer hover:bg-slate-50/60 <%= day.inMonth ? '' : 'bg-slate-50/60' %>"
+            <div data-cal-cell <%= day.isToday ? 'data-today' : '' %> class="min-h-[92px] border-r border-b border-slate-100 last:border-r-0 p-1.5 cursor-pointer hover:bg-slate-50/60 <%= day.inMonth ? '' : 'bg-slate-50/60' %>"
                  @click="openNew('<%= day.key %>')" @contextmenu.prevent="openMenu($event, { type: 'day', key: '<%= day.key %>' })">
               <div class="flex justify-end">
                 <span @click.stop="openDay('<%= day.key %>')" class="text-[11px] inline-flex items-center justify-center w-5 h-5 rounded-full cursor-pointer <%= day.isToday ? 'bg-brand-600 text-white font-semibold' : (day.inMonth ? 'text-slate-500 hover:bg-slate-100' : 'text-slate-300') %>"><%= day.day %></span>
@@ -48,9 +48,9 @@
               <div class="mt-0.5 space-y-0.5 cal-events min-h-[44px]" data-day="<%= day.key %>">
                 <% day.events.slice(0, 3).forEach(function(e){ %>
                   <% if (e.kind === 'reminder') { %>
-                    <button type="button" title="<%= e.title %>" data-remid="<%= e.id %>" @click.stop="openEdit(REM[<%= e.id %>])" @contextmenu.prevent.stop="openMenu($event, { type: 'reminder', id: <%= e.id %> })" class="block w-full text-left truncate rounded px-1 py-0.5 text-[10px] leading-tight cursor-grab <%= chipCls(e) %>"><%= e.title %></button>
+                    <button type="button" title="<%= e.title %>" data-remid="<%= e.id %>" @click.stop="openEdit(REM[<%= e.id %>])" @contextmenu.prevent.stop="openMenu($event, { type: 'reminder', id: <%= e.id %> })" class="cal-chip block w-full text-left truncate rounded px-1 py-0.5 text-[10px] leading-tight cursor-grab <%= chipCls(e) %>"><%= e.title %></button>
                   <% } else { %>
-                    <a href="<%= e.href %>" title="<%= e.title %>" @click.stop @contextmenu.prevent.stop="openMenu($event, { type: '<%= e.kind %>', id: <%= e.id %>, href: '<%= e.href %>' })" class="block truncate rounded px-1 py-0.5 text-[10px] leading-tight <%= chipCls(e) %>"><%= e.title %></a>
+                    <a href="<%= e.href %>" title="<%= e.title %>" @click.stop @contextmenu.prevent.stop="openMenu($event, { type: '<%= e.kind %>', id: <%= e.id %>, href: '<%= e.href %>' })" class="cal-chip block truncate rounded px-1 py-0.5 text-[10px] leading-tight <%= chipCls(e) %>"><%= e.title %></a>
                   <% } %>
                 <% }); %>
                 <% if (day.events.length > 3) { %><button type="button" @click.stop="openDay('<%= day.key %>')" class="text-[10px] text-slate-400 pl-1 hover:text-brand-600">+<%= day.events.length - 3 %> więcej</button><% } %>
