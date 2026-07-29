@@ -104,6 +104,22 @@ async function submitMessage(req, res, next) {
   }
 }
 
+// Pobranie załącznika wiadomości w wątku transferu przychodzącego (/upload).
+async function downloadMessageAttachment(req, res, next) {
+  try {
+    const transfer = await loadIncoming(req, res);
+    if (!transfer) return;
+    if (transferService.requiresPassword(transfer) && !isUnlocked(req, transfer.token)) return res.status(403).end();
+    const att = await messageService.attachmentInThread(req.params.msgId, { transferId: transfer.id });
+    if (!att) return res.status(404).end();
+    res.setHeader('Content-Type', att.mime);
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.name)}"`);
+    storage.readStream(att.path).on('error', () => res.status(404).end()).pipe(res);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Sprawdzenie hasła (ten sam formularz/bramka co przy pobieraniu).
 async function submitPassword(req, res, next) {
   try {
@@ -181,4 +197,4 @@ async function submitUpload(req, res, next) {
   }
 }
 
-module.exports = { showUploadPage, showMessages, submitMessage, submitPassword, submitUpload };
+module.exports = { showUploadPage, showMessages, submitMessage, downloadMessageAttachment, submitPassword, submitUpload };

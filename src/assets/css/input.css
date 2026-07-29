@@ -241,6 +241,12 @@ html.dark.theme-modern [data-stat-icon] { background: rgb(var(--brand-600) / 0.2
    niższy niż rozwinięty (ikona + tekst, line-height 20px) → „skok" wysokości przy
    zwijaniu. 2.25rem = tyle, ile daje py-2 + tekst; równa oba stany (jak h-9 w portalu). */
 [data-admin-sidebar] [data-rail-item] { min-height: 2.25rem; }
+/* Etykiety NIE mogą się zawijać — przy rozwijaniu label pojawia się (display) zanim
+   szerokość paska urośnie (transition), więc w wąskiej kolumnie łamał się na 2 linie
+   („Puls Agencji" itp.). `nowrap` + `overflow-hidden` na aside = etykieta czysto
+   wysuwa się/chowa bez łamania. */
+[data-admin-sidebar] [data-rail-item],
+[data-admin-sidebar] [data-rail-head] { white-space: nowrap; }
 @media (min-width: 768px) {
   html.rail-collapsed [data-admin-sidebar] { width: 4rem; }
   html.rail-collapsed [data-admin-sidebar] [data-rail-label] { display: none; }

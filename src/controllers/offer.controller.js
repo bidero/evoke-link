@@ -6,6 +6,7 @@ const projectService = require('../services/project.service');
 const events = require('../services/event.service');
 const mail = require('../services/mail.service');
 const messageService = require('../services/message.service');
+const storage = require('../services/storage.service');
 const { contentRailNav, contentMsgNav } = require('../utils/contentNav');
 const config = require('../config');
 
@@ -169,6 +170,21 @@ async function submitMessage(req, res, next) {
   }
 }
 
+// Pobranie załącznika wiadomości w wątku oferty (/o) — wątek klienta-właściciela oferty.
+async function downloadMessageAttachment(req, res, next) {
+  try {
+    const offer = await offerService.getByToken(req.params.token);
+    if (!offer) return res.status(404).end();
+    const att = await messageService.attachmentInThread(req.params.msgId, { clientId: offer.clientId });
+    if (!att) return res.status(404).end();
+    res.setHeader('Content-Type', att.mime);
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.name)}"`);
+    storage.readStream(att.path).on('error', () => res.status(404).end()).pipe(res);
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function submitDecision(req, res, next) {
   try {
     const offer = await offerService.getByToken(req.params.token);
@@ -208,4 +224,4 @@ async function submitDecision(req, res, next) {
   }
 }
 
-module.exports = { showPipeline, createOffer, editOffer, deleteOffer, sendOffer, showOffer, showMessages, submitMessage, submitDecision };
+module.exports = { showPipeline, createOffer, editOffer, deleteOffer, sendOffer, showOffer, showMessages, submitMessage, downloadMessageAttachment, submitDecision };

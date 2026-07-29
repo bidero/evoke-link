@@ -160,6 +160,22 @@ async function submitMessage(req, res, next) {
   }
 }
 
+// Pobranie załącznika wiadomości w portalu projektu (tylko z wątku tego projektu).
+async function downloadMessageAttachment(req, res, next) {
+  try {
+    const project = await loadProject(req, res);
+    if (!project) return;
+    if (!gate(req, res, project)) return;
+    const att = await messageService.attachmentInThread(req.params.msgId, { projectId: project.id });
+    if (!att) return res.status(404).end();
+    res.setHeader('Content-Type', att.mime);
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.name)}"`);
+    storage.readStream(att.path).on('error', () => res.status(404).end()).pipe(res);
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function submitPassword(req, res, next) {
   try {
     const project = await loadProject(req, res);
@@ -347,4 +363,4 @@ async function submitDecision(req, res, next) {
   }
 }
 
-module.exports = { showPortal, showMessages, submitMessage, submitDecision, markSeen, submitPassword, submitUpload, downloadFile, previewFile, downloadAllZip };
+module.exports = { showPortal, showMessages, submitMessage, downloadMessageAttachment, submitDecision, markSeen, submitPassword, submitUpload, downloadFile, previewFile, downloadAllZip };

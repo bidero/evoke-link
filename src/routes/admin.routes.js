@@ -12,6 +12,7 @@ const retainers = require('../controllers/retainer.controller');
 const offers = require('../controllers/offer.controller');
 const documents = require('../controllers/document.controller');
 const documentUpload = require('../middleware/documentUpload');
+const messageUpload = require('../middleware/messageUpload');
 const notifications = require('../controllers/notification.controller');
 const settings = require('../controllers/settings.controller');
 const search = require('../controllers/search.controller');
@@ -68,7 +69,7 @@ router.post('/calendar/reminders/:id/delete', calendar.deleteReminder);
 router.get('/messages', messages.listMessages); // dwupanel: ?client=<id|none> = wybrana rozmowa
 router.post('/messages/read-all', messages.markAllRead);
 router.get('/messages/:id/attachment', messages.downloadAttachment); // :id = id wiadomości
-router.post('/messages/:clientId/send', messages.sendMessage);       // odpowiedź/zagajenie (scope w body)
+router.post('/messages/:clientId/send', messageUpload, messages.sendMessage); // odpowiedź/zagajenie (scope + opcjonalny załącznik)
 router.post('/messages/:clientId/delete', messages.deleteConversation);
 
 // Transfery. Ważne: trasy z konkretnym słowem (new, new-upload, upload)

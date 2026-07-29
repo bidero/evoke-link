@@ -45,7 +45,7 @@ async function sendMessage(req, res, next) {
     const client = await clientService.getById(Number(req.params.clientId));
     if (!client) return res.redirect('/admin/messages');
     const scope = parseScope(req.body.scope, client);
-    const msg = await messageService.send({ clientId: client.id, projectId: scope.projectId, transferId: scope.transferId, body: req.body.body });
+    const msg = await messageService.send({ clientId: client.id, projectId: scope.projectId, transferId: scope.transferId, body: req.body.body, file: req.file });
     if (msg) {
       await messageService.markClientRead(client.id); // wysłanie = obejrzałem wątek
       if (req.body.notify && client.email) {

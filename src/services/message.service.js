@@ -147,6 +147,21 @@ async function attachment(id) {
   return m && m.attachmentPath ? { path: m.attachmentPath, name: m.attachmentName || 'zalacznik', mime: m.attachmentMime || 'application/octet-stream' } : null;
 }
 
+// Załącznik OGRANICZONY do widocznego wątku danej powierzchni (bezpieczne pobieranie
+// po stronie klienta) — TEN SAM filtr co `thread`, plus wymóg id + istniejącego pliku.
+// Dzięki temu klient pobierze tylko załącznik z SWOJEGO wątku (brak IDOR).
+async function attachmentInThread(msgId, scope) {
+  let where;
+  if (scope.transferId) where = { transferId: Number(scope.transferId) };
+  else if (scope.projectId) where = { projectId: Number(scope.projectId) };
+  else if (scope.clientId) where = { clientId: Number(scope.clientId), projectId: null, transferId: null };
+  else return null;
+  where.id = Number(msgId);
+  where.attachmentPath = { not: null };
+  const m = await prisma.message.findFirst({ where, select: { attachmentPath: true, attachmentName: true, attachmentMime: true } });
+  return m ? { path: m.attachmentPath, name: m.attachmentName || 'zalacznik', mime: m.attachmentMime || 'application/octet-stream' } : null;
+}
+
 // Czy w wątku jest odpowiedź agencji (out) nowsza niż ostatnio „obejrzane" przez klienta (ts).
 function hasUnseen(thread, lastSeen) {
   const ts = Number(lastSeen) || 0;
@@ -189,11 +204,20 @@ function conversation(clientId, limit = 300) {
 
 // Agencja WYSYŁA (odpowiedź lub ZAGAJENIE) — direction 'out' w wybranym kontekście (scope).
 // scope: { projectId } | { transferId } | {} (ogólne/kliencki). clientId zawsze ustawiany.
-async function send({ clientId, projectId, transferId, body }) {
+// Agencja wysyła (out). `file` = multer req.file (opcjonalny załącznik). Dozwolona
+// wiadomość sam-plik (body='') — inaczej wymaga treści. Zwraca null gdy brak klienta
+// albo pusto (i sprząta tmp osieroconego pliku).
+async function send({ clientId, projectId, transferId, body, file }) {
   const text = (body == null ? '' : String(body)).trim().slice(0, MAX);
-  if (!text || !clientId) return null;
+  if (!clientId || (!text && !file)) { if (file) storage.removeTmp(file.path); return null; }
+
+  let att = {};
+  if (file) {
+    const stored = storage.saveMessageFile(file.path, storage.makeStoredName(file.originalname));
+    att = { attachmentPath: stored, attachmentName: (file.originalname || 'plik').slice(0, 255), attachmentSize: file.size, attachmentMime: file.mimetype };
+  }
   return prisma.message.create({
-    data: { body: text, direction: 'out', clientId: Number(clientId), projectId: projectId ? Number(projectId) : null, transferId: transferId ? Number(transferId) : null },
+    data: { body: text, direction: 'out', clientId: Number(clientId), projectId: projectId ? Number(projectId) : null, transferId: transferId ? Number(transferId) : null, ...att },
   });
 }
 
@@ -210,4 +234,4 @@ async function deleteClientConversation(clientId) {
   return prisma.message.deleteMany({ where: scope });
 }
 
-module.exports = { create, listInbox, listThreads, unreadCount, getById, thread, reply, markThreadRead, deleteThread, attachment, hasUnseen, markRead, markAllRead, remove, conversationList, conversation, send, markClientRead, deleteClientConversation };
+module.exports = { create, listInbox, listThreads, unreadCount, getById, thread, reply, markThreadRead, deleteThread, attachment, attachmentInThread, hasUnseen, markRead, markAllRead, remove, conversationList, conversation, send, markClientRead, deleteClientConversation };

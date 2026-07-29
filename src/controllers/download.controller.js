@@ -131,6 +131,22 @@ async function submitMessage(req, res, next) {
   }
 }
 
+// Pobranie załącznika wiadomości w wątku transferu (/t). Chroniony hasłem = wymaga unlocka.
+async function downloadMessageAttachment(req, res, next) {
+  try {
+    const transfer = await loadAvailable(req, res);
+    if (!transfer) return;
+    if (transferService.requiresPassword(transfer) && !isUnlocked(req, transfer.token)) return res.status(403).end();
+    const att = await messageService.attachmentInThread(req.params.msgId, { transferId: transfer.id });
+    if (!att) return res.status(404).end();
+    res.setHeader('Content-Type', att.mime);
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.name)}"`);
+    storage.readStream(att.path).on('error', () => res.status(404).end()).pipe(res);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Sprawdzenie hasła z bramki.
 async function submitPassword(req, res, next) {
   try {
@@ -247,4 +263,4 @@ async function downloadZip(req, res, next) {
   }
 }
 
-module.exports = { showDownloadPage, showMessages, submitMessage, submitDecision, markSeen, submitPassword, downloadFile, previewFile, downloadZip };
+module.exports = { showDownloadPage, showMessages, submitMessage, downloadMessageAttachment, submitDecision, markSeen, submitPassword, downloadFile, previewFile, downloadZip };

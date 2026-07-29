@@ -77,19 +77,31 @@
       </div>
 
       <% if (client) { %>
-      <form method="POST" action="/admin/messages/<%= client.id %>/send" class="border-t border-slate-100 p-3 flex flex-col gap-2">
-        <div class="flex items-center gap-2 flex-wrap text-xs">
+      <form method="POST" action="/admin/messages/<%= client.id %>/send" enctype="multipart/form-data" class="border-t border-slate-100 p-3" x-data="{ fileName: '' }">
+        <%# Kontekst wysyłki + powiadomienie mailem (kompaktowy rząd nad polem). %>
+        <div class="flex items-center gap-2 flex-wrap text-xs mb-2">
           <label class="text-slate-500">Kontekst:</label>
           <select name="scope" class="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
             <option value="c" <%= defScope === 'c' ? 'selected' : '' %>>Ogólne</option>
             <% (projects || []).forEach(function (p) { %><option value="p:<%= p.id %>" <%= defScope === 'p:' + p.id ? 'selected' : '' %>>Projekt: <%= p.name %></option><% }); %>
             <% Object.keys(threadTransfers).forEach(function (tid) { %><option value="t:<%= tid %>" <%= defScope === 't:' + tid ? 'selected' : '' %>>Transfer: <%= threadTransfers[tid] %></option><% }); %>
           </select>
+          <label class="inline-flex items-center gap-1.5 text-slate-500 ml-auto"><input type="checkbox" name="notify" checked class="rounded border-slate-300" /> Powiadom mailem<% if (!client.email) { %> <span class="text-slate-300">(brak e-maila)</span><% } %></label>
         </div>
-        <textarea name="body" required rows="2" maxlength="4000" placeholder="Napisz wiadomość… (Enter wysyła, Shift+Enter — nowa linia)" data-enter-send class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
-        <div class="flex items-center justify-between gap-2 flex-wrap">
-          <label class="inline-flex items-center gap-1.5 text-xs text-slate-500"><input type="checkbox" name="notify" checked class="rounded border-slate-300" /> Powiadom mailem<% if (!client.email) { %> <span class="text-slate-300">(brak e-maila)</span><% } %></label>
-          <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-1.5 transition">Wyślij</button>
+        <%# Chip wybranego pliku (po wyborze) + „×" czyszczący input. %>
+        <div x-show="fileName" x-cloak class="mb-2 flex items-center gap-2 text-xs text-slate-600">
+          <%- icon('file', { size: 13, cls: 'text-brand-600 shrink-0' }) %><span class="truncate max-w-[240px]" x-text="fileName"></span>
+          <button type="button" @click="fileName=''; $refs.att.value=''" class="text-slate-400 hover:text-red-600 shrink-0" aria-label="Usuń załącznik"><%- icon('x', { size: 13, cls: '' }) %></button>
+        </div>
+        <%# Composer jak w komunikatorze: „dołącz" (chmura) | pole | „wyślij" (kółko marki). %>
+        <div class="flex items-end gap-2">
+          <label class="shrink-0 w-10 h-10 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition" title="Dołącz plik" aria-label="Dołącz plik">
+            <input type="file" name="attachment" class="hidden" x-ref="att" @change="fileName = $event.target.files.length ? $event.target.files[0].name : ''" />
+            <%- icon('cloudUpload', { size: 20, cls: '' }) %>
+          </label>
+          <textarea name="body" :required="!fileName" rows="1" maxlength="4000" placeholder="Napisz wiadomość… (Enter wysyła, Shift+Enter — nowa linia)" data-enter-send
+            class="flex-1 resize-none rounded-2xl border border-slate-300 px-4 py-2.5 text-sm leading-5 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+          <button type="submit" class="shrink-0 w-10 h-10 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center transition" title="Wyślij" aria-label="Wyślij"><%- icon('send', { size: 18, cls: '' }) %></button>
         </div>
       </form>
       <% } %>
