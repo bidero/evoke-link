@@ -44,6 +44,21 @@ test('2FA: hasło → kod; samo hasło nie wpuszcza; kod zapasowy jednorazowy', 
     // zły kod
     assert.equal((await post('/admin/login/2fa', { token: '000000' }, cookie)).status, 401, 'zły kod odrzucony');
 
+    // ekran 2FA używa TEGO SAMEGO układu co logowanie (wspólna skorupa _login_shell)
+    const snapLogin = await prisma.settings.findUnique({ where: { id: 1 }, select: { login: true } });
+    try {
+      const settingsService = require('../src/services/settings.service');
+      await settingsService.update({ login: { style: 'panel', side: 'left', width: '2xl', heroTitle: 'HERO_2FA' } });
+      const shaped = await post('/admin/login', { email, password: pass });
+      const shapedHtml = await shaped.text();
+      assert.match(shapedHtml, /Weryfikacja dwuetapowa/, 'to nadal ekran 2FA');
+      assert.match(shapedHtml, /md:max-w-2xl/, 'ekran 2FA dziedziczy szerokość panelu');
+      assert.match(shapedHtml, /HERO_2FA/, 'ekran 2FA dziedziczy hero z ustawień logowania');
+    } finally {
+      await prisma.settings.update({ where: { id: 1 }, data: { login: snapLogin ? snapLogin.login : null } });
+      await require('../src/services/settings.service').get();
+    }
+
     // poprawny kod TOTP → wejście
     const ok = await post('/admin/login/2fa', { token: totp.generate(secret) }, cookie);
     assert.equal(ok.status, 302, 'poprawny kod → redirect');

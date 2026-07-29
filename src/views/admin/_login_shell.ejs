@@ -1,0 +1,96 @@
+<%# Wspólna „skorupa" strony logowania — układ (card / split / panel), logo, hero,
+    stopka i personalizacja z Settings.login. Treść (formularz hasła albo kodu 2FA)
+    wstawia się przez `innerPartial`, a nagłówek/podpis przez `lgHeading`/`lgSub`.
+    Dzięki temu drugi krok logowania (2FA) wygląda tak samo jak wybrany ekran logowania. %>
+<%
+  const appName = (typeof settings !== 'undefined' && settings) ? settings.appName : 'Evoke LINK';
+  const dark = (typeof loginBgDark !== 'undefined') ? loginBgDark : (typeof bgDark !== 'undefined' && bgDark);
+  const logoCfg = (typeof settings !== 'undefined' && settings && settings.logo) ? settings.logo : { size: 36, align: 'left' };
+  const justify = { left: 'justify-start', center: 'justify-center', right: 'justify-end' }[logoCfg.align] || 'justify-start';
+  const useLayout = (typeof uiLayout !== 'undefined' && uiLayout && uiLayout.applyToLogin);
+  const lg = (typeof settings !== 'undefined' && settings && settings.login) ? settings.login
+    : { style: 'card', side: 'left', width: 'md', title: '', subtitle: '', heroTitle: '', heroSubtitle: '', hideName: false, footer: '', hideLogo: false, hideTitle: false, hideHero: false, hideFooter: false };
+  const lFooter = lg.footer || ((typeof settings !== 'undefined' && settings && settings.texts.footer) ? settings.texts.footer : (appName + ' · prywatny system wymiany plików'));
+  const isSplit = lg.style === 'split';
+  const isPanel = lg.style === 'panel';
+  const formRight = lg.side === 'right';
+  const showHero = !lg.hideHero;
+  const heroT = lg.heroTitle || appName;
+  const heroS = lg.heroSubtitle || 'Bezpieczna wymiana plików z klientami.';
+  const panelWCls = { sm: 'md:max-w-sm', md: 'md:max-w-md', lg: 'md:max-w-lg', xl: 'md:max-w-xl', '2xl': 'md:max-w-2xl' }[lg.width] || 'md:max-w-md';
+  // Nagłówek/podpis: strona podaje swoje (np. 2FA), inaczej teksty z ustawień.
+  const heading = (typeof lgHeading !== 'undefined' && lgHeading) ? lgHeading : (lg.title || 'Zaloguj się');
+  const sub = (typeof lgSub !== 'undefined' && lgSub !== null) ? lgSub : (lg.subtitle || 'Panel administracyjny agencji.');
+  // Ukrycie nagłówka dotyczy tylko zwykłego logowania — przy 2FA zawsze tłumaczymy, co zrobić.
+  const forceHeading = (typeof lgForceHeading !== 'undefined' && lgForceHeading);
+  const showHeading = forceHeading || !lg.hideTitle;
+  const inner = (typeof innerPartial !== 'undefined' && innerPartial) ? innerPartial : '_login_form';
+%>
+<%
+  // Wspólny blok logo (używany w każdym układzie).
+  const logoHtml = lg.hideLogo ? '' : null;
+%>
+<% if (isPanel) { %>
+  <main class="flex-1 flex">
+    <section class="w-full <%= panelWCls %> bg-white min-h-screen flex flex-col shrink-0 <%= formRight ? 'md:order-2' : '' %>">
+      <div class="flex-1 min-h-0 md:overflow-y-auto flex flex-col px-6 sm:px-9 py-7">
+        <% if (!lg.hideLogo) { %><%- include('_login_logo', { appName, logoCfg, justify, lg }) %><% } %>
+        <div class="flex-1 flex flex-col [justify-content:safe_center]">
+          <% if (showHeading) { %>
+            <h1 class="text-xl font-semibold mb-1"><%= heading %></h1>
+            <% if (sub) { %><p class="text-sm text-slate-500 mb-6"><%= sub %></p><% } %>
+          <% } %>
+          <% if (error) { %><div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div><% } %>
+          <%- include(inner, { email: typeof email !== 'undefined' ? email : '', useLayout }) %>
+        </div>
+      </div>
+    </section>
+    <aside class="hidden md:flex flex-1 flex-col <%= formRight ? 'md:order-1' : '' %>">
+      <div class="flex-1 flex items-center justify-center p-12">
+        <% if (showHero) { %>
+          <div class="max-w-md <%= dark ? 'text-white' : 'text-slate-800' %>">
+            <h2 class="text-4xl font-bold tracking-tight"><%= heroT %></h2>
+            <p class="mt-3 text-lg <%= dark ? 'text-white/80' : 'text-slate-600' %>"><%= heroS %></p>
+          </div>
+        <% } %>
+      </div>
+      <% if (!lg.hideFooter) { %><div class="p-6 text-xs <%= dark ? 'text-slate-300/70' : 'text-slate-500' %>"><%= lFooter %></div><% } %>
+    </aside>
+  </main>
+
+<% } else if (isSplit) { %>
+  <div class="w-full max-w-4xl">
+    <div class="grid grid-cols-1 md:grid-cols-2 rounded-2xl overflow-hidden shadow-xl shadow-slate-900/10">
+      <div class="bg-white p-8 sm:p-10 <%= formRight ? 'md:order-2' : 'md:order-1' %>">
+        <% if (!lg.hideLogo) { %><%- include('_login_logo', { appName, logoCfg, justify, lg }) %><% } %>
+        <% if (showHeading) { %>
+          <h1 class="text-xl font-semibold mb-1"><%= heading %></h1>
+          <% if (sub) { %><p class="text-sm text-slate-500 mb-6"><%= sub %></p><% } %>
+        <% } %>
+        <% if (error) { %><div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div><% } %>
+        <%- include(inner, { email: typeof email !== 'undefined' ? email : '', useLayout }) %>
+      </div>
+      <% if (showHero) { %>
+        <div class="hidden md:flex flex-col justify-center gap-3 bg-brand-600 text-white p-10 <%= formRight ? 'md:order-1' : 'md:order-2' %>">
+          <h2 class="text-2xl font-semibold tracking-tight leading-snug"><%= heroT %></h2>
+          <p class="text-white/80 text-sm leading-relaxed"><%= heroS %></p>
+        </div>
+      <% } %>
+    </div>
+    <% if (!lg.hideFooter) { %><p class="text-center text-xs mt-6 <%= dark ? 'text-white/80' : 'text-slate-500' %>"><%= lFooter %></p><% } %>
+  </div>
+
+<% } else { %>
+  <div class="w-full max-w-sm">
+    <div class="<%= useLayout ? 'evoke-card' : 'bg-white rounded-2xl shadow-xl shadow-slate-900/10' %> p-8">
+      <% if (!lg.hideLogo) { %><%- include('_login_logo', { appName, logoCfg, justify, lg }) %><% } %>
+      <% if (showHeading) { %>
+        <h1 class="text-xl font-semibold mb-1"><%= heading %></h1>
+        <% if (sub) { %><p class="text-sm text-slate-500 mb-6"><%= sub %></p><% } %>
+      <% } %>
+      <% if (error) { %><div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div><% } %>
+      <%- include(inner, { email: typeof email !== 'undefined' ? email : '', useLayout }) %>
+    </div>
+    <% if (!lg.hideFooter) { %><p class="text-center text-xs mt-6 <%= dark ? 'text-white/80' : 'text-slate-500' %>"><%= lFooter %></p><% } %>
+  </div>
+<% } %>

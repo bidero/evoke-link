@@ -1,0 +1,9 @@
+<%# Blok logo strony logowania — wspólny dla wszystkich układów (card / split / panel). %>
+<div class="flex items-center gap-2 mb-6 <%= justify %>">
+  <% if (typeof settings !== 'undefined' && settings && hasLogo(settings, 'login')) { %>
+    <%- logoTag(settings, { appName, surface: 'login', imgClass: 'max-w-[70%] object-contain', imgStyle: 'height: ' + logoCfg.size + 'px' }) %>
+  <% } else { %>
+    <div class="w-9 h-9 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
+    <% if (!lg.hideName) { %><span class="font-semibold text-lg tracking-tight"><%= appName %></span><% } %>
+  <% } %>
+</div>
