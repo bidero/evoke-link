@@ -39,6 +39,25 @@ test('logowanie: normalizacja ustawień + render układów card/split z własnym
     assert.match(html, /HERO_PODPIS/, 'hero podpis');
     assert.match(html, /md:order-2/, 'kolejność kolumn (formularz po prawej)');
     assert.match(html, /name="password"/, 'formularz logowania obecny w układzie split');
+
+    // panel (pełna wysokość) — szerokość z whitelisty + min-h-screen
+    await settingsService.update({ login: { style: 'panel', side: 'left', width: '2xl', title: '', subtitle: '', heroTitle: 'HERO_PANEL', heroSubtitle: '', hideName: false, footer: '', hideLogo: false, hideTitle: false, hideHero: false, hideFooter: false } });
+    html = await (await fetch(`${base}/admin/login`)).text();
+    assert.match(html, /md:max-w-2xl/, 'szerokość panelu z ustawień');
+    assert.match(html, /min-h-screen/, 'panel pełnej wysokości');
+    assert.match(html, /HERO_PANEL/, 'hero po stronie tła');
+
+    // zła szerokość → domyślne md
+    let s2 = await settingsService.update({ login: { style: 'panel', width: 'ogromny' } });
+    assert.equal(s2.login.width, 'md', 'nieznana szerokość → md');
+
+    // wyłączanie elementów: bez logo/tytułu/hero/stopki
+    await settingsService.update({ login: { style: 'panel', side: 'left', width: 'sm', title: 'NIE_POKAZUJ', subtitle: '', heroTitle: 'HERO_UKRYTE', heroSubtitle: '', hideName: false, footer: 'STOPKA_UKRYTA', hideLogo: true, hideTitle: true, hideHero: true, hideFooter: true } });
+    html = await (await fetch(`${base}/admin/login`)).text();
+    assert.ok(!/NIE_POKAZUJ/.test(html), 'hideTitle chowa nagłówek');
+    assert.ok(!/HERO_UKRYTE/.test(html), 'hideHero chowa hero');
+    assert.ok(!/STOPKA_UKRYTA/.test(html), 'hideFooter chowa stopkę');
+    assert.match(html, /name="password"/, 'formularz zostaje mimo ukrytych elementów');
   } finally {
     await prisma.settings.update({ where: { id: 1 }, data: { login: snap ? snap.login : null } });
     await settingsService.get();

@@ -50,7 +50,7 @@ const DEFAULTS = {
   // splashSize = wielkość grafiki (ikona/logo) na ekranie startowym (px).
   pwa: { enabled: false, name: '', shortName: '', themeColor: '', background: '', display: 'standalone', iconPath: null, logoPath: null, logoScale: 62, splashMs: 1200, splashMode: 'icon', splashSize: 120 },
   // Strona logowania (niezależna od stron klienta). Puste teksty = domyślne z widoku.
-  login: { style: 'card', side: 'left', title: '', subtitle: '', heroTitle: '', heroSubtitle: '', hideName: false, footer: '' },
+  login: { style: 'card', side: 'left', width: 'md', title: '', subtitle: '', heroTitle: '', heroSubtitle: '', hideName: false, footer: '', hideLogo: false, hideTitle: false, hideHero: false, hideFooter: false },
 };
 
 const ALIGNS = ['left', 'center', 'right'];
@@ -92,20 +92,28 @@ function normPwa(p) {
 }
 
 // Strona logowania — niezależna od stron klienta. `style`: card (wyśrodkowana karta,
-// dotychczasowy wygląd) | split (formularz obok brandowego panelu z hero).
-const LOGIN_STYLES = ['card', 'split'];
+// dotychczasowy wygląd) | split (formularz obok brandowego panelu z hero)
+// | panel (panel PEŁNEJ WYSOKOŚCI przy krawędzi, hero na tle — jak „Panel na tle" u klienta).
+const LOGIN_STYLES = ['card', 'split', 'panel'];
+const LOGIN_WIDTHS = ['sm', 'md', 'lg', 'xl', '2xl'];
 function normLogin(l) {
   const x = l && typeof l === 'object' ? l : {};
   const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
   return {
     style: LOGIN_STYLES.includes(x.style) ? x.style : DEFAULTS.login.style,
-    side: x.side === 'right' ? 'right' : 'left', // po której stronie FORMULARZ (split)
+    side: x.side === 'right' ? 'right' : 'left', // po której stronie FORMULARZ (split/panel)
+    width: LOGIN_WIDTHS.includes(x.width) ? x.width : DEFAULTS.login.width, // szerokość panelu (panel)
     title: str(x.title, 80),
     subtitle: str(x.subtitle, 160),
     heroTitle: str(x.heroTitle, 120),
     heroSubtitle: str(x.heroSubtitle, 240),
     hideName: !!x.hideName,
     footer: str(x.footer, 200),
+    // Wyłączanie elementów (puste teksty i tak nie renderują się — to twarde ukrycie).
+    hideLogo: !!x.hideLogo,
+    hideTitle: !!x.hideTitle,
+    hideHero: !!x.hideHero,
+    hideFooter: !!x.hideFooter,
   };
 }
 

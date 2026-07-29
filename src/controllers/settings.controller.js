@@ -182,14 +182,19 @@ async function updateSettings(req, res, next) {
 
     // --- Strona logowania (niezależna personalizacja) ---
     const login = {
-      style: ['card', 'split'].includes(b.loginStyle) ? b.loginStyle : 'card',
+      style: ['card', 'split', 'panel'].includes(b.loginStyle) ? b.loginStyle : 'card',
       side: b.loginSide === 'right' ? 'right' : 'left',
+      width: ['sm', 'md', 'lg', 'xl', '2xl'].includes(b.loginWidth) ? b.loginWidth : 'md',
       title: b.loginTitle || '',
       subtitle: b.loginSubtitle || '',
       heroTitle: b.loginHeroTitle || '',
       heroSubtitle: b.loginHeroSubtitle || '',
       hideName: b.loginHideName === 'on',
       footer: b.loginFooter || '',
+      hideLogo: b.loginHideLogo === 'on',
+      hideTitle: b.loginHideTitle === 'on',
+      hideHero: b.loginHideHero === 'on',
+      hideFooter: b.loginHideFooter === 'on',
     };
 
     // --- PWA (instalowalna aplikacja) — ikona dołożona niżej przy uploadzie/usuwaniu ---

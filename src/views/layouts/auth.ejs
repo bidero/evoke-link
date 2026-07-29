@@ -26,8 +26,15 @@
     <span class="dark:hidden"><%- icon('moon', { size: 18, cls: '' }) %></span>
     <span class="hidden dark:inline"><%- icon('sun', { size: 18, cls: '' }) %></span>
   </button>
-  <div class="relative z-10 min-h-screen flex items-center justify-center p-6">
-    <%- body %>
-  </div>
+  <%# Układ „panel" (pełna wysokość, panel przy krawędzi) renderuje się bez wyśrodkowanej
+      ramki z paddingiem — treść sama zarządza wysokością. Pozostałe układy jak dotąd. %>
+  <% const _lgStyle = (typeof settings !== 'undefined' && settings && settings.login) ? settings.login.style : 'card'; %>
+  <% if (_lgStyle === 'panel') { %>
+    <div class="relative z-10 min-h-screen flex"><%- body %></div>
+  <% } else { %>
+    <div class="relative z-10 min-h-screen flex items-center justify-center p-6">
+      <%- body %>
+    </div>
+  <% } %>
 </body>
 </html>

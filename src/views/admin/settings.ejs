@@ -767,8 +767,8 @@
 
       <div>
         <span class="block text-xs font-medium text-slate-500 mb-1">Układ</span>
-        <div class="grid grid-cols-2 gap-2 text-sm max-w-md">
-          <% [['card','Karta (wyśrodkowana)'],['split','Formularz + panel marki']].forEach(function(o){ %>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm max-w-2xl">
+          <% [['card','Karta (wyśrodkowana)'],['split','Formularz + panel marki'],['panel','Panel pełnej wysokości']].forEach(function(o){ %>
             <label class="cursor-pointer">
               <input type="radio" name="loginStyle" value="<%= o[0] %>" <%= LG.style === o[0] ? 'checked' : '' %> @change="lStyle=$event.target.value" class="peer sr-only" />
               <span class="block rounded-lg border border-slate-300 px-3 py-1.5 text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
@@ -777,12 +777,24 @@
         </div>
       </div>
 
-      <div x-show="lStyle==='split'" x-cloak>
+      <div x-show="lStyle==='split' || lStyle==='panel'" x-cloak>
         <span class="block text-xs font-medium text-slate-500 mb-1">Formularz po stronie</span>
         <div class="grid grid-cols-2 gap-2 text-sm max-w-md">
           <% [['left','Lewej'],['right','Prawej']].forEach(function(o){ %>
             <label class="cursor-pointer">
               <input type="radio" name="loginSide" value="<%= o[0] %>" <%= LG.side === o[0] ? 'checked' : '' %> class="peer sr-only" />
+              <span class="block rounded-lg border border-slate-300 px-3 py-1.5 text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
+            </label>
+          <% }); %>
+        </div>
+      </div>
+
+      <div x-show="lStyle==='panel'" x-cloak>
+        <span class="block text-xs font-medium text-slate-500 mb-1">Szerokość panelu</span>
+        <div class="grid grid-cols-5 gap-2 text-sm max-w-md">
+          <% [['sm','S'],['md','M'],['lg','L'],['xl','XL'],['2xl','2XL']].forEach(function(o){ %>
+            <label class="cursor-pointer">
+              <input type="radio" name="loginWidth" value="<%= o[0] %>" <%= LG.width === o[0] ? 'checked' : '' %> class="peer sr-only" />
               <span class="block rounded-lg border border-slate-300 px-3 py-1.5 text-center peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition"><%= o[1] %></span>
             </label>
           <% }); %>
@@ -800,9 +812,9 @@
         </label>
       </div>
 
-      <div x-show="lStyle==='split'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div x-show="lStyle==='split' || lStyle==='panel'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <label class="block">
-          <span class="block text-xs font-medium text-slate-500 mb-1">Hero — tytuł <span class="text-slate-400 font-normal">(panel marki)</span></span>
+          <span class="block text-xs font-medium text-slate-500 mb-1">Hero — tytuł <span class="text-slate-400 font-normal">(obok formularza)</span></span>
           <input name="loginHeroTitle" value="<%= LG.heroTitle %>" maxlength="120" placeholder="<%= settings.appName %>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
         </label>
         <label class="block">
@@ -816,10 +828,26 @@
         <input name="loginFooter" value="<%= LG.footer %>" maxlength="200" placeholder="<%= settings.texts.footer || (settings.appName + ' · prywatny system wymiany plików') %>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
       </label>
 
-      <label class="inline-flex items-center gap-2 text-sm text-slate-600">
-        <input type="checkbox" name="loginHideName" <%= LG.hideName ? 'checked' : '' %> class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" />
-        Ukryj nazwę aplikacji przy logo
-      </label>
+      <div class="pt-3 border-t border-slate-100">
+        <span class="block text-xs font-medium text-slate-500 mb-2">Pokaż / ukryj elementy</span>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+          <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+            <input type="checkbox" name="loginHideLogo" <%= LG.hideLogo ? 'checked' : '' %> class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" /> Ukryj logo
+          </label>
+          <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+            <input type="checkbox" name="loginHideName" <%= LG.hideName ? 'checked' : '' %> class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" /> Ukryj nazwę aplikacji przy logo
+          </label>
+          <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+            <input type="checkbox" name="loginHideTitle" <%= LG.hideTitle ? 'checked' : '' %> class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" /> Ukryj nagłówek i podpis
+          </label>
+          <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+            <input type="checkbox" name="loginHideHero" <%= LG.hideHero ? 'checked' : '' %> class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" /> Ukryj hero <span class="text-slate-400">(split/panel)</span>
+          </label>
+          <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+            <input type="checkbox" name="loginHideFooter" <%= LG.hideFooter ? 'checked' : '' %> class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" /> Ukryj stopkę
+          </label>
+        </div>
+      </div>
     </div>
 
     <!-- Strona logowania: własne tło (null = dziedziczy tło stron klienta) -->
