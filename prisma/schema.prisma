@@ -27,6 +27,24 @@ model User {
   recoveryCodes String?
   createdAt    DateTime   @default(now())
   transfers    Transfer[]
+  credentials  Credential[]
+}
+
+// Passkey (WebAuthn) — klucz sprzętowy/platformowy konta (Touch ID, iCloud Keychain,
+// menedżer haseł). Klucz PRYWATNY nigdy nie opuszcza urządzenia; trzymamy tylko publiczny.
+model Credential {
+  id           Int       @id @default(autoincrement())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       Int
+  credentialId String    @unique // base64url — identyfikator klucza
+  publicKey    String    // base64url — klucz publiczny (COSE)
+  counter      Int       @default(0) // licznik podpisów (ochrona przed klonowaniem)
+  transports   String?   // JSON: ['internal','hybrid',…]
+  label        String?   // nazwa nadana przez użytkownika („MacBook", „iPhone")
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  @@index([userId])
 }
 
 // Projekt — pojemnik grupujący transfery, pliki i historię.

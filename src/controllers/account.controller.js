@@ -5,6 +5,7 @@ const { verifyCredentials, setAdminPassword, hasDbPassword } = require('../servi
 const authService = require('../services/auth.service');
 const totp = require('../utils/totp');
 const qr = require('../utils/qr');
+const webauthn = require('../services/webauthn.service');
 const settingsService = require('../services/settings.service');
 const { sanitizeSvg, looksLikeSvg } = require('../utils/svgSanitize');
 const events = require('../services/event.service');
@@ -24,6 +25,9 @@ async function baseLocals(req, extra) {
     canUse2fa: !!me.id,                                  // 2FA wymaga konta w bazie
     twoFaOn: authService.has2fa(user),
     recoveryLeft: authService.recoveryCodesLeft(user),
+    passkeys: me.id ? await webauthn.listForUser(me.id) : [],
+    passkeysSupported: webauthn.isSupportedOrigin(),     // HTTPS albo localhost
+    appUrlHost: webauthn.rp().id,
     setupSecret: null, setupUri: null, setupQr: null, newCodes: null,
     saved: false,
     savedProfile: false,
@@ -170,4 +174,50 @@ async function newRecoveryCodes(req, res, next) {
   }
 }
 
-module.exports = { showAccount, updateProfile, changePassword, start2fa, confirm2fa, disable2fa, newRecoveryCodes };
+// ── Passkeys (WebAuthn) ──────────────────────────────────────────────────────
+// Rejestracja przebiega przez JSON: przeglądarka prosi o opcje, tworzy klucz
+// i odsyła odpowiedź do weryfikacji. Challenge trzymamy w sesji.
+async function passkeyOptions(req, res, next) {
+  try {
+    const me = (req.session && req.session.user) || {};
+    if (!me.id) return res.status(400).json({ error: 'Passkey wymaga konta w bazie.' });
+    const settings = await settingsService.get();
+    const options = await webauthn.registrationOptions(me, settings.appName);
+    req.session.pkChallenge = options.challenge;
+    res.json(options);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function passkeyVerify(req, res, next) {
+  try {
+    const me = (req.session && req.session.user) || {};
+    const challenge = req.session && req.session.pkChallenge;
+    if (!me.id || !challenge) return res.status(400).json({ error: 'Sesja rejestracji wygasła.' });
+    const cred = await webauthn.verifyRegistration(me, req.body.response, challenge, req.body.label);
+    req.session.pkChallenge = null;
+    if (!cred) return res.status(400).json({ error: 'Nie udało się zweryfikować klucza.' });
+    await events.log({ type: 'updated', message: `Dodano passkey: ${me.email}`, ip: req.ip });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function passkeyDelete(req, res, next) {
+  try {
+    const me = (req.session && req.session.user) || {};
+    if (!me.id) return res.redirect('/admin/account');
+    await webauthn.removeCredential(me.id, req.params.id);
+    await events.log({ type: 'updated', message: `Usunięto passkey: ${me.email}`, ip: req.ip });
+    res.redirect('/admin/account');
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = {
+  showAccount, updateProfile, changePassword, start2fa, confirm2fa, disable2fa, newRecoveryCodes,
+  passkeyOptions, passkeyVerify, passkeyDelete,
+};

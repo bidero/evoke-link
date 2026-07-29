@@ -103,6 +103,52 @@
       <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Zmień hasło</button>
     </form>
 
+    <%# ── Passkeys (WebAuthn) ────────────────────────────────────────────── %>
+    <div class="border-t border-slate-100 mt-6 pt-5" x-data="{ busy: false, err: '', label: '' }">
+      <div class="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <div class="text-sm font-medium text-slate-700">Klucze dostępu (passkeys)</div>
+          <div class="text-xs text-slate-400">
+            <% if (!canUse2fa) { %>
+              Wymaga konta w bazie — ustaw hasło w panelu, aby dodać klucz.
+            <% } else if (!passkeysSupported) { %>
+              Wymagają połączenia HTTPS. Na produkcji (<%= appUrlHost %>) zadziałają; lokalnie działa tylko <code>localhost</code>.
+            <% } else { %>
+              Logowanie odciskiem palca / Face ID lub kluczem z menedżera haseł — bez wpisywania hasła.
+            <% } %>
+          </div>
+        </div>
+        <% if (canUse2fa && passkeysSupported) { %>
+          <button type="button" x-show="window.evokePasskey && window.evokePasskey.supported()" x-cloak
+                  :disabled="busy"
+                  @click="err=''; busy=true; window.evokePasskey.register(label).then(()=>location.reload()).catch(e=>{ err = e.message || 'Nie udało się dodać klucza.'; busy=false; })"
+                  class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition disabled:opacity-60">
+            <span x-show="!busy">Dodaj passkey</span><span x-show="busy" x-cloak>Czekam na urządzenie…</span>
+          </button>
+        <% } %>
+      </div>
+      <p x-show="err" x-cloak x-text="err" class="mt-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"></p>
+
+      <% if (passkeys && passkeys.length) { %>
+        <div class="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200">
+          <% passkeys.forEach(function(k){ %>
+            <div class="flex items-center gap-3 px-3 py-2.5">
+              <span class="shrink-0 text-slate-400"><%- icon('lock', { size: 16, cls: '' }) %></span>
+              <div class="min-w-0 flex-1">
+                <div class="text-sm text-slate-800 truncate"><%= k.label || 'Passkey' %></div>
+                <div class="text-[11px] text-slate-400">
+                  dodany <%= fmt.date(k.createdAt) %><% if (k.lastUsedAt) { %> · ostatnio użyty <%= fmt.date(k.lastUsedAt) %><% } %>
+                </div>
+              </div>
+              <form method="POST" action="/admin/account/passkey/<%= k.id %>/delete" onsubmit="return confirm('Usunąć ten klucz?');">
+                <button type="submit" class="text-slate-300 hover:text-red-600 p-1" title="Usuń klucz"><%- icon('trash', { size: 15, cls: '' }) %></button>
+              </form>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </div>
+
     <%# ── 2FA (TOTP) ─────────────────────────────────────────────────────── %>
     <div class="border-t border-slate-100 mt-6 pt-5">
       <div class="flex items-start justify-between gap-3 flex-wrap">

@@ -220,5 +220,9 @@ router.post('/account/2fa/start', account.start2fa);
 router.post('/account/2fa/confirm', account.confirm2fa);
 router.post('/account/2fa/disable', account.disable2fa);
 router.post('/account/2fa/recovery', account.newRecoveryCodes);
+// Passkeys (WebAuthn) własnego konta
+router.post('/account/passkey/options', account.passkeyOptions);
+router.post('/account/passkey/verify', account.passkeyVerify);
+router.post('/account/passkey/:id/delete', account.passkeyDelete);
 
 module.exports = router;

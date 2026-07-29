@@ -1,6 +1,7 @@
 // Obsługa requestów logowania/wylogowania (cienka warstwa — logika w auth.service).
 // Logowanie dwuetapowe: hasło → (gdy konto ma 2FA) kod z aplikacji albo kod zapasowy.
 const { authenticate, touchLogin, verifySecondFactor } = require('../services/auth.service');
+const webauthn = require('../services/webauthn.service');
 
 const loginView = (extra) => ({ title: 'Logowanie', layout: 'layouts/auth', error: null, email: '', ...extra });
 
@@ -58,9 +59,38 @@ async function doVerify2fa(req, res, next) {
   }
 }
 
+// ── Logowanie passkeyem (bez hasła) ──────────────────────────────────────────
+// Klucz jest „czymś, co masz" + weryfikacja użytkownika na urządzeniu (Touch ID/PIN),
+// więc sam w sobie jest dwuskładnikowy — nie prosimy dodatkowo o kod TOTP.
+async function passkeyOptions(req, res, next) {
+  try {
+    const options = await webauthn.authenticationOptions();
+    req.session.pkLoginChallenge = options.challenge;
+    res.json(options);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function passkeyLogin(req, res, next) {
+  try {
+    const challenge = req.session && req.session.pkLoginChallenge;
+    if (!challenge) return res.status(400).json({ error: 'Sesja logowania wygasła — odśwież stronę.' });
+    const user = await webauthn.verifyAuthentication(req.body.response, challenge);
+    req.session.pkLoginChallenge = null;
+    if (!user) return res.status(401).json({ error: 'Nie rozpoznano klucza.' });
+    req.session.pending2fa = null;
+    req.session.user = user;
+    touchLogin(user.id);
+    res.json({ ok: true, redirect: '/admin' });
+  } catch (err) {
+    next(err);
+  }
+}
+
 function doLogout(req, res) {
   req.session = null;
   res.redirect('/admin/login');
 }
 
-module.exports = { showLogin, doLogin, doVerify2fa, doLogout };
+module.exports = { showLogin, doLogin, doVerify2fa, doLogout, passkeyOptions, passkeyLogin };

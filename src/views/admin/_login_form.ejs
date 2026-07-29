@@ -15,3 +15,24 @@
     Zaloguj się
   </button>
 </form>
+
+<%# Logowanie passkeyem — pokazywane tylko, gdy przeglądarka je obsługuje
+    (HTTPS/localhost). Bez JS albo bez wsparcia zostaje zwykłe hasło. %>
+<div x-data="{ busy: false, err: '', can: false }" x-init="can = !!(window.evokePasskey && window.evokePasskey.supported())">
+  <template x-if="can">
+    <div class="mt-4">
+      <div class="flex items-center gap-3 mb-3">
+        <span class="h-px flex-1 bg-slate-200"></span>
+        <span class="text-[11px] uppercase tracking-wide text-slate-400">albo</span>
+        <span class="h-px flex-1 bg-slate-200"></span>
+      </div>
+      <button type="button" :disabled="busy"
+              @click="err=''; busy=true; window.evokePasskey.login().catch(e=>{ err = e.message || 'Nie udało się zalogować kluczem.'; busy=false; })"
+              class="<%= useLayout ? 'evoke-btn' : '' %> w-full rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium py-2.5 text-sm transition inline-flex items-center justify-center gap-2 disabled:opacity-60">
+        <%- icon('lock', { size: 16, cls: '' }) %>
+        <span x-show="!busy">Zaloguj kluczem (passkey)</span><span x-show="busy" x-cloak>Czekam na urządzenie…</span>
+      </button>
+      <p x-show="err" x-cloak x-text="err" class="mt-2 text-xs text-red-600"></p>
+    </div>
+  </template>
+</div>
