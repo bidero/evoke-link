@@ -43,10 +43,10 @@
   const evTime = (d) => { const x = new Date(d); return `${pad(x.getHours())}:${pad(x.getMinutes())}`; };
   // Hidden inputy zachowujące widok po zapisie (miesiąc/tydzień/dzień).
 %>
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6" x-data="calendar()">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6" x-data="calendar()" x-init="$watch('sideOpen', v => { try { localStorage.setItem('evoke-cal-side', v ? '1' : '0'); } catch(e){} })">
 
   <!-- KALENDARZ -->
-  <div class="lg:col-span-2">
+  <div :class="sideOpen ? 'lg:col-span-2' : 'lg:col-span-3'">
     <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
       <div class="flex items-center gap-2">
         <a href="<%= prevLink %>" class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50" aria-label="Poprzedni"><%- icon('arrowLeft', { size: 16, cls: '' }) %></a>
@@ -55,6 +55,11 @@
         <% if (!isToday) { %><a href="<%= todayLink %>" class="ml-1 text-sm text-brand-700 hover:underline">Dziś</a><% } %>
       </div>
       <div class="flex items-center gap-2">
+        <%# Zwiń/rozwiń panel boczny (Nadchodzące/Zrobione) — kalendarz na pełną szerokość. %>
+        <button type="button" @click="sideOpen = !sideOpen" :title="sideOpen ? 'Zwiń panel — szerszy kalendarz' : 'Rozwiń panel'" class="w-8 h-8 hidden lg:inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50">
+          <span x-show="sideOpen"><%- icon('arrowRight', { size: 16, cls: '' }) %></span>
+          <span x-show="!sideOpen" x-cloak><%- icon('arrowLeft', { size: 16, cls: '' }) %></span>
+        </button>
         <%# Przełącznik widoku: miesiąc / tydzień / dzień (data referencyjna = viewDate). %>
         <div class="inline-flex rounded-lg border border-slate-300 overflow-hidden text-sm">
           <a href="/admin/calendar?month=<%= curMonth %>" class="px-3 py-1.5 <%= view === 'month' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50' %>">Miesiąc</a>
@@ -185,12 +190,11 @@
       <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-brand-400"></span> Przypomnienie</span>
       <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> Płatność</span>
       <span class="inline-flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span> Wygasa transfer</span>
-      <span class="hidden sm:inline text-slate-300">· klik = dodaj (w tydz./dniu: o klikniętej godzinie) · prawy‑klik = menu · w miesiącu: przeciągnij = zmiana dnia</span>
     </div>
   </div>
 
-  <!-- PANEL: nadchodzące + zrobione -->
-  <div class="space-y-4">
+  <!-- PANEL: nadchodzące + zrobione (zwijany — szerszy kalendarz) -->
+  <div class="space-y-4" x-show="sideOpen" x-cloak>
     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
       <div class="px-4 py-3 border-b border-slate-100 text-sm font-medium text-slate-700">Nadchodzące i zaległe</div>
       <% if (!upcoming.length) { %>
@@ -387,6 +391,7 @@
       MONTH: '<%= curMonth %>',
       VIEW: '<%= view %>',
       VDATE: '<%= viewDate %>',
+      sideOpen: (function () { try { return localStorage.getItem('evoke-cal-side') !== '0'; } catch (e) { return true; } })(),
       formOpen: false,
       form: { id: null, title: '', note: '', dueAt: '', endAt: '', priority: 'normal', color: '', clientId: '', projectId: '', repeat: 'none', repeatUntil: '', seriesId: '' },
       dayOpen: false, dayKey: null,

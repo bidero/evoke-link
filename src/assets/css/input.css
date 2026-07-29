@@ -190,6 +190,22 @@ html.dark .hover\:bg-slate-100:hover { background-color: var(--dk-surface-2) !im
 .theme-modern main table thead th { color: #64748b; font-weight: 600; }
 .theme-modern main table tbody tr:hover { background: rgb(var(--brand-600) / 0.04); }
 
+/* Formularze (modern): spójny, nieco większy promień kontrolek + płynny hover/focus.
+   Wyklucza checkbox/radio/color/range/file (i przełączniki-kółka). Classic bez zmian. */
+.theme-modern main input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]):not([type=file]),
+.theme-modern main select,
+.theme-modern main textarea {
+  border-radius: 10px;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.theme-modern main input:not([type=checkbox]):not([type=radio]):not([type=color]):not([type=range]):not([type=file]):hover:not(:focus),
+.theme-modern main select:hover:not(:focus),
+.theme-modern main textarea:hover:not(:focus) { border-color: #94a3b8; } /* slate-400 na hover */
+/* Ciemny motyw: hover nie rozjaśnia ponad ramkę dark. */
+html.dark.theme-modern main input:hover:not(:focus),
+html.dark.theme-modern main select:hover:not(:focus),
+html.dark.theme-modern main textarea:hover:not(:focus) { border-color: var(--dk-muted-2); }
+
 /* Kafelki statystyk: ikona w rogu → brandowy „badge" (kwadrat z tintem marki).
    Marker `data-stat-icon` (widok `_widgets/_stat.ejs`) — classic ignoruje. */
 .theme-modern [data-stat-icon] {

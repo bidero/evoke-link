@@ -26,7 +26,10 @@ test('kalendarz: strona + dodanie/licznik/zrobione/usuń przypomnienia', async (
 
   const page = await fetch(`${base}/admin/calendar`, { headers: { Cookie: cookie } });
   assert.equal(page.status, 200);
-  assert.match(await page.text(), /Nadchodzące/);
+  const pageHtml = await page.text();
+  assert.match(pageHtml, /Nadchodzące/);
+  assert.ok(!/klik = dodaj/.test(pageHtml), 'usunięty opis-hint pod kalendarzem');
+  assert.match(pageHtml, /sideOpen/, 'zwijany panel boczny (Alpine sideOpen)');
 
   const now = new Date();
   const month = `${now.getFullYear()}-${pad(now.getMonth() + 1)}`;
