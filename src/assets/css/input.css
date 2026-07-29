@@ -163,15 +163,17 @@ html.dark .hover\:bg-slate-100:hover { background-color: var(--dk-surface-2) !im
    personalizacja kolorów działa jak dotąd. Współistnieje z .dark. */
 
 /* Sidebar: zaokrąglone pozycje + wyraźna aktywna pigułka w kolorze marki.
-   Selektor obejmuje też link „Konto i hasło" w stopce paska (poza <nav>). */
-.theme-modern aside nav a,
-.theme-modern aside [data-rail-item] { border-radius: 10px; margin-bottom: 2px; }
-.theme-modern aside a.bg-brand-50 {
+   Scope `[data-admin-sidebar]` (NIE goły `aside`) — inaczej reguła przecieka na
+   inne <aside> w treści (np. lista rozmów w /admin/messages). Obejmuje też link
+   „Konto i hasło" w stopce paska (poza <nav>). */
+.theme-modern [data-admin-sidebar] nav a,
+.theme-modern [data-admin-sidebar] [data-rail-item] { border-radius: 10px; margin-bottom: 2px; }
+.theme-modern [data-admin-sidebar] a.bg-brand-50 {
   background: rgb(var(--brand-600)) !important;
   color: #fff !important;
   box-shadow: 0 8px 18px -8px rgb(var(--brand-600) / 0.55);
 }
-.theme-modern aside a.bg-brand-50 * { color: #fff !important; opacity: 1 !important; }
+.theme-modern [data-admin-sidebar] a.bg-brand-50 * { color: #fff !important; opacity: 1 !important; }
 
 /* Nagłówek: czystsza linia + zaokrąglona szukajka. */
 .theme-modern header { border-bottom-color: rgba(15, 23, 42, 0.06); }
@@ -197,6 +199,22 @@ html.dark .hover\:bg-slate-100:hover { background-color: var(--dk-surface-2) !im
   color: rgb(var(--brand-600)) !important;
 }
 .theme-modern [data-stat-icon] svg { width: 20px; height: 20px; }
+
+/* Chat/skrzynka: awatary (inicjał klienta) w liście rozmów i nagłówku rozmowy —
+   tylko „modern". W classic element ma klasę `hidden` (display:none) → zero zmian. */
+.theme-modern [data-avatar] {
+  display: inline-flex !important; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 9999px; flex-shrink: 0;
+  background: rgb(var(--brand-600) / 0.12); color: rgb(var(--brand-600));
+  font-weight: 600; font-size: 14px; line-height: 1;
+}
+html.dark.theme-modern [data-avatar] { background: rgb(var(--brand-600) / 0.28); color: rgb(var(--brand-400)); }
+/* Lista rozmów: aktywna pozycja = pastel `bg-brand-50` + akcent marki po lewej. */
+.theme-modern [data-conv-list] a.bg-brand-50 { box-shadow: inset 3px 0 0 rgb(var(--brand-600)); }
+/* Dark: aktywna rozmowa NIE może zostać na jasnym `bg-brand-50` (nieczytelny jasny
+   tekst na pastelu) — brandowy tint na ciemnej powierzchni. Warstwa dark działa dla
+   classic i modern (to naprawa kontrastu, nie zmiana jasnego motywu). */
+html.dark [data-conv-list] a.bg-brand-50 { background: rgb(var(--brand-600) / 0.22) !important; }
 
 /* Dark mode + modern: karty i tabele na ciemno (pigułka brand zostaje). */
 html.dark.theme-modern main .rounded-2xl {
