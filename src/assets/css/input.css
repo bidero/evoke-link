@@ -162,14 +162,16 @@ html.dark .hover\:bg-slate-100:hover { background-color: var(--dk-surface-2) !im
    wygląd BEZ zmian. Czyta te same zmienne kolorów (--admin-*, brand-*), więc
    personalizacja kolorów działa jak dotąd. Współistnieje z .dark. */
 
-/* Sidebar: zaokrąglone pozycje + wyraźna aktywna pigułka w kolorze marki. */
-.theme-modern aside nav a { border-radius: 10px; margin-bottom: 2px; }
-.theme-modern aside nav a.bg-brand-50 {
+/* Sidebar: zaokrąglone pozycje + wyraźna aktywna pigułka w kolorze marki.
+   Selektor obejmuje też link „Konto i hasło" w stopce paska (poza <nav>). */
+.theme-modern aside nav a,
+.theme-modern aside [data-rail-item] { border-radius: 10px; margin-bottom: 2px; }
+.theme-modern aside a.bg-brand-50 {
   background: rgb(var(--brand-600)) !important;
   color: #fff !important;
   box-shadow: 0 8px 18px -8px rgb(var(--brand-600) / 0.55);
 }
-.theme-modern aside nav a.bg-brand-50 * { color: #fff !important; opacity: 1 !important; }
+.theme-modern aside a.bg-brand-50 * { color: #fff !important; opacity: 1 !important; }
 
 /* Nagłówek: czystsza linia + zaokrąglona szukajka. */
 .theme-modern header { border-bottom-color: rgba(15, 23, 42, 0.06); }
@@ -199,3 +201,22 @@ html.dark.theme-modern main table thead th { color: var(--dk-muted); }
 .hide-scrollbars { scrollbar-width: none; -ms-overflow-style: none; }
 .hide-scrollbars ::-webkit-scrollbar,
 .hide-scrollbars::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+/* ── Zwijane lewe menu panelu (desktop) — niezależne od motywu ───────────────
+   Klasa html.rail-collapsed dokładana inline-skryptem w <head> (jak dark mode),
+   więc BRAK migotania przy wczytaniu (szerokość poprawna przed pierwszym malowaniem).
+   Przełącznik: hamburger w nagłówku (desktop = zwiń/rozwiń, mobile = offcanvas).
+   Mobile (< md) bez zmian — pasek jako offcanvas w pełnej szerokości. */
+[data-admin-sidebar] { transition: transform .3s ease, width .3s ease; }
+@media (min-width: 768px) {
+  html.rail-collapsed [data-admin-sidebar] { width: 4rem; }
+  html.rail-collapsed [data-admin-sidebar] [data-rail-label] { display: none; }
+  html.rail-collapsed [data-admin-sidebar] [data-rail-head] { justify-content: center; padding-left: 0; padding-right: 0; }
+  html.rail-collapsed [data-admin-sidebar] [data-rail-item] { justify-content: center; }
+  /* Badge liczbowy → mała kropka na ikonie (nie tracimy sygnału „są nowe"). */
+  html.rail-collapsed [data-admin-sidebar] [data-rail-badge] {
+    position: absolute; top: 4px; right: 10px;
+    min-width: 0; width: 8px; height: 8px; padding: 0;
+    font-size: 0; line-height: 0; overflow: hidden;
+  }
+}

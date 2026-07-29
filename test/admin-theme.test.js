@@ -76,3 +76,17 @@ test('layout admina: klasy theme-modern/hide-scrollbars na <html> tylko gdy usta
     await settingsService.get();
   }
 });
+
+test('zwijane lewe menu: markery paska + przełącznik toggleRail w layoucie', async (t) => {
+  const cookie = await login();
+  if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
+
+  const html = await (await fetch(`${base}/admin`, { headers: { Cookie: cookie } })).text();
+  // pasek i pozycje mają markery używane przez CSS zwijania (html.rail-collapsed)
+  assert.match(html, /data-admin-sidebar/, 'aside ma data-admin-sidebar');
+  assert.match(html, /data-rail-item/, 'pozycje menu mają data-rail-item');
+  assert.match(html, /data-rail-label/, 'etykiety mają data-rail-label (chowane po zwinięciu)');
+  // inline-skrypt inicjuje stan bez migotania + globalny przełącznik
+  assert.match(html, /rail-collapsed/, 'init klasy rail-collapsed w <head>');
+  assert.match(html, /window\.toggleRail\s*=/, 'globalny toggleRail zdefiniowany');
+});
