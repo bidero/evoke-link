@@ -33,8 +33,9 @@
 
     <form method="POST" action="<%= msgContext.action %>" enctype="multipart/form-data" data-turbo="false" class="mt-6 pt-6 border-t border-slate-100 space-y-3" x-data="{ fileName: '' }">
       <%# Enter wysyła, Shift+Enter = nowa linia (jak w komunikatorze). requestSubmit() respektuje
-          `required` i normalny submit (formularz jest data-turbo="false"). %>
-      <textarea name="body" required rows="3" maxlength="4000" placeholder="Twoja wiadomość… (Enter wysyła, Shift+Enter — nowa linia)"
+          `required` i normalny submit (formularz jest data-turbo="false").
+          Skrótu NIE piszemy w placeholderze — zaśmiecał pole; zachowanie jest oczywiste. %>
+      <textarea name="body" required rows="3" maxlength="4000" placeholder="Twoja wiadomość…"
         @keydown.enter="if(!$event.shiftKey){ $event.preventDefault(); $event.target.form.requestSubmit(); }"
         class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
       <%# Imię/e-mail TYLKO gdy nadawca nieznany (anonimowy transfer /t /upload). W portalu klienta

@@ -77,7 +77,7 @@
       </div>
 
       <% if (client) { %>
-      <form method="POST" action="/admin/messages/<%= client.id %>/send" enctype="multipart/form-data" class="border-t border-slate-100 p-3" x-data="{ fileName: '' }">
+      <form method="POST" action="/admin/messages/<%= client.id %>/send" enctype="multipart/form-data" class="border-t border-slate-100 p-3" x-data="{ fileName: '', body: '' }">
         <%# Kontekst wysyłki + powiadomienie mailem (kompaktowy rząd nad polem). %>
         <div class="flex items-center gap-2 flex-wrap text-xs mb-2">
           <label class="text-slate-500">Kontekst:</label>
@@ -93,15 +93,20 @@
           <%- icon('file', { size: 13, cls: 'text-brand-600 shrink-0' }) %><span class="truncate max-w-[240px]" x-text="fileName"></span>
           <button type="button" @click="fileName=''; $refs.att.value=''" class="text-slate-400 hover:text-red-600 shrink-0" aria-label="Usuń załącznik"><%- icon('x', { size: 13, cls: '' }) %></button>
         </div>
-        <%# Composer jak w komunikatorze: „dołącz" (chmura) | pole | „wyślij" (kółko marki). %>
+        <%# Composer: „dołącz" (chmura) | pole z ikoną wysyłki WEWNĄTRZ (wyszarzona, gdy nic nie
+            napisano; brandowa, gdy jest treść albo załącznik) — jak w ChatGPT/Linear. %>
         <div class="flex items-end gap-2">
           <label class="shrink-0 w-10 h-10 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-slate-100 flex items-center justify-center cursor-pointer transition" title="Dołącz plik" aria-label="Dołącz plik">
             <input type="file" name="attachment" class="hidden" x-ref="att" @change="fileName = $event.target.files.length ? $event.target.files[0].name : ''" />
             <%- icon('cloudUpload', { size: 20, cls: '' }) %>
           </label>
-          <textarea name="body" :required="!fileName" rows="1" maxlength="4000" placeholder="Napisz wiadomość… (Enter wysyła, Shift+Enter — nowa linia)" data-enter-send
-            class="flex-1 resize-none rounded-2xl border border-slate-300 px-4 py-2.5 text-sm leading-5 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
-          <button type="submit" class="shrink-0 w-10 h-10 rounded-full bg-brand-600 hover:bg-brand-700 text-white flex items-center justify-center transition" title="Wyślij" aria-label="Wyślij"><%- icon('send', { size: 18, cls: '' }) %></button>
+          <div class="relative flex-1">
+            <textarea name="body" x-model="body" :required="!fileName" rows="1" maxlength="4000" placeholder="Napisz wiadomość…" data-enter-send
+              class="w-full resize-none rounded-2xl border border-slate-300 pl-4 pr-12 py-2.5 text-sm leading-5 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+            <button type="submit" title="Wyślij" aria-label="Wyślij"
+                    :class="(body.trim() || fileName) ? 'bg-brand-600 hover:bg-brand-700 text-white shadow-sm' : 'text-slate-300 hover:text-brand-600 hover:bg-brand-50'"
+                    class="absolute right-2 bottom-1.5 w-8 h-8 rounded-full flex items-center justify-center transition"><%- icon('send', { size: 17, cls: '' }) %></button>
+          </div>
         </div>
       </form>
       <% } %>
