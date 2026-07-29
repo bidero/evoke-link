@@ -188,6 +188,16 @@ html.dark .hover\:bg-slate-100:hover { background-color: var(--dk-surface-2) !im
 .theme-modern main table thead th { color: #64748b; font-weight: 600; }
 .theme-modern main table tbody tr:hover { background: rgb(var(--brand-600) / 0.04); }
 
+/* Kafelki statystyk: ikona w rogu → brandowy „badge" (kwadrat z tintem marki).
+   Marker `data-stat-icon` (widok `_widgets/_stat.ejs`) — classic ignoruje. */
+.theme-modern [data-stat-icon] {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 12px;
+  background: rgb(var(--brand-600) / 0.10);
+  color: rgb(var(--brand-600)) !important;
+}
+.theme-modern [data-stat-icon] svg { width: 20px; height: 20px; }
+
 /* Dark mode + modern: karty i tabele na ciemno (pigułka brand zostaje). */
 html.dark.theme-modern main .rounded-2xl {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
@@ -195,6 +205,7 @@ html.dark.theme-modern main .rounded-2xl {
 }
 html.dark.theme-modern main table thead { background: var(--dk-surface-2); }
 html.dark.theme-modern main table thead th { color: var(--dk-muted); }
+html.dark.theme-modern [data-stat-icon] { background: rgb(var(--brand-600) / 0.22); color: rgb(var(--brand-400)) !important; }
 
 /* ── Ukrycie pasków przewijania (opcja, niezależna od motywu) ────────────────
    Działa też w „classic". Firefox: scrollbar-width; WebKit: ::-webkit-scrollbar. */
