@@ -89,6 +89,17 @@ function normPwa(p) {
   };
 }
 
+function normProfile(p) {
+  const x = p && typeof p === 'object' ? p : {};
+  const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
+  return {
+    name: str(x.name, 120),
+    role: str(x.role, 120),
+    phone: str(x.phone, 60),
+    avatarPath: x.avatarPath || null,
+  };
+}
+
 function normPdf(p) {
   const x = p && typeof p === 'object' ? p : {};
   const h = parseInt(x.logoHeight, 10);
@@ -159,6 +170,8 @@ function normalize(row) {
   try { panel = row.panel ? JSON.parse(row.panel) : {}; } catch (_) {}
   let pwa = {};
   try { pwa = row.pwa ? JSON.parse(row.pwa) : {}; } catch (_) {}
+  let profile = {};
+  try { profile = row.profile ? JSON.parse(row.profile) : {}; } catch (_) {}
   return {
     appName: row.appName || DEFAULTS.appName,
     logoPath: row.logoPath || null,
@@ -175,6 +188,7 @@ function normalize(row) {
     pdf: normPdf(pdf),
     panel: { menu: panelUi.sanitizeMenu(panel.menu), dashboard: panelUi.sanitizeWidgets(panel.dashboard) },
     pwa: normPwa(pwa),
+    profile: normProfile(profile),
   };
 }
 
@@ -209,6 +223,7 @@ async function update(data) {
   if (data.pdf !== undefined) patch.pdf = JSON.stringify(data.pdf);
   if (data.panel !== undefined) patch.panel = JSON.stringify({ menu: panelUi.sanitizeMenu(data.panel.menu), dashboard: panelUi.sanitizeWidgets(data.panel.dashboard) });
   if (data.pwa !== undefined) patch.pwa = JSON.stringify(normPwa(data.pwa));
+  if (data.profile !== undefined) patch.profile = JSON.stringify(normProfile(data.profile));
 
   const row = await prisma.settings.upsert({
     where: { id: 1 },

@@ -193,6 +193,7 @@ router.post(
 
 // Konto admina — zmiana hasła.
 router.get('/account', account.showAccount);
+router.post('/account/profile', brandingUpload.single('avatar'), account.updateProfile);
 router.post('/account/password', account.changePassword);
 
 module.exports = router;

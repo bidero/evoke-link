@@ -101,7 +101,16 @@
               <span class="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold"><%= unreadH %></span>
             <% } %>
           </a>
-          <span class="hidden sm:inline text-sm opacity-60"><%= typeof currentUser !== 'undefined' && currentUser ? currentUser.email : '' %></span>
+          <% const _prof = (typeof settings !== 'undefined' && settings) ? settings.profile : null; %>
+          <% const _pnm = (_prof && _prof.name) ? _prof.name : (typeof currentUser !== 'undefined' && currentUser ? currentUser.email : ''); %>
+          <a href="/admin/account" class="flex items-center gap-2 group shrink-0" title="Mój profil">
+            <% if (_prof && _prof.avatarPath) { %>
+              <img src="<%= _prof.avatarPath %>" alt="" class="w-8 h-8 rounded-full object-cover border border-black/10" />
+            <% } else { %>
+              <span class="w-8 h-8 rounded-full bg-brand-50 text-brand-700 inline-flex items-center justify-center text-sm font-semibold"><%= (_pnm || '?').trim().charAt(0).toUpperCase() %></span>
+            <% } %>
+            <span class="hidden sm:inline text-sm opacity-70 group-hover:opacity-100 max-w-[160px] truncate"><%= _pnm %></span>
+          </a>
         </div>
       </header>
       <main class="flex-1 p-4 sm:p-6 lg:p-8">

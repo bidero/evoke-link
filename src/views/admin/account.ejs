@@ -1,43 +1,130 @@
-<div class="max-w-md">
+<%
+  const pName = (profile && profile.name) ? profile.name : '';
+  const pInitial = ((pName || email || '?').trim().charAt(0) || '?').toUpperCase();
+%>
+<div class="max-w-3xl space-y-6">
+  <% if (savedProfile) { %>
+    <div class="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">
+      <%- icon('check', { size: 16, cls: 'text-green-600' }) %> Profil zapisany.
+    </div>
+  <% } %>
   <% if (saved) { %>
-    <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">
+    <div class="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">
       <%- icon('check', { size: 16, cls: 'text-green-600' }) %> Hasło zostało zmienione.
     </div>
   <% } %>
   <% if (error) { %>
-    <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
+    <div class="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
   <% } %>
 
-  <div class="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
-    <div>
-      <h2 class="text-sm font-semibold text-slate-700">Konto administratora</h2>
-      <p class="text-sm text-slate-500 mt-1"><%= email %></p>
-      <p class="text-xs mt-2 <%= usingDbPassword ? 'text-slate-400' : 'text-amber-600' %>">
-        <% if (usingDbPassword) { %>
-          Hasło ustawione w panelu (zapisane w bazie).
-        <% } else { %>
-          Logowanie korzysta z hasła z pliku .env. Ustaw nowe hasło poniżej, aby zarządzać nim z panelu.
-        <% } %>
-      </p>
+  <!-- PROFIL -->
+  <div class="bg-white rounded-2xl border border-slate-200 p-6">
+    <h2 class="text-base font-semibold text-slate-800 mb-5">Mój profil</h2>
+    <div class="flex items-center gap-4 mb-6">
+      <% if (profile && profile.avatarPath) { %>
+        <img src="<%= profile.avatarPath %>" alt="Avatar" class="w-16 h-16 rounded-full object-cover border border-slate-200" />
+      <% } else { %>
+        <div class="w-16 h-16 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center text-2xl font-semibold"><%= pInitial %></div>
+      <% } %>
+      <div class="min-w-0">
+        <div class="text-lg font-semibold text-slate-800 truncate"><%= pName || 'Administrator' %></div>
+        <div class="text-sm text-slate-500 truncate">
+          <%= (profile && profile.role) ? profile.role : 'Konto agencji' %>
+          <span class="text-slate-300">·</span> <%= email %>
+        </div>
+      </div>
     </div>
 
-    <form method="POST" action="/admin/account/password" class="space-y-4">
+    <form method="POST" action="/admin/account/profile" enctype="multipart/form-data" class="space-y-4" x-data="{ avatar: '' }">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Imię i nazwisko / nazwa</label>
+          <input name="name" type="text" value="<%= pName %>" maxlength="120" placeholder="np. Radek Biedermann"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Rola / stanowisko</label>
+          <input name="role" type="text" value="<%= (profile && profile.role) ? profile.role : '' %>" maxlength="120" placeholder="np. Właściciel"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">Telefon</label>
+          <input name="phone" type="text" value="<%= (profile && profile.phone) ? profile.phone : '' %>" maxlength="60" placeholder="np. 600 100 200"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">E-mail logowania</label>
+          <input type="text" value="<%= email %>" disabled
+                 class="w-full rounded-lg border border-slate-200 bg-slate-50 text-slate-400 px-3 py-2 text-sm outline-none cursor-not-allowed" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-slate-700 mb-1">Avatar <span class="text-slate-400 font-normal">(kwadrat, PNG/JPG/SVG)</span></label>
+        <div class="flex items-center gap-3 flex-wrap">
+          <label class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600 cursor-pointer hover:bg-brand-50 hover:text-brand-700 hover:border-brand-300 transition">
+            <%- icon('cloudUpload', { size: 16, cls: '' }) %> Wgraj avatar
+            <input type="file" name="avatar" accept="image/*" class="hidden" @change="avatar = $event.target.files.length ? $event.target.files[0].name : ''" />
+          </label>
+          <span class="text-xs text-slate-500 truncate max-w-[220px]" x-show="avatar" x-cloak x-text="avatar"></span>
+          <% if (profile && profile.avatarPath) { %>
+            <label class="inline-flex items-center gap-1.5 text-xs text-slate-500"><input type="checkbox" name="removeAvatar" value="1" class="rounded border-slate-300" /> Usuń obecny avatar</label>
+          <% } %>
+        </div>
+      </div>
+      <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Zapisz profil</button>
+    </form>
+  </div>
+
+  <!-- BEZPIECZEŃSTWO -->
+  <div class="bg-white rounded-2xl border border-slate-200 p-6">
+    <h2 class="text-base font-semibold text-slate-800 mb-1">Bezpieczeństwo</h2>
+    <p class="text-xs mb-5 <%= usingDbPassword ? 'text-slate-400' : 'text-amber-600' %>">
+      <% if (usingDbPassword) { %>Hasło ustawione w panelu (zapisane w bazie).<% } else { %>Logowanie korzysta z hasła z pliku .env. Ustaw nowe hasło poniżej, aby zarządzać nim z panelu.<% } %>
+    </p>
+
+    <form method="POST" action="/admin/account/password" class="space-y-4 max-w-md">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1" for="currentPassword">Obecne hasło</label>
         <input id="currentPassword" name="currentPassword" type="password" required autocomplete="current-password"
                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
       </div>
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1" for="newPassword">Nowe hasło <span class="text-slate-400 font-normal">(min. 8 znaków)</span></label>
-        <input id="newPassword" name="newPassword" type="password" required minlength="8" autocomplete="new-password"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1" for="confirmPassword">Powtórz nowe hasło</label>
-        <input id="confirmPassword" name="confirmPassword" type="password" required minlength="8" autocomplete="new-password"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1" for="newPassword">Nowe hasło <span class="text-slate-400 font-normal">(min. 8)</span></label>
+          <input id="newPassword" name="newPassword" type="password" required minlength="8" autocomplete="new-password"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1" for="confirmPassword">Powtórz nowe hasło</label>
+          <input id="confirmPassword" name="confirmPassword" type="password" required minlength="8" autocomplete="new-password"
+                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        </div>
       </div>
       <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Zmień hasło</button>
     </form>
+
+    <div class="border-t border-slate-100 mt-6 pt-5 flex items-center justify-between gap-3">
+      <div>
+        <div class="text-sm font-medium text-slate-700">Uwierzytelnianie dwuetapowe (2FA)</div>
+        <div class="text-xs text-slate-400">Dodatkowy kod / klucz przy logowaniu. <span class="text-brand-600">Wkrótce (Etap 4).</span></div>
+      </div>
+      <span class="inline-flex items-center h-6 w-11 rounded-full bg-slate-200 p-0.5 cursor-not-allowed opacity-60" title="Wkrótce">
+        <span class="w-5 h-5 rounded-full bg-white shadow"></span>
+      </span>
+    </div>
+  </div>
+
+  <!-- STREFA RYZYKA -->
+  <div class="bg-white rounded-2xl border border-slate-200 p-6">
+    <h2 class="text-base font-semibold text-slate-800 mb-4">Sesja</h2>
+    <div class="flex items-center justify-between gap-3">
+      <div>
+        <div class="text-sm font-medium text-slate-700">Wyloguj z panelu</div>
+        <div class="text-xs text-slate-400">Zakończ bieżącą sesję w tej przeglądarce.</div>
+      </div>
+      <form method="POST" action="/admin/logout">
+        <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 px-4 py-2 text-sm transition"><%- icon('arrowRight', { size: 15, cls: '' }) %> Wyloguj</button>
+      </form>
+    </div>
   </div>
 </div>
