@@ -86,6 +86,7 @@ router.post('/messages/:clientId/delete', messages.deleteConversation);
 // Transfery. Ważne: trasy z konkretnym słowem (new, new-upload, upload)
 // muszą być PRZED trasami z :id, żeby Express nie potraktował ich jak id.
 router.get('/transfers', transfers.listTransfers);
+router.get('/transfers.csv', transfers.listTransfersCsv);   // eksport listy (te same filtry co widok)
 router.get('/transfers/new', transfers.showCreateForm);
 router.get('/transfers/new-upload', transfers.showCreateUploadForm);
 router.post('/transfers/chunk', chunkParser, receiveChunk); // kawałki uploadu (przed :id!)
@@ -128,6 +129,7 @@ router.post('/projects/:id/delete', projects.deleteProject);
 
 // Klienci (Grupa 4).
 router.get('/clients', clients.listClients);
+router.get('/clients.csv', clients.listClientsCsv);        // eksport listy (te same filtry co widok)
 router.get('/clients/new', clients.showCreateForm);
 router.post('/clients', avatarUpload, clients.createClient);
 router.post('/clients/:id/send-panel', clients.sendPanel);

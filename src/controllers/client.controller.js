@@ -17,6 +17,7 @@ const config = require('../config');
 const fmt = require('../utils/format');
 const backlink = require('../utils/backlink');
 const { sanitizeIfSvg } = require('../utils/svgSanitize');
+const csv = require('../utils/csv');
 
 const PUBLIC_LAYOUT = 'layouts/public';
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -29,13 +30,45 @@ async function clientProjectId(projectId, clientId) {
   return p && p.clientId === clientId ? p.id : null;
 }
 
+// Filtry listy klientów — wspólne dla widoku i eksportu CSV (ten sam zestaw parametrów).
+function clientFilters(req) {
+  return {
+    q: req.query.q || '',
+    status: ['lead', 'active', 'inactive'].includes(req.query.status) ? req.query.status : '',
+    sort: clientService.SORTS.includes(req.query.sort) ? req.query.sort : 'name_asc',
+    tag: (req.query.tag || '').trim(),
+  };
+}
+
 async function listClients(req, res, next) {
   try {
-    const q = req.query.q || '';
-    const status = ['lead', 'active', 'inactive'].includes(req.query.status) ? req.query.status : '';
-    const sort = clientService.SORTS.includes(req.query.sort) ? req.query.sort : 'name_asc';
-    const clients = await clientService.list({ q, status, sort });
-    res.render('admin/clients/index', { title: 'Klienci', active: 'clients', clients, appUrl: config.appUrl, q, status, sort, mailReady: mail.isConfigured(), sent: req.query.sent || null });
+    const f = clientFilters(req);
+    const clients = await clientService.list(f);
+    res.render('admin/clients/index', {
+      title: 'Klienci', active: 'clients', clients, appUrl: config.appUrl,
+      q: f.q, status: f.status, sort: f.sort, tag: f.tag,
+      tags: await clientService.tagCloud(),
+      mailReady: mail.isConfigured(), sent: req.query.sent || null,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Eksport listy klientów do CSV — respektuje TE SAME filtry co widok listy.
+async function listClientsCsv(req, res, next) {
+  try {
+    const clients = await clientService.list(clientFilters(req));
+    const statusLabel = { lead: 'Lead', active: 'Aktywny', inactive: 'Nieaktywny' };
+    const rows = [['Nazwa', 'Firma', 'Imię', 'Nazwisko', 'E-mail', 'Telefon', 'NIP', 'Adres', 'Status', 'Tagi', 'Projekty', 'Do zapłaty (brutto)', 'Link portalu']];
+    clients.forEach((c) => rows.push([
+      c.name, c.company || '', c.firstName || '', c.lastName || '',
+      c.email || '', c.phone || '', c.nip || '', c.address || '',
+      statusLabel[c.status] || c.status, c.tags || '',
+      c._count.projects, csv.money(c.outstanding || 0),
+      `${config.appUrl}/c/${c.token}`,
+    ]));
+    csv.send(res, 'klienci.csv', rows);
   } catch (err) {
     next(err);
   }
@@ -196,23 +229,16 @@ async function clientChargesCsv(req, res, next) {
     if (ids && !Array.isArray(ids)) ids = [ids];
     const charges = await chargeService.forStatement(client.id, { from, to, status, ids });
 
-    const SEP = ';'; // średnik — Excel PL otwiera w kolumnach bez importu
-    const cell = (v) => { const s = String(v == null ? '' : v); return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
-    const money = (g) => (g / 100).toFixed(2).replace('.', ',');
     const date = (d) => (d ? fmt.dateOnly(d) : '');
     const rows = [['Data', 'Termin', 'Projekt', 'Pozycja', 'Netto', 'VAT %', 'Brutto', 'Status', 'Rozliczono']];
     charges.forEach((c) => rows.push([
       date(c.date), date(c.dueDate),
       (c.project && c.project.name) || 'Bez projektu',
       c.label || 'Pozycja',
-      money(c.amount), c.vatRate != null ? String(c.vatRate) : '', money(chargeService.grossOf(c)),
+      csv.money(c.amount), c.vatRate != null ? String(c.vatRate) : '', csv.money(chargeService.grossOf(c)),
       c.paidAt ? 'Rozliczone' : 'Do zapłaty', date(c.paidAt),
     ]));
-    const csv = '﻿' + rows.map((r) => r.map(cell).join(SEP)).join('\r\n') + '\r\n'; // BOM dla Excela
-    const slug = String(client.name || 'klient').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'klient';
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="pozycje-${slug}.csv"`);
-    res.send(csv);
+    csv.send(res, `pozycje-${csv.slug(client.name, 'klient')}.csv`, rows);
   } catch (err) {
     next(err);
   }
@@ -566,4 +592,4 @@ async function downloadMessageAttachment(req, res, next) {
   }
 }
 
-module.exports = { listClients, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, createFollowup, showClientPortal, showClientMessages, submitClientMessage, downloadMessageAttachment, submitPaidDeclaration, markSeen };
+module.exports = { listClients, listClientsCsv, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, createFollowup, showClientPortal, showClientMessages, submitClientMessage, downloadMessageAttachment, submitPaidDeclaration, markSeen };

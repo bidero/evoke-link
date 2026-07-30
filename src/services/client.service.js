@@ -33,8 +33,12 @@ function sortClients(clients, sort) {
   });
 }
 
-async function list({ q, status, sort } = {}) {
+async function list({ q, status, sort, tag } = {}) {
   const where = {};
+  // Filtr po tagu: SQL zawęża przez `contains` (indeksowo tanie), a DOKŁADNE dopasowanie
+  // robimy w JS na rozbitej liście — inaczej „vip" łapałoby też „vip-plus".
+  const tagWanted = tag && tag.trim() ? tag.trim() : null;
+  if (tagWanted) where.tags = { contains: tagWanted };
   if (q && q.trim()) {
     const s = q.trim();
     // wyszukiwanie po wszystkich polach tekstowych (SQLite LIKE — bez rozróżniania wielkości, ASCII)
@@ -50,11 +54,15 @@ async function list({ q, status, sort } = {}) {
     ];
   }
   if (STATUSES.includes(status)) where.status = status;
-  const clients = await prisma.client.findMany({
+  let clients = await prisma.client.findMany({
     where,
     include: { _count: { select: { projects: true } } },
     orderBy: { name: 'asc' },
   });
+  if (tagWanted) {
+    const wanted = tagWanted.toLowerCase();
+    clients = clients.filter((c) => (c.tags || '').split(',').some((t) => t.trim().toLowerCase() === wanted));
+  }
   // Dolicz „do rozliczenia" (nierozliczone pozycje: po projektach klienta + przypięte wprost).
   const ids = clients.map((c) => c.id);
   if (ids.length) {

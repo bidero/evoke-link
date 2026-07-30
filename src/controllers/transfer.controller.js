@@ -8,6 +8,8 @@ const mail = require('../services/mail.service');
 const config = require('../config');
 const { isRaster } = require('../utils/fileIcon');
 const backlink = require('../utils/backlink');
+const csv = require('../utils/csv');
+const fmt = require('../utils/format');
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -16,17 +18,48 @@ function parseProjectId(value) {
   return value ? parseInt(value, 10) : null;
 }
 
-// Lista transferów z prostym filtrowaniem (?status=...&direction=...).
+// Filtry listy transferów — wspólne dla widoku i eksportu CSV.
+function transferFilters(req) {
+  const { status, direction, q } = req.query;
+  return {
+    status: ['active', 'expired', 'deleted'].includes(status) ? status : '',
+    direction: ['outgoing', 'incoming'].includes(direction) ? direction : '',
+    q: q || '',
+    sort: transferService.SORTS.includes(req.query.sort) ? req.query.sort : 'created_desc',
+  };
+}
+
 async function listTransfers(req, res, next) {
   try {
-    const { status, direction, q } = req.query;
-    const transfers = await transferService.list({ status, direction, q });
+    const filter = transferFilters(req);
+    const transfers = await transferService.list(filter);
     res.render('admin/transfers/index', {
       title: 'Transfery',
       active: 'transfers',
       transfers,
-      filter: { status: status || '', direction: direction || '', q: q || '' },
+      filter,
     });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// Eksport listy transferów do CSV — respektuje TE SAME filtry/sortowanie co widok.
+async function listTransfersCsv(req, res, next) {
+  try {
+    const transfers = await transferService.list(transferFilters(req));
+    const date = (d) => (d ? fmt.dateOnly(d) : '');
+    const rows = [['Kierunek', 'Tytuł', 'Token', 'Projekt', 'Pliki', 'Rozmiar (B)', 'Pobrania', 'Limit', 'Hasło', 'Wygasa', 'Status', 'Utworzono']];
+    transfers.forEach((t) => rows.push([
+      t.direction === 'incoming' ? 'Od klienta' : 'Do klienta',
+      t.title || '', t.token, (t.project && t.project.name) || '',
+      t.files.length, String(transferService.totalSize(t)),
+      t.direction === 'incoming' ? '' : t.downloadCount,
+      t.maxDownloads != null ? t.maxDownloads : '',
+      t.passwordHash ? 'tak' : 'nie',
+      date(t.expiresAt), fmt.status(t.status), date(t.createdAt),
+    ]));
+    csv.send(res, 'transfery.csv', rows);
   } catch (err) {
     next(err);
   }
@@ -311,6 +344,7 @@ async function extendTransfer(req, res, next) {
 
 module.exports = {
   listTransfers,
+  listTransfersCsv,
   extendTransfer,
   showCreateForm,
   createTransfer,

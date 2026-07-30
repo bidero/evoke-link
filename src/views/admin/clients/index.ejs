@@ -18,6 +18,18 @@
         <option value="<%= o[0] %>" <%= sort === o[0] ? 'selected' : '' %>><%= o[1] %></option>
       <% }); %>
     </select>
+    <%# Filtr po tagu (dokładne dopasowanie) — lista z chmury tagów kartotek. %>
+    <% if ((tags || []).length) { %>
+      <select name="tag" onchange="this.form.submit()" title="Filtr po tagu" class="rounded-lg border border-slate-300 pl-3 pr-9 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+        <option value="">Wszystkie tagi</option>
+        <% tags.forEach(function(t){ %><option value="<%= t.tag %>" <%= tag === t.tag ? 'selected' : '' %>><%= t.tag %> (<%= t.count %>)</option><% }); %>
+      </select>
+    <% } else if (tag) { %>
+      <input type="hidden" name="tag" value="<%= tag %>" />
+    <% } %>
+    <%# Eksport respektuje bieżące filtry (te same parametry co widok). %>
+    <% const _cqs = new URLSearchParams(Object.entries({ q: q, status: status, sort: sort, tag: tag }).filter(function(e){ return e[1]; })).toString(); %>
+    <a href="/admin/clients.csv<%= _cqs ? '?' + _cqs : '' %>" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-sm font-medium px-3 py-2 transition" title="Eksportuj widoczną listę do CSV"><%- icon('download', { size: 15, cls: '' }) %> CSV</a>
   </form>
   <a href="/admin/clients/new" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition self-start sm:self-auto shrink-0">+ Nowy klient</a>
 </div>

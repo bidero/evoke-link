@@ -6,8 +6,10 @@
         { label: 'Aktywne', q: 'status=active' },
         { label: 'Wygasłe', q: 'status=expired' },
       ]; %>
-      <% tabs.forEach(function(t){ const isActive = (filter.status||'') === (t.q.split('=')[1]||''); %>
-        <a href="/admin/transfers<%= t.q ? '?' + t.q : '' %>"
+      <%# Zakładki statusu zachowują pozostałe filtry (szukajka/kierunek/sortowanie). %>
+      <% function withFilter(over){ const p = new URLSearchParams(); Object.entries(Object.assign({}, filter, over)).forEach(function(e){ if (e[1]) p.set(e[0], e[1]); }); const s = p.toString(); return '/admin/transfers' + (s ? '?' + s : ''); } %>
+      <% tabs.forEach(function(t){ const _st = t.q.split('=')[1] || ''; const isActive = (filter.status||'') === _st; %>
+        <a href="<%= withFilter({ status: _st }) %>"
            class="px-3 py-1.5 rounded-lg <%= isActive ? 'bg-brand-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' %>">
           <%= t.label %>
         </a>
@@ -22,11 +24,27 @@
       </a>
     </div>
   </div>
-  <form method="GET" action="/admin/transfers" class="relative w-full sm:max-w-md">
-    <% if (filter.status) { %><input type="hidden" name="status" value="<%= filter.status %>" /><% } %>
-    <% if (filter.direction) { %><input type="hidden" name="direction" value="<%= filter.direction %>" /><% } %>
-    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><%- icon('search', { size: 16 }) %></span>
-    <input type="search" name="q" value="<%= filter.q %>" placeholder="Szukaj po nazwie pliku, tytule lub tokenie…" class="w-full rounded-lg border border-slate-300 pl-9 pr-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+  <%# Szukajka + filtry + sortowanie w JEDNYM formularzu GET (zachowują się nawzajem —
+      jak na liście klientów). `status` steruje też zakładkami powyżej. %>
+  <form method="GET" action="/admin/transfers" class="flex flex-col gap-2 sm:flex-row sm:items-center">
+    <div class="relative w-full sm:max-w-sm">
+      <input type="hidden" name="status" value="<%= filter.status %>" />
+      <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><%- icon('search', { size: 16 }) %></span>
+      <input type="search" name="q" value="<%= filter.q %>" placeholder="Szukaj po nazwie pliku, tytule lub tokenie…" class="w-full rounded-lg border border-slate-300 pl-9 pr-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+    </div>
+    <select name="direction" onchange="this.form.submit()" class="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+      <option value="">Oba kierunki</option>
+      <option value="outgoing" <%= filter.direction === 'outgoing' ? 'selected' : '' %>>Do klienta</option>
+      <option value="incoming" <%= filter.direction === 'incoming' ? 'selected' : '' %>>Od klienta</option>
+    </select>
+    <% const SORT_LABELS = { created_desc: 'Najnowsze', created_asc: 'Najstarsze', expires_asc: 'Wygasa najbliżej', expires_desc: 'Wygasa najpóźniej', downloads_desc: 'Najwięcej pobrań', size_desc: 'Największe' }; %>
+    <select name="sort" onchange="this.form.submit()" class="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+      <% Object.keys(SORT_LABELS).forEach(function(k){ %><option value="<%= k %>" <%= filter.sort === k ? 'selected' : '' %>><%= SORT_LABELS[k] %></option><% }); %>
+    </select>
+    <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-3 py-2 transition">Filtruj</button>
+    <%# Eksport niesie TE SAME filtry co widok (budujemy query z bieżącego filtra). %>
+    <% const _qs = new URLSearchParams(Object.entries(filter).filter(function(e){ return e[1]; })).toString(); %>
+    <a href="/admin/transfers.csv<%= _qs ? '?' + _qs : '' %>" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-sm font-medium px-3 py-2 transition sm:ml-auto" title="Eksportuj widoczną listę do CSV"><%- icon('download', { size: 15, cls: '' }) %> CSV</a>
   </form>
 </div>
 
@@ -57,11 +75,19 @@
           <th class="px-4 py-3 w-10"><input type="checkbox" @change="$root.querySelectorAll('input[name=ids]').forEach(c => c.checked = $el.checked); n = count()" class="rounded border-slate-300" title="Zaznacz wszystkie" /></th>
           <th class="px-4 py-3 font-medium">Tytuł</th>
           <th class="px-4 py-3 font-medium">Pliki</th>
-          <th class="px-4 py-3 font-medium">Rozmiar</th>
-          <th class="px-4 py-3 font-medium">Pobrania</th>
-          <th class="px-4 py-3 font-medium">Wygasa</th>
+          <%# Klikalne nagłówki = skrót do sortowania (te same klucze co select powyżej).
+              Kolumny z dwoma kierunkami przełączają się; „Rozmiar"/„Pobrania" mają sens tylko malejąco. %>
+          <% function sortTh(label, keys){ const i = keys.indexOf(filter.sort); const next = keys[(i + 1) % keys.length]; const on = i >= 0;
+               const arrow = !on ? '' : (String(filter.sort).endsWith('_asc') ? ' ↑' : ' ↓'); %>
+            <th class="px-4 py-3 font-medium">
+              <a href="<%= withFilter({ sort: next }) %>" class="inline-flex items-center gap-0.5 <%= on ? 'text-brand-700' : 'hover:text-slate-700' %>" title="Sortuj"><%= label %><%= arrow %></a>
+            </th>
+          <% } %>
+          <% sortTh('Rozmiar', ['size_desc']); %>
+          <% sortTh('Pobrania', ['downloads_desc']); %>
+          <% sortTh('Wygasa', ['expires_asc', 'expires_desc']); %>
           <th class="px-4 py-3 font-medium">Status</th>
-          <th class="px-4 py-3 font-medium">Utworzono</th>
+          <% sortTh('Utworzono', ['created_desc', 'created_asc']); %>
         </tr>
       </thead>
       <tbody class="divide-y divide-slate-100">

@@ -69,8 +69,26 @@ function getById(id) {
   });
 }
 
-// Lista transferów do panelu (z opcjonalnym filtrem).
-function list({ direction, status, q } = {}) {
+// Sortowanie listy transferów (whitelist — wartość wchodzi do orderBy).
+// „size" liczymy w JS: suma File.size to BigInt, SQL-owe sortowanie po sumie relacji
+// wymagałoby osobnego zapytania i tak trzymamy już wszystkie pliki w include.
+const SORTS = ['created_desc', 'created_asc', 'expires_asc', 'expires_desc', 'downloads_desc', 'size_desc'];
+const ORDER_BY = {
+  created_desc: { createdAt: 'desc' },
+  created_asc: { createdAt: 'asc' },
+  // Transfery bez daty wygaśnięcia trafiają na koniec (SQLite: NULL jest „najmniejszy").
+  expires_asc: [{ expiresAt: 'asc' }, { createdAt: 'desc' }],
+  expires_desc: [{ expiresAt: 'desc' }, { createdAt: 'desc' }],
+  downloads_desc: [{ downloadCount: 'desc' }, { createdAt: 'desc' }],
+  size_desc: { createdAt: 'desc' },
+};
+
+function totalSize(t) {
+  return (t.files || []).reduce((a, f) => a + BigInt(f.size), 0n);
+}
+
+// Lista transferów do panelu (opcjonalne filtry + sortowanie).
+async function list({ direction, status, q, sort } = {}) {
   const where = {};
   if (direction) where.direction = direction;
   if (status) where.status = status;
@@ -82,11 +100,20 @@ function list({ direction, status, q } = {}) {
       { files: { some: { originalName: { contains: s } } } }, // wyszukiwanie po nazwie pliku
     ];
   }
-  return prisma.transfer.findMany({
+  const key = SORTS.includes(sort) ? sort : 'created_desc';
+  const transfers = await prisma.transfer.findMany({
     where,
     include: { files: true, project: true },
-    orderBy: { createdAt: 'desc' },
+    orderBy: ORDER_BY[key],
   });
+  if (key === 'expires_asc') {
+    // NULL-e (bez wygaśnięcia) na koniec — inaczej przesłoniłyby najbliższe terminy.
+    const withDate = transfers.filter((t) => t.expiresAt);
+    const without = transfers.filter((t) => !t.expiresAt);
+    return withDate.concat(without);
+  }
+  if (key === 'size_desc') return transfers.sort((a, b) => (totalSize(b) > totalSize(a) ? 1 : totalSize(b) < totalSize(a) ? -1 : 0));
+  return transfers;
 }
 
 // Sprawdza, czy transfer jest dostępny do pobrania.
@@ -210,6 +237,8 @@ function extend(id, days) {
 }
 
 module.exports = {
+  SORTS,
+  totalSize,
   extend,
   setDecision,
   createOutgoingTransfer,
