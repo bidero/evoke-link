@@ -84,8 +84,13 @@ test('pulpit: widżety „Wymaga uwagi" i wykres w rejestrze i w renderze (snaps
     assert.match(html, /Wymaga uwagi/);
     assert.match(html, /Przychód — 6 miesięcy/);
     assert.match(html, /evoke-chart-type/, 'przełącznik typu wykresu z pamięcią');
-    assert.match(html, /type === 'bars'/, 'wariant słupkowy');
-    assert.match(html, /url\(#chartFill\)/, 'wariant liniowy z wypełnieniem');
+    // Geometria wykresu liczy się PO STRONIE KLIENTA (ResizeObserver + real-px SVG, v0.99.79) —
+    // sprawdzamy obecność kontenera/danych i mechanizmu rysowania, nie statycznego <path>/<rect>.
+    assert.match(html, /data-chart-mount/, 'kontener z danymi wykresu');
+    assert.match(html, /data-chart-svg/, 'pusty SVG wypełniany przez JS');
+    assert.match(html, /ResizeObserver/, 'redraw na zmianę szerokości (nie tylko window resize)');
+    assert.match(html, /evokeChartRedraw/, 'redraw przy przełączniku linia\/słupki');
+    assert.match(html, /"current":true/, 'flaga bieżącego miesiąca w danych (do rysowania w JS)');
     assert.ok(html.indexOf('Wymaga uwagi') < html.indexOf('Przychód — 6 miesięcy'), 'kolejność z zapisanego układu');
   } finally {
     await prisma.settings.update({ where: { id: 1 }, data: { panel: snap ? snap.panel : null } });
