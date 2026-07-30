@@ -1,16 +1,20 @@
-<%# Kafelek KPI. Kompozycja jak w referencji (TailAdmin): badge ikony u góry, pod nim
-    etykieta i wartość — treść zawsze przy GÓRNEJ krawędzi (żadnego centrowania w pionie),
-    więc kafelek wygląda tak samo przy każdej wysokości ustawionej w siatce pulpitu. %>
+<%# Kafelek KPI. Kompozycja jak w referencji (TailAdmin): badge ikony u góry, blok
+    etykieta/wartość/podpis PRZY DOLNEJ krawędzi (flex column + justify-between) —
+    przy wysokim `rows` (regulowana wysokość widżetów) treść nie zostaje przyklejona
+    do góry z pustym marginesem pod spodem, tylko rozciąga się na całą wysokość karty. %>
 <% const _ic = typeof wicon !== 'undefined' && wicon ? wicon : null; %>
-<% const _inner = `
-    ${_ic ? `<span data-stat-icon class="text-slate-300 group-hover:text-brand-400 transition">${icon(_ic, { size: 18, cls: '' })}</span>` : ''}
-    <div class="${_ic ? 'mt-4' : ''}">
+<% const _badge = _ic ? `<span data-stat-icon class="text-slate-300 group-hover:text-brand-400 transition">${icon(_ic, { size: 18, cls: '' })}</span>` : ''; %>
+<% const _body = `
+    <div>
       <div class="text-sm text-slate-500">${tile.label}</div>
       <div class="mt-1 text-3xl font-semibold tracking-tight ${tile.valueCls || ''}">${tile.value}</div>
       <div class="mt-1 text-xs text-slate-400">${tile.hint}</div>
     </div>` %>
+<%# Bez ikony nie ma czego rozpychać na dwa końce — zostaje zwykły blok (jak dotąd). %>
+<% const _cls = 'block h-full bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-sm transition group' + (_ic ? ' flex flex-col justify-between' : ''); %>
+<% const _cls2 = 'h-full bg-white rounded-2xl border border-slate-200 p-5' + (_ic ? ' flex flex-col justify-between' : ''); %>
 <% if (tile.href) { %>
-  <a href="<%= tile.href %>" class="block h-full bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-sm transition group"><%- _inner %></a>
+  <a href="<%= tile.href %>" class="<%= _cls %>"><%- _badge %><%- _body %></a>
 <% } else { %>
-  <div class="h-full bg-white rounded-2xl border border-slate-200 p-5"><%- _inner %></div>
+  <div class="<%= _cls2 %>"><%- _badge %><%- _body %></div>
 <% } %>
