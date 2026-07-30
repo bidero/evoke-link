@@ -3,6 +3,9 @@
 const prisma = require('../db/client');
 const { grossOf } = require('./charge.service'); // kwoty BRUTTO (amount = netto od v0.85.0)
 const retainerService = require('./retainer.service'); // MRR z aktywnych retainerów
+const messageService = require('./message.service');
+const reminderService = require('./reminder.service');
+const { money: fmtMoney } = require('../utils/format');
 
 const MONTHS_SHORT = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
 const monthKey = (d) => `${d.getFullYear()}-${d.getMonth()}`;
@@ -89,4 +92,30 @@ async function pulse() {
   };
 }
 
-module.exports = { pulse };
+// „Wymaga uwagi" — jeden agregat sygnałów, które normalnie trzeba wyłapać z 4 ekranów.
+// Wszystko z istniejących helperów/zapytań; zwraca listę wierszy gotową do renderu
+// (`items` = tylko niepuste sygnały, więc widok nie filtruje).
+async function attention() {
+  const now = new Date();
+  const soon = new Date(now.getTime() + 3 * 86400000); // 3 dni — okno „wygasa niedługo"
+
+  const [unpaid, expiring, unreadMessages, dueTasks] = await Promise.all([
+    prisma.charge.findMany({ where: { paidAt: null, dueDate: { lt: now } }, select: { amount: true, vatRate: true } }),
+    // Wysłane, jeszcze NIEPOBRANE i wygasające w 3 dni — dokładnie ten sam warunek,
+    // co ostrzeżenie mailowe w jobs/reminders.job.js (tam okno to 24 h).
+    prisma.transfer.count({ where: { direction: 'outgoing', status: 'active', downloadCount: 0, expiresAt: { gt: now, lte: soon } } }),
+    messageService.unreadCount(),
+    reminderService.dueCount(),
+  ]);
+
+  const overdueAmount = unpaid.reduce((a, c) => a + grossOf(c), 0);
+  const items = [];
+  if (unpaid.length) items.push({ key: 'overdue', tone: 'red', icon: 'clock', label: 'Płatności po terminie', value: fmtMoney(overdueAmount), sub: `${unpaid.length} pozycj(i)`, href: '/admin/pulse' });
+  if (expiring) items.push({ key: 'expiring', tone: 'amber', icon: 'send', label: 'Wygasa, a klient nie pobrał', value: String(expiring), sub: 'w ciągu 3 dni', href: '/admin/transfers?status=active&direction=outgoing&sort=expires_asc' });
+  if (unreadMessages) items.push({ key: 'messages', tone: 'brand', icon: 'mail', label: 'Nieprzeczytane wiadomości', value: String(unreadMessages), sub: 'w skrzynce', href: '/admin/messages' });
+  if (dueTasks) items.push({ key: 'tasks', tone: 'brand', icon: 'check', label: 'Zadania na dziś i zaległe', value: String(dueTasks), sub: 'do zrobienia', href: '/admin/tasks' });
+
+  return { items, count: items.length };
+}
+
+module.exports = { pulse, attention };

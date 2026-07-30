@@ -1,0 +1,30 @@
+<%# Widżet „Wymaga uwagi" — agregat sygnałów z 4 ekranów (stats.service.attention()).
+    Każdy wiersz: sygnał → liczba/kwota → link do właściwego miejsca. Kolor = waga sprawy. %>
+<div class="h-full flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden">
+  <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
+    <h2 class="text-sm font-medium text-slate-700 inline-flex items-center gap-1.5"><%- icon(typeof wicon !== 'undefined' ? wicon : 'alert', { size: 15, cls: 'text-slate-400' }) %> Wymaga uwagi</h2>
+    <% if (attention && attention.count) { %><span class="text-xs font-semibold text-red-600"><%= attention.count %> sygnał(y)</span><% } %>
+  </div>
+  <% if (!attention || !attention.count) { %>
+    <div class="flex-1 flex flex-col items-center justify-center px-5 py-8 text-center">
+      <span class="text-green-500"><%- icon('check', { size: 22, cls: '' }) %></span>
+      <p class="mt-1.5 text-sm text-slate-400">Wszystko pod kontrolą.</p>
+    </div>
+  <% } else { %>
+    <% const TONE = { red: ['text-red-600', 'bg-red-50'], amber: ['text-amber-600', 'bg-amber-50'], brand: ['text-brand-700', 'bg-brand-50'] }; %>
+    <ul class="flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100">
+      <% attention.items.forEach(function(it){ const t = TONE[it.tone] || TONE.brand; %>
+        <li>
+          <a href="<%= it.href %>" class="flex items-center gap-3 px-5 py-3 hover:bg-slate-50 transition group">
+            <span class="w-8 h-8 shrink-0 rounded-lg <%= t[1] %> <%= t[0] %> inline-flex items-center justify-center"><%- icon(it.icon, { size: 15, cls: '' }) %></span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-sm text-slate-700 truncate group-hover:text-brand-700"><%= it.label %></span>
+              <span class="block text-xs text-slate-400"><%= it.sub %></span>
+            </span>
+            <span class="shrink-0 text-sm font-semibold <%= t[0] %>"><%= it.value %></span>
+          </a>
+        </li>
+      <% }); %>
+    </ul>
+  <% } %>
+</div>

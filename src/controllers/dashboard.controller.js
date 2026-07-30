@@ -31,8 +31,9 @@ async function showDashboard(req, res, next) {
     let pulse = null;
     let msgThreads = [];
     let stale = [];
+    let attention = null;
     try {
-      const [transfers, projects, pendingUploads, outstanding, overdue, recentEvents, upcomingEvents, pulseData, threads, staleData] = await Promise.all([
+      const [transfers, projects, pendingUploads, outstanding, overdue, recentEvents, upcomingEvents, pulseData, threads, staleData, attentionData] = await Promise.all([
         prisma.transfer.count({ where: { status: 'active' } }),
         prisma.project.count({ where: { status: 'active' } }),
         prisma.transfer.count({ where: { direction: 'incoming', status: 'active' } }),
@@ -40,9 +41,10 @@ async function showDashboard(req, res, next) {
         chargeService.overdueTotal(),
         visible.has('activity') ? events.recent(8) : [],
         visible.has('tasks') ? calendarService.upcomingEvents(14) : [],
-        visible.has('revenue') ? statsService.pulse() : null,
+        (visible.has('revenue') || visible.has('chart')) ? statsService.pulse() : null,
         visible.has('messages') ? messageService.listThreads(50) : [],
         visible.has('followup') ? clientService.staleClients({ days: 30, limit: 6 }) : [],
+        visible.has('attention') ? statsService.attention() : null,
       ]);
       stats = { transfers, projects, pendingUploads, storageBytes: storage.totalUsedBytes(), outstanding, overdue };
       recent = recentEvents;
@@ -50,6 +52,7 @@ async function showDashboard(req, res, next) {
       pulse = pulseData;
       msgThreads = threads.filter((t) => t.unread > 0).slice(0, 5);
       stale = staleData;
+      attention = attentionData;
     } catch (_) {
       // baza nie jest jeszcze gotowa — zostają zera
     }
@@ -68,6 +71,7 @@ async function showDashboard(req, res, next) {
       pulse,
       msgThreads,
       stale,
+      attention,
     });
   } catch (err) {
     next(err);

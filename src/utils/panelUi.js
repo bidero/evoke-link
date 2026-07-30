@@ -35,6 +35,8 @@ const WIDGETS = [
   { key: 'stat-outstanding', label: 'Do rozliczenia', span: 4, rows: 2, icon: 'banknote' },
   { key: 'stat-overdue', label: 'Przeterminowane', span: 4, rows: 2, icon: 'clock' },
   { key: 'stat-storage', label: 'Wykorzystane miejsce', span: 4, rows: 2, icon: 'archive' },
+  { key: 'attention', label: 'Wymaga uwagi', span: 4, rows: 4, icon: 'alert' },
+  { key: 'chart', label: 'Wykres przychodu', span: 8, rows: 4, icon: 'trendingUp' },
   { key: 'actions', label: 'Szybkie akcje', span: 4, rows: 4, icon: 'plus' },
   { key: 'activity', label: 'Ostatnia aktywność', span: 8, rows: 4, icon: 'activity' },
   { key: 'tasks', label: 'Nadchodzące zadania', span: 4, rows: 4, icon: 'calendarDays' },

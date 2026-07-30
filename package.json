@@ -1,6 +1,6 @@
 {
   "name": "evoke-transfer",
-  "version": "0.99.76",
+  "version": "0.99.77",
   "private": true,
   "description": "Evoke Transfer — prywatny system wymiany plików agencja↔klient",
   "main": "app.js",

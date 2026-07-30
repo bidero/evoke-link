@@ -1,0 +1,76 @@
+<%# Widżet wykresu przychodu (6 miesięcy) — dane z pulse().money.chart (bez nowego zapytania).
+    Dwa renderingi w INLINE SVG (zero bibliotek — CSP 'self'): linia z wypełnieniem i słupki.
+    Przełącznik w nagłówku, wybór pamiętany w localStorage['evoke-chart-type']. %>
+<div class="h-full flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden"
+     x-data="{ type: (localStorage.getItem('evoke-chart-type') || 'line') }"
+     x-init="$watch('type', function(v){ try { localStorage.setItem('evoke-chart-type', v); } catch(e) {} })">
+  <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
+    <h2 class="text-sm font-medium text-slate-700 inline-flex items-center gap-1.5"><%- icon(typeof wicon !== 'undefined' ? wicon : 'trendingUp', { size: 15, cls: 'text-slate-400' }) %> Przychód — 6 miesięcy</h2>
+    <div class="flex items-center gap-1 shrink-0">
+      <button type="button" @click="type = 'line'" title="Wykres liniowy" aria-label="Wykres liniowy"
+              :class="type === 'line' ? 'bg-brand-50 text-brand-700' : 'text-slate-400 hover:text-slate-600'"
+              class="w-7 h-7 rounded-lg inline-flex items-center justify-center transition"><%- icon('activity', { size: 14, cls: '' }) %></button>
+      <button type="button" @click="type = 'bars'" title="Wykres słupkowy" aria-label="Wykres słupkowy"
+              :class="type === 'bars' ? 'bg-brand-50 text-brand-700' : 'text-slate-400 hover:text-slate-600'"
+              class="w-7 h-7 rounded-lg inline-flex items-center justify-center transition"><%- icon('grip', { size: 14, cls: '' }) %></button>
+    </div>
+  </div>
+  <div class="flex-1 min-h-0 overflow-y-auto p-5">
+    <% if (!pulse) { %>
+      <p class="py-4 text-center text-sm text-slate-400">Brak danych.</p>
+    <% } else { %>
+      <%
+        const data = pulse.money.chart;
+        const maxV = Math.max(1, ...data.map((c) => c.value));
+        // Geometria wspólna dla obu wariantów. TOP = zapas na etykiety kwot nad serią.
+        const CW = 560, CH = 150, TOP = 18, BASE = TOP + CH;
+        const BW = 56, GAP = (CW - data.length * BW) / (data.length + 1);
+        const cx = (i) => GAP + i * (BW + GAP) + BW / 2;                     // środek kolumny
+        const cy = (v) => BASE - Math.round((v / maxV) * CH);                 // wysokość serii
+        // Etykiety muszą być KRÓTKIE (6 punktów na 560 px) i jednoznaczne: pełne złotówki
+        // bez groszy, a od 10 tys. zł skrót w tysiącach (5200 zł i 4600 zł nie mogą
+        // wyglądać identycznie — dlatego progu „tys." nie stosujemy niżej).
+        const zlShort = (g) => { const zl = g / 100; return zl >= 10000 ? Math.round(zl / 1000) + ' tys.' : Math.round(zl).toLocaleString('pl-PL'); };
+        const pts = data.map((c, i) => [cx(i), cy(c.value)]);
+        const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0] + ' ' + p[1]).join(' ');
+        const area = line + ` L${pts[pts.length - 1][0]} ${BASE} L${pts[0][0]} ${BASE} Z`;
+      %>
+      <svg viewBox="0 0 <%= CW %> <%= BASE + 28 %>" class="w-full" role="img" aria-label="Wykres przychodu z 6 miesięcy">
+        <defs>
+          <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" class="text-brand-600" stop-color="currentColor" stop-opacity="0.28" />
+            <stop offset="100%" class="text-brand-600" stop-color="currentColor" stop-opacity="0.02" />
+          </linearGradient>
+        </defs>
+        <%# Linia bazowa — wspólna dla obu wariantów. %>
+        <line x1="0" y1="<%= BASE %>" x2="<%= CW %>" y2="<%= BASE %>" class="stroke-slate-200" stroke-width="1" />
+
+        <g x-show="type === 'bars'">
+          <% data.forEach(function(c, i){ const y = cy(c.value); const h = Math.max(3, BASE - y); %>
+            <rect x="<%= cx(i) - BW / 2 %>" y="<%= BASE - h %>" width="<%= BW %>" height="<%= h %>" rx="6"
+                  class="<%= c.current ? 'fill-brand-600' : 'fill-brand-200' %>" />
+          <% }); %>
+        </g>
+
+        <g x-show="type === 'line'" x-cloak>
+          <path d="<%= area %>" fill="url(#chartFill)" class="text-brand-600" />
+          <path d="<%= line %>" fill="none" class="stroke-brand-600" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
+          <% pts.forEach(function(p, i){ %>
+            <circle cx="<%= p[0] %>" cy="<%= p[1] %>" r="<%= data[i].current ? 5 : 3.5 %>"
+                    class="<%= data[i].current ? 'fill-brand-600' : 'fill-white stroke-brand-600' %>" stroke-width="2" />
+          <% }); %>
+        </g>
+
+        <%# Kwoty i nazwy miesięcy — te same dla obu wariantów (nie duplikujemy w gałęziach). %>
+        <% data.forEach(function(c, i){ %>
+          <% if (c.value > 0) { %><text x="<%= cx(i) %>" y="<%= cy(c.value) - 9 %>" text-anchor="middle" class="fill-slate-500" font-size="11"><%= zlShort(c.value) %></text><% } %>
+          <text x="<%= cx(i) %>" y="<%= BASE + 18 %>" text-anchor="middle" class="<%= c.current ? 'fill-brand-700' : 'fill-slate-400' %>" font-size="11" font-weight="<%= c.current ? '600' : '400' %>"><%= c.label %></text>
+        <% }); %>
+      </svg>
+      <div class="mt-2 flex items-baseline justify-between gap-2">
+        <span class="text-xs text-slate-400">w tym miesiącu</span>
+        <span class="text-lg font-semibold tracking-tight"><%= fmt.money(pulse.money.paidThisMonth) %></span>
+      </div>
+    <% } %>
+  </div>
+</div>
