@@ -71,7 +71,9 @@
 <!-- Nagłówek klienta (stały nad zakładkami) -->
 <div class="bg-white rounded-2xl border border-slate-200 p-6 mb-5">
   <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-    <div class="min-w-0">
+    <div class="min-w-0 flex items-start gap-4">
+      <%- avatar(client, { size: 'lg' }) %>
+      <div class="min-w-0">
       <div class="flex items-center gap-2 flex-wrap">
         <h1 class="text-xl font-semibold text-slate-800"><%= client.name %></h1>
         <% const _statusMap = { lead: ['Lead', 'bg-amber-50 text-amber-700'], active: ['Aktywny', 'bg-green-50 text-green-700'], inactive: ['Nieaktywny', 'bg-slate-100 text-slate-500'] }; const _s = _statusMap[client.status] || _statusMap.active; %>
@@ -92,6 +94,7 @@
         </div>
       <% } %>
       <% if (client.note) { %><p class="mt-3 text-sm text-slate-600 whitespace-pre-line"><%= client.note %></p><% } %>
+      </div>
     </div>
     <div class="flex flex-wrap items-center gap-2 shrink-0">
       <a href="/admin/projects/new?client=<%= client.id %>" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">+ Nowy projekt</a>

@@ -34,7 +34,10 @@
               <% } %>
             </div>
             <div class="mt-1 flex items-center justify-between gap-2 text-xs text-slate-400">
-              <span class="truncate"><%= p.client ? p.client.name : (p.clientName || '—') %></span>
+              <span class="flex items-center gap-1.5 min-w-0">
+                <% if (p.client) { %><%- avatar(p.client, { size: 'xs' }) %><% } %>
+                <span class="truncate"><%= p.client ? p.client.name : (p.clientName || '—') %></span>
+              </span>
               <span class="shrink-0"><%= p._count.transfers %> transf.</span>
             </div>
             <% if (p.outstanding > 0) { %>

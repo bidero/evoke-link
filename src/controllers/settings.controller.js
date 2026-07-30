@@ -1,11 +1,10 @@
 // Panel: customizacja (branding, kolory panelu, tło stron klienta, treści).
-const fs = require('fs');
 const settingsService = require('../services/settings.service');
 const events = require('../services/event.service');
 const mail = require('../services/mail.service');
 const config = require('../config');
 const { safeHex } = require('../utils/color');
-const { sanitizeSvg, looksLikeSvg } = require('../utils/svgSanitize');
+const { sanitizeIfSvg } = require('../utils/svgSanitize');
 const { sanitizeCss } = require('../utils/css');
 const { sanitizeEmailHtml } = require('../utils/htmlEmail');
 const background = require('../utils/background');
@@ -53,17 +52,6 @@ async function showSettings(req, res, next) {
 
 function uploadedFile(req, field) {
   return req.files && req.files[field] && req.files[field][0];
-}
-
-// Po wgraniu pliku graficznego: jeśli to SVG, oczyść go na dysku (XSS/XXE).
-function sanitizeIfSvg(file) {
-  if (!file) return;
-  const isSvg = /svg/i.test(file.mimetype) || /\.svg$/i.test(file.originalname);
-  if (!isSvg) return;
-  try {
-    const raw = fs.readFileSync(file.path, 'utf8');
-    if (looksLikeSvg(raw)) fs.writeFileSync(file.path, sanitizeSvg(raw), 'utf8');
-  } catch (_) { /* nie blokuj zapisu ustawień przez błąd I/O */ }
 }
 
 async function updateSettings(req, res, next) {

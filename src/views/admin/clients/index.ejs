@@ -62,8 +62,13 @@
         <% clients.forEach(function(c){ const _s = _statusMap[c.status] || _statusMap.active; %>
           <tr class="hover:bg-slate-50 cursor-pointer" onclick="window.location='/admin/clients/<%= c.id %>'">
             <td class="px-4 py-3 font-medium text-slate-800">
-              <%= c.name %>
-              <% if (c.company) { %><span class="block text-xs font-normal text-slate-400"><%= c.company %></span><% } %>
+              <span class="flex items-center gap-2.5">
+                <%- avatar(c, { size: 'sm' }) %>
+                <span class="min-w-0">
+                  <span class="block truncate"><%= c.name %></span>
+                  <% if (c.company) { %><span class="block text-xs font-normal text-slate-400 truncate"><%= c.company %></span><% } %>
+                </span>
+              </span>
             </td>
             <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded-full <%= _s[1] %>"><%= _s[0] %></span></td>
             <td class="px-4 py-3 text-slate-500"><%= c.email || '—' %></td>
@@ -92,9 +97,12 @@
     <% clients.forEach(function(c){ const _s = _statusMap[c.status] || _statusMap.active; %>
       <div class="bg-white rounded-xl border border-slate-200 p-4">
         <div class="flex items-start justify-between gap-3">
-          <a href="/admin/clients/<%= c.id %>" class="min-w-0">
-            <span class="block font-medium text-slate-800 truncate"><%= c.name %></span>
-            <% if (c.company) { %><span class="block text-xs text-slate-400 truncate"><%= c.company %></span><% } %>
+          <a href="/admin/clients/<%= c.id %>" class="min-w-0 flex items-center gap-2.5">
+            <%- avatar(c, { size: 'sm' }) %>
+            <span class="min-w-0">
+              <span class="block font-medium text-slate-800 truncate"><%= c.name %></span>
+              <% if (c.company) { %><span class="block text-xs text-slate-400 truncate"><%= c.company %></span><% } %>
+            </span>
           </a>
           <span class="text-xs px-2 py-0.5 rounded-full shrink-0 <%= _s[1] %>"><%= _s[0] %></span>
         </div>

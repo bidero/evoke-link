@@ -16,6 +16,7 @@ const payment = require('../utils/payment');
 const config = require('../config');
 const fmt = require('../utils/format');
 const backlink = require('../utils/backlink');
+const { sanitizeIfSvg } = require('../utils/svgSanitize');
 
 const PUBLIC_LAYOUT = 'layouts/public';
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -79,13 +80,23 @@ async function showClient(req, res, next) {
   }
 }
 
+// Awatar klienta z formularza: nowy plik → ścieżka, „usuń" → null, brak zmiany → undefined
+// (undefined nie trafia do UPDATE, więc dotychczasowy awatar zostaje).
+function avatarFrom(req) {
+  if (req.file) {
+    sanitizeIfSvg(req.file);
+    return '/branding/' + req.file.filename;
+  }
+  return req.body.removeAvatar === '1' ? null : undefined;
+}
+
 async function createClient(req, res, next) {
   try {
     const { name, firstName, lastName, email, note, company, phone, nip, address, status, tags, contactEveryDays } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).render('admin/clients/new', { title: 'Nowy klient', active: 'clients', error: 'Podaj nazwę klienta.', tagCloud: await clientService.tagCloud() });
     }
-    const client = await clientService.create({ name, firstName, lastName, email, note, company, phone, nip, address, status, tags, contactEveryDays });
+    const client = await clientService.create({ name, firstName, lastName, email, note, company, phone, nip, address, status, tags, contactEveryDays, avatarPath: avatarFrom(req) });
     res.redirect(`/admin/clients/${client.id}/edit`);
   } catch (err) {
     next(err);
@@ -152,7 +163,7 @@ async function updateClient(req, res, next) {
       const client = await clientService.getById(req.params.id);
       return res.status(400).render('admin/clients/edit', { title: 'Edytuj klienta', active: 'clients', client, error: 'Podaj nazwę klienta.', portalUrl: `${config.appUrl}/c/${client.token}`, mailReady: mail.isConfigured(), tagCloud: await clientService.tagCloud() });
     }
-    await clientService.update(req.params.id, { name, firstName, lastName, email, note, company, phone, nip, address, status, tags, contactEveryDays });
+    await clientService.update(req.params.id, { name, firstName, lastName, email, note, company, phone, nip, address, status, tags, contactEveryDays, avatarPath: avatarFrom(req) });
     res.redirect(`/admin/clients/${req.params.id}/edit`);
   } catch (err) {
     next(err);

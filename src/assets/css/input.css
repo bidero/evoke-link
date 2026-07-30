@@ -216,15 +216,10 @@ html.dark.theme-modern main textarea:hover:not(:focus) { border-color: var(--dk-
 }
 .theme-modern [data-stat-icon] svg { width: 20px; height: 20px; }
 
-/* Chat/skrzynka: awatary (inicjał klienta) w liście rozmów i nagłówku rozmowy —
-   tylko „modern". W classic element ma klasę `hidden` (display:none) → zero zmian. */
-.theme-modern [data-avatar] {
-  display: inline-flex !important; align-items: center; justify-content: center;
-  width: 40px; height: 40px; border-radius: 9999px; flex-shrink: 0;
-  background: rgb(var(--brand-600) / 0.12); color: rgb(var(--brand-600));
-  font-weight: 600; font-size: 14px; line-height: 1;
-}
-html.dark.theme-modern [data-avatar] { background: rgb(var(--brand-600) / 0.28); color: rgb(var(--brand-400)); }
+/* Awatary klientów są teraz WSPÓLNE dla obu motywów (utils/avatar.js: wgrane logo albo
+   kółko z inicjałem w stabilnym kolorze), więc nie ma tu już nic do nadpisywania —
+   dawna reguła `.theme-modern [data-avatar]` (inicjał tylko w modern) zniknęła razem
+   z markerem w widoku skrzynki. */
 /* Lista rozmów: aktywna pozycja = pastel `bg-brand-50` + akcent marki po lewej. */
 .theme-modern [data-conv-list] a.bg-brand-50 { box-shadow: inset 3px 0 0 rgb(var(--brand-600)); }
 /* Dark: aktywna rozmowa NIE może zostać na jasnym `bg-brand-50` (nieczytelny jasny

@@ -1,5 +1,4 @@
 // Panel: „Mój profil" — profil administratora (nazwa/rola/telefon/avatar) + zmiana hasła.
-const fs = require('fs');
 const config = require('../config');
 const { verifyCredentials, setAdminPassword, hasDbPassword } = require('../services/auth.service');
 const authService = require('../services/auth.service');
@@ -7,7 +6,7 @@ const totp = require('../utils/totp');
 const qr = require('../utils/qr');
 const webauthn = require('../services/webauthn.service');
 const settingsService = require('../services/settings.service');
-const { sanitizeSvg, looksLikeSvg } = require('../utils/svgSanitize');
+const { sanitizeIfSvg } = require('../utils/svgSanitize');
 const events = require('../services/event.service');
 
 async function baseLocals(req, extra) {
@@ -46,17 +45,6 @@ async function showAccount(req, res, next) {
 
 async function render(req, res, status, extra) {
   res.status(status).render('admin/account', await baseLocals(req, extra));
-}
-
-// Jeśli avatar to SVG — oczyść na dysku (XSS/XXE), jak reszta brandingu.
-function sanitizeIfSvg(file) {
-  if (!file) return;
-  const isSvg = /svg/i.test(file.mimetype) || /\.svg$/i.test(file.originalname);
-  if (!isSvg) return;
-  try {
-    const raw = fs.readFileSync(file.path, 'utf8');
-    if (looksLikeSvg(raw)) fs.writeFileSync(file.path, sanitizeSvg(raw), 'utf8');
-  } catch (_) { /* nie blokuj zapisu przez błąd I/O */ }
 }
 
 async function updateProfile(req, res, next) {

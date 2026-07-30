@@ -1,0 +1,109 @@
+<%# Paleta wyszukiwania (Cmd/Ctrl+K) — nakładka nad panelem. Dane z GET /admin/search.json
+    (ten sam serwis co strona /admin/search, więc bez JS pole w nagłówku dalej działa jako GET).
+    Ikony grup są renderowane SERWEROWO do mapy (x-html) — client-side nie mamy helpera icon(). %>
+<% const PAL_ICONS = { users: icon('users', { size: 15, cls: '' }), folder: icon('folder', { size: 15, cls: '' }), send: icon('send', { size: 15, cls: '' }) }; %>
+<div x-data="searchPalette(<%= JSON.stringify(PAL_ICONS) %>)"
+     @keydown.window.prevent.cmd.k="open()" @keydown.window.prevent.ctrl.k="open()"
+     @open-search.window="open()">
+  <div x-show="shown" x-cloak class="fixed inset-0 z-50 flex items-start justify-center px-4 pt-[12vh]"
+       @keydown.escape="close()" @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)" @keydown.enter.prevent="go()">
+    <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]" @click="close()"></div>
+    <div class="relative w-full max-w-xl rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden" style="color: var(--admin-text)">
+      <div class="flex items-center gap-2.5 px-4 border-b border-slate-100">
+        <span class="text-slate-400 shrink-0"><%- icon('search', { size: 17, cls: '' }) %></span>
+        <input x-ref="input" x-model="q" @input.debounce.150ms="run()" type="text" autocomplete="off" spellcheck="false"
+               placeholder="Szukaj klientów, projektów, transferów…"
+               class="flex-1 py-3.5 text-sm bg-transparent outline-none placeholder:text-slate-400" />
+        <span class="shrink-0 text-[11px] font-medium text-slate-400 border border-slate-200 rounded px-1.5 py-0.5">esc</span>
+      </div>
+
+      <div class="max-h-[52vh] overflow-y-auto">
+        <template x-if="q.trim().length < 2">
+          <p class="px-4 py-6 text-sm text-slate-400 text-center">Wpisz co najmniej 2 znaki — szukamy po nazwie, firmie, e-mailu, NIP-ie, nazwie pliku.</p>
+        </template>
+        <template x-if="q.trim().length >= 2 && busy && !groups.length">
+          <p class="px-4 py-6 text-sm text-slate-400 text-center">Szukam…</p>
+        </template>
+        <template x-if="q.trim().length >= 2 && !busy && !groups.length">
+          <p class="px-4 py-6 text-sm text-slate-400 text-center">Brak wyników dla „<span x-text="q.trim()"></span>".</p>
+        </template>
+        <template x-for="g in groups" :key="g.key">
+          <div class="py-1.5">
+            <div class="px-4 py-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <span x-html="icons[g.icon] || ''" class="opacity-60"></span><span x-text="g.label"></span>
+            </div>
+            <template x-for="it in g.items" :key="it.href">
+              <a :href="it.href" @mouseenter="cur = idx(it)"
+                 class="flex items-center justify-between gap-3 px-4 py-2 transition"
+                 :class="cur === idx(it) ? 'bg-brand-50' : 'hover:bg-slate-50'">
+                <span class="flex items-center gap-2.5 min-w-0">
+                  <span x-html="it.avatar" x-show="it.avatar" class="shrink-0 inline-flex"></span>
+                  <span class="min-w-0">
+                    <span class="block text-sm font-medium text-slate-800 truncate" x-text="it.label"></span>
+                    <span class="block text-xs text-slate-400 truncate" x-text="it.sub" x-show="it.sub"></span>
+                  </span>
+                </span>
+                <span class="shrink-0 text-xs text-brand-700" x-show="cur === idx(it)">↵</span>
+              </a>
+            </template>
+          </div>
+        </template>
+      </div>
+
+      <div class="px-4 py-2 border-t border-slate-100 bg-slate-50/70 flex items-center justify-between text-[11px] text-slate-400">
+        <span>↑↓ wybór · ↵ otwórz</span>
+        <a :href="'/admin/search?q=' + encodeURIComponent(q)" class="hover:text-brand-700" x-show="q.trim().length >= 2">Wszystkie wyniki →</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function searchPalette(icons) {
+    return {
+      icons: icons,
+      shown: false,
+      q: '',
+      groups: [],
+      busy: false,
+      cur: 0,
+      seq: 0,
+      open() {
+        this.shown = true;
+        this.$nextTick(() => { this.$refs.input.focus(); this.$refs.input.select(); });
+      },
+      close() { this.shown = false; },
+      // Płaska lista pozycji (wszystkie grupy) — po niej chodzą strzałki.
+      get flat() { return this.groups.reduce((a, g) => a.concat(g.items), []); },
+      idx(it) { return this.flat.findIndex((x) => x.href === it.href); },
+      move(d) {
+        const n = this.flat.length;
+        if (!n) return;
+        this.cur = (this.cur + d + n) % n;
+      },
+      go() {
+        const it = this.flat[this.cur];
+        if (it) window.location = it.href;
+        else if (this.q.trim().length >= 2) window.location = '/admin/search?q=' + encodeURIComponent(this.q);
+      },
+      async run() {
+        const term = this.q.trim();
+        if (term.length < 2) { this.groups = []; this.busy = false; return; }
+        // Numer żądania: odpowiedzi mogą wrócić w innej kolejności niż wysłane.
+        const my = ++this.seq;
+        this.busy = true;
+        try {
+          const r = await fetch('/admin/search.json?q=' + encodeURIComponent(term), { headers: { Accept: 'application/json' } });
+          if (my !== this.seq) return;
+          const d = await r.json();
+          this.groups = d.groups || [];
+          this.cur = 0;
+        } catch (e) {
+          if (my === this.seq) this.groups = [];
+        } finally {
+          if (my === this.seq) this.busy = false;
+        }
+      },
+    };
+  }
+</script>

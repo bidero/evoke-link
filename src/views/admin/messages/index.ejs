@@ -30,7 +30,7 @@
       <% if (!conversations.length) { %><p class="p-6 text-center text-sm text-slate-400">Brak rozmów. Otwórz kartotekę klienta lub projekt, aby napisać jako pierwszy.</p><% } %>
       <% conversations.forEach(function (c) { var cid = c.clientId ? String(c.clientId) : 'none'; var name = c.client ? c.client.name : 'Bez klienta'; var active = selected === cid; %>
         <a href="/admin/messages?client=<%= cid %>" class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition <%= active ? 'bg-brand-50' : '' %>">
-          <span data-avatar class="hidden"><%= (name || '?').trim().charAt(0).toUpperCase() %></span>
+          <%- avatar(c.client || { name: name }, { size: 'md' }) %>
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between gap-2">
               <span class="text-sm font-medium text-slate-800 truncate"><%= name %></span>
@@ -54,7 +54,7 @@
       <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
         <div class="flex items-center gap-2 min-w-0">
           <a href="/admin/messages" class="md:hidden text-slate-400 hover:text-slate-700 shrink-0"><%- icon('arrowLeft', { size: 18, cls: '' }) %></a>
-          <span data-avatar class="hidden"><%= ((client ? client.name : 'Bez klienta') || '?').trim().charAt(0).toUpperCase() %></span>
+          <%- avatar(client || { name: 'Bez klienta' }, { size: 'sm' }) %>
           <span class="font-semibold text-slate-800 truncate"><%= client ? client.name : 'Bez klienta' %></span>
           <% if (client) { %><a href="/admin/clients/<%= client.id %>" class="text-xs text-brand-700 hover:underline shrink-0">kartoteka →</a><% } %>
         </div>

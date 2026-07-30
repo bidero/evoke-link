@@ -151,7 +151,7 @@ function setStatus(id, status) {
 async function board() {
   const projects = await prisma.project.findMany({
     where: { status: { notIn: ['deleted', 'archived'] } },
-    include: { client: { select: { id: true, name: true } }, _count: { select: { transfers: true } } },
+    include: { client: { select: { id: true, name: true, avatarPath: true } }, _count: { select: { transfers: true } } },
     orderBy: [{ position: 'asc' }, { updatedAt: 'desc' }],
   });
   if (projects.length) {

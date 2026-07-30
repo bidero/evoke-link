@@ -4,12 +4,30 @@
     <div class="mt-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
   <% } %>
 
-  <form method="POST" action="/admin/clients/<%= client.id %>" class="mt-4 space-y-5 bg-white rounded-2xl border border-slate-200 p-6">
+  <form method="POST" action="/admin/clients/<%= client.id %>" enctype="multipart/form-data" class="mt-4 space-y-5 bg-white rounded-2xl border border-slate-200 p-6">
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Nazwa klienta *</label>
       <input name="name" type="text" required value="<%= client.name %>"
              class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
       <p class="text-xs text-slate-400 mt-1">Nazwa wyświetlana (firma lub osoba). Imię/nazwisko poniżej służą tylko do personalizacji maili.</p>
+    </div>
+    <%# Awatar: podgląd bieżącego (wgrane logo albo inicjał) + podmiana / usunięcie. %>
+    <div>
+      <label class="block text-sm font-medium text-slate-700 mb-1">Logo / awatar</label>
+      <div class="flex items-center gap-3">
+        <%- avatar(client, { size: 'md' }) %>
+        <div class="min-w-0 flex-1">
+          <input name="avatar" type="file" accept="image/*"
+                 class="w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-brand-100" />
+          <% if (client.avatarPath) { %>
+            <label class="mt-1.5 inline-flex items-center gap-1.5 text-xs text-slate-500">
+              <input type="checkbox" name="removeAvatar" value="1" class="rounded border-slate-300" /> Usuń logo (wróć do inicjału)
+            </label>
+          <% } else { %>
+            <p class="text-xs text-slate-400 mt-1">Bez pliku klient ma kółko z inicjałem.</p>
+          <% } %>
+        </div>
+      </div>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
       <div>

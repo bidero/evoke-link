@@ -109,6 +109,35 @@ test('rytm kontaktu: normalizacja w create/update (clamp 1..365, puste → null)
   }
 });
 
+test('awatar klienta: zapis/czyszczenie przy create+update i wygląd helpera', async () => {
+  const avatar = require('../src/utils/avatar');
+
+  // Helper: wgrane logo → <img>, brak → kółko z inicjałem i STABILNYM kolorem z nazwy.
+  const withLogo = avatar.html({ name: 'Foo', avatarPath: '/branding/x.png' });
+  assert.match(withLogo, /^<img src="\/branding\/x\.png"/);
+  const withInitial = avatar.html({ name: 'żaba studio' });
+  assert.match(withInitial, />Ż</, 'inicjał z pierwszej litery (wielka, polskie znaki)');
+  assert.equal(avatar.colorFor('Foo'), avatar.colorFor('Foo'), 'ten sam klient = ten sam kolor');
+  assert.ok(avatar.PALETTE.includes(avatar.colorFor('Foo')), 'kolor z palety');
+  assert.equal(avatar.initial(''), '?', 'brak nazwy → ?');
+  assert.equal(avatar.initial('#1 klient'), '1', 'pomija znaki niealfanumeryczne');
+  // Inicjał to POJEDYNCZY znak alfanumeryczny, więc z nazwy nie da się wstrzyknąć HTML-a;
+  // escapowanie pilnujemy tam, gdzie dane trafiają do atrybutu (ścieżka awatara).
+  assert.equal(avatar.initial('<img onerror=x>'), 'I');
+  assert.match(avatar.html({ name: 'x', avatarPath: '/a.png" onerror="alert(1)' }), /&quot; onerror=&quot;/, 'ścieżka escapowana w atrybucie');
+
+  // Serwis: create zapisuje ścieżkę; update — string podmienia, null czyści, undefined nie rusza.
+  const cl = await clientService.create({ name: 'Awatar Test ' + Date.now(), avatarPath: '/branding/a.png' });
+  try {
+    assert.equal(cl.avatarPath, '/branding/a.png');
+    assert.equal((await clientService.update(cl.id, { name: cl.name })).avatarPath, '/branding/a.png', 'brak pola = bez zmian');
+    assert.equal((await clientService.update(cl.id, { name: cl.name, avatarPath: '/branding/b.png' })).avatarPath, '/branding/b.png');
+    assert.equal((await clientService.update(cl.id, { name: cl.name, avatarPath: null })).avatarPath, null, 'null czyści awatar');
+  } finally {
+    await prisma.client.delete({ where: { id: cl.id } });
+  }
+});
+
 test('wskaźniki 360°: LTV, śr. czas płatności, seria 12 miesięcy', () => {
   const now = new Date(2026, 5, 15); // czerwiec 2026
   const charges = [

@@ -176,7 +176,7 @@ function hasUnseen(thread, lastSeen) {
 async function conversationList(limit = 300) {
   const all = await prisma.message.findMany({
     orderBy: { createdAt: 'asc' },
-    include: { client: { select: { id: true, name: true } } },
+    include: { client: { select: { id: true, name: true, avatarPath: true } } },
   });
   const map = new Map();
   for (const m of all) {

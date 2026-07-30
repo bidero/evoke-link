@@ -193,9 +193,10 @@ function normEvery(v) {
   return Number.isFinite(n) && n >= 1 && n <= 365 ? n : null;
 }
 
-function create({ name, firstName, lastName, email, note, company, phone, nip, address, status, tags, contactEveryDays }) {
+function create({ name, firstName, lastName, email, note, company, phone, nip, address, status, tags, contactEveryDays, avatarPath }) {
   return prisma.client.create({
     data: {
+      ...(avatarPath ? { avatarPath } : {}),
       name: name.trim(),
       firstName: clean(firstName),
       lastName: clean(lastName),
@@ -213,10 +214,12 @@ function create({ name, firstName, lastName, email, note, company, phone, nip, a
   });
 }
 
-function update(id, { name, firstName, lastName, email, note, company, phone, nip, address, status, tags, contactEveryDays }) {
+// avatarPath: string = nowy plik, null = wyczyść, undefined = nie ruszaj.
+function update(id, { name, firstName, lastName, email, note, company, phone, nip, address, status, tags, contactEveryDays, avatarPath }) {
   return prisma.client.update({
     where: { id: Number(id) },
     data: {
+      ...(avatarPath !== undefined ? { avatarPath } : {}),
       name: name.trim(),
       firstName: clean(firstName),
       lastName: clean(lastName),

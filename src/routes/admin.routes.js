@@ -18,6 +18,7 @@ const settings = require('../controllers/settings.controller');
 const search = require('../controllers/search.controller');
 const account = require('../controllers/account.controller');
 const brandingUpload = require('../middleware/brandingUpload');
+const avatarUpload = brandingUpload.single('avatar'); // awatar/logo klienta (public/branding/)
 const events = require('../services/event.service');
 const messages = require('../controllers/message.controller');
 const messageService = require('../services/message.service');
@@ -56,6 +57,7 @@ router.post('/dashboard/layout', saveDashboardLayout); // zapis układu widżet�
 router.get('/pulse', require('../controllers/pulse.controller').showPulse);
 router.get('/sales', offers.showPipeline); // lejek sprzedaży (oferty ponad klientem)
 router.get('/search', search.index);
+router.get('/search.json', search.json); // paleta Cmd/Ctrl+K (fetch z nagłówka)
 
 // Wiadomości od klientów (skrzynka).
 // Kalendarz / przypomnienia.
@@ -127,7 +129,7 @@ router.post('/projects/:id/delete', projects.deleteProject);
 // Klienci (Grupa 4).
 router.get('/clients', clients.listClients);
 router.get('/clients/new', clients.showCreateForm);
-router.post('/clients', clients.createClient);
+router.post('/clients', avatarUpload, clients.createClient);
 router.post('/clients/:id/send-panel', clients.sendPanel);
 router.post('/clients/:id/onboarding', onboarding.generateLink);        // generuj/wymień link onboardingowy
 router.post('/clients/:id/onboarding/send', onboarding.sendLink);       // wyślij link mailem
@@ -154,7 +156,7 @@ router.post('/clients/:id/charges/:chargeId/toggle', clients.toggleCharge);
 router.post('/clients/:id/charges/:chargeId/delete', clients.deleteCharge);
 router.post('/clients/:id/charges/:chargeId', clients.updateCharge);          // edycja (po wariantach /toggle, /delete)
 router.get('/clients/:id', clients.showClient);
-router.post('/clients/:id', clients.updateClient);
+router.post('/clients/:id', avatarUpload, clients.updateClient);
 router.post('/clients/:id/delete', clients.deleteClient);
 
 // Powiadomienia (Etap 4).

@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 // Lekka sanityzacja SVG (bez zależności / jsdom — bezpieczne na shared hostingu).
 // SVG wgrane jako logo/favicon serwujemy przez <img>, co już blokuje wykonanie
 // skryptów, ale czyścimy plik na wszelki wypadek (np. otwarcie URL-a wprost).
@@ -39,4 +41,16 @@ function looksLikeSvg(input) {
   return typeof input === 'string' && /<svg[\s>]/i.test(input);
 }
 
-module.exports = { sanitizeSvg, looksLikeSvg };
+// Po wgraniu pliku graficznego: jeśli to SVG, oczyść go NA DYSKU (XSS/XXE).
+// Wspólne dla wszystkich uploadów brandingu (ustawienia, profil, awatar klienta).
+function sanitizeIfSvg(file) {
+  if (!file) return;
+  const isSvg = /svg/i.test(file.mimetype) || /\.svg$/i.test(file.originalname);
+  if (!isSvg) return;
+  try {
+    const raw = fs.readFileSync(file.path, 'utf8');
+    if (looksLikeSvg(raw)) fs.writeFileSync(file.path, sanitizeSvg(raw), 'utf8');
+  } catch (_) { /* nie blokuj zapisu przez błąd I/O */ }
+}
+
+module.exports = { sanitizeSvg, looksLikeSvg, sanitizeIfSvg };

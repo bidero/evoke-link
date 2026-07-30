@@ -12,6 +12,8 @@ const fmt = require('./utils/format');
 const { icon, eventIcon } = require('./utils/icons');
 const { fileMeta } = require('./utils/fileIcon');
 const { logoTag, hasLogo } = require('./utils/logo');
+const avatar = require('./utils/avatar');
+const searchPalette = require('./utils/searchPalette');
 const qr = require('./utils/qr');
 const color = require('./utils/color');
 const bg = require('./utils/background');
@@ -95,6 +97,8 @@ app.use((req, res, next) => {
   res.locals.logoTag = logoTag;
   res.locals.hasLogo = hasLogo;
   res.locals.qrSvg = qr.svg; // kod QR jako inline SVG: <%- qrSvg(url) %>
+  res.locals.avatar = avatar.html; // awatar klienta: <%- avatar(client, { size: 'sm' }) %>
+  res.locals.searchPalette = searchPalette.html(); // paleta Cmd/Ctrl+K (layout panelu)
   next();
 });
 
