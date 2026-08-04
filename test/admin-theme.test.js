@@ -101,3 +101,28 @@ test('zwijane lewe menu: markery paska + przełącznik toggleRail w layoucie', a
     await settingsService.get();
   }
 });
+
+test('offcanvas na telefonie: pełna szerokość, zamykanie i sekcja konta + sync theme-color', async (t) => {
+  const cookie = await login();
+  if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
+
+  const html = await (await fetch(`${base}/admin`, { headers: { Cookie: cookie } })).text();
+
+  // Telefon: menu na CAŁĄ szerokość; od md wraca pasek 15rem (zero regresji na desktopie).
+  assert.match(html, /data-admin-sidebar[^>]*\bw-full md:w-60\b/, 'offcanvas pełnoekranowy tylko poniżej md');
+  assert.match(html, /data-nav-close/, 'przycisk zamknięcia menu (brak przyciemnienia do kliknięcia)');
+  assert.match(html, /overflow-hidden md:overflow-visible/, 'blokada przewijania tła przy otwartym menu');
+
+  // Sekcja konta w menu — tylko na telefonie, z tymi samymi trasami co dropdown w nagłówku.
+  const acc = html.slice(html.indexOf('data-nav-account'), html.indexOf('</aside>'));
+  assert.match(acc, /md:hidden/, 'sekcja konta ukryta na desktopie');
+  assert.match(acc, /\/admin\/account/);
+  assert.match(acc, /\/admin\/users/);
+  assert.match(acc, /\/admin\/settings/);
+  assert.match(acc, /action="\/admin\/logout"/, 'wylogowanie jako POST (jak w dropdownie)');
+
+  // Pasek systemowy: kolor synchronizowany z treścią (nagłówek / otwarte menu / dark mode).
+  assert.match(html, /window\.evokeSyncThemeColor\s*=/, 'funkcja synchronizująca theme-color');
+  assert.match(html, /nav-open/, 'klasa nav-open steruje źródłem koloru');
+  assert.match(html, /toggleTheme[\s\S]{0,220}evokeSyncThemeColor/, 'zmiana dark mode przelicza kolor paska');
+});

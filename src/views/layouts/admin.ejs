@@ -3,7 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script>try{if(localStorage.getItem('evoke-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}try{if(localStorage.getItem('evoke-admin-rail')==='0')document.documentElement.classList.add('rail-collapsed')}catch(e){}window.toggleTheme=function(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('evoke-theme',d?'dark':'light')}catch(e){}};window.toggleRail=function(){var c=document.documentElement.classList.toggle('rail-collapsed');try{localStorage.setItem('evoke-admin-rail',c?'0':'1')}catch(e){}};</script>
+  <script>try{if(localStorage.getItem('evoke-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}try{if(localStorage.getItem('evoke-admin-rail')==='0')document.documentElement.classList.add('rail-collapsed')}catch(e){}window.toggleTheme=function(){var d=document.documentElement.classList.toggle('dark');try{localStorage.setItem('evoke-theme',d?'dark':'light')}catch(e){}if(window.evokeSyncThemeColor)window.evokeSyncThemeColor()};window.toggleRail=function(){var c=document.documentElement.classList.toggle('rail-collapsed');try{localStorage.setItem('evoke-admin-rail',c?'0':'1')}catch(e){}};</script>
+  <%# Pasek systemowy (status bar w PWA / pasek Safari) bierze kolor z <meta name="theme-color">.
+      Statyczna wartość z ustawień PWA nie ma związku z tym, co realnie jest u góry ekranu — stąd
+      wrażenie „skaczącego" paska przy otwieraniu menu. Synchronizujemy go z faktyczną treścią:
+      otwarty offcanvas → kolor menu, inaczej → kolor nagłówka.
+      Kolor czytamy z `getComputedStyle(el).backgroundColor`, a NIE ze zmiennych --admin-*:
+      w dark mode są zdefiniowane przez var(--dk-*), więc getPropertyValue zwróciłby
+      nierozwinięte "var(...)". Meta tworzymy, gdy jej nie ma (PWA wyłączone → i tak działa
+      dla paska Safari). Statyczny theme-color z utils/pwa.js zostaje wartością startową. %>
+  <script>
+    window.evokeSyncThemeColor = function () {
+      var open = document.documentElement.classList.contains('nav-open');
+      var el = document.querySelector(open ? '[data-admin-sidebar]' : 'header');
+      if (!el) return;
+      var bg = getComputedStyle(el).backgroundColor;
+      if (!bg || bg === 'transparent' || bg.indexOf('rgba(0, 0, 0, 0)') === 0) return;
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (!meta) { meta = document.createElement('meta'); meta.name = 'theme-color'; document.head.appendChild(meta); }
+      meta.setAttribute('content', bg);
+    };
+  </script>
   <% const appName = (typeof settings !== 'undefined' && settings) ? settings.appName : 'Evoke LINK'; %>
   <title><%= typeof title !== 'undefined' ? title + ' — ' + appName : appName %></title>
   <link rel="stylesheet" href="/css/app.css?v=<%= assetVer %>" />
@@ -18,7 +38,12 @@
   <script defer src="/js/chart.js"></script>
   <script defer src="/js/alpine.min.js"></script>
 </head>
-<body class="bg-[var(--admin-bg)] antialiased" style="color: var(--admin-text)" x-data="{ nav: false }">
+<%# `nav-open` na <html> steruje kolorem paska systemowego (evokeSyncThemeColor); blokada
+    przewijania tła dotyczy tylko telefonu — na desktopie offcanvas nie istnieje. %>
+<body class="bg-[var(--admin-bg)] antialiased" style="color: var(--admin-text)"
+      x-data="{ nav: false }"
+      x-init="$watch('nav', function (v) { document.documentElement.classList.toggle('nav-open', v); window.evokeSyncThemeColor && window.evokeSyncThemeColor(); }); window.evokeSyncThemeColor && window.evokeSyncThemeColor()"
+      :class="nav && 'overflow-hidden md:overflow-visible'">
 <%- typeof pwaSplash !== 'undefined' ? pwaSplash : '' %>
   <%# Desktop = „app shell" przez STICKY (NIE overflow): strona przewija się normalnie (body), a
       sidebar i nagłówek są `md:sticky` → zostają widoczne. Świadomie NIE robimy `overflow-y-auto`
@@ -29,8 +54,9 @@
     <!-- Przyciemnienie tła pod offcanvas (mobile) -->
     <div x-show="nav" x-cloak @click="nav = false" class="fixed inset-0 bg-black/40 z-30 md:hidden"></div>
 
-    <!-- Pasek boczny (offcanvas na mobile, statyczny od md) -->
-    <aside data-admin-sidebar class="fixed inset-y-0 left-0 z-40 w-60 shrink-0 bg-[var(--admin-sidebar)] border-r border-slate-200/60 flex flex-col overflow-hidden -translate-x-full md:translate-x-0 md:sticky md:top-0 md:h-screen md:self-start"
+    <!-- Pasek boczny: na telefonie offcanvas na CAŁĄ szerokość (zakrywa nagłówek, więc nie widać
+         przyciemnienia pod spodem), od md statyczny pasek 15rem jak dotąd. -->
+    <aside data-admin-sidebar class="fixed inset-y-0 left-0 z-40 w-full md:w-60 shrink-0 bg-[var(--admin-sidebar)] border-r border-slate-200/60 flex flex-col overflow-hidden -translate-x-full md:translate-x-0 md:sticky md:top-0 md:h-screen md:self-start"
            :class="nav && '!translate-x-0'" style="color: var(--admin-sidebar-text)">
       <div data-rail-head class="h-16 flex items-center gap-2 px-6 border-b border-black/5">
         <% if (typeof settings !== 'undefined' && settings && hasLogo(settings, 'admin')) { %>
@@ -39,6 +65,9 @@
           <div class="w-8 h-8 shrink-0 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">E</div>
           <span data-rail-label class="font-semibold tracking-tight"><%= appName %></span>
         <% } %>
+        <%# Zamknięcie menu — na pełnym ekranie nie ma już przyciemnienia, w które można kliknąć. %>
+        <button type="button" data-nav-close @click="nav = false" aria-label="Zamknij menu"
+                class="md:hidden ml-auto -mr-2 w-10 h-10 inline-flex items-center justify-center rounded-lg opacity-60 hover:opacity-100 transition"><%- icon('x', { size: 22, cls: '' }) %></button>
       </div>
       <nav class="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-1 text-sm">
         <%
@@ -60,6 +89,32 @@
           </a>
         <% }); %>
       </nav>
+      <%# Konto — TYLKO na telefonie (na desktopie te same pozycje są w dropdownie przy awatarze).
+          Pełnoekranowe menu daje na nie miejsce; dropdown w rogu jest na telefonie ciasny. %>
+      <div data-nav-account class="md:hidden shrink-0 border-t border-black/5 px-3 py-3 space-y-1 text-sm">
+        <% const _navProf = (typeof settings !== 'undefined' && settings) ? settings.profile : null; %>
+        <% const _navEmail = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.email : ''; %>
+        <% const _navName = (_navProf && _navProf.name) ? _navProf.name : _navEmail; %>
+        <div class="flex items-center gap-2.5 px-3 pb-1">
+          <% if (_navProf && _navProf.avatarPath) { %>
+            <img src="<%= _navProf.avatarPath %>" alt="" class="w-9 h-9 rounded-full object-cover border border-black/10" />
+          <% } else { %>
+            <span class="w-9 h-9 rounded-full bg-brand-50 text-brand-700 inline-flex items-center justify-center text-sm font-semibold shrink-0"><%= (_navName || '?').trim().charAt(0).toUpperCase() %></span>
+          <% } %>
+          <span class="min-w-0">
+            <span class="block font-medium truncate"><%= _navName || 'Administrator' %></span>
+            <% if (_navProf && _navProf.name && _navEmail) { %><span class="block text-xs opacity-50 truncate"><%= _navEmail %></span><% } %>
+          </span>
+        </div>
+        <a href="/admin/account" class="flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition"><%- icon('userCheck', { size: 16, cls: 'opacity-60' }) %> Mój profil</a>
+        <% if (typeof isAdmin === 'undefined' || isAdmin) { %>
+          <a href="/admin/users" class="flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition"><%- icon('users', { size: 16, cls: 'opacity-60' }) %> Konta</a>
+          <a href="/admin/settings" class="flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition"><%- icon('cog', { size: 16, cls: 'opacity-60' }) %> Ustawienia</a>
+        <% } %>
+        <form method="POST" action="/admin/logout">
+          <button type="submit" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 text-left transition"><%- icon('arrowRight', { size: 16, cls: 'opacity-60' }) %> Wyloguj</button>
+        </form>
+      </div>
     </aside>
 
     <!-- Główna kolumna -->
