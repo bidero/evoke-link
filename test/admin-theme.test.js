@@ -124,6 +124,9 @@ test('offcanvas na telefonie: pełna szerokość, zamykanie i sekcja konta + syn
   assert.match(acc, /\/admin\/settings/);
   assert.match(acc, /action="\/admin\/logout"/, 'wylogowanie jako POST (jak w dropdownie)');
 
+  // Nagłówek przyklejony na KAŻDEJ szerokości (v0.99.84) — na telefonie też.
+  assert.match(html, /<header class="h-16 shrink-0 sticky top-0 z-20/, 'nagłówek sticky także na telefonie');
+
   // Pasek systemowy: kolor synchronizowany z treścią (nagłówek / otwarte menu / dark mode).
   assert.match(html, /window\.evokeSyncThemeColor\s*=/, 'funkcja synchronizująca theme-color');
   assert.match(html, /nav-open/, 'klasa nav-open steruje źródłem koloru');

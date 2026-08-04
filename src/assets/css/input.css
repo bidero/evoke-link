@@ -338,4 +338,12 @@ html.dark.theme-modern [data-stat-icon] { background: rgb(var(--brand-600) / 0.2
    koloru. (Klasa `nav-open` jest już ustawiana dla evokeSyncThemeColor.) */
 @media (max-width: 767.98px) {
   html.nav-open body { background-color: var(--admin-sidebar); }
+
+  /* Obszar NAD stroną (pod status barem / za paskiem przeglądarki) w kolorze nagłówka.
+     Safari barwi swoje paski kolorem canvasu, a canvas bierze tło ROOT elementu (<html>) —
+     gdy html ma własne tło, tło <body> już na canvas nie propaguje. Dzięki temu pas nad
+     nagłówkiem przestaje odcinać się jasnym `--admin-bg`, a treść zostaje bez zmian
+     (body dalej maluje `--admin-bg` w swoim boxie). Przy otwartym menu — kolor menu. */
+  html { background-color: var(--admin-header); }
+  html.nav-open { background-color: var(--admin-sidebar); }
 }
