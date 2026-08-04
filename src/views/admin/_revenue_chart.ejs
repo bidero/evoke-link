@@ -1,0 +1,26 @@
+<%# Wykres przychodu (6 miesięcy) — wspólny dla widżetu pulpitu i strony Puls.
+    Locals:
+      chartData — tablica z pulse.money.chart ([{label, value, current}])
+      storeKey  — klucz localStorage z typem wykresu (OSOBNY per strona: pulpit vs Puls)
+      chartTitle (opc.) — nagłówek nad wykresem; gdy pusty, sam przełącznik po prawej
+    Rysowanie: public/js/chart.js (geometria liczona z REALNEJ szerokości, stała wysokość). %>
+<% const _store = typeof storeKey !== 'undefined' && storeKey ? storeKey : 'evoke-chart-type'; %>
+<div x-data="{ type: (localStorage.getItem('<%= _store %>') || 'line') }"
+     x-init="$watch('type', function(v){ try { localStorage.setItem('<%= _store %>', v); } catch(e) {} window.evokeChartRedraw && window.evokeChartRedraw($el); })">
+  <div class="flex items-center justify-between gap-2 mb-3">
+    <% if (typeof chartTitle !== 'undefined' && chartTitle) { %>
+      <div class="text-sm font-medium text-slate-700"><%= chartTitle %></div>
+    <% } else { %><span></span><% } %>
+    <div class="flex items-center gap-1 shrink-0">
+      <button type="button" @click="type = 'line'" title="Wykres liniowy" aria-label="Wykres liniowy"
+              :class="type === 'line' ? 'bg-brand-50 text-brand-700' : 'text-slate-400 hover:text-slate-600'"
+              class="w-7 h-7 rounded-lg inline-flex items-center justify-center transition"><%- icon('activity', { size: 14, cls: '' }) %></button>
+      <button type="button" @click="type = 'bars'" title="Wykres słupkowy" aria-label="Wykres słupkowy"
+              :class="type === 'bars' ? 'bg-brand-50 text-brand-700' : 'text-slate-400 hover:text-slate-600'"
+              class="w-7 h-7 rounded-lg inline-flex items-center justify-center transition"><%- icon('grip', { size: 14, cls: '' }) %></button>
+    </div>
+  </div>
+  <div data-chart-mount data-chart-store="<%= _store %>" data-chart-data='<%- JSON.stringify(chartData) %>'>
+    <svg data-chart-svg class="block w-full" role="img" aria-label="Wykres przychodu z 6 miesięcy"></svg>
+  </div>
+</div>

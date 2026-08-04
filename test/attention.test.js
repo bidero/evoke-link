@@ -83,16 +83,31 @@ test('pulpit: widżety „Wymaga uwagi" i wykres w rejestrze i w renderze (snaps
     const html = await (await fetch(`${base}/admin`, { headers: { Cookie: cookie } })).text();
     assert.match(html, /Wymaga uwagi/);
     assert.match(html, /Przychód — 6 miesięcy/);
-    assert.match(html, /evoke-chart-type/, 'przełącznik typu wykresu z pamięcią');
-    // Geometria wykresu liczy się PO STRONIE KLIENTA (ResizeObserver + real-px SVG, v0.99.79) —
-    // sprawdzamy obecność kontenera/danych i mechanizmu rysowania, nie statycznego <path>/<rect>.
+    // Geometria wykresu liczy się PO STRONIE KLIENTA, a rysownik siedzi we WSPÓLNYM pliku
+    // public/js/chart.js (ten sam używa Puls) — sprawdzamy kontener z danymi + ładowanie skryptu,
+    // nie statycznego <path>/<rect> ani kodu inline.
     assert.match(html, /data-chart-mount/, 'kontener z danymi wykresu');
     assert.match(html, /data-chart-svg/, 'pusty SVG wypełniany przez JS');
-    assert.match(html, /ResizeObserver/, 'redraw na zmianę szerokości (nie tylko window resize)');
-    assert.match(html, /evokeChartRedraw/, 'redraw przy przełączniku linia\/słupki');
+    assert.match(html, /src="\/js\/chart\.js"/, 'wspólny rysownik ładowany z layoutu');
+    assert.match(html, /data-chart-store="evoke-chart-type"/, 'pulpit ma SWÓJ klucz typu wykresu');
     assert.match(html, /"current":true/, 'flaga bieżącego miesiąca w danych (do rysowania w JS)');
     assert.ok(html.indexOf('Wymaga uwagi') < html.indexOf('Przychód — 6 miesięcy'), 'kolejność z zapisanego układu');
   } finally {
     await prisma.settings.update({ where: { id: 1 }, data: { panel: snap ? snap.panel : null } });
   }
+});
+
+test('Puls: wykres przychodu ze wspólnego partiala, ale z WŁASNYM kluczem typu', async (t) => {
+  const cookie = await login();
+  if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
+
+  const html = await (await fetch(`${base}/admin/pulse`, { headers: { Cookie: cookie } })).text();
+  assert.match(html, /Przychód — ostatnie 6 miesięcy/);
+  assert.match(html, /data-chart-mount/, 'ten sam mechanizm co na pulpicie');
+  assert.match(html, /data-chart-store="evoke-pulse-chart-type"/, 'Puls pamięta typ OSOBNO od pulpitu');
+  assert.ok(!/data-chart-store="evoke-chart-type"/.test(html), 'klucz pulpitu nie przecieka do Pulsu');
+  assert.match(html, /Wykres liniowy/, 'przełącznik wariantu obecny');
+  assert.match(html, /Wykres słupkowy/);
+  // Stary statyczny SVG (skalowany viewBoxem, puchł na szerokim ekranie) ma zniknąć.
+  assert.ok(!/fill-brand-200/.test(html), 'brak statycznych słupków rysowanych w EJS');
 });

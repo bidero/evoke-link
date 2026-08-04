@@ -99,6 +99,20 @@
   --dk-border: #334155;
 }
 
+/* Kolory wykresów (pulpit + Puls). Rysownik siedzi w public/js/chart.js, którego
+   Tailwind NIE skanuje (content: src/views, src/assets/js, src/utils) — dlatego
+   kolory idą przez zmienne CSS ustawiane inline (`el.style.fill = 'var(--chart-label)'`),
+   a nie przez klasy `fill-slate-*`. Przy okazji wykres reaguje na dark mode, czego
+   klasy `fill-*` nie robiły (brak dla nich nadpisań w html.dark). */
+:root {
+  --chart-axis: #e2e8f0;    /* linia bazowa (slate-200) */
+  --chart-label: #94a3b8;   /* nazwy miesięcy (slate-400) */
+  --chart-amount: #64748b;  /* etykiety kwot (slate-500) */
+  --chart-point: #fff;      /* wypełnienie kółek na linii (kolor powierzchni karty) */
+  --chart-brand: rgb(var(--brand-600));      /* seria danych + bieżący miesiąc */
+  --chart-brand-soft: rgb(var(--brand-200)); /* słupki miesięcy minionych */
+}
+
 html.dark {
   color-scheme: dark;
   /* Panel: przejmij zmienne chrome */
@@ -113,6 +127,15 @@ html.dark {
   --card-bg: var(--dk-surface);
   --card-border-color: var(--dk-border);
   --card-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.6);
+  /* Wykresy: oś i etykiety czytelne na ciemnej powierzchni. Marka idzie o dwa stopnie
+     w górę (brand-400) — brand-600 na ciemnym tle jest nieczytelny, zwłaszcza w tekście
+     etykiety bieżącego miesiąca. Ten sam zabieg co przy ikonach kafelków w motywie modern. */
+  --chart-axis: var(--dk-border);
+  --chart-label: var(--dk-muted-2);
+  --chart-amount: var(--dk-muted);
+  --chart-point: var(--dk-surface);
+  --chart-brand: rgb(var(--brand-400));
+  --chart-brand-soft: rgb(var(--brand-600) / 0.45);
 }
 
 /* Strony klienta/logowania: w dark mode ZACHOWUJEMY skonfigurowane tło

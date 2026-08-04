@@ -1,39 +1,15 @@
 <%# Widżet wykresu przychodu (6 miesięcy) — dane z pulse().money.chart (bez nowego zapytania).
-    GOTCHA (naprawione): pierwsza wersja rysowała SVG statycznie w EJS z `viewBox` skalowanym
-    przez CSS (`class="w-full"`, bez jawnej wysokości) — przeglądarka trzyma wtedy aspect-ratio
-    z viewBox, więc przy poszerzaniu okna/widżetu WYSOKOŚĆ rosła razem z szerokością, aż
-    przekraczała stałą wysokość karty (regulowaną przez `rows`, v0.99.74) i wypychała wiersz
-    z kwotą poza widoczny obszar. Próba z `preserveAspectRatio="none"` (rozciągnij niezależnie
-    X/Y) rozwiązałaby overflow, ale rozciągałaby też KÓŁKA punktów w elipsy przy szerokich
-    widżetach — kosmetyczna regresja.
-    Właściwy fix: geometria liczona PO STRONIE KLIENTA. JS mierzy RZECZYWISTĄ szerokość
-    kontenera (ResizeObserver — łapie też zwijanie paska bocznego, nie tylko resize okna) i
-    rysuje SVG w PRAWDZIWYCH pikselach (`viewBox` = zmierzona szerokość × stała wysokość) —
-    szerokość rozciąga się swobodnie, wysokość ZAWSZE stała, a kółka/tekst nie są zniekształcane
-    (bo współrzędne liczymy wprost w pikselach, bez nierównomiernego skalowania SVG). %>
-<div class="h-full flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden"
-     x-data="{ type: (localStorage.getItem('evoke-chart-type') || 'line') }"
-     x-init="$watch('type', function(v){ try { localStorage.setItem('evoke-chart-type', v); } catch(e) {} window.evokeChartRedraw && window.evokeChartRedraw($el); })">
+    Sam wykres + przełącznik linia/słupki siedzą we wspólnym partialu `admin/_revenue_chart`
+    (ten sam kod używa strona Puls); rysownik: public/js/chart.js. %>
+<div class="h-full flex flex-col bg-white rounded-2xl border border-slate-200 overflow-hidden">
   <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-2">
     <h2 class="text-sm font-medium text-slate-700 inline-flex items-center gap-1.5"><%- icon(typeof wicon !== 'undefined' ? wicon : 'trendingUp', { size: 15, cls: 'text-slate-400' }) %> Przychód — 6 miesięcy</h2>
-    <div class="flex items-center gap-1 shrink-0">
-      <button type="button" @click="type = 'line'" title="Wykres liniowy" aria-label="Wykres liniowy"
-              :class="type === 'line' ? 'bg-brand-50 text-brand-700' : 'text-slate-400 hover:text-slate-600'"
-              class="w-7 h-7 rounded-lg inline-flex items-center justify-center transition"><%- icon('activity', { size: 14, cls: '' }) %></button>
-      <button type="button" @click="type = 'bars'" title="Wykres słupkowy" aria-label="Wykres słupkowy"
-              :class="type === 'bars' ? 'bg-brand-50 text-brand-700' : 'text-slate-400 hover:text-slate-600'"
-              class="w-7 h-7 rounded-lg inline-flex items-center justify-center transition"><%- icon('grip', { size: 14, cls: '' }) %></button>
-    </div>
   </div>
   <div class="flex-1 min-h-0 overflow-y-auto p-5">
     <% if (!pulse) { %>
       <p class="py-4 text-center text-sm text-slate-400">Brak danych.</p>
     <% } else { %>
-      <%# Dane trafiają do JS jako atrybut (bez sekretów — to zagregowany przychód, już widoczny
-          w tej samej odpowiedzi). Rysowanie w <script> poniżej (evokeChart*). %>
-      <div data-chart-mount data-chart-data='<%- JSON.stringify(pulse.money.chart) %>'>
-        <svg data-chart-svg class="block w-full" role="img" aria-label="Wykres przychodu z 6 miesięcy"></svg>
-      </div>
+      <%- include('../_revenue_chart', { chartData: pulse.money.chart, storeKey: 'evoke-chart-type' }) %>
       <div class="mt-2 flex items-baseline justify-between gap-2">
         <span class="text-xs text-slate-400">w tym miesiącu</span>
         <span class="text-lg font-semibold tracking-tight"><%= fmt.money(pulse.money.paidThisMonth) %></span>
@@ -41,99 +17,3 @@
     <% } %>
   </div>
 </div>
-
-<script>
-(function () {
-  // Wysokość ZAWSZE stała (nie zależy od szerokości) — TOP: zapas na etykiety kwot nad serią,
-  // +28 na oś z nazwami miesięcy pod spodem. Proporcje słupków/odstępów jak w oryginalnym
-  // designie (BW = 10% szerokości, jak dawne „56 z 560"), tylko liczone dla realnej szerokości.
-  var CH = 150, TOP = 18, BASE = TOP + CH, HEIGHT = BASE + 28;
-  var NS = 'http://www.w3.org/2000/svg';
-
-  function zlShort(grosze) {
-    var zl = grosze / 100;
-    return zl >= 10000 ? Math.round(zl / 1000) + ' tys.' : Math.round(zl).toLocaleString('pl-PL');
-  }
-
-  function svgEl(tag, attrs) {
-    var el = document.createElementNS(NS, tag);
-    for (var k in attrs) el.setAttribute(k, attrs[k]);
-    return el;
-  }
-
-  function draw(mount) {
-    var svg = mount.querySelector('[data-chart-svg]');
-    var data;
-    try { data = JSON.parse(mount.dataset.chartData || '[]'); } catch (e) { data = []; }
-    if (!svg || !data.length) return;
-    var width = Math.round(mount.getBoundingClientRect().width);
-    if (!width) return; // widżet jeszcze niewidoczny (np. w trybie edycji ukryty) — poczeka na kolejny resize
-
-    var type = localStorage.getItem('evoke-chart-type') || 'line';
-    var n = data.length;
-    var BW = width * (56 / 560);
-    var GAP = (width - n * BW) / (n + 1);
-    var maxV = Math.max(1, Math.max.apply(null, data.map(function (c) { return c.value; })));
-    function cx(i) { return GAP + i * (BW + GAP) + BW / 2; }
-    function cy(v) { return BASE - Math.round((v / maxV) * CH); }
-
-    svg.setAttribute('viewBox', '0 0 ' + width + ' ' + HEIGHT);
-    svg.innerHTML = '';
-
-    var defs = svgEl('defs', {});
-    var grad = svgEl('linearGradient', { id: 'chartFill', x1: 0, y1: 0, x2: 0, y2: 1 });
-    grad.appendChild(svgEl('stop', { offset: '0%', class: 'text-brand-600', 'stop-color': 'currentColor', 'stop-opacity': 0.28 }));
-    grad.appendChild(svgEl('stop', { offset: '100%', class: 'text-brand-600', 'stop-color': 'currentColor', 'stop-opacity': 0.02 }));
-    defs.appendChild(grad);
-    svg.appendChild(defs);
-
-    // Linia bazowa — wspólna dla obu wariantów.
-    svg.appendChild(svgEl('line', { x1: 0, y1: BASE, x2: width, y2: BASE, class: 'stroke-slate-200', 'stroke-width': 1 }));
-
-    if (type === 'bars') {
-      data.forEach(function (c, i) {
-        var y = cy(c.value), h = Math.max(3, BASE - y);
-        svg.appendChild(svgEl('rect', { x: cx(i) - BW / 2, y: BASE - h, width: BW, height: h, rx: 6, class: c.current ? 'fill-brand-600' : 'fill-brand-200' }));
-      });
-    } else {
-      var pts = data.map(function (c, i) { return [cx(i), cy(c.value)]; });
-      var line = pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0] + ' ' + p[1]; }).join(' ');
-      var area = line + ' L' + pts[pts.length - 1][0] + ' ' + BASE + ' L' + pts[0][0] + ' ' + BASE + ' Z';
-      svg.appendChild(svgEl('path', { d: area, fill: 'url(#chartFill)', class: 'text-brand-600' }));
-      svg.appendChild(svgEl('path', { d: line, fill: 'none', class: 'stroke-brand-600', 'stroke-width': 2.5, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
-      pts.forEach(function (p, i) {
-        svg.appendChild(svgEl('circle', { cx: p[0], cy: p[1], r: data[i].current ? 5 : 3.5, class: data[i].current ? 'fill-brand-600' : 'fill-white stroke-brand-600', 'stroke-width': 2 }));
-      });
-    }
-
-    // Kwoty i nazwy miesięcy — te same dla obu wariantów.
-    data.forEach(function (c, i) {
-      if (c.value > 0) {
-        var amt = svgEl('text', { x: cx(i), y: cy(c.value) - 9, 'text-anchor': 'middle', class: 'fill-slate-500', 'font-size': 11 });
-        amt.textContent = zlShort(c.value);
-        svg.appendChild(amt);
-      }
-      var lbl = svgEl('text', { x: cx(i), y: BASE + 18, 'text-anchor': 'middle', class: c.current ? 'fill-brand-700' : 'fill-slate-400', 'font-size': 11, 'font-weight': c.current ? 600 : 400 });
-      lbl.textContent = c.label;
-      svg.appendChild(lbl);
-    });
-  }
-
-  // Skrypt siedzi zaraz PO markupie widżetu — poprzedni element to root x-data.
-  var root = document.currentScript.previousElementSibling;
-  var mount = root && root.querySelector('[data-chart-mount]');
-  if (!mount) return;
-
-  draw(mount);
-  if (window.ResizeObserver) {
-    new ResizeObserver(function () { draw(mount); }).observe(mount);
-  } else {
-    window.addEventListener('resize', function () { draw(mount); });
-  }
-  // Wywoływane przez $watch('type', …) w x-init przy przełączniku linia/słupki.
-  window.evokeChartRedraw = function (widgetRoot) {
-    var m = widgetRoot.querySelector('[data-chart-mount]');
-    if (m) draw(m);
-  };
-})();
-</script>
