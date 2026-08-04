@@ -70,6 +70,34 @@ test('panelUi: wysokość widżetu (rows) przechodzi przez scalanie i sanityzacj
   assert.ok(panelUi.WIDGETS.every((w) => panelUi.ROWS.includes(w.rows)), 'domyślne rows z whitelisty');
 });
 
+test('panelUi: osobny układ mobilny (mspan + morder) w scalaniu i sanityzacji', () => {
+  // sanityzacja: mspan z whitelisty (1|2), morder = nieujemna liczba całkowita
+  const s = panelUi.sanitizeWidgets([
+    { key: 'attention', mspan: 2, morder: 0 },
+    { key: 'chart', mspan: 9, morder: -3 },   // obie wartości poza zakresem → pomijane
+    { key: 'tasks', mspan: '1', morder: '4' }, // stringi → Number()
+  ]);
+  assert.deepEqual(s[0], { key: 'attention', hidden: false, mspan: 2, morder: 0 });
+  assert.deepEqual(s[1], { key: 'chart', hidden: false }, 'zła szerokość i ujemna pozycja pomijane');
+  assert.equal(s[2].mspan, 1);
+  assert.equal(s[2].morder, 4);
+
+  // scalanie: zapis wygrywa, brak → domyślna z rejestru
+  const m = panelUi.mergeWidgets(s);
+  const byKey = Object.fromEntries(m.map((w) => [w.key, w]));
+  const def = Object.fromEntries(panelUi.WIDGETS.map((w) => [w.key, w]));
+  assert.equal(byKey.attention.mspan, 2);
+  assert.equal(byKey.chart.mspan, def.chart.mspan, 'brak zapisu → domyślna szerokość mobilna');
+  assert.equal(byKey['stat-transfers'].mspan, 1, 'kafelki KPI domyślnie ½ (jak dotąd)');
+  assert.ok(panelUi.WIDGETS.every((w) => panelUi.MOBILE_SPANS.includes(w.mspan)), 'domyślne mspan z whitelisty');
+
+  // morder jest ZAWSZE ciągły 0..n-1 (nawet gdy zapis miał dziury/duplikaty) i zachowuje
+  // względną kolejność — attention (morder 0) przed tasks (morder 4).
+  const orders = m.map((w) => w.morder).sort((a, b) => a - b);
+  assert.deepEqual(orders, m.map((_, i) => i), 'ciągłe pozycje bez dziur');
+  assert.ok(byKey.attention.morder < byKey.tasks.morder, 'względna kolejność zachowana');
+});
+
 test('pulpit: tryb Dostosuj zapisuje układ (snapshot+restore Settings)', async (t) => {
   const cookie = await login();
   if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
@@ -82,8 +110,8 @@ test('pulpit: tryb Dostosuj zapisuje układ (snapshot+restore Settings)', async 
     assert.match(html, /Szybkie akcje/);
     assert.match(html, /Nadchodzące zadania/);
 
-    // zapis układu: aktywność na początku (½ szerokości, XL wysokości), akcje ukryte
-    const layout = [{ key: 'activity', hidden: false, span: 6, rows: 6 }, { key: 'actions', hidden: true }];
+    // zapis układu: aktywność na początku (½ szerokości, XL wysokości), na telefonie ½ i PIERWSZA
+    const layout = [{ key: 'activity', hidden: false, span: 6, rows: 6, mspan: 1, morder: 0 }, { key: 'actions', hidden: true }];
     const r = await fetch(`${base}/admin/dashboard/layout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookie },
@@ -98,6 +126,10 @@ test('pulpit: tryb Dostosuj zapisuje układ (snapshot+restore Settings)', async 
     // szerokość i WYSOKOŚĆ z zapisu trafiają na klasy siatki
     assert.match(html, /lg:col-span-6 lg:row-span-6/, 'zapisana wysokość na elemencie siatki');
     assert.match(html, /lg:auto-rows-\[96px\]/, 'jednostka wysokości siatki');
+    // Układ telefonu jedzie zmiennymi CSS (--ms/--mo), NIE klasami — regułę ma input.css.
+    assert.match(html, /style="--ms: 1; --mo: 0;"/, 'szerokość i pozycja mobilna widżetu');
+    assert.match(html, /data-resize/, 'uchwyt zmiany rozmiaru w nakładce edycji');
+    assert.match(html, /Układ na telefonie/, 'przełącznik trybu edycji Desktop\/Telefon');
 
     // menu boczne: edytor w ustawieniach obecny
     const sHtml = await (await fetch(`${base}/admin/settings`, { headers: { Cookie: cookie } })).text();

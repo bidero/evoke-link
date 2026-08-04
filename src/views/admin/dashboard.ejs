@@ -9,38 +9,39 @@
     'stat-overdue':     { label: 'Przeterminowane', value: fmt.money(stats.overdue), hint: 'po terminie', href: '/admin/clients', valueCls: stats.overdue > 0 ? 'text-red-600' : '' },
     'stat-storage':     { label: 'Wykorzystane miejsce', value: fmtBytes(stats.storageBytes), hint: 'na dysku' },
   };
-  // Siatka: mobile 2 kolumny (kafelki ½, treść pełna), lg 12 kolumn.
-  // Szerokość z w.span (3=¼, 4=⅓, 6=½, 8=⅔, 12=1/1), WYSOKOŚĆ z w.rows w jednostkach
-  // `lg:auto-rows-[96px]` + gap 20 px (2=212, 3=328, 4=444, 6=676 px). Dzięki temu da się
-  // złożyć układ „dwa niskie kafelki obok jednego wysokiego" — CSS Grid sam pakuje elementy
+  // Siatka: na telefonie 2 kolumny, od lg 12 kolumn.
+  // DESKTOP (klasy `lg:*`): szerokość z w.span (3=¼, 4=⅓, 6=½, 8=⅔, 12=1/1), WYSOKOŚĆ z w.rows
+  // w jednostkach `lg:auto-rows-[96px]` + gap 20 px (2=212, 3=328, 4=444, 6=676 px). Dzięki temu
+  // da się złożyć układ „dwa niskie kafelki obok jednego wysokiego" — CSS Grid sam pakuje elementy
   // w kolumnach (auto-placement wg kolejności DOM; BEZ `dense`, żeby kolejność przeciągania
-  // pozostała przewidywalna). Wysokość działa TYLKO od lg — na mobile stos rośnie z treścią.
+  // pozostała przewidywalna). Kolejność desktopowa = kolejność DOM.
+  // TELEFON (zmienne `--ms`/`--mo`, reguła w input.css): szerokość ½/pełna i OSOBNA kolejność —
+  // zmiennymi, nie klasami, bo `order-1..14` wykracza poza domyślną skalę Tailwinda.
   // Literalne klasy (skanuje je Tailwind): lg:col-span-3 lg:col-span-4 lg:col-span-6 lg:col-span-8 lg:col-span-12
   // lg:row-span-2 lg:row-span-3 lg:row-span-4 lg:row-span-6
   const SPAN_CLS = { 3: 'lg:col-span-3', 4: 'lg:col-span-4', 6: 'lg:col-span-6', 8: 'lg:col-span-8', 12: 'lg:col-span-12' };
   const ROW_CLS = { 2: 'lg:row-span-2', 3: 'lg:row-span-3', 4: 'lg:row-span-4', 6: 'lg:row-span-6' };
   function spanCls(w){
-    const mobile = w.key.indexOf('stat-') === 0 ? 'col-span-1' : 'col-span-2';
-    return mobile + ' ' + (SPAN_CLS[w.span] || 'lg:col-span-4') + ' ' + (ROW_CLS[w.rows] || 'lg:row-span-4');
+    return (SPAN_CLS[w.span] || 'lg:col-span-4') + ' ' + (ROW_CLS[w.rows] || 'lg:row-span-4');
   }
 %>
 
-<div x-data="dashEdit(<%= JSON.stringify(hiddenMap) %>, <%= JSON.stringify(spansMap) %>, <%= JSON.stringify(rowsMap) %>)" @dash-edit.window="start()">
-  <!-- auto-rows tylko od lg: wysokość widżetu = jego rows × 96 px (+ gapy). Na mobile stos. -->
-  <div id="dashGrid" class="grid grid-cols-2 lg:grid-cols-12 lg:auto-rows-[96px] gap-5">
+<div x-data="dashEdit(<%= JSON.stringify(hiddenMap) %>, <%= JSON.stringify(spansMap) %>, <%= JSON.stringify(rowsMap) %>, <%= JSON.stringify(mspansMap) %>)" @dash-edit.window="start()">
+  <!-- auto-rows tylko od lg: wysokość widżetu = jego rows × 96 px (+ gapy). Na telefonie
+       szerokość/kolejność z --ms/--mo (reguła w input.css), wysokość rośnie z treścią. -->
+  <div id="dashGrid" class="grid grid-cols-2 lg:grid-cols-12 lg:auto-rows-[96px] gap-5" :class="mobileMode && 'mobile-preview'">
     <% widgets.forEach(function(w){ %>
-      <div class="relative <%= spanCls(w) %>" data-key="<%= w.key %>"
+      <div class="relative <%= spanCls(w) %>" data-key="<%= w.key %>" style="--ms: <%= w.mspan %>; --mo: <%= w.morder %>;"
            <% if (w.hidden) { %>x-show="edit" x-cloak<% } %>
            :class="edit && hidden['<%= w.key %>'] ? 'opacity-40' : ''">
-        <!-- nakładka trybu edycji: szerokość + oko, kursor przenoszenia -->
+        <!-- nakładka trybu edycji: oko (+ uchwyt rozmiaru w rogu), kursor przenoszenia -->
         <div x-show="edit" x-cloak class="absolute inset-0 z-10 rounded-2xl cursor-grab" title="Przeciągnij, aby przenieść">
           <div class="absolute top-2 right-2 flex gap-1.5">
-            <button type="button" @click.stop="cycleSpan('<%= w.key %>')"
+            <%# Na telefonie są tylko dwie szerokości — uchwyt nie ma czego snapować, więc
+                w trybie „Telefon" dostajemy zwykły przełącznik ½ ↔ 1/1. %>
+            <button type="button" x-show="mobileMode" x-cloak @click.stop="toggleMspan('<%= w.key %>')"
                     class="h-8 min-w-[32px] px-1.5 inline-flex items-center justify-center rounded-full bg-white border border-slate-200 shadow-sm text-xs font-semibold text-slate-500 hover:text-brand-700 hover:border-brand-200 transition"
-                    title="Zmień szerokość" x-text="spanLabel('<%= w.key %>')"></button>
-            <button type="button" @click.stop="cycleRows('<%= w.key %>')"
-                    class="h-8 min-w-[32px] px-1.5 inline-flex items-center justify-center rounded-full bg-white border border-slate-200 shadow-sm text-xs font-semibold text-slate-500 hover:text-brand-700 hover:border-brand-200 transition"
-                    title="Zmień wysokość" x-text="rowsLabel('<%= w.key %>')"></button>
+                    title="Szerokość na telefonie" x-text="mspans['<%= w.key %>'] === 1 ? '½' : '1/1'"></button>
             <button type="button" @click.stop="toggle('<%= w.key %>')"
                     class="w-8 h-8 inline-flex items-center justify-center rounded-full bg-white border border-slate-200 shadow-sm text-slate-500 hover:text-brand-700 hover:border-brand-200 transition"
                     :title="hidden['<%= w.key %>'] ? 'Pokaż widżet' : 'Ukryj widżet'">
@@ -48,6 +49,16 @@
               <span x-show="hidden['<%= w.key %>']" x-cloak><%- icon('eyeOff', { size: 15, cls: '' }) %></span>
             </button>
           </div>
+          <%# Uchwyt rozmiaru (desktop): przeciąganie zmienia szerokość I wysokość naraz,
+              snapując do dozwolonych wartości. Strzałki z klawiatury robią to samo.
+              Sortable go ignoruje (filter: '[data-resize]'), więc drag za uchwyt nie przenosi. %>
+          <button type="button" data-resize x-show="!mobileMode" title="Przeciągnij, aby zmienić rozmiar (strzałki: ←→ szerokość, ↑↓ wysokość)"
+                  aria-label="Zmień rozmiar widżetu"
+                  @pointerdown.stop.prevent="startResize($event, '<%= w.key %>')"
+                  @keydown.stop="resizeKey($event, '<%= w.key %>')"
+                  class="absolute bottom-1.5 right-1.5 w-6 h-6 inline-flex items-center justify-center rounded-md bg-white/90 border border-slate-200 shadow-sm text-slate-400 hover:text-brand-700 hover:border-brand-200 cursor-nwse-resize touch-none transition">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M11 5 5 11M11 9l-2 2"/></svg>
+          </button>
         </div>
         <% if (w.hidden) { %>
           <!-- placeholder ukrytego widżetu (dane nie są pobierane) -->
@@ -67,7 +78,18 @@
   <!-- pływający pasek trybu edycji (nie przesuwa treści) -->
   <div x-show="edit" x-cloak
        class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 rounded-2xl bg-white border border-slate-200 shadow-lg px-4 py-2.5">
-    <p class="hidden sm:block text-xs text-slate-400 max-w-[300px]">Przeciągnij widżety; przycisk ¼–1/1 zmienia szerokość, S–XL wysokość, oko ukrywa.</p>
+    <%# Desktop i telefon mają OSOBNE układy (szerokość + kolejność) — przełącznik decyduje,
+        który właśnie edytujesz. Podgląd „Telefon" jest WYSIWYG (te same --ms/--mo co realny telefon). %>
+    <div class="flex items-center rounded-lg border border-slate-200 p-0.5 shrink-0">
+      <button type="button" @click="setMode(false)" title="Układ na desktopie"
+              :class="!mobileMode ? 'bg-brand-50 text-brand-700' : 'text-slate-500 hover:text-slate-700'"
+              class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition"><%- icon('grip', { size: 13, cls: '' }) %> Desktop</button>
+      <button type="button" @click="setMode(true)" title="Układ na telefonie"
+              :class="mobileMode ? 'bg-brand-50 text-brand-700' : 'text-slate-500 hover:text-slate-700'"
+              class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition"><%- icon('phone', { size: 13, cls: '' }) %> Telefon</button>
+    </div>
+    <p class="hidden sm:block text-xs text-slate-400 max-w-[260px]"
+       x-text="mobileMode ? 'Przeciągnij, aby ustawić kolejność na telefonie; przycisk ½–1/1 zmienia szerokość.' : 'Przeciągnij widżety; uchwyt w rogu zmienia rozmiar, oko ukrywa.'"></p>
     <button type="button" @click="save()" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">Zapisz układ</button>
     <button type="button" @click="cancel()" class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">Anuluj</button>
   </div>
@@ -75,55 +97,130 @@
 
 <script src="/js/sortable.min.js"></script>
 <script>
-  function dashEdit(hiddenMap, spansMap, rowsMap) {
+  function dashEdit(hiddenMap, spansMap, rowsMap, mspansMap) {
     var SPAN_ORDER = [3, 4, 6, 8, 12];
     var SPAN_CLS = { 3: 'lg:col-span-3', 4: 'lg:col-span-4', 6: 'lg:col-span-6', 8: 'lg:col-span-8', 12: 'lg:col-span-12' };
-    var SPAN_LABEL = { 3: '¼', 4: '⅓', 6: '½', 8: '⅔', 12: '1/1' };
-    // Wysokość: jednostki siatki (auto-rows 96 px) → etykieta S/M/L/XL.
+    // Wysokość: jednostki siatki (auto-rows 96 px + gap 20).
     var ROW_ORDER = [2, 3, 4, 6];
     var ROW_CLS = { 2: 'lg:row-span-2', 3: 'lg:row-span-3', 4: 'lg:row-span-4', 6: 'lg:row-span-6' };
-    var ROW_LABEL = { 2: 'S', 3: 'M', 4: 'L', 6: 'XL' };
+    var GAP = 20, ROW_UNIT = 96;
+
+    var el = (key) => document.querySelector('#dashGrid [data-key="' + key + '"]');
+    // Najbliższa DOZWOLONA wartość z listy (snap przy przeciąganiu — zestawy zostają te same,
+    // co przy dotychczasowych przyciskach cyklicznych).
+    var snap = (list, v) => list.reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a), list[0]);
+    var step = (list, cur, dir) => list[Math.min(list.length - 1, Math.max(0, list.indexOf(cur) + dir))];
+
     return {
       edit: false,
+      mobileMode: false,
       hidden: hiddenMap,
       spans: spansMap,
       rows: rowsMap,
+      mspans: mspansMap,
       sortable: null,
+      deskOrder: [],   // kolejność desktopowa (DOM) zapamiętana na czas edycji telefonu
       start() {
         this.edit = true;
         if (!this.sortable && window.Sortable) {
-          this.sortable = Sortable.create(document.getElementById('dashGrid'), { animation: 150, ghostClass: 'opacity-30' });
+          this.sortable = Sortable.create(document.getElementById('dashGrid'), {
+            animation: 150,
+            ghostClass: 'opacity-30',
+            // Uchwyt rozmiaru i przyciski nakładki NIE mogą startować przenoszenia.
+            filter: '[data-resize],button',
+            preventOnFilter: false,
+            onEnd: () => { if (this.mobileMode) this.syncMobileOrder(); },
+          });
         }
       },
       toggle(key) { this.hidden[key] = !this.hidden[key]; },
-      spanLabel(key) { return SPAN_LABEL[this.spans[key]] || '⅓'; },
-      cycleSpan(key) {
-        const next = SPAN_ORDER[(SPAN_ORDER.indexOf(this.spans[key]) + 1) % SPAN_ORDER.length];
-        this.spans[key] = next;
-        const el = document.querySelector('#dashGrid [data-key="' + key + '"]');
-        if (el) {
-          Object.values(SPAN_CLS).forEach((c) => el.classList.remove(c));
-          el.classList.add(SPAN_CLS[next]);
-        }
+
+      // ── Rozmiar na desktopie: uchwyt w rogu ────────────────────────────────
+      applySize(key, span, rows) {
+        this.spans[key] = span;
+        this.rows[key] = rows;
+        const node = el(key);
+        if (!node) return;
+        Object.values(SPAN_CLS).forEach((c) => node.classList.remove(c));
+        Object.values(ROW_CLS).forEach((c) => node.classList.remove(c));
+        node.classList.add(SPAN_CLS[span], ROW_CLS[rows]);
       },
-      rowsLabel(key) { return ROW_LABEL[this.rows[key]] || 'L'; },
-      cycleRows(key) {
-        const next = ROW_ORDER[(ROW_ORDER.indexOf(this.rows[key]) + 1) % ROW_ORDER.length];
-        this.rows[key] = next;
-        const el = document.querySelector('#dashGrid [data-key="' + key + '"]');
-        if (el) {
-          Object.values(ROW_CLS).forEach((c) => el.classList.remove(c));
-          el.classList.add(ROW_CLS[next]);
-        }
+      startResize(ev, key) {
+        const grid = document.getElementById('dashGrid');
+        // Jednostka kolumny liczona z REALNEJ szerokości siatki (12 kolumn + 11 przerw).
+        const colUnit = (grid.getBoundingClientRect().width - 11 * GAP) / 12;
+        const x0 = ev.clientX, y0 = ev.clientY;
+        const span0 = this.spans[key], rows0 = this.rows[key];
+        const move = (e) => {
+          const span = snap(SPAN_ORDER, span0 + (e.clientX - x0) / (colUnit + GAP));
+          const rows = snap(ROW_ORDER, rows0 + (e.clientY - y0) / (ROW_UNIT + GAP));
+          if (span !== this.spans[key] || rows !== this.rows[key]) this.applySize(key, span, rows);
+        };
+        const up = () => {
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', up);
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
       },
+      // Fallback bez myszy (uchwyt jest fokusowalny): ←→ szerokość, ↑↓ wysokość.
+      resizeKey(ev, key) {
+        const k = ev.key;
+        if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].indexOf(k) < 0) return;
+        ev.preventDefault();
+        const span = (k === 'ArrowLeft' || k === 'ArrowRight') ? step(SPAN_ORDER, this.spans[key], k === 'ArrowRight' ? 1 : -1) : this.spans[key];
+        const rows = (k === 'ArrowUp' || k === 'ArrowDown') ? step(ROW_ORDER, this.rows[key], k === 'ArrowDown' ? 1 : -1) : this.rows[key];
+        this.applySize(key, span, rows);
+      },
+
+      // ── Układ na telefonie ─────────────────────────────────────────────────
+      toggleMspan(key) {
+        const next = this.mspans[key] === 1 ? 2 : 1;
+        this.mspans[key] = next;
+        const node = el(key);
+        if (node) node.style.setProperty('--ms', next);
+      },
+      // Kolejność mobilna jest OSOBNA od desktopowej, ale Sortable operuje na DOM.
+      // Rozwiązanie: w trybie telefonu DOM jest ustawiony w kolejności mobilnej, a przy wyjściu
+      // wraca do desktopowej (zapamiętanej w deskOrder) — dzięki temu jedno Sortable obsługuje
+      // oba tryby i kolejności się nie mieszają.
+      syncMobileOrder() {
+        const grid = document.getElementById('dashGrid');
+        Array.prototype.forEach.call(grid.children, (node, i) => node.style.setProperty('--mo', i));
+      },
+      reorderDom(keys) {
+        const grid = document.getElementById('dashGrid');
+        keys.forEach((k) => { const node = el(k); if (node) grid.appendChild(node); });
+      },
+      setMode(mobile) {
+        if (mobile === this.mobileMode) return;
+        const grid = document.getElementById('dashGrid');
+        const keys = Array.prototype.map.call(grid.children, (n) => n.dataset.key);
+        if (mobile) {
+          this.deskOrder = keys;                       // zapamiętaj układ desktopowy
+          this.reorderDom(keys.slice().sort((a, b) =>  // ustaw DOM w kolejności mobilnej
+            (+el(a).style.getPropertyValue('--mo') || 0) - (+el(b).style.getPropertyValue('--mo') || 0)));
+          this.syncMobileOrder();                      // znormalizuj --mo do 0..n-1
+        } else {
+          this.syncMobileOrder();                      // zapisz to, co user poukładał
+          this.reorderDom(this.deskOrder);             // wróć do kolejności desktopowej
+        }
+        this.mobileMode = mobile;
+      },
+
       cancel() { location.reload(); },
       async save() {
+        // Zapis zawsze w kolejności DESKTOPOWEJ (tak działa kolejność tablicy w konfiguracji);
+        // kolejność telefonu jedzie osobno w `morder`.
+        if (this.mobileMode) this.setMode(false);
         const grid = document.getElementById('dashGrid');
-        const layout = Array.prototype.map.call(grid.children, (el) => ({
-          key: el.dataset.key,
-          hidden: !!this.hidden[el.dataset.key],
-          span: this.spans[el.dataset.key],
-          rows: this.rows[el.dataset.key],
+        const layout = Array.prototype.map.call(grid.children, (node) => ({
+          key: node.dataset.key,
+          hidden: !!this.hidden[node.dataset.key],
+          span: this.spans[node.dataset.key],
+          rows: this.rows[node.dataset.key],
+          mspan: this.mspans[node.dataset.key],
+          morder: +node.style.getPropertyValue('--mo') || 0,
         }));
         await fetch('/admin/dashboard/layout', {
           method: 'POST',

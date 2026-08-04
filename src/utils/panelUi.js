@@ -22,27 +22,33 @@ const MENU = [
 // Widżety pulpitu. span = szerokość na lg w jednostkach siatki 12-kolumnowej
 // (3 = ¼, 4 = ⅓, 6 = ½, 8 = ⅔, 12 = pełna); rows = WYSOKOŚĆ w jednostkach siatki
 // (`auto-rows-[96px]` + gap 20px → 2=212px, 3=328px, 4=444px, 6=676px). Obie wartości
-// użytkownik zmienia przełącznikami w trybie edycji pulpitu.
+// użytkownik ustawia uchwytem w rogu widżetu (tryb edycji pulpitu).
 // Dzięki `rows` da się złożyć układ „dwa niskie kafelki obok jednego wysokiego" —
 // CSS Grid sam pakuje elementy w kolumnach (auto-placement wg kolejności DOM).
+//
+// TELEFON ma OSOBNY układ (poniżej breakpointu lg): `mspan` = szerokość w siatce
+// 2-kolumnowej (1 = ½, 2 = pełna) — domyślne wartości odtwarzają dotychczasowe zachowanie
+// (kafelki KPI po pół, treść na pełną). Kolejność mobilna jest osobna od desktopowej
+// i siedzi w `morder` (indeks); brak wartości = pozycja z tej listy.
 // Renderery: views/admin/_widgets/<key>.ejs.
 const SPANS = [3, 4, 6, 8, 12];
 const ROWS = [2, 3, 4, 6];
+const MOBILE_SPANS = [1, 2];
 const WIDGETS = [
-  { key: 'stat-transfers', label: 'Aktywne transfery', span: 4, rows: 2, icon: 'send' },
-  { key: 'stat-projects', label: 'Aktywne projekty', span: 4, rows: 2, icon: 'folder' },
-  { key: 'stat-uploads', label: 'Oczekujące uploady', span: 4, rows: 2, icon: 'cloudUpload' },
-  { key: 'stat-outstanding', label: 'Do rozliczenia', span: 4, rows: 2, icon: 'banknote' },
-  { key: 'stat-overdue', label: 'Przeterminowane', span: 4, rows: 2, icon: 'clock' },
-  { key: 'stat-storage', label: 'Wykorzystane miejsce', span: 4, rows: 2, icon: 'archive' },
-  { key: 'attention', label: 'Wymaga uwagi', span: 4, rows: 4, icon: 'alert' },
-  { key: 'chart', label: 'Wykres przychodu', span: 8, rows: 4, icon: 'trendingUp' },
-  { key: 'actions', label: 'Szybkie akcje', span: 4, rows: 4, icon: 'plus' },
-  { key: 'activity', label: 'Ostatnia aktywność', span: 8, rows: 4, icon: 'activity' },
-  { key: 'tasks', label: 'Nadchodzące zadania', span: 4, rows: 4, icon: 'calendarDays' },
-  { key: 'revenue', label: 'Przychód i top klienci', span: 4, rows: 4, icon: 'trendingUp' },
-  { key: 'messages', label: 'Nieprzeczytane wiadomości', span: 4, rows: 4, icon: 'mail' },
-  { key: 'followup', label: 'Do odezwania się', span: 4, rows: 4, icon: 'phone' },
+  { key: 'stat-transfers', label: 'Aktywne transfery', span: 4, rows: 2, mspan: 1, icon: 'send' },
+  { key: 'stat-projects', label: 'Aktywne projekty', span: 4, rows: 2, mspan: 1, icon: 'folder' },
+  { key: 'stat-uploads', label: 'Oczekujące uploady', span: 4, rows: 2, mspan: 1, icon: 'cloudUpload' },
+  { key: 'stat-outstanding', label: 'Do rozliczenia', span: 4, rows: 2, mspan: 1, icon: 'banknote' },
+  { key: 'stat-overdue', label: 'Przeterminowane', span: 4, rows: 2, mspan: 1, icon: 'clock' },
+  { key: 'stat-storage', label: 'Wykorzystane miejsce', span: 4, rows: 2, mspan: 1, icon: 'archive' },
+  { key: 'attention', label: 'Wymaga uwagi', span: 4, rows: 4, mspan: 2, icon: 'alert' },
+  { key: 'chart', label: 'Wykres przychodu', span: 8, rows: 4, mspan: 2, icon: 'trendingUp' },
+  { key: 'actions', label: 'Szybkie akcje', span: 4, rows: 4, mspan: 2, icon: 'plus' },
+  { key: 'activity', label: 'Ostatnia aktywność', span: 8, rows: 4, mspan: 2, icon: 'activity' },
+  { key: 'tasks', label: 'Nadchodzące zadania', span: 4, rows: 4, mspan: 2, icon: 'calendarDays' },
+  { key: 'revenue', label: 'Przychód i top klienci', span: 4, rows: 4, mspan: 2, icon: 'trendingUp' },
+  { key: 'messages', label: 'Nieprzeczytane wiadomości', span: 4, rows: 4, mspan: 2, icon: 'mail' },
+  { key: 'followup', label: 'Do odezwania się', span: 4, rows: 4, mspan: 2, icon: 'phone' },
 ];
 
 // Szybkie akcje (widżet pulpitu „Szybkie akcje"). `on` = domyślnie widoczna.
@@ -97,9 +103,16 @@ function mergeWidgets(cfg) {
       hidden: !!s.hidden,
       span: SPANS.includes(s.span) ? s.span : base.span,
       rows: ROWS.includes(s.rows) ? s.rows : base.rows,
+      mspan: MOBILE_SPANS.includes(s.mspan) ? s.mspan : base.mspan,
+      // morder = pozycja na telefonie; uzupełniamy niżej, gdy brak zapisu.
+      ...(Number.isInteger(s.morder) ? { morder: s.morder } : {}),
     });
   }
   for (const w of WIDGETS) if (!seen.has(w.key)) out.push({ ...w, hidden: false });
+  // Kolejność mobilna: braki dopełniamy pozycją desktopową, potem normalizujemy do 0..n-1,
+  // żeby wartości zawsze były ciągłe (po dodaniu nowego widżetu w aktualizacji aplikacji).
+  out.forEach((w, i) => { if (!Number.isInteger(w.morder)) w.morder = i; });
+  out.slice().sort((a, b) => a.morder - b.morder).forEach((w, i) => { w.morder = i; });
   return out;
 }
 
@@ -127,11 +140,16 @@ function sanitizeWidgets(raw) {
     seen.add(s.key);
     const span = Number(s.span);
     const rows = Number(s.rows);
+    const mspan = Number(s.mspan);
+    const morder = Number(s.morder);
     out.push({
       key: s.key,
       hidden: !!s.hidden,
       ...(SPANS.includes(span) ? { span } : {}),
       ...(ROWS.includes(rows) ? { rows } : {}),
+      ...(MOBILE_SPANS.includes(mspan) ? { mspan } : {}),
+      // Kolejność na telefonie: dowolna nieujemna liczba całkowita (merge normalizuje do 0..n-1).
+      ...(Number.isInteger(morder) && morder >= 0 && morder < 500 ? { morder } : {}),
     });
   }
   return out;
@@ -159,4 +177,4 @@ function sanitizeActions(raw) {
   return out;
 }
 
-module.exports = { MENU, WIDGETS, ACTIONS, SPANS, ROWS, mergeMenu, mergeWidgets, mergeActions, sanitizeMenu, sanitizeWidgets, sanitizeActions };
+module.exports = { MENU, WIDGETS, ACTIONS, SPANS, ROWS, MOBILE_SPANS, mergeMenu, mergeWidgets, mergeActions, sanitizeMenu, sanitizeWidgets, sanitizeActions };

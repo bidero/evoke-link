@@ -304,3 +304,29 @@ html.dark.theme-modern [data-stat-icon] { background: rgb(var(--brand-600) / 0.2
     font-size: 0; line-height: 0; overflow: hidden;
   }
 }
+
+/* ── Pulpit: osobny układ na telefon ────────────────────────────────────────
+   Szerokość (--ms: 1 = ½, 2 = pełna) i kolejność (--mo) są ustawiane inline per widżet
+   z konfiguracji (Settings.panel.dashboard). ŚWIADOMIE zmiennymi CSS, nie klasami
+   Tailwinda: `order-1..order-14` wykracza poza domyślną skalę, a takie podejście działa
+   dla dowolnej liczby widżetów bez dokładania klas do skanowania. */
+@media (max-width: 1023.98px) {          /* poniżej breakpointu lg */
+  #dashGrid > [data-key] {
+    grid-column: span var(--ms, 2) / span var(--ms, 2);
+    order: var(--mo, 0);
+  }
+}
+
+/* Podgląd „Telefon" w trybie edycji — TE SAME zmienne co realny telefon (jedno źródło
+   prawdy), tylko wymuszone na szerokim ekranie, więc `!important` przebija klasy `lg:*`. */
+#dashGrid.mobile-preview {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  grid-auto-rows: auto !important;
+  max-width: 420px;
+  margin-inline: auto;
+}
+#dashGrid.mobile-preview > [data-key] {
+  grid-column: span var(--ms, 2) / span var(--ms, 2) !important;
+  grid-row: auto !important;
+  order: var(--mo, 0);
+}

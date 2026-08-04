@@ -65,6 +65,7 @@ async function showDashboard(req, res, next) {
       hiddenMap: Object.fromEntries(widgets.map((w) => [w.key, w.hidden])),
       spansMap: Object.fromEntries(widgets.map((w) => [w.key, w.span])),
       rowsMap: Object.fromEntries(widgets.map((w) => [w.key, w.rows])),
+      mspansMap: Object.fromEntries(widgets.map((w) => [w.key, w.mspan])),
       stats,
       recent,
       upcoming,
