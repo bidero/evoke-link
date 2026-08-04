@@ -51,11 +51,15 @@
       (podglądy szkła w Ustawieniach → Wygląd) dawał glitch renderowania: „szary ekran i część
       znika". Mobile bez zmian (sidebar offcanvas, normalny scroll). %>
   <div class="min-h-screen flex">
-    <!-- Przyciemnienie tła pod offcanvas (mobile) -->
-    <div x-show="nav" x-cloak @click="nav = false" class="fixed inset-0 bg-black/40 z-30 md:hidden"></div>
+    <%# GOTCHA (v0.99.83): przy offcanvasie na CAŁĄ szerokość NIE MA przyciemnienia tła.
+        Nie ma go po co klikać (jest przycisk X), a na iOS realnie szkodziło: menu to
+        `position:fixed` z `inset-y-0`, które przy dynamicznym pasku Safari nie zawsze pokrywa
+        pełną wysokość ekranu (ta sama pułapka co przy pasie portali, v0.99.8). W odsłoniętym
+        skrawku zostawała czarna warstwa 40%, a Safari barwi swoje paski kolorem pobranym przy
+        krawędziach — stąd „paski szarzeją po otwarciu menu". Zabezpieczenie na skrawek:
+        `html.nav-open body` dostaje kolor menu (input.css). %>
 
-    <!-- Pasek boczny: na telefonie offcanvas na CAŁĄ szerokość (zakrywa nagłówek, więc nie widać
-         przyciemnienia pod spodem), od md statyczny pasek 15rem jak dotąd. -->
+    <!-- Pasek boczny: na telefonie offcanvas na CAŁĄ szerokość, od md statyczny pasek 15rem. -->
     <aside data-admin-sidebar class="fixed inset-y-0 left-0 z-40 w-full md:w-60 shrink-0 bg-[var(--admin-sidebar)] border-r border-slate-200/60 flex flex-col overflow-hidden -translate-x-full md:translate-x-0 md:sticky md:top-0 md:h-screen md:self-start"
            :class="nav && '!translate-x-0'" style="color: var(--admin-sidebar-text)">
       <div data-rail-head class="h-16 flex items-center gap-2 px-6 border-b border-black/5">

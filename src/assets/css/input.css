@@ -330,3 +330,12 @@ html.dark.theme-modern [data-stat-icon] { background: rgb(var(--brand-600) / 0.2
   grid-row: auto !important;
   order: var(--mo, 0);
 }
+
+/* Offcanvas panelu na telefonie zajmuje CAŁY ekran, ale to `position:fixed` — na iOS przy
+   dynamicznym pasku Safari taki element bywa krótszy niż realny widok i przy krawędzi
+   prześwituje tło <body>. Safari barwi swoje paski kolorem pobranym właśnie stamtąd, więc
+   na czas otwartego menu tło body dostaje kolor menu — paski nie mają skąd wziąć innego
+   koloru. (Klasa `nav-open` jest już ustawiana dla evokeSyncThemeColor.) */
+@media (max-width: 767.98px) {
+  html.nav-open body { background-color: var(--admin-sidebar); }
+}

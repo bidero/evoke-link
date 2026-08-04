@@ -112,6 +112,9 @@ test('offcanvas na telefonie: pełna szerokość, zamykanie i sekcja konta + syn
   assert.match(html, /data-admin-sidebar[^>]*\bw-full md:w-60\b/, 'offcanvas pełnoekranowy tylko poniżej md');
   assert.match(html, /data-nav-close/, 'przycisk zamknięcia menu (brak przyciemnienia do kliknięcia)');
   assert.match(html, /overflow-hidden md:overflow-visible/, 'blokada przewijania tła przy otwartym menu');
+  // Przyciemnienia NIE MA (v0.99.83): przy fixed-menu na iOS zostawało w odsłoniętym skrawku
+  // i barwiło paski Safari na szaro. Zamykanie zapewnia przycisk X, nie klik w tło.
+  assert.ok(!/bg-black\/40/.test(html), 'brak przyciemnienia pod offcanvasem');
 
   // Sekcja konta w menu — tylko na telefonie, z tymi samymi trasami co dropdown w nagłówku.
   const acc = html.slice(html.indexOf('data-nav-account'), html.indexOf('</aside>'));
