@@ -5,6 +5,7 @@ const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 process.chdir(path.join(__dirname, '..'));
 const app = require('../src/app');
 const prisma = require('../src/db/client');
@@ -71,6 +72,52 @@ test('transfer: dodanie i usunięcie plików z panelu (plik znika też z dysku)'
     const anon = await fetch(`${base}/admin/transfers/${transfer.id}/file/${files[0].id}/delete`, { method: 'POST', redirect: 'manual' });
     assert.match(anon.headers.get('location') || '', /\/admin\/login/, 'bez sesji przekierowanie na logowanie');
     assert.ok(await prisma.file.findUnique({ where: { id: files[0].id } }), 'plik nietknięty bez logowania');
+  } finally {
+    const t2 = await transferService.getById(transfer.id);
+    if (t2) await transferService.remove(t2);
+  }
+});
+
+test('transfer: dopisanie pliku uploadem dzielonym (kawałki + integralność md5)', async (t) => {
+  const cookie = await login();
+  if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
+
+  const CHUNK = 5 * 1024 * 1024;
+  const transfer = await makeTransfer('chunk');
+  const uploadId = crypto.randomBytes(16).toString('hex');
+  try {
+    // 6 MB → 2 kawałki; drugi wysyłamy PRZED pierwszym (klient wysyła równolegle).
+    const big = crypto.randomBytes(6 * 1024 * 1024);
+    const send = async (buf, ci) => {
+      const fd = new FormData();
+      fd.append('uploadId', uploadId);
+      fd.append('fileIndex', '0');
+      fd.append('fileName', 'duzy.bin');
+      fd.append('fileType', 'application/octet-stream');
+      fd.append('chunkIndex', String(ci));
+      fd.append('totalChunks', '2');
+      fd.append('chunk', new Blob([buf]), 'chunk');
+      const r = await fetch(`${base}/admin/transfers/chunk`, { method: 'POST', headers: { Cookie: cookie }, body: fd });
+      assert.equal(r.status, 200, `kawałek ${ci} przyjęty`);
+    };
+    await send(big.subarray(CHUNK), 1);
+    await send(big.subarray(0, CHUNK), 0);
+
+    // Finalizacja: zwykłe urlencoded z uploadId (bez multipartu) — `receiveUpload` skleja.
+    const fin = await fetch(`${base}/admin/transfers/${transfer.id}/files`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookie },
+      body: new URLSearchParams({ uploadId }),
+      redirect: 'manual',
+    });
+    assert.equal(fin.status, 302, 'finalizacja OK');
+    await wait(300);
+
+    const added = (await prisma.file.findMany({ where: { transferId: transfer.id } })).find((f) => f.originalName === 'duzy.bin');
+    assert.ok(added, 'plik z kawałków dopisany do transferu');
+    assert.equal(Number(added.size), big.length, 'pełny rozmiar');
+    const onDisk = fs.readFileSync(storage.absolutePath(added.storedPath));
+    assert.equal(crypto.createHash('md5').update(onDisk).digest('hex'), crypto.createHash('md5').update(big).digest('hex'), 'zawartość zgodna (md5)');
   } finally {
     const t2 = await transferService.getById(transfer.id);
     if (t2) await transferService.remove(t2);

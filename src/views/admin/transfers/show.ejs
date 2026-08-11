@@ -127,14 +127,22 @@
       <span class="text-sm font-medium text-slate-700">
         <%= incoming ? 'Otrzymane pliki' : 'Pliki' %> (<%= transfer.files.length %>)
       </span>
-      <span class="flex items-center gap-3">
-        <%# Dopisanie plików do JUŻ ISTNIEJĄCEGO transferu — zwykły multipart, bez osobnego
-            kreatora; wysyłka od razu po wybraniu plików. %>
-        <form method="POST" action="/admin/transfers/<%= transfer.id %>/files" enctype="multipart/form-data">
-          <label class="inline-flex items-center gap-1.5 text-sm text-brand-700 hover:underline cursor-pointer">
+      <span class="flex items-center gap-3" x-data="addFiles(<%= transfer.id %>)">
+        <%# Dopisanie plików do JUŻ ISTNIEJĄCEGO transferu — upload DZIELONY na 5 MB
+            (ten sam mechanizm co w kreatorze), więc duże pliki nie odbijają się od limitu
+            rozmiaru requestu na hostingu. Bez chunkedUpload w przeglądarce leci zwykły
+            multipart (`receiveUpload` obsługuje oba warianty). %>
+        <form method="POST" action="/admin/transfers/<%= transfer.id %>/files" enctype="multipart/form-data" x-ref="form">
+          <label x-show="!busy" class="inline-flex items-center gap-1.5 text-sm text-brand-700 hover:underline cursor-pointer">
             <%- icon('plus', { size: 14, cls: '' }) %> Dodaj pliki
-            <input type="file" name="files" multiple class="hidden" onchange="this.form.submit()" />
+            <input type="file" name="files" multiple class="hidden" x-ref="input" @change="pick()" />
           </label>
+          <span x-show="busy" x-cloak class="inline-flex items-center gap-2 text-sm text-slate-500">
+            <span x-text="finalizing ? 'Finalizowanie…' : ('Wysyłanie… ' + progress + '%')"></span>
+            <span class="w-24 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+              <span class="block h-full bg-brand-600 transition-all" :class="finalizing && 'animate-pulse'" :style="'width:' + (finalizing ? 100 : progress) + '%'"></span>
+            </span>
+          </span>
         </form>
         <% if (transfer.files.length) { %>
           <a href="/admin/transfers/<%= transfer.id %>/zip" class="text-sm text-brand-700 hover:underline">Pobierz ZIP</a>
@@ -199,7 +207,39 @@
     </div>
   </div>
 
+  <script src="/js/chunked-upload.js"></script>
   <script>
+    // Dopisanie plików do istniejącego transferu. Kawałki lecą na /admin/transfers/chunk
+    // (endpoint wspólny z kreatorem), potem zwykłe urlencoded z `uploadId` — `receiveUpload`
+    // składa z nich req.files w kształcie multera, więc kontroler nic o tym nie wie.
+    function addFiles(transferId) {
+      return {
+        busy: false, finalizing: false, progress: 0,
+        async pick() {
+          const input = this.$refs.input;
+          const files = Array.prototype.slice.call(input.files || []);
+          if (!files.length || this.busy) return;
+          // Brak skryptu dzielenia (np. nie zdążył się wczytać) → zwykły multipart.
+          if (!window.chunkedUpload) return this.$refs.form.submit();
+
+          this.busy = true; this.finalizing = false; this.progress = 0;
+          try {
+            const uploadId = await window.chunkedUpload(files, '/admin/transfers/chunk', (p) => { this.progress = p; });
+            this.finalizing = true; // serwer skleja kawałki — pokaż aktywność
+            const body = new URLSearchParams();
+            body.append('uploadId', uploadId);
+            const res = await fetch('/admin/transfers/' + transferId + '/files', { method: 'POST', body });
+            if (res.ok) return window.location.reload();
+            throw new Error('Serwer odrzucił żądanie (' + res.status + ').');
+          } catch (err) {
+            this.busy = false; this.finalizing = false;
+            input.value = ''; // pozwól wybrać te same pliki ponownie
+            alert(err && err.message ? err.message : 'Błąd wysyłania.');
+          }
+        },
+      };
+    }
+
     function lightbox(items) {
       return {
         items: items || [],
