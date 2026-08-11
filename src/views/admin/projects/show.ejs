@@ -134,9 +134,21 @@
     </div>
 
     <!-- Rozliczenia -->
-    <div id="rozliczenia" class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <%# „Ukryj rozliczone" — filtr wizualny (x-show), stan w localStorage pod tym samym kluczem
+        co na karcie klienta 360°, więc przełącznik przenosi się między ekranami. %>
+    <div id="rozliczenia" class="bg-white rounded-2xl border border-slate-200 overflow-hidden"
+         x-data="{ hideSettled: (localStorage.getItem('evoke-hide-settled') === '1') }"
+         x-init="$watch('hideSettled', function(v){ try { localStorage.setItem('evoke-hide-settled', v ? '1' : '0'); } catch(e) {} })">
       <div class="px-5 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <h2 class="text-sm font-medium text-slate-700">Rozliczenia</h2>
+        <div class="flex items-center gap-3">
+          <h2 class="text-sm font-medium text-slate-700">Rozliczenia</h2>
+          <% if (project.charges.some(function(c){ return c.paidAt; })) { %>
+            <label class="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700 cursor-pointer select-none">
+              <input type="checkbox" x-model="hideSettled" class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" />
+              Ukryj rozliczone
+            </label>
+          <% } %>
+        </div>
         <% if (chargeTotals.gross > 0) { %>
           <div class="text-xs text-slate-400">
             <% if (chargeTotals.vat > 0) { %>
@@ -153,9 +165,10 @@
       </div>
 
       <% if (project.charges.length) { %>
+        <% const _anyUnpaid = project.charges.some(function(c){ return !c.paidAt; }); %>
         <ul class="divide-y divide-slate-100">
           <% project.charges.forEach(function(ch){ const _vat = ch.vatRate ? Math.round(ch.amount * ch.vatRate / 100) : 0; const _gross = ch.amount + _vat; %>
-            <li class="flex items-center gap-3 px-5 py-3">
+            <li<%- ch.paidAt ? ' x-show="!hideSettled"' : '' %> class="flex items-center gap-3 px-5 py-3">
               <form method="POST" action="/admin/projects/<%= project.id %>/charges/<%= ch.id %>/toggle" class="shrink-0">
                 <button type="submit" title="<%= ch.paidAt ? 'Oznacz jako nierozliczone' : 'Oznacz jako rozliczone' %>" class="w-5 h-5 rounded border flex items-center justify-center transition <%= ch.paidAt ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 text-transparent hover:border-brand-400' %>"><%- icon('check', { size: 13, cls: '' }) %></button>
               </form>
@@ -180,6 +193,13 @@
             </li>
           <% }); %>
         </ul>
+        <% if (!_anyUnpaid) { %>
+          <%# Wszystko rozliczone → po ukryciu lista byłaby pusta bez wyjaśnienia. %>
+          <div x-show="hideSettled" x-cloak class="px-5 py-6 text-center text-sm text-slate-400">
+            Wszystkie pozycje są rozliczone (ukryte).
+            <button type="button" @click="hideSettled = false" class="text-brand-700 hover:underline">Pokaż</button>
+          </div>
+        <% } %>
       <% } else { %>
         <div class="px-5 py-6 text-center text-sm text-slate-400">Brak pozycji rozliczeniowych.</div>
       <% } %>
