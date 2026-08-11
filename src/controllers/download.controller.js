@@ -252,6 +252,10 @@ async function downloadZip(req, res, next) {
   try {
     const transfer = await guard(req, res);
     if (!transfer) return;
+    // Transfer bez plików (admin mógł usunąć wszystkie z panelu): nie wydajemy pustego
+    // archiwum i — co ważniejsze — NIE zliczamy pobrania, bo zjadłoby limit i mogło
+    // wygasić transfer. Panel zachowuje się tak samo (adminDownloadZip → 404).
+    if (!transfer.files.length) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
 
     maybeNotifyDownload(transfer, req);
     await transferService.incrementDownload(transfer.id);

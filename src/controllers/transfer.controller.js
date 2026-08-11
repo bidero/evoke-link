@@ -331,6 +331,69 @@ async function deleteTransfer(req, res, next) {
   }
 }
 
+// Zmiana zawartości transferu unieważnia decyzję proofingu — klient oceniał INNY zestaw plików.
+// Cicha, bo to konsekwencja akcji admina, a nie osobna operacja (jak przy edycji oferty).
+async function invalidateApproval(transfer) {
+  if (!transfer.proofing || !transfer.approvalStatus) return;
+  await transferService.resetApproval(transfer.id);
+  await events.log({
+    type: 'updated',
+    message: 'Zmiana plików — status akceptacji wyczyszczony (poproś klienta ponownie)',
+    transferId: transfer.id,
+    projectId: transfer.projectId,
+  });
+}
+
+// Dopisanie plików do ISTNIEJĄCEGO transferu (panel, strona szczegółów).
+async function addTransferFiles(req, res, next) {
+  try {
+    const transfer = await transferService.getById(req.params.id);
+    if (!transfer) {
+      (req.files || []).forEach((f) => storage.removeTmp(f.path));
+      return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
+    }
+    const files = req.files || [];
+    if (!files.length) return res.redirect(`/admin/transfers/${transfer.id}`);
+
+    await transferService.addFiles(transfer, files);
+    await events.log({
+      type: 'updated',
+      message: `Dodano ${files.length} plik(ów) do transferu`,
+      transferId: transfer.id,
+      projectId: transfer.projectId,
+      ip: req.ip,
+    });
+    await invalidateApproval(transfer);
+    res.redirect(`/admin/transfers/${transfer.id}`);
+  } catch (err) {
+    (req.files || []).forEach((f) => storage.removeTmp(f.path));
+    next(err);
+  }
+}
+
+// Usunięcie pojedynczego pliku z transferu (plik znika też z dysku).
+async function removeTransferFile(req, res, next) {
+  try {
+    const transfer = await transferService.getById(req.params.id);
+    if (!transfer) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
+
+    const file = await transferService.removeFile(transfer.id, req.params.fileId);
+    if (file) {
+      await events.log({
+        type: 'updated',
+        message: `Usunięto plik z transferu: ${file.originalName}`,
+        transferId: transfer.id,
+        projectId: transfer.projectId,
+        ip: req.ip,
+      });
+      await invalidateApproval(transfer);
+    }
+    res.redirect(`/admin/transfers/${transfer.id}`);
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Przedłużenie ważności transferu (domyka pętlę ostrzeżenia o wygasaniu).
 async function extendTransfer(req, res, next) {
   try {
@@ -354,6 +417,8 @@ module.exports = {
   sendLinkEmail,
   showEditForm,
   updateTransfer,
+  addTransferFiles,
+  removeTransferFile,
   adminDownloadFile,
   adminPreviewFile,
   adminDownloadZip,

@@ -102,6 +102,10 @@ router.get('/transfers/:id/preview/:fileId', transfers.adminPreviewFile);
 router.post('/transfers/:id', transfers.updateTransfer);
 router.post('/transfers/:id/extend', transfers.extendTransfer);
 router.post('/transfers/:id/delete', transfers.deleteTransfer);
+// Edycja ZAWARTOŚCI istniejącego transferu (strona szczegółów): `receiveUpload` to ten sam
+// middleware co przy tworzeniu — obsłuży i chunked upload, i zwykły multipart.
+router.post('/transfers/:id/files', receiveUpload('files'), transfers.addTransferFiles);
+router.post('/transfers/:id/file/:fileId/delete', transfers.removeTransferFile);
 
 // Projekty (Etap 3).
 router.get('/projects', projects.listProjects);

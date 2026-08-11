@@ -206,6 +206,28 @@ async function addFiles(transfer, uploadedFiles) {
   return prisma.transfer.findUnique({ where: { id: transfer.id }, include: { files: true } });
 }
 
+// Usuwa POJEDYNCZY plik transferu (panel: edycja zawartości już utworzonego transferu).
+// Kasuje plik z dysku ORAZ wiersz z bazy — `onDelete: Cascade` działa tylko w drugą stronę
+// (kasowanie transferu kasuje pliki), samo usunięcie File nie rusza dysku. Wzorzec jak
+// w document.service.remove(). Filtr po transferId chroni przed usunięciem cudzego pliku.
+async function removeFile(transferId, fileId) {
+  const file = await prisma.file.findFirst({ where: { id: Number(fileId), transferId: Number(transferId) } });
+  if (!file) return null;
+  storage.removeStored(file.storedPath);
+  await prisma.file.delete({ where: { id: file.id } });
+  return file;
+}
+
+// Czyści decyzję proofingu. Wołane, gdy admin zmieni ZAWARTOŚĆ transferu, który klient już
+// zatwierdził/odesłał z uwagami — zestaw plików przestał być tym, który klient oceniał.
+// Wzorzec jak przy edycji oferty (offer.service.update resetuje status i decyzję).
+function resetApproval(id) {
+  return prisma.transfer.update({
+    where: { id: Number(id) },
+    data: { approvalStatus: null, approvalComment: null, approvalBy: null, approvalAt: null },
+  });
+}
+
 // Usuwa transfer i jego pliki z dysku.
 async function remove(transfer) {
   storage.removeTransfer(transfer.token);
@@ -244,6 +266,8 @@ module.exports = {
   createOutgoingTransfer,
   createUploadRequest,
   addFiles,
+  removeFile,
+  resetApproval,
   update,
   getByToken,
   getById,

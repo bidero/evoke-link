@@ -127,9 +127,19 @@
       <span class="text-sm font-medium text-slate-700">
         <%= incoming ? 'Otrzymane pliki' : 'Pliki' %> (<%= transfer.files.length %>)
       </span>
-      <% if (transfer.files.length) { %>
-        <a href="/admin/transfers/<%= transfer.id %>/zip" class="text-sm text-brand-700 hover:underline">Pobierz ZIP</a>
-      <% } %>
+      <span class="flex items-center gap-3">
+        <%# Dopisanie plików do JUŻ ISTNIEJĄCEGO transferu — zwykły multipart, bez osobnego
+            kreatora; wysyłka od razu po wybraniu plików. %>
+        <form method="POST" action="/admin/transfers/<%= transfer.id %>/files" enctype="multipart/form-data">
+          <label class="inline-flex items-center gap-1.5 text-sm text-brand-700 hover:underline cursor-pointer">
+            <%- icon('plus', { size: 14, cls: '' }) %> Dodaj pliki
+            <input type="file" name="files" multiple class="hidden" onchange="this.form.submit()" />
+          </label>
+        </form>
+        <% if (transfer.files.length) { %>
+          <a href="/admin/transfers/<%= transfer.id %>/zip" class="text-sm text-brand-700 hover:underline">Pobierz ZIP</a>
+        <% } %>
+      </span>
     </div>
     <% if (!transfer.files.length) { %>
       <div class="px-5 py-8 text-center text-sm text-slate-400">
@@ -159,6 +169,12 @@
             <span class="flex items-center gap-3 shrink-0">
               <span class="text-slate-400"><%= fmt.bytes(f.size) %></span>
               <a href="<%= _dl %>" class="text-slate-400 hover:text-brand-700 opacity-0 group-hover:opacity-100 transition" aria-label="Pobierz" title="Pobierz"><%- icon('download', { size: 16 }) %></a>
+              <%# Nazwa pliku przez JSON.stringify (nie wklejana wprost w apostrofy) — inaczej
+                  cudzysłów albo backslash w nazwie rozwala literał JS w atrybucie. %>
+              <form method="POST" action="/admin/transfers/<%= transfer.id %>/file/<%= f.id %>/delete"
+                    onsubmit="return confirm('Usunąć plik ' + <%= JSON.stringify(f.originalName) %> + '? Zniknie też z dysku — tej operacji nie można cofnąć.')">
+                <button type="submit" class="text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition" aria-label="Usuń plik" title="Usuń plik"><%- icon('trash', { size: 16 }) %></button>
+              </form>
             </span>
           </div>
         <% }); %>
