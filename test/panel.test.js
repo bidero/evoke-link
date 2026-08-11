@@ -70,6 +70,26 @@ test('panelUi: wysokość widżetu (rows) przechodzi przez scalanie i sanityzacj
   assert.ok(panelUi.WIDGETS.every((w) => panelUi.ROWS.includes(w.rows)), 'domyślne rows z whitelisty');
 });
 
+test('panelUi: minRows — wykres nie schodzi poniżej wysokości swojej treści', () => {
+  // Wykres ma treść o STAŁEJ wysokości (przełącznik + SVG 196px + wiersz z kwotą) i przy
+  // rows < 4 była ucinana. Zapisane niższe wartości są podnoszone na obu ścieżkach:
+  // przy odczycie (samoleczenie starych układów) i przy zapisie (konfiguracja nie kłamie).
+  const chart = panelUi.WIDGETS.find((w) => w.key === 'chart');
+  assert.equal(chart.minRows, 4);
+  assert.ok(chart.rows >= chart.minRows, 'domyślna wysokość nie mniejsza niż minimum');
+
+  const merged = (cfg, key) => panelUi.mergeWidgets(cfg).find((w) => w.key === key).rows;
+  assert.equal(merged([{ key: 'chart', rows: 2 }], 'chart'), 4, 'rows 2 → podniesione do minimum');
+  assert.equal(merged([{ key: 'chart', rows: 3 }], 'chart'), 4, 'rows 3 → podniesione do minimum');
+  assert.equal(merged([{ key: 'chart', rows: 6 }], 'chart'), 6, 'wyższa wartość zostaje');
+
+  assert.equal(panelUi.sanitizeWidgets([{ key: 'chart', rows: 2 }])[0].rows, 4, 'zapis też podnosi');
+
+  // Widżety-listy minimum NIE mają — tam wewnętrzny scroll jest naturalny.
+  assert.equal(merged([{ key: 'activity', rows: 2 }], 'activity'), 2, 'lista może być niska');
+  assert.equal(panelUi.sanitizeWidgets([{ key: 'activity', rows: 2 }])[0].rows, 2);
+});
+
 test('panelUi: osobny układ mobilny (mspan + morder) w scalaniu i sanityzacji', () => {
   // sanityzacja: mspan z whitelisty (1|2), morder = nieujemna liczba całkowita
   const s = panelUi.sanitizeWidgets([
@@ -129,6 +149,8 @@ test('pulpit: tryb Dostosuj zapisuje układ (snapshot+restore Settings)', async 
     // Układ telefonu jedzie zmiennymi CSS (--ms/--mo), NIE klasami — regułę ma input.css.
     assert.match(html, /style="--ms: 1; --mo: 0;"/, 'szerokość i pozycja mobilna widżetu');
     assert.match(html, /data-resize/, 'uchwyt zmiany rozmiaru w nakładce edycji');
+    // JSON idzie przez <%= %>, więc cudzysłowy są w HTML zescapowane (&#34;).
+    assert.match(html, /&#34;chart&#34;:4/, 'minimalna wysokość wykresu przekazana do uchwytu');
     assert.match(html, /Układ na telefonie/, 'przełącznik trybu edycji Desktop\/Telefon');
 
     // menu boczne: edytor w ustawieniach obecny

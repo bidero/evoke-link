@@ -31,6 +31,13 @@ const MENU = [
 // (kafelki KPI po pół, treść na pełną). Kolejność mobilna jest osobna od desktopowej
 // i siedzi w `morder` (indeks); brak wartości = pozycja z tej listy.
 // Renderery: views/admin/_widgets/<key>.ejs.
+//
+// `minRows` = najniższa wysokość, przy której widżet jeszcze pokazuje CAŁĄ treść.
+// Ma go tylko wykres: jego zawartość ma stałą wysokość (przełącznik 40px + SVG 196px
+// + wiersz z kwotą 28px + padding) i przy `rows` < 4 była po prostu UCINANA — przewijanie
+// w tak niskiej karcie niczego nie ratuje (zmierzone: rows 2 → SVG ucięty o 91px i kwota
+// miesiąca niewidoczna, rows 3 → kwota ucięta o 11px). Widżety-listy (aktywność, zadania,
+// wiadomości) minimum NIE mają — tam wewnętrzny scroll jest naturalny i pożądany.
 const SPANS = [3, 4, 6, 8, 12];
 const ROWS = [2, 3, 4, 6];
 const MOBILE_SPANS = [1, 2];
@@ -42,7 +49,7 @@ const WIDGETS = [
   { key: 'stat-overdue', label: 'Przeterminowane', span: 4, rows: 2, mspan: 1, icon: 'clock' },
   { key: 'stat-storage', label: 'Wykorzystane miejsce', span: 4, rows: 2, mspan: 1, icon: 'archive' },
   { key: 'attention', label: 'Wymaga uwagi', span: 4, rows: 4, mspan: 2, icon: 'alert' },
-  { key: 'chart', label: 'Wykres przychodu', span: 8, rows: 4, mspan: 2, icon: 'trendingUp' },
+  { key: 'chart', label: 'Wykres przychodu', span: 8, rows: 4, minRows: 4, mspan: 2, icon: 'trendingUp' },
   { key: 'actions', label: 'Szybkie akcje', span: 4, rows: 4, mspan: 2, icon: 'plus' },
   { key: 'activity', label: 'Ostatnia aktywność', span: 8, rows: 4, mspan: 2, icon: 'activity' },
   { key: 'tasks', label: 'Nadchodzące zadania', span: 4, rows: 4, mspan: 2, icon: 'calendarDays' },
@@ -102,7 +109,9 @@ function mergeWidgets(cfg) {
       ...base,
       hidden: !!s.hidden,
       span: SPANS.includes(s.span) ? s.span : base.span,
-      rows: ROWS.includes(s.rows) ? s.rows : base.rows,
+      // Wysokość poniżej minimum widżetu jest PODNOSZONA — samoleczenie układów zapisanych,
+      // zanim minimum istniało (inaczej treść zostaje ucięta aż do ręcznej zmiany).
+      rows: Math.max(ROWS.includes(s.rows) ? s.rows : base.rows, base.minRows || 0),
       mspan: MOBILE_SPANS.includes(s.mspan) ? s.mspan : base.mspan,
       // morder = pozycja na telefonie; uzupełniamy niżej, gdy brak zapisu.
       ...(Number.isInteger(s.morder) ? { morder: s.morder } : {}),
@@ -138,6 +147,7 @@ function sanitizeWidgets(raw) {
   for (const s of arr) {
     if (!s || !WIDGET_KEYS.includes(s.key) || seen.has(s.key)) continue;
     seen.add(s.key);
+    const base = WIDGETS.find((w) => w.key === s.key);
     const span = Number(s.span);
     const rows = Number(s.rows);
     const mspan = Number(s.mspan);
@@ -146,7 +156,8 @@ function sanitizeWidgets(raw) {
       key: s.key,
       hidden: !!s.hidden,
       ...(SPANS.includes(span) ? { span } : {}),
-      ...(ROWS.includes(rows) ? { rows } : {}),
+      // Zapisujemy już podniesioną wysokość, żeby konfiguracja nie kłamała względem renderu.
+      ...(ROWS.includes(rows) ? { rows: Math.max(rows, base.minRows || 0) } : {}),
       ...(MOBILE_SPANS.includes(mspan) ? { mspan } : {}),
       // Kolejność na telefonie: dowolna nieujemna liczba całkowita (merge normalizuje do 0..n-1).
       ...(Number.isInteger(morder) && morder >= 0 && morder < 500 ? { morder } : {}),

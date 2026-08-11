@@ -26,7 +26,7 @@
   }
 %>
 
-<div x-data="dashEdit(<%= JSON.stringify(hiddenMap) %>, <%= JSON.stringify(spansMap) %>, <%= JSON.stringify(rowsMap) %>, <%= JSON.stringify(mspansMap) %>)" @dash-edit.window="start()">
+<div x-data="dashEdit(<%= JSON.stringify(hiddenMap) %>, <%= JSON.stringify(spansMap) %>, <%= JSON.stringify(rowsMap) %>, <%= JSON.stringify(mspansMap) %>, <%= JSON.stringify(minRowsMap) %>)" @dash-edit.window="start()">
   <!-- auto-rows tylko od lg: wysokość widżetu = jego rows × 96 px (+ gapy). Na telefonie
        szerokość/kolejność z --ms/--mo (reguła w input.css), wysokość rośnie z treścią. -->
   <div id="dashGrid" class="grid grid-cols-2 lg:grid-cols-12 lg:auto-rows-[96px] gap-5" :class="mobileMode && 'mobile-preview'">
@@ -97,7 +97,7 @@
 
 <script src="/js/sortable.min.js"></script>
 <script>
-  function dashEdit(hiddenMap, spansMap, rowsMap, mspansMap) {
+  function dashEdit(hiddenMap, spansMap, rowsMap, mspansMap, minRowsMap) {
     var SPAN_ORDER = [3, 4, 6, 8, 12];
     var SPAN_CLS = { 3: 'lg:col-span-3', 4: 'lg:col-span-4', 6: 'lg:col-span-6', 8: 'lg:col-span-8', 12: 'lg:col-span-12' };
     // Wysokość: jednostki siatki (auto-rows 96 px + gap 20).
@@ -110,6 +110,9 @@
     // co przy dotychczasowych przyciskach cyklicznych).
     var snap = (list, v) => list.reduce((a, b) => (Math.abs(b - v) < Math.abs(a - v) ? b : a), list[0]);
     var step = (list, cur, dir) => list[Math.min(list.length - 1, Math.max(0, list.indexOf(cur) + dir))];
+    // Wysokości dostępne dla DANEGO widżetu: niektóre mają minimum (wykres — jego treść ma
+    // stałą wysokość i przy niższej karcie była ucinana), więc uchwyt nie może zejść niżej.
+    var rowsFor = (key) => ROW_ORDER.filter((r) => r >= ((minRowsMap && minRowsMap[key]) || 0));
 
     return {
       edit: false,
@@ -153,7 +156,7 @@
         const span0 = this.spans[key], rows0 = this.rows[key];
         const move = (e) => {
           const span = snap(SPAN_ORDER, span0 + (e.clientX - x0) / (colUnit + GAP));
-          const rows = snap(ROW_ORDER, rows0 + (e.clientY - y0) / (ROW_UNIT + GAP));
+          const rows = snap(rowsFor(key), rows0 + (e.clientY - y0) / (ROW_UNIT + GAP));
           if (span !== this.spans[key] || rows !== this.rows[key]) this.applySize(key, span, rows);
         };
         const up = () => {
@@ -169,7 +172,7 @@
         if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].indexOf(k) < 0) return;
         ev.preventDefault();
         const span = (k === 'ArrowLeft' || k === 'ArrowRight') ? step(SPAN_ORDER, this.spans[key], k === 'ArrowRight' ? 1 : -1) : this.spans[key];
-        const rows = (k === 'ArrowUp' || k === 'ArrowDown') ? step(ROW_ORDER, this.rows[key], k === 'ArrowDown' ? 1 : -1) : this.rows[key];
+        const rows = (k === 'ArrowUp' || k === 'ArrowDown') ? step(rowsFor(key), this.rows[key], k === 'ArrowDown' ? 1 : -1) : this.rows[key];
         this.applySize(key, span, rows);
       },
 

@@ -65,6 +65,9 @@ async function showDashboard(req, res, next) {
       hiddenMap: Object.fromEntries(widgets.map((w) => [w.key, w.hidden])),
       spansMap: Object.fromEntries(widgets.map((w) => [w.key, w.span])),
       rowsMap: Object.fromEntries(widgets.map((w) => [w.key, w.rows])),
+      // Minimalna wysokość per widżet — uchwyt zmiany rozmiaru nie może zejść niżej
+      // (wykres ma treść o stałej wysokości i przy niższej karcie był ucinany).
+      minRowsMap: Object.fromEntries(widgets.map((w) => [w.key, w.minRows || 0])),
       mspansMap: Object.fromEntries(widgets.map((w) => [w.key, w.mspan])),
       stats,
       recent,
