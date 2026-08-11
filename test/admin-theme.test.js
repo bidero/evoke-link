@@ -133,8 +133,15 @@ test('offcanvas na telefonie: pełna szerokość, zamykanie i sekcja konta + syn
   const listAt = acc.indexOf('x-show="acct"');
   assert.ok(listAt > toggleAt && listAt > -1, 'lista pozycji za przełącznikiem, sterowana x-show');
 
-  // Nagłówek przyklejony na KAŻDEJ szerokości (v0.99.84) — na telefonie też.
-  assert.match(html, /<header class="h-16 shrink-0 sticky top-0 z-20/, 'nagłówek sticky także na telefonie');
+  // Nagłówek trzyma się góry na KAŻDEJ szerokości, ale INNYM mechanizmem (v0.99.90):
+  // telefon = `fixed` + rozpórka (iOS gubi `sticky` przy inercyjnym przewijaniu),
+  // desktop = `sticky` (fixed nachodziłby na pasek boczny).
+  assert.match(html, /<header class="h-16 shrink-0 fixed inset-x-0 top-0 z-20 md:sticky md:inset-x-auto/, 'nagłówek fixed na telefonie, sticky od md');
+  assert.match(html, /<div class="h-16 shrink-0 md:hidden" aria-hidden="true"><\/div>/, 'rozpórka pod fixed nagłówkiem');
+  // Offcanvas mierzony w `dvh`, nie `inset-y-0` — inaczej na iOS dolna sekcja (konto)
+  // wypada pod krawędź ekranu (Safari liczy bottom:0 do DUŻEGO viewportu).
+  assert.match(html, /data-admin-sidebar[^>]*\bh-\[100dvh\]/, 'wysokość menu w dvh');
+  assert.ok(!/data-admin-sidebar[^>]*\binset-y-0\b/.test(html), 'brak inset-y-0 na offcanvasie');
 
   // Pasek systemowy: kolor synchronizowany z treścią (nagłówek / otwarte menu / dark mode).
   assert.match(html, /window\.evokeSyncThemeColor\s*=/, 'funkcja synchronizująca theme-color');

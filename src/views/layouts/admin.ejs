@@ -59,8 +59,12 @@
         krawędziach — stąd „paski szarzeją po otwarciu menu". Zabezpieczenie na skrawek:
         `html.nav-open body` dostaje kolor menu (input.css). %>
 
-    <!-- Pasek boczny: na telefonie offcanvas na CAŁĄ szerokość, od md statyczny pasek 15rem. -->
-    <aside data-admin-sidebar class="fixed inset-y-0 left-0 z-40 w-full md:w-60 shrink-0 bg-[var(--admin-sidebar)] border-r border-slate-200/60 flex flex-col overflow-hidden -translate-x-full md:translate-x-0 md:sticky md:top-0 md:h-screen md:self-start"
+    <%# Pasek boczny: na telefonie offcanvas na CAŁĄ szerokość, od md statyczny pasek 15rem.
+        GOTCHA iOS: wysokość przez `h-[100dvh]`, NIE `inset-y-0` — przy `position:fixed` Safari
+        potrafi rozciągnąć `bottom:0` do DUŻEGO viewportu (z schowanym paskiem URL), przez co
+        dolna sekcja (konto) wypadała pod krawędź ekranu i trzeba było przewijać menu.
+        `dvh` śledzi realnie widoczną wysokość, więc stopka menu zawsze siedzi na dole. %>
+    <aside data-admin-sidebar class="fixed top-0 left-0 h-[100dvh] z-40 w-full md:w-60 shrink-0 bg-[var(--admin-sidebar)] border-r border-slate-200/60 flex flex-col overflow-hidden -translate-x-full md:translate-x-0 md:sticky md:top-0 md:h-screen md:self-start"
            :class="nav && '!translate-x-0'" style="color: var(--admin-sidebar-text)">
       <div data-rail-head class="h-16 flex items-center gap-2 px-6 border-b border-black/5">
         <% if (typeof settings !== 'undefined' && settings && hasLogo(settings, 'admin')) { %>
@@ -133,9 +137,15 @@
 
     <!-- Główna kolumna -->
     <div class="flex-1 flex flex-col min-w-0">
-      <%# Nagłówek przyklejony NA KAŻDEJ szerokości (na telefonie też) — hamburger, szukajka
-          i profil są zawsze pod ręką. Pełnoekranowe menu ma z-40, więc wjeżdża nad nagłówek. %>
-      <header class="h-16 shrink-0 sticky top-0 z-20 bg-[var(--admin-header)] border-b border-black/5 flex items-center justify-between px-4 sm:px-6 lg:px-8" style="color: var(--admin-header-text)">
+      <%# Nagłówek zawsze pod ręką (hamburger, szukajka, profil). Pełnoekranowe menu ma z-40,
+          więc wjeżdża nad nagłówek.
+          TELEFON = `fixed` + rozpórka, NIE `sticky`: na iOS przy inercyjnym przewijaniu Safari
+          nie odrysowuje elementów `sticky` na bieżąco — pasek „ucieka" w górę i wraca dopiero
+          po zatrzymaniu, co wygląda jakby nie był przyklejony. `fixed top-0` (element o STAŁEJ
+          wysokości, nie pełnoekranowy) jest na iOS stabilny — inaczej niż `fixed inset-y-0`,
+          które ma pułapkę wysokości viewportu (patrz aside wyżej).
+          DESKTOP zostaje na `sticky`: `fixed` nie zna kolumny treści i nachodziłby na pasek boczny. %>
+      <header class="h-16 shrink-0 fixed inset-x-0 top-0 z-20 md:sticky md:inset-x-auto bg-[var(--admin-header)] border-b border-black/5 flex items-center justify-between px-4 sm:px-6 lg:px-8" style="color: var(--admin-header-text)">
         <div class="flex items-center gap-3 min-w-0">
           <button type="button" class="opacity-70 hover:opacity-100" @click="window.innerWidth < 768 ? (nav = true) : window.toggleRail()" aria-label="Menu / zwiń panel"><%- icon('menu', { size: 22, cls: '' }) %></button>
           <h1 class="text-lg font-semibold truncate"><%= typeof title !== 'undefined' ? title : '' %></h1>
@@ -201,6 +211,8 @@
           </div>
         </div>
       </header>
+      <%# Rozpórka pod `fixed` nagłówek — tylko na telefonie, bo tylko tam wypada z potoku. %>
+      <div class="h-16 shrink-0 md:hidden" aria-hidden="true"></div>
       <main class="flex-1 p-4 sm:p-6 lg:p-8">
         <%- body %>
       </main>
