@@ -124,6 +124,15 @@ test('offcanvas na telefonie: pełna szerokość, zamykanie i sekcja konta + syn
   assert.match(acc, /\/admin\/settings/);
   assert.match(acc, /action="\/admin\/logout"/, 'wylogowanie jako POST (jak w dropdownie)');
 
+  // Pozycje konta są ZWINIĘTE — rozwija je dopiero pasek z awatarem i nazwą.
+  assert.match(acc, /data-nav-account-toggle/, 'pasek użytkownika jest przyciskiem');
+  assert.match(acc, /x-data="\{ acct: false \}"/, 'domyślnie zwinięte');
+  assert.match(acc, /x-effect="if \(!nav\) acct = false"/, 'zamknięcie menu zwija sekcję');
+  // Same pozycje siedzą za x-show — przycisk jest PRZED nimi w dokumencie.
+  const toggleAt = acc.indexOf('data-nav-account-toggle');
+  const listAt = acc.indexOf('x-show="acct"');
+  assert.ok(listAt > toggleAt && listAt > -1, 'lista pozycji za przełącznikiem, sterowana x-show');
+
   // Nagłówek przyklejony na KAŻDEJ szerokości (v0.99.84) — na telefonie też.
   assert.match(html, /<header class="h-16 shrink-0 sticky top-0 z-20/, 'nagłówek sticky także na telefonie');
 

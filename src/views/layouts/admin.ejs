@@ -95,29 +95,39 @@
       </nav>
       <%# Konto — TYLKO na telefonie (na desktopie te same pozycje są w dropdownie przy awatarze).
           Pełnoekranowe menu daje na nie miejsce; dropdown w rogu jest na telefonie ciasny. %>
-      <div data-nav-account class="md:hidden shrink-0 border-t border-black/5 px-3 py-3 space-y-1 text-sm">
+      <%# Pozycje konta są ZWINIĘTE — rozwija je dopiero stuknięcie w pasek z awatarem
+          i nazwą (jak dropdown profilu na desktopie). Bez tego cztery pozycje siedziały
+          na stałe pod nawigacją i zjadały dół ekranu. Stan wraca do zwiniętego przy
+          zamknięciu menu, żeby kolejne otwarcie zawsze wyglądało tak samo. %>
+      <div data-nav-account class="md:hidden shrink-0 border-t border-black/5 px-3 py-3 text-sm"
+           x-data="{ acct: false }" x-effect="if (!nav) acct = false">
         <% const _navProf = (typeof settings !== 'undefined' && settings) ? settings.profile : null; %>
         <% const _navEmail = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.email : ''; %>
         <% const _navName = (_navProf && _navProf.name) ? _navProf.name : _navEmail; %>
-        <div class="flex items-center gap-2.5 px-3 pb-1">
+        <button type="button" data-nav-account-toggle @click="acct = !acct"
+                :aria-expanded="acct ? 'true' : 'false'" aria-label="Menu konta"
+                class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-black/5 transition text-left">
           <% if (_navProf && _navProf.avatarPath) { %>
-            <img src="<%= _navProf.avatarPath %>" alt="" class="w-9 h-9 rounded-full object-cover border border-black/10" />
+            <img src="<%= _navProf.avatarPath %>" alt="" class="w-9 h-9 rounded-full object-cover border border-black/10 shrink-0" />
           <% } else { %>
             <span class="w-9 h-9 rounded-full bg-brand-50 text-brand-700 inline-flex items-center justify-center text-sm font-semibold shrink-0"><%= (_navName || '?').trim().charAt(0).toUpperCase() %></span>
           <% } %>
-          <span class="min-w-0">
+          <span class="min-w-0 flex-1">
             <span class="block font-medium truncate"><%= _navName || 'Administrator' %></span>
             <% if (_navProf && _navProf.name && _navEmail) { %><span class="block text-xs opacity-50 truncate"><%= _navEmail %></span><% } %>
           </span>
+          <span class="shrink-0 opacity-60 transition-transform" :class="acct && 'rotate-180'"><%- icon('chevronDown', { size: 16, cls: '' }) %></span>
+        </button>
+        <div x-show="acct" x-cloak x-transition.opacity.duration.150ms class="mt-1 space-y-1">
+          <a href="/admin/account" class="flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition"><%- icon('userCheck', { size: 16, cls: 'opacity-60' }) %> Mój profil</a>
+          <% if (typeof isAdmin === 'undefined' || isAdmin) { %>
+            <a href="/admin/users" class="flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition"><%- icon('users', { size: 16, cls: 'opacity-60' }) %> Konta</a>
+            <a href="/admin/settings" class="flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition"><%- icon('cog', { size: 16, cls: 'opacity-60' }) %> Ustawienia</a>
+          <% } %>
+          <form method="POST" action="/admin/logout">
+            <button type="submit" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 text-left transition"><%- icon('arrowRight', { size: 16, cls: 'opacity-60' }) %> Wyloguj</button>
+          </form>
         </div>
-        <a href="/admin/account" class="flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition"><%- icon('userCheck', { size: 16, cls: 'opacity-60' }) %> Mój profil</a>
-        <% if (typeof isAdmin === 'undefined' || isAdmin) { %>
-          <a href="/admin/users" class="flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition"><%- icon('users', { size: 16, cls: 'opacity-60' }) %> Konta</a>
-          <a href="/admin/settings" class="flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition"><%- icon('cog', { size: 16, cls: 'opacity-60' }) %> Ustawienia</a>
-        <% } %>
-        <form method="POST" action="/admin/logout">
-          <button type="submit" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 text-left transition"><%- icon('arrowRight', { size: 16, cls: 'opacity-60' }) %> Wyloguj</button>
-        </form>
       </div>
     </aside>
 
