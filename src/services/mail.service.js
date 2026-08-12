@@ -98,14 +98,18 @@ function cleanSubject(s) {
   return (s || '').replace(/\{przycisk\}/gi, '').replace(/\s+/g, ' ').replace(/^\s*[–—-]\s*/, '').replace(/\s*[–—-]\s*$/, '').trim();
 }
 
+// Zwracamy `subject` i `to` razem z wynikiem wysyłki — dzięki temu wołający zapisuje
+// w historii TEN temat, który realnie poszedł do klienta (także gdy pochodzi z szablonu
+// w Ustawieniach → E-mail). Działa też bez SMTP (tryb dev), więc historia jest spójna.
 async function send({ to, subject, html, text, replyTo, attachments }) {
   const t = getTransporter();
   if (!t) {
     console.log('\n[mail:DEV] (SMTP niewłączony) =>', { to, subject, attachments: attachments ? attachments.map((a) => a.filename) : undefined });
     console.log('[mail:DEV] treść:\n' + (text || html) + '\n');
-    return { dev: true };
+    return { dev: true, to, subject };
   }
-  return t.sendMail({ from: config.mail.from, to, subject, html, text, replyTo, attachments });
+  const info = await t.sendMail({ from: config.mail.from, to, subject, html, text, replyTo, attachments });
+  return Object.assign({}, info, { to, subject });
 }
 
 // Miesza kolor marki z bielą (t=0..1) i zwraca hex — do jasnych tintów w motywach.

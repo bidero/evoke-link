@@ -260,8 +260,8 @@ async function sendStatement(req, res, next) {
     const pdfBuffer = await pdfService.clientStatementBuffer({ client, charges, filters, settings });
     const filename = pdfService.statementFilename(client, settings);
     try {
-      await mail.sendClientStatement({ to: email, client, pdfBuffer, filename, title });
-      await events.log({ type: 'email_sent', message: `Wysłano ${title.toLowerCase()} do ${email}`, clientId: client.id, ip: req.ip });
+      const info = await mail.sendClientStatement({ to: email, client, pdfBuffer, filename, title });
+      await events.emailSent({ kind: `${title} (PDF)`, to: email, info, extra: `${charges.length} poz., załącznik ${filename}`, clientId: client.id, ip: req.ip });
       res.redirect(`/admin/clients/${client.id}?tab=rozliczenia&sent=${mail.isConfigured() ? 'stmt-ok' : 'stmt-dev'}`);
     } catch (e) {
       console.error('[mail] rozliczenie:', e.message);

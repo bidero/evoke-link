@@ -27,7 +27,10 @@ test('retainer: mail do klienta o nowej pozycji — tylko przy włączonym toggl
     await settingsService.update({ emails: { ...cur, retainerNotify: true } });
     await retainerService.generateNow(r.id, new Date(2026, 5, 10)); // czerwiec
     const ev = await prisma.event.findFirst({ where: { clientId: cl.id, type: 'email_sent' } });
-    assert.ok(ev && /nowej pozycji/.test(ev.message), 'mail wysłany przy włączonym toggle');
+    assert.ok(ev, 'mail wysłany przy włączonym toggle');
+    // Format wpisu: „Rodzaj → adresat · „temat"" + dopisek z kwotą brutto (v0.99.91).
+    assert.match(ev.message, /^Pozycja cykliczna → retmail@example\.com · „.+Abonament SEO.+" \(615,00 zł\)$/, 'rodzaj, adresat, temat i kwota w historii');
+    assert.equal(JSON.parse(ev.meta).kind, 'Pozycja cykliczna');
   } finally {
     await prisma.charge.deleteMany({ where: { clientId: cl.id } });
     await prisma.retainer.deleteMany({ where: { clientId: cl.id } });

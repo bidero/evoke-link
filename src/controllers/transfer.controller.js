@@ -163,8 +163,8 @@ async function sendLinkEmail(req, res, next) {
     if (!EMAIL_RE.test(to)) return res.redirect(`/admin/transfers/${transfer.id}?mail=invalid`);
 
     try {
-      await mail.sendTransferLink({ to, transfer, message: (req.body.message || '').trim() });
-      await events.log({ type: 'email_sent', message: `Wysłano link e-mailem do ${to}`, transferId: transfer.id, projectId: transfer.projectId, ip: req.ip });
+      const info = await mail.sendTransferLink({ to, transfer, message: (req.body.message || '').trim() });
+      await events.emailSent({ kind: transfer.direction === 'incoming' ? 'Link uploadu' : 'Link do transferu', to, info, transferId: transfer.id, projectId: transfer.projectId, ip: req.ip });
       res.redirect(`/admin/transfers/${transfer.id}?mail=sent`);
     } catch (e) {
       console.error('[mail] błąd wysyłki linku:', e.message);

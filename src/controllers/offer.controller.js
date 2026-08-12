@@ -89,8 +89,8 @@ async function sendOffer(req, res, next) {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return res.redirect(back(req.params.id, 'off-noemail'));
     const url = `${config.appUrl}/o/${o.token}`;
     try {
-      await mail.sendOfferLink({ to, url, offer: o, client: o.client, total: offerService.totals(o.items).gross });
-      await events.log({ type: 'email_sent', message: `Wysłano ofertę „${o.title}" do ${to}`, clientId: o.clientId });
+      const info = await mail.sendOfferLink({ to, url, offer: o, client: o.client, total: offerService.totals(o.items).gross });
+      await events.emailSent({ kind: 'Oferta', to, info, clientId: o.clientId });
       res.redirect(back(req.params.id, mail.isConfigured() ? 'off-ok' : 'off-dev'));
     } catch (e) {
       console.error('[mail] oferta:', e.message);

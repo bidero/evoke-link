@@ -40,8 +40,8 @@ async function sendLink(req, res, next) {
     if (!EMAIL_RE.test(to)) return res.redirect(back('onb-invalid'));
     const url = `${config.appUrl}/onboard/${client.onboardingToken}`;
     try {
-      await mail.sendOnboardingLink({ to, url, client, expiresAt: client.onboardingExpiresAt });
-      events.log({ type: 'email_sent', message: `Wysłano link onboardingowy do ${to}`, clientId: client.id });
+      const info = await mail.sendOnboardingLink({ to, url, client, expiresAt: client.onboardingExpiresAt });
+      events.emailSent({ kind: 'Link onboardingowy', to, info, clientId: client.id });
       res.redirect(back(mail.isConfigured() ? 'onb-ok' : 'onb-dev'));
     } catch (e) {
       console.error('[mail] onboarding:', e.message);

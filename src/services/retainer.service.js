@@ -78,14 +78,16 @@ async function notifyClient(clientId, charge) {
       select: { id: true, name: true, firstName: true, lastName: true, email: true, token: true },
     });
     if (!client || !client.email) return;
-    await mail.sendRetainerCharge({
+    const info = await mail.sendRetainerCharge({
       to: client.email,
       client,
       charge,
       seller: (s.pdf && s.pdf.seller) || {},
       portalUrl: `${config.appUrl}/c/${client.token}`,
     });
-    await events.log({ type: 'email_sent', message: `Wysłano mail o nowej pozycji: ${charge.label}`, clientId });
+    // Dopisek = kwota brutto: nazwa pozycji siedzi już w temacie, więc powtarzanie jej
+    // tylko zaśmiecałoby wpis; kwoty w temacie NIE ma.
+    await events.emailSent({ kind: 'Pozycja cykliczna', to: client.email, info, extra: fmt.money(chargeService.grossOf(charge)), clientId });
   } catch (e) {
     console.error('[retainers] mail do klienta:', e.message);
   }

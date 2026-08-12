@@ -28,6 +28,24 @@ async function log({ type, message, projectId, transferId, clientId, meta, ip })
   }
 }
 
+// Zdarzenie „wysłano e-mail" w JEDNYM, spójnym formacie: „Rodzaj → adresat · „temat"".
+// Wcześniej każde miejsce budowało własne zdanie i część wpisów gubiła adresata albo temat.
+// `info` to wynik z mail.service — niesie realny `subject`, więc w historii ląduje ten temat,
+// który dostał klient (także z szablonu w Ustawieniach → E-mail). `extra` to opcjonalny
+// dopisek w nawiasie (np. liczba pozycji i kwota). Komplet trafia też do `meta`.
+function emailSent({ kind, to, info, extra, projectId, transferId, clientId, ip }) {
+  const subject = (info && info.subject) || '';
+  const addr = to || (info && info.to) || '';
+  let message = kind || 'E-mail';
+  if (addr) message += ` → ${addr}`;
+  if (subject) message += ` · „${subject}"`;
+  if (extra) message += ` (${extra})`;
+  return log({
+    type: 'email_sent', message, projectId, transferId, clientId, ip,
+    meta: { kind: kind || null, to: addr || null, subject: subject || null },
+  });
+}
+
 // Typy zdarzeń traktowane jako POWIADOMIENIA (akcje klienta + błędy).
 // 'created'/'updated' to akcje agencji — są w historii projektu, ale nie zaśmiecają powiadomień.
 const NOTIFY_TYPES = ['uploaded', 'downloaded', 'error', 'approved', 'changes', 'onboarded', 'paid_declared', 'offer_accepted', 'offer_rejected', 'update'];
@@ -91,5 +109,5 @@ function markProjectRead(projectId) {
   });
 }
 
-module.exports = { log, recent, listNotifications, unreadCount, findById, markRead, markAllRead, markProjectRead, dismiss, dismissAll, NOTIFY_TYPES };
+module.exports = { log, emailSent, recent, listNotifications, unreadCount, findById, markRead, markAllRead, markProjectRead, dismiss, dismissAll, NOTIFY_TYPES };
 

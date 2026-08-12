@@ -88,9 +88,9 @@ async function runPaymentReminders(s) {
     const list = byClient[client.id];
     const total = list.reduce((n, c) => n + grossOf(c), 0);
     try {
-      await mail.sendPaymentReminder({ to: client.email, client, charges: list, total });
+      const info = await mail.sendPaymentReminder({ to: client.email, client, charges: list, total });
       await prisma.charge.updateMany({ where: { id: { in: list.map((c) => c.id) } }, data: { remindedAt: now } });
-      await events.log({ type: 'email_sent', message: `Wysłano przypomnienie o płatności (${list.length} poz., ${(total / 100).toFixed(2)} zł)`, clientId: client.id });
+      await events.emailSent({ kind: 'Przypomnienie o płatności', to: client.email, info, extra: `${list.length} poz., ${(total / 100).toFixed(2)} zł`, clientId: client.id });
       sent++;
     } catch (e) {
       console.error('[reminders] błąd dla', client.email, '-', e.message);

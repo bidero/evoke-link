@@ -4,6 +4,7 @@ const messageService = require('../services/message.service');
 const clientService = require('../services/client.service');
 const storage = require('../services/storage.service');
 const mail = require('../services/mail.service');
+const events = require('../services/event.service');
 const config = require('../config');
 
 // scope z formularza: 'c' (ogólne/kliencki) | 'p:<id>' (projekt) | 't:<id>' (transfer).
@@ -52,7 +53,14 @@ async function sendMessage(req, res, next) {
         // Link zwrotny zależny od kontekstu: projekt → /p, inaczej klient → /c.
         let link = `${config.appUrl}/c/${client.token}`;
         if (scope.projectId) { const p = (client.projects || []).find((x) => x.id === scope.projectId); if (p && p.clientToken) link = `${config.appUrl}/p/${p.clientToken}`; }
-        mail.sendClientReply({ to: client.email, body: msg.body, link }).catch((e) => console.error('[mail] wiadomość:', e.message));
+        // Wysyłka „w tle" (nie blokuje odpowiedzi HTTP), ale ślad w historii zostawiamy —
+        // wcześniej powiadomienie o wiadomości znikało bez śladu w osi czasu klienta.
+        mail.sendClientReply({ to: client.email, body: msg.body, link })
+          .then((info) => events.emailSent({
+            kind: 'Powiadomienie o wiadomości', to: client.email, info,
+            clientId: client.id, projectId: scope.projectId || null, transferId: scope.transferId || null, ip: req.ip,
+          }))
+          .catch((e) => console.error('[mail] wiadomość:', e.message));
       }
     }
     res.redirect(`/admin/messages?client=${client.id}`);
