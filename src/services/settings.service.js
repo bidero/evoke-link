@@ -48,7 +48,7 @@ const DEFAULTS = {
   // logoPath = osobne logo PWA składane w ikonę (na kolorze marki); logoScale = jego rozmiar (%).
   // iconPath = gotowa ikona NADPISUJĄCA logo (override — użyta bez zmian, gdy wgrana).
   // splashSize = wielkość grafiki (ikona/logo) na ekranie startowym (px).
-  pwa: { enabled: false, name: '', shortName: '', themeColor: '', background: '', display: 'standalone', iconPath: null, logoPath: null, logoScale: 62, splashMs: 1200, splashMode: 'icon', splashSize: 120 },
+  pwa: { enabled: false, name: '', shortName: '', themeColor: '', background: '', display: 'standalone', iconPath: null, logoPath: null, logoScale: 62, splashMs: 1200, splashMode: 'icon', splashSize: 120, badge: true },
   // Strona logowania (niezależna od stron klienta). Puste teksty = domyślne z widoku.
   login: { style: 'card', side: 'left', width: 'md', title: '', subtitle: '', heroTitle: '', heroSubtitle: '', hideName: false, footer: '', hideLogo: false, hideTitle: false, hideHero: false, hideFooter: false },
 };
@@ -88,6 +88,9 @@ function normPwa(p) {
     splashMs: Number.isFinite(ms) ? Math.min(5000, Math.max(0, ms)) : DEFAULTS.pwa.splashMs, // 0..5000; 0 = wyłącz
     splashMode: PWA_SPLASH_MODES.includes(x.splashMode) ? x.splashMode : DEFAULTS.pwa.splashMode,
     splashSize: Number.isFinite(ssz) ? Math.max(48, ssz) : DEFAULTS.pwa.splashSize, // px grafiki na splashu — bez górnego limitu
+    // Licznik na ikonie zainstalowanej aplikacji (Badging API). Brak pola w zapisie =
+    // domyślnie WŁĄCZONY (istniejące instalacje dostają licznik po włączeniu PWA).
+    badge: x.badge === undefined ? DEFAULTS.pwa.badge : !!x.badge,
   };
 }
 

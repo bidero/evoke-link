@@ -189,3 +189,42 @@ test('service worker serwowany z roota (scope /)', async () => {
   assert.match(res.headers.get('content-type') || '', /javascript/);
   assert.match(await res.text(), /addEventListener\('fetch'/);
 });
+
+test('licznik na ikonie (Badging API): domyślnie włączony, da się wyłączyć', async () => {
+  assert.equal(settingsService.DEFAULTS.pwa.badge, true);
+  // Brak pola w zapisie = włączony (istniejące instalacje dostają licznik po włączeniu PWA).
+  assert.equal((await settingsService.update({ pwa: { enabled: true } })).pwa.badge, true);
+  assert.equal((await settingsService.update({ pwa: { enabled: true, badge: false } })).pwa.badge, false);
+  assert.equal((await settingsService.update({ pwa: { enabled: true, badge: 'on' } })).pwa.badge, true);
+});
+
+test('licznik na ikonie: skrypt w panelu tylko gdy PWA + badge włączone; logowanie czyści', async (t) => {
+  const password = process.env.ADMIN_PASSWORD;
+  if (!password) return t.skip('brak ADMIN_PASSWORD w .env');
+  const r = await fetch(`${base}/admin/login`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ email: process.env.ADMIN_EMAIL, password }), redirect: 'manual' });
+  const cookie = (r.headers.getSetCookie() || []).map((c) => c.split(';')[0]).join('; ');
+  const panel = () => fetch(`${base}/admin`, { headers: { Cookie: cookie } }).then((x) => x.text());
+
+  await settingsService.update({ pwa: { enabled: true, display: 'standalone', badge: true } });
+  let html = await panel();
+  assert.match(html, /navigator\.setAppBadge/, 'ustawianie licznika przy włączonym badge');
+  assert.match(html, /navigator\.clearAppBadge/, 'zerowanie, gdy nie ma nieprzeczytanych');
+
+  // wyłączony licznik = brak skryptu (reszta PWA działa dalej)
+  await settingsService.update({ pwa: { enabled: true, display: 'standalone', badge: false } });
+  html = await panel();
+  assert.ok(!/setAppBadge/.test(html), 'brak skryptu przy wyłączonym liczniku');
+  assert.match(html, /manifest\.webmanifest/, 'reszta PWA nietknięta');
+
+  // PWA wyłączone = brak skryptu niezależnie od badge
+  await settingsService.update({ pwa: { enabled: false, badge: true } });
+  html = await panel();
+  assert.ok(!/setAppBadge/.test(html), 'brak licznika gdy PWA wyłączone');
+
+  // Ekran logowania czyści licznik (po wylogowaniu nie ma do czego go odnieść).
+  await settingsService.update({ pwa: { enabled: true, display: 'standalone', badge: true } });
+  const login = await (await fetch(`${base}/admin/login`)).text();
+  assert.match(login, /clearAppBadge/, 'logowanie czyści licznik');
+  assert.ok(!/setAppBadge/.test(login), 'na logowaniu nie ustawiamy licznika');
+});

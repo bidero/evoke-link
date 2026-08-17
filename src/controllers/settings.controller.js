@@ -199,6 +199,7 @@ async function updateSettings(req, res, next) {
       splashMs: clampInt(b.pwaSplashMs, 0, 5000, 1200),
       splashMode: ['icon', 'logo', 'name'].includes(b.pwaSplashMode) ? b.pwaSplashMode : 'icon',
       splashSize: Math.max(48, parseInt(b.pwaSplashSize, 10) || 120), // bez górnego limitu
+      badge: b.pwaBadge === 'on',
     };
 
     const data = {

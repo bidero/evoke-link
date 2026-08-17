@@ -37,6 +37,23 @@
   <%# Rysownik wykresów (pulpit + Puls) — na stronach bez [data-chart-mount] nic nie robi. %>
   <script defer src="/js/chart.js"></script>
   <script defer src="/js/alpine.min.js"></script>
+  <%# Licznik na ikonie ZAINSTALOWANEJ aplikacji (Badging API): nieprzeczytane powiadomienia
+      + wiadomości. Działa w zainstalowanym PWA (Chrome/Edge desktop, iOS/iPadOS 16.4+ dodane
+      do ekranu głównego); w zwykłej karcie API nie ma i blok jest bezszkodliwym no-opem.
+      OGRANICZENIE: bez Web Push licznik odświeża się tylko przy otwartej aplikacji (na każdym
+      wczytaniu strony) — po zamknięciu zostaje ostatnia znana wartość. %>
+  <% if (typeof settings !== 'undefined' && settings && settings.pwa && settings.pwa.enabled && settings.pwa.badge) { %>
+    <% const _badgeN = (typeof unreadCount !== 'undefined' ? unreadCount : 0) + (typeof unreadMessages !== 'undefined' ? unreadMessages : 0); %>
+    <script>
+      (function () {
+        var n = <%= _badgeN %>;
+        try {
+          if (n > 0 && navigator.setAppBadge) navigator.setAppBadge(n);
+          else if (navigator.clearAppBadge) navigator.clearAppBadge();
+        } catch (e) { /* brak uprawnień/API — trudno */ }
+      })();
+    </script>
+  <% } %>
 </head>
 <%# `nav-open` na <html> steruje kolorem paska systemowego (evokeSyncThemeColor); blokada
     przewijania tła dotyczy tylko telefonu — na desktopie offcanvas nie istnieje. %>

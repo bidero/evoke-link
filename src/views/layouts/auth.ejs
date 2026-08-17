@@ -17,6 +17,11 @@
   <script defer src="/js/bg-rotate.js"></script>
   <script src="/js/passkey.js"></script>
   <script defer src="/js/alpine.min.js"></script>
+  <%# Wylogowanie/ekran logowania czyści licznik na ikonie — inaczej zostałaby wisieć
+      ostatnia znana liczba, mimo że nie ma już do czego jej odnieść. %>
+  <% if (typeof settings !== 'undefined' && settings && settings.pwa && settings.pwa.enabled && settings.pwa.badge) { %>
+    <script>try { navigator.clearAppBadge && navigator.clearAppBadge(); } catch (e) {}</script>
+  <% } %>
 </head>
 <body class="client-bg min-h-screen text-slate-800 antialiased" style="<%= typeof loginBgStyle !== 'undefined' ? loginBgStyle : (typeof bgStyle !== 'undefined' ? bgStyle : '') %>">
 <%- typeof pwaSplash !== 'undefined' ? pwaSplash : '' %>
