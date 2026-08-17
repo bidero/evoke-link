@@ -1,5 +1,22 @@
 // Panel: powiadomienia (zdarzenia: nowe pliki od klienta, pobrania, błędy).
 const events = require('../services/event.service');
+const messageService = require('../services/message.service');
+const reminderService = require('../services/reminder.service');
+
+// Aktualne liczniki dla otwartej karty panelu (dzwonek, badge menu, licznik na ikonie PWA).
+// Bez tego liczby są prawdziwe tylko w chwili wczytania strony — kto siedzi na jednym
+// ekranie, nie zobaczyłby nowej wiadomości aż do przeładowania.
+async function badgeCounts(req, res, next) {
+  try {
+    const [notifications, messages, calendar] = await Promise.all([
+      events.unreadCount(), messageService.unreadCount(), reminderService.dueCount(),
+    ]);
+    res.set('Cache-Control', 'no-store');
+    res.json({ notifications, messages, calendar });
+  } catch (err) {
+    next(err);
+  }
+}
 
 async function index(req, res, next) {
   try {
@@ -56,4 +73,4 @@ async function clearAll(req, res, next) {
   }
 }
 
-module.exports = { index, readAll, open, dismiss, clearAll };
+module.exports = { index, readAll, open, dismiss, clearAll, badgeCounts };

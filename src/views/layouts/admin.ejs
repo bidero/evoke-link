@@ -36,6 +36,9 @@
   <script src="/js/passkey.js"></script>
   <%# Rysownik wykresów (pulpit + Puls) — na stronach bez [data-chart-mount] nic nie robi. %>
   <script defer src="/js/chart.js"></script>
+  <%# Odświeżanie liczników (dzwonek, menu, ikona PWA) w otwartej karcie — bez tego liczby
+      są prawdziwe tylko w chwili wczytania strony. %>
+  <script defer src="/js/badges.js"></script>
   <script defer src="/js/alpine.min.js"></script>
   <%# Licznik na ikonie ZAINSTALOWANEJ aplikacji (Badging API): nieprzeczytane powiadomienia
       + wiadomości. Działa w zainstalowanym PWA (Chrome/Edge desktop, iOS/iPadOS 16.4+ dodane
@@ -45,13 +48,16 @@
   <% if (typeof settings !== 'undefined' && settings && settings.pwa && settings.pwa.enabled && settings.pwa.badge) { %>
     <% const _badgeN = (typeof unreadCount !== 'undefined' ? unreadCount : 0) + (typeof unreadMessages !== 'undefined' ? unreadMessages : 0); %>
     <script>
-      (function () {
-        var n = <%= _badgeN %>;
+      // Wystawione globalnie, żeby odświeżanie w tle (badges.js) mogło aktualizować licznik
+      // bez przeładowania. Gdy licznik jest wyłączony w Ustawieniach, funkcji nie ma
+      // i badges.js po prostu jej nie woła.
+      window.evokeAppBadge = function (n) {
         try {
           if (n > 0 && navigator.setAppBadge) navigator.setAppBadge(n);
           else if (navigator.clearAppBadge) navigator.clearAppBadge();
         } catch (e) { /* brak uprawnień/API — trudno */ }
-      })();
+      };
+      window.evokeAppBadge(<%= _badgeN %>);
     </script>
   <% } %>
 </head>
@@ -104,12 +110,16 @@
         <% const unreadM = (typeof unreadMessages !== 'undefined') ? unreadMessages : 0; %>
         <% const calDue = (typeof calendarDue !== 'undefined') ? calendarDue : 0; %>
         <% items.forEach(function(it){ %>
+          <%# Badge renderujemy ZAWSZE dla pozycji, które go mają (ukryty przy zerze) — dzięki
+              temu odświeżanie w tle (public/js/badges.js) ma co aktualizować bez dorabiania
+              markupu z JS. Pozostałe pozycje menu badge'a nie dostają wcale. %>
+          <% const badgeKey = ['notifications', 'messages', 'calendar'].includes(it.key) ? it.key : null; %>
           <% const badge = it.key === 'notifications' ? unread : (it.key === 'messages' ? unreadM : (it.key === 'calendar' ? calDue : 0)); %>
           <a href="<%= it.href %>" data-rail-item title="<%= it.label %>"
              class="relative flex items-center justify-between px-3 py-2 rounded-lg transition <%= (typeof active !== 'undefined' && active === it.key) ? 'bg-brand-50 text-brand-700 font-medium' : 'opacity-70 hover:opacity-100 hover:bg-black/5' %>">
             <span class="inline-flex items-center gap-2.5"><span class="shrink-0 inline-flex"><%- icon(it.icon, { size: 16, cls: (typeof active !== 'undefined' && active === it.key) ? 'text-brand-600' : 'opacity-60' }) %></span><span data-rail-label><%= it.label %></span></span>
-            <% if (badge > 0) { %>
-              <span data-rail-badge class="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-brand-600 text-white text-xs font-semibold"><%= badge %></span>
+            <% if (badgeKey) { %>
+              <span data-rail-badge data-badge="<%= badgeKey %>" class="ml-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-brand-600 text-white text-xs font-semibold<%= badge > 0 ? '' : ' hidden' %>"><%= badge %></span>
             <% } %>
           </a>
         <% }); %>
@@ -192,9 +202,9 @@
           <a href="/admin/notifications" class="relative opacity-70 hover:opacity-100" title="Powiadomienia">
             <%- icon('bell', { size: 20, cls: '' }) %>
             <% const unreadH = (typeof unreadCount !== 'undefined') ? unreadCount : 0; %>
-            <% if (unreadH > 0) { %>
-              <span class="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold"><%= unreadH %></span>
-            <% } %>
+            <%# Jak w menu: element istnieje zawsze, przy zerze schowany — odświeżanie w tle
+                tylko podmienia liczbę i zdejmuje/dokłada `hidden`. %>
+            <span data-badge="notifications" class="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold<%= unreadH > 0 ? '' : ' hidden' %>"><%= unreadH %></span>
           </a>
           <% const _prof = (typeof settings !== 'undefined' && settings) ? settings.profile : null; %>
           <% const _email = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.email : ''; %>

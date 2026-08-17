@@ -166,6 +166,7 @@ router.post('/clients/:id', avatarUpload, clients.updateClient);
 router.post('/clients/:id/delete', clients.deleteClient);
 
 // Powiadomienia (Etap 4).
+router.get('/badges.json', notifications.badgeCounts); // liczniki dla otwartej karty (dzwonek, menu, ikona PWA)
 router.get('/notifications', notifications.index);
 router.post('/notifications/read-all', notifications.readAll);
 router.post('/notifications/clear', notifications.clearAll); // przed :id
