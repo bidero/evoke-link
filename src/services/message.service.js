@@ -32,12 +32,10 @@ async function create({ body, senderName, senderEmail, clientId, projectId, tran
   // Push (aplikacja może być ZAMKNIĘTA). Wiadomość od klienta NIE tworzy zdarzenia `Event`,
   // więc hook w event.service by jej nie złapał — a to najważniejsze powiadomienie.
   // Bez `await`: wiadomość ma być zapisana niezależnie od powodzenia wysyłki.
+  // Tytuł i treść składa push.service — tam też decyduje się, czy pokazać fragment wiadomości
+  // (ustawienie `pwa.pushBody`) i skąd wziąć nazwę nadawcy, gdy klient nie podpisał się z imienia.
   require('./push.service')
-    .notify({
-      title: clean(senderName) ? `Wiadomość od ${clean(senderName)}` : 'Nowa wiadomość',
-      body: text.slice(0, 160),
-      url: '/admin/messages',
-    })
+    .notifyMessage({ clientId, senderName: clean(senderName), text })
     .catch(() => {});
 
   return msg;

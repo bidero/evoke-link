@@ -1284,6 +1284,13 @@
         </span>
       </label>
 
+      <label class="flex items-start gap-2 text-sm text-slate-700 pl-6">
+        <input type="checkbox" name="pwaPushBody" class="mt-0.5 rounded border-slate-300" <%= settings.pwa.pushBody ? 'checked' : '' %> />
+        <span>Pokazuj treść wiadomości w powiadomieniu
+          <span class="block text-[11px] text-slate-400 font-normal">Wyłączone = powiadomienie mówi tylko <em>kto</em> napisał, bez fragmentu treści. Przydatne, bo powiadomienia widać na ekranie blokady telefonu. Dotyczy wyłącznie wiadomości od klientów — opisy zdarzeń (nowe pliki, akceptacje) to nasze własne teksty.</span>
+        </span>
+      </label>
+
       <label class="flex items-start gap-2 text-sm text-slate-700">
         <input type="checkbox" name="pwaBadge" class="mt-0.5 rounded border-slate-300" <%= settings.pwa.badge ? 'checked' : '' %> />
         <span>Licznik na ikonie aplikacji

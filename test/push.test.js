@@ -119,3 +119,68 @@ test('service worker: obsługa push, kliknięcia i licznika na ikonie', async ()
   assert.match(sw, /setAppBadge/, 'push aktualizuje licznik na ikonie');
   assert.match(sw, /showNotification/, 'banerek — wymagany przez userVisibleOnly');
 });
+
+test('tytuły powiadomień: etykieta zdarzenia zamiast nazwy aplikacji', () => {
+  // Regresja: tytułem było 'Evoke LINK', a przeglądarka i tak dokleja atrybucję
+  // („… from Evoke LINK") — wychodziło „Evoke LINK from Evoke LINK".
+  assert.equal(pushService.eventTitle('uploaded'), 'Nowe pliki od klienta');
+  assert.equal(pushService.eventTitle('paid_declared'), 'Klient zgłosił wpłatę');
+  assert.equal(pushService.eventTitle('nieznany-typ'), 'Powiadomienie', 'fallback dla nieznanego typu');
+  for (const t of Object.keys(pushService.EVENT_LABELS)) {
+    assert.ok(!/evoke/i.test(pushService.EVENT_LABELS[t]), `etykieta ${t} nie powiela nazwy aplikacji`);
+  }
+});
+
+test('treść powiadomień: nazwa klienta, podpis nadawcy i przełącznik prywatności', async () => {
+  // Stub transportu — sprawdzamy sam ŁADUNEK, bez ruszania sieci.
+  const webpush = require('web-push');
+  const realSend = webpush.sendNotification;
+  const sent = [];
+  webpush.sendNotification = async (sub, payload) => { sent.push(JSON.parse(payload)); return { statusCode: 201 }; };
+
+  const ep = 'https://fcm.googleapis.com/fcm/send/UNIT-txt-' + Date.now();
+  const cl = await prisma.client.create({ data: { name: 'Firma Testowa', token: 'ptxt_' + Date.now() } });
+  try {
+    await pushService.subscribe(Object.assign(fakeSub('txt'), { endpoint: ep }), { ua: 'test' });
+    await settingsService.update({ pwa: { enabled: true, display: 'standalone', push: true, pushBody: true } });
+
+    // Nadawca bez podpisu, ale znany klient (portale chowają pola imienia — v0.99.17).
+    sent.length = 0;
+    await pushService.notifyMessage({ clientId: cl.id, senderName: '', text: 'Treść pytania' });
+    assert.equal(sent[0].title, 'Wiadomość od Firma Testowa', 'nazwa klienta zamiast „Nowa wiadomość"');
+    assert.equal(sent[0].body, 'Treść pytania');
+
+    // Podpis nadawcy ma pierwszeństwo przed nazwą klienta.
+    sent.length = 0;
+    await pushService.notifyMessage({ clientId: cl.id, senderName: 'Jan Nowak', text: 'x' });
+    assert.equal(sent[0].title, 'Wiadomość od Jan Nowak');
+
+    // Brak obu → ogólny tytuł (np. anonimowy transfer bez projektu).
+    sent.length = 0;
+    await pushService.notifyMessage({ clientId: null, senderName: '', text: 'x' });
+    assert.equal(sent[0].title, 'Nowa wiadomość');
+
+    // Przełącznik prywatności: bez fragmentu treści (ekran blokady).
+    await settingsService.update({ pwa: { enabled: true, display: 'standalone', push: true, pushBody: false } });
+    sent.length = 0;
+    await pushService.notifyMessage({ clientId: cl.id, senderName: '', text: 'Tajna treść' });
+    assert.equal(sent[0].title, 'Wiadomość od Firma Testowa', 'kto napisał — nadal widać');
+    assert.equal(sent[0].body, '', 'treść ukryta');
+
+    // Zdarzenia mają własne teksty i przełącznik ich NIE dotyczy (to nasze opisy, nie treść klienta).
+    sent.length = 0;
+    await pushService.notifyEvent({ type: 'approved', message: 'Klient zatwierdził pliki w projekcie X' });
+    assert.equal(sent[0].title, 'Klient zatwierdził pliki');
+    assert.equal(sent[0].body, 'Klient zatwierdził pliki w projekcie X');
+  } finally {
+    webpush.sendNotification = realSend;
+    await prisma.pushSubscription.deleteMany({ where: { endpoint: ep } });
+    await prisma.client.delete({ where: { id: cl.id } });
+  }
+});
+
+test('pushBody: domyślnie włączone, da się wyłączyć', async () => {
+  assert.equal(settingsService.DEFAULTS.pwa.pushBody, true);
+  assert.equal((await settingsService.update({ pwa: { enabled: true, push: true } })).pwa.pushBody, true, 'brak pola = domyślnie');
+  assert.equal((await settingsService.update({ pwa: { enabled: true, push: true, pushBody: false } })).pwa.pushBody, false);
+});

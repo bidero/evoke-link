@@ -48,7 +48,7 @@ const DEFAULTS = {
   // logoPath = osobne logo PWA składane w ikonę (na kolorze marki); logoScale = jego rozmiar (%).
   // iconPath = gotowa ikona NADPISUJĄCA logo (override — użyta bez zmian, gdy wgrana).
   // splashSize = wielkość grafiki (ikona/logo) na ekranie startowym (px).
-  pwa: { enabled: false, name: '', shortName: '', themeColor: '', background: '', display: 'standalone', iconPath: null, logoPath: null, logoScale: 62, splashMs: 1200, splashMode: 'icon', splashSize: 120, badge: true, push: true },
+  pwa: { enabled: false, name: '', shortName: '', themeColor: '', background: '', display: 'standalone', iconPath: null, logoPath: null, logoScale: 62, splashMs: 1200, splashMode: 'icon', splashSize: 120, badge: true, push: true, pushBody: true },
   // Strona logowania (niezależna od stron klienta). Puste teksty = domyślne z widoku.
   login: { style: 'card', side: 'left', width: 'md', title: '', subtitle: '', heroTitle: '', heroSubtitle: '', hideName: false, footer: '', hideLogo: false, hideTitle: false, hideHero: false, hideFooter: false },
 };
@@ -94,6 +94,9 @@ function normPwa(p) {
     // Powiadomienia push (budzą aplikację przy zamkniętym oknie). Bezczynne, dopóki
     // ktoś nie włączy ich na swoim urządzeniu — to i tak wymaga zgody w przeglądarce.
     push: x.push === undefined ? DEFAULTS.pwa.push : !!x.push,
+    // Czy powiadomienie pokazuje FRAGMENT wiadomości od klienta. Dotyczy tylko wiadomości —
+    // opisy zdarzeń to nasze własne teksty, nie treść pisana przez klienta.
+    pushBody: x.pushBody === undefined ? DEFAULTS.pwa.pushBody : !!x.pushBody,
   };
 }
 

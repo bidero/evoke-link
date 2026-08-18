@@ -201,6 +201,7 @@ async function updateSettings(req, res, next) {
       splashSize: Math.max(48, parseInt(b.pwaSplashSize, 10) || 120), // bez górnego limitu
       badge: b.pwaBadge === 'on',
       push: b.pwaPush === 'on',
+      pushBody: b.pwaPushBody === 'on',
     };
 
     const data = {

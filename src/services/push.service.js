@@ -138,28 +138,98 @@ async function sendToAll({ title, body, url, badge }) {
   return { sent, removed: dead.length };
 }
 
-// Powiadomienie o nowym zdarzeniu/wiadomości: liczy aktualny stan liczników i wysyła push.
+// Bramka wysyłki: ustawienia + istnienie choćby jednej subskrypcji. Zwraca ustawienia albo null.
+// Wydzielona, żeby budowanie treści (np. dociągnięcie nazwy klienta) działo się DOPIERO po jej
+// przejściu — przy wyłączonym pushu nie robimy ani jednego dodatkowego zapytania.
+async function canSend() {
+  const settingsService = require('./settings.service');
+  const s = await settingsService.get();
+  if (!(s.pwa && s.pwa.enabled && s.pwa.push)) return null;
+  if ((await count()) === 0) return null; // nikt nie ma włączonych powiadomień
+  return s;
+}
+
+// Aktualny stan liczników → kropka na ikonie ustawiana przez service workera.
+// GOTCHA (cykl require): `event.service` woła funkcje z tego pliku, a my potrzebujemy z niego
+// licznika. Dlatego oba serwisy ładujemy LENIWIE, w środku wywołania — w tym momencie moduły
+// są już w pełni załadowane, więc nie dostajemy pustego obiektu z połowicznego cyklu.
+async function badgeCount() {
+  const events = require('./event.service');
+  const messageService = require('./message.service');
+  const [a, b] = await Promise.all([events.unreadCount(), messageService.unreadCount()]);
+  return a + b;
+}
+
+// Powiadomienie z gotowym tytułem/treścią (używa go „Wyślij testowe" w profilu).
 // „Nie wybuchowe" — błąd wysyłki nie może wywrócić uploadu ani zapisu wiadomości.
-//
-// GOTCHA (cykl require): `event.service` woła TĘ funkcję, a ona potrzebuje z niego licznika.
-// Dlatego oba serwisy ładujemy LENIWIE, w środku wywołania — w tym momencie moduły są już
-// w pełni załadowane, więc nie dostajemy pustego obiektu z połowicznego cyklu.
 async function notify({ title, body, url }) {
   try {
-    const settingsService = require('./settings.service');
-    const s = await settingsService.get();
-    if (!(s.pwa && s.pwa.enabled && s.pwa.push)) return { skipped: true };
-    if ((await count()) === 0) return { skipped: true }; // nikt nie ma włączonych powiadomień
-
-    const events = require('./event.service');
-    const messageService = require('./message.service');
-    const [a, b] = await Promise.all([events.unreadCount(), messageService.unreadCount()]);
-
-    return await sendToAll({ title, body, url, badge: a + b });
+    if (!(await canSend())) return { skipped: true };
+    return await sendToAll({ title, body, url, badge: await badgeCount() });
   } catch (e) {
     console.error('[push] powiadomienie nieudane:', (e && e.message) || e);
     return { error: true };
   }
 }
 
-module.exports = { publicKey, subscribe, unsubscribe, list, count, sendToAll, notify, labelFor, KEYS_FILE };
+// Krótkie, ludzkie tytuły zdarzeń. WAŻNE: tytułem NIE może być nazwa aplikacji — przeglądarka
+// i tak dokleja atrybucję („… from Evoke LINK"), więc wychodziło „Evoke LINK from Evoke LINK".
+// Klucze = NOTIFY_TYPES z event.service (tylko te typy w ogóle dzwonią).
+const EVENT_LABELS = {
+  uploaded: 'Nowe pliki od klienta',
+  downloaded: 'Klient pobrał pliki',
+  approved: 'Klient zatwierdził pliki',
+  changes: 'Klient zgłosił poprawki',
+  onboarded: 'Klient uzupełnił dane',
+  paid_declared: 'Klient zgłosił wpłatę',
+  offer_accepted: 'Oferta zaakceptowana',
+  offer_rejected: 'Oferta odrzucona',
+  update: 'Dostępna aktualizacja',
+  error: 'Błąd',
+};
+const eventTitle = (type) => EVENT_LABELS[type] || 'Powiadomienie';
+
+// Zdarzenie: tytuł = etykieta typu, treść = opisowe zdanie, które i tak już mamy w historii.
+async function notifyEvent({ type, message, url }) {
+  try {
+    if (!(await canSend())) return { skipped: true };
+    return await sendToAll({
+      title: eventTitle(type),
+      body: message || '',
+      url: url || '/admin/notifications',
+      badge: await badgeCount(),
+    });
+  } catch (e) {
+    console.error('[push] powiadomienie nieudane:', (e && e.message) || e);
+    return { error: true };
+  }
+}
+
+// Wiadomość od klienta. Tytuł: podpis nadawcy → nazwa klienta z bazy → ogólny fallback.
+// W portalach pola „Imię"/„E-mail" są ukryte (znany nadawca, v0.99.17), więc `senderName`
+// bywa pusty MIMO że wiemy, kto pisze — stąd dociąganie nazwy klienta.
+// Fragment treści pokazujemy tylko przy `pwa.pushBody` (powiadomienia widać na ekranie blokady).
+async function notifyMessage({ clientId, senderName, text }) {
+  try {
+    const s = await canSend();
+    if (!s) return { skipped: true };
+
+    let who = (senderName || '').trim();
+    if (!who && clientId) {
+      const c = await prisma.client.findUnique({ where: { id: Number(clientId) }, select: { name: true } });
+      if (c) who = c.name;
+    }
+
+    return await sendToAll({
+      title: who ? `Wiadomość od ${who}` : 'Nowa wiadomość',
+      body: s.pwa.pushBody ? String(text || '').slice(0, 160) : '',
+      url: '/admin/messages',
+      badge: await badgeCount(),
+    });
+  } catch (e) {
+    console.error('[push] powiadomienie nieudane:', (e && e.message) || e);
+    return { error: true };
+  }
+}
+
+module.exports = { publicKey, subscribe, unsubscribe, list, count, sendToAll, notify, notifyEvent, notifyMessage, eventTitle, EVENT_LABELS, labelFor, KEYS_FILE };
