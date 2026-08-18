@@ -10,6 +10,8 @@ storage/transfers/*
 storage/tmp/*
 !storage/tmp/.gitkeep
 storage/*.db
+# Klucze VAPID (Web Push) — PRYWATNY klucz, nigdy do repo.
+storage/vapid.json
 storage/*.db-journal
 storage/*.db-wal
 storage/*.db-shm

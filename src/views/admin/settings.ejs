@@ -1278,6 +1278,13 @@
       <p class="text-[11px] text-slate-400 -mt-1">Po otwarciu <strong>zainstalowanej</strong> aplikacji pokazuje wybraną treść na „tle startowym" przez podany czas, potem znika. Raz na uruchomienie; w przeglądarce nie działa. „Wielkość grafiki" dotyczy ikony/logo. Tryb „Logo aplikacji" bierze <strong>logo na splash</strong> (pole niżej), a gdy go brak — logo z Brandingu.</p>
 
       <label class="flex items-start gap-2 text-sm text-slate-700">
+        <input type="checkbox" name="pwaPush" class="mt-0.5 rounded border-slate-300" <%= settings.pwa.push ? 'checked' : '' %> />
+        <span>Powiadomienia push
+          <span class="block text-[11px] text-slate-400 font-normal">Jedyne, co budzi aplikację, gdy jest <strong>zamknięta</strong> — licznik na ikonie odświeża się sam, a na wierzchu pojawia się powiadomienie. Każde urządzenie włącza je osobno w <strong>Mój profil → Bezpieczeństwo</strong> (wymaga zgody w przeglądarce). Na iPhonie tylko po dodaniu do ekranu głównego, iOS 16.4+.</span>
+        </span>
+      </label>
+
+      <label class="flex items-start gap-2 text-sm text-slate-700">
         <input type="checkbox" name="pwaBadge" class="mt-0.5 rounded border-slate-300" <%= settings.pwa.badge ? 'checked' : '' %> />
         <span>Licznik na ikonie aplikacji
           <span class="block text-[11px] text-slate-400 font-normal">Kropka z liczbą nieprzeczytanych powiadomień i wiadomości na ikonie <strong>zainstalowanej</strong> aplikacji (Chrome/Edge na komputerze, iPhone/iPad z iOS 16.4+ po dodaniu do ekranu głównego). Odświeża się przy otwartej aplikacji — bez powiadomień push nie zmieni się, gdy apka jest zamknięta. Wylogowanie czyści licznik.</span>

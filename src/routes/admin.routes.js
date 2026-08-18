@@ -16,6 +16,7 @@ const messageUpload = require('../middleware/messageUpload');
 const notifications = require('../controllers/notification.controller');
 const settings = require('../controllers/settings.controller');
 const search = require('../controllers/search.controller');
+const push = require('../controllers/push.controller');
 const account = require('../controllers/account.controller');
 const brandingUpload = require('../middleware/brandingUpload');
 const avatarUpload = brandingUpload.single('avatar'); // awatar/logo klienta (public/branding/)
@@ -166,6 +167,11 @@ router.post('/clients/:id', avatarUpload, clients.updateClient);
 router.post('/clients/:id/delete', clients.deleteClient);
 
 // Powiadomienia (Etap 4).
+// Powiadomienia push (Web Push) — subskrypcja jest per PRZEGLĄDARKA, jak passkeys.
+router.get('/push/config', push.config);
+router.post('/push/subscribe', push.subscribe);
+router.post('/push/unsubscribe', push.unsubscribe);
+router.post('/push/test', push.test);
 router.get('/badges.json', notifications.badgeCounts); // liczniki dla otwartej karty (dzwonek, menu, ikona PWA)
 router.get('/notifications', notifications.index);
 router.post('/notifications/read-all', notifications.readAll);

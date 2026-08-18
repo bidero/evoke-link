@@ -52,6 +52,10 @@ async function archiveTo(outStream, scope) {
     archive.pipe(outStream);
     if (fs.existsSync(dbToZip)) archive.file(dbToZip, { name: 'evoke.db' });
     if (scope !== 'db' && fs.existsSync(storage.STORAGE_DIR)) archive.directory(storage.STORAGE_DIR, 'transfers');
+    // Klucze VAPID (Web Push): leżą poza katalogiem transferów, a ich utrata unieważnia
+    // WSZYSTKIE subskrypcje przeglądarek — bez nich każdy musiałby włączać powiadomienia od nowa.
+    const vapid = path.join(STORAGE_ROOT, 'vapid.json');
+    if (fs.existsSync(vapid)) archive.file(vapid, { name: 'vapid.json' });
     archive.finalize();
   });
   if (snap) { try { fs.rmSync(snap); } catch (_) {} }

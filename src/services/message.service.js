@@ -16,7 +16,7 @@ async function create({ body, senderName, senderEmail, clientId, projectId, tran
     const stored = storage.saveMessageFile(file.path, storage.makeStoredName(file.originalname));
     att = { attachmentPath: stored, attachmentName: (file.originalname || 'plik').slice(0, 255), attachmentSize: file.size, attachmentMime: file.mimetype };
   }
-  return prisma.message.create({
+  const msg = await prisma.message.create({
     data: {
       body: text,
       senderName: clean(senderName),
@@ -28,6 +28,19 @@ async function create({ body, senderName, senderEmail, clientId, projectId, tran
       ...att,
     },
   });
+
+  // Push (aplikacja może być ZAMKNIĘTA). Wiadomość od klienta NIE tworzy zdarzenia `Event`,
+  // więc hook w event.service by jej nie złapał — a to najważniejsze powiadomienie.
+  // Bez `await`: wiadomość ma być zapisana niezależnie od powodzenia wysyłki.
+  require('./push.service')
+    .notify({
+      title: clean(senderName) ? `Wiadomość od ${clean(senderName)}` : 'Nowa wiadomość',
+      body: text.slice(0, 160),
+      url: '/admin/messages',
+    })
+    .catch(() => {});
+
+  return msg;
 }
 
 // Skrzynka w panelu — wiadomości OD klientów (direction 'in'), z kontekstem.

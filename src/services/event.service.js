@@ -23,6 +23,13 @@ async function log({ type, message, projectId, transferId, clientId, meta, ip })
         ip: ip || null,
       },
     });
+    // Powiadomienie push (aplikacja może być ZAMKNIĘTA) — tylko typy, które i tak dzwonią.
+    // Świadomie bez `await`: zdarzenie ma być zapisane niezależnie od tego, czy push wyszedł.
+    if (NOTIFY_TYPES.includes(type)) {
+      require('./push.service')
+        .notify({ title: 'Evoke LINK', body: message || 'Nowe powiadomienie', url: '/admin/notifications' })
+        .catch(() => {});
+    }
   } catch (e) {
     console.error('[event] nie udało się zapisać zdarzenia:', e.message);
   }

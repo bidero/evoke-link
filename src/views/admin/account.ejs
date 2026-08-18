@@ -149,6 +149,61 @@
       <% } %>
     </div>
 
+    <%# ── Powiadomienia push ─────────────────────────────────────────────── %>
+    <%# Subskrypcja należy do PRZEGLĄDARKI, nie do konta — jak passkeys włącza się ją
+        osobno na każdym urządzeniu. To jedyne, co budzi aplikację przy zamkniętym oknie. %>
+    <div class="border-t border-slate-100 mt-6 pt-5"
+         x-data="{ on: false, busy: false, err: '', ok: '', supported: false, blocked: false,
+                   init() {
+                     if (!window.evokePush) return;
+                     this.supported = window.evokePush.supported();
+                     if (this.supported) window.evokePush.status().then(s => { this.on = s.on; this.blocked = s.permission === 'denied'; });
+                   },
+                   toggle() {
+                     this.err = ''; this.ok = ''; this.busy = true;
+                     const p = this.on ? window.evokePush.disable() : window.evokePush.enable();
+                     p.then(() => { this.on = !this.on; this.busy = false; })
+                      .catch(e => { this.err = e.message || 'Nie udało się.'; this.busy = false; });
+                   },
+                   sendTest() {
+                     this.err = ''; this.ok = ''; this.busy = true;
+                     window.evokePush.test()
+                       .then(n => { this.ok = 'Wysłano na ' + n + ' urządz. — powiadomienie powinno pojawić się za chwilę.'; this.busy = false; })
+                       .catch(e => { this.err = e.message; this.busy = false; });
+                   } }" x-init="init()">
+      <div class="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <div class="text-sm font-medium text-slate-700">Powiadomienia push (to urządzenie)</div>
+          <div class="text-xs text-slate-400">
+            <% if (!(settings.pwa && settings.pwa.enabled && settings.pwa.push)) { %>
+              Wyłączone w Ustawieniach → Zaawansowane (sekcja „Aplikacja (PWA)").
+            <% } else { %>
+              Jedyne, co odświeża licznik i pokazuje powiadomienie, gdy aplikacja jest <strong>zamknięta</strong>.
+              Na iPhonie działa po dodaniu do ekranu głównego (iOS 16.4+).
+            <% } %>
+          </div>
+        </div>
+        <% if (settings.pwa && settings.pwa.enabled && settings.pwa.push) { %>
+          <div class="flex items-center gap-2" x-show="supported" x-cloak>
+            <button type="button" x-show="on" x-cloak :disabled="busy" @click="sendTest()"
+                    class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-3 py-2 transition disabled:opacity-60">Wyślij testowe</button>
+            <button type="button" :disabled="busy || blocked" @click="toggle()"
+                    :class="on ? 'border border-slate-300 text-slate-700 hover:bg-slate-50' : 'bg-brand-600 hover:bg-brand-700 text-white'"
+                    class="rounded-lg text-sm font-medium px-4 py-2 transition disabled:opacity-60">
+              <span x-show="!busy" x-text="on ? 'Wyłącz' : 'Włącz powiadomienia'"></span>
+              <span x-show="busy" x-cloak>Chwileczkę…</span>
+            </button>
+          </div>
+        <% } %>
+      </div>
+      <p x-show="blocked" x-cloak class="mt-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-3 py-2">
+        Powiadomienia są zablokowane w ustawieniach przeglądarki dla tej strony — odblokuj je tam, żeby móc włączyć.
+      </p>
+      <p x-show="err" x-cloak x-text="err" class="mt-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"></p>
+      <p x-show="ok" x-cloak x-text="ok" class="mt-3 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"></p>
+      <p x-show="!supported" x-cloak class="mt-3 text-xs text-slate-400">Ta przeglądarka nie obsługuje powiadomień push (albo strona nie działa po HTTPS).</p>
+    </div>
+
     <%# ── 2FA (TOTP) ─────────────────────────────────────────────────────── %>
     <div class="border-t border-slate-100 mt-6 pt-5">
       <div class="flex items-start justify-between gap-3 flex-wrap">

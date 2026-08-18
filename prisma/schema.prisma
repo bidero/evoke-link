@@ -28,6 +28,7 @@ model User {
   createdAt    DateTime   @default(now())
   transfers    Transfer[]
   credentials  Credential[]
+  pushSubs     PushSubscription[]
 }
 
 // Passkey (WebAuthn) — klucz sprzętowy/platformowy konta (Touch ID, iCloud Keychain,
@@ -368,4 +369,22 @@ model Reminder {
   @@index([clientId])
   @@index([projectId])
   @@index([seriesId])
+}
+
+// Subskrypcja Web Push — jedna na przeglądarkę/urządzenie. Pozwala obudzić aplikację,
+// gdy jest ZAMKNIĘTA (licznik na ikonie + banerek). `endpoint` jest unikalny i sam w sobie
+// identyfikuje subskrypcję; `p256dh`/`auth` to klucze do szyfrowania ładunku (od przeglądarki).
+// Wygasłe/odwołane subskrypcje kasujemy po odpowiedzi 404/410 z serwera push.
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int?
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  label     String?  // skrót User-Agent — żeby dało się poznać urządzenie na liście
+  createdAt DateTime @default(now())
+  lastOkAt  DateTime?
+
+  @@index([userId])
 }
