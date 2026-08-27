@@ -10,6 +10,12 @@
 //
 // ZAKRES: tylko iOS w standalone. W Chrome (desktop/Android) atrybut `download` działa
 // poprawnie i skrypt świadomie się nie wtrąca.
+//
+// GOTCHA NA STAŁE — NIE UŻYWAĆ TU `window.open`: wzorzec „otwórz puste okno w geście,
+// potem podstaw adres" (poprawny na blokady popupów w Chrome) w iOS standalone NIE DZIAŁA.
+// Okno się otwiera, ale zwrócony uchwyt jest ZERWANY — `win.location = …` nie ma żadnego
+// skutku i wewnętrzna przeglądarka zostaje na `about:blank`, bez wyjątku i bez błędu
+// (czyli `catch` nie łapie, degradacja się nie uruchamia). Zgłoszone z iPhone'a po v1.0.3.
 (function () {
   function ready(fn) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
@@ -33,11 +39,7 @@
       if (!kind || !marker[1]) return;
       e.preventDefault();
 
-      // Okno MUSI powstać synchronicznie, w geście użytkownika — po `await` Safari
-      // potraktowałoby je jak wyskakujące i zablokowało.
-      var win = window.open('', '_blank');
       var fallback = function () {
-        if (win) { try { win.close(); } catch (_) { /* już zamknięte */ } }
         window.location.href = a.href;   // dotychczasowe zachowanie — nie gorzej niż było
       };
 
@@ -50,8 +52,11 @@
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (d) {
           if (!d || !d.url) return fallback();
-          if (win) win.location.href = d.url;
-          else window.location.href = d.url; // okno zablokowane — adres i tak jest poza scope
+          // Nawigacja BIEŻĄCEGO okna na adres spoza `scope` — iOS przejmuje ją i otwiera
+          // wewnętrzną przeglądarkę (to samo, co robi z linkami /c i /p), a okno panelu
+          // zostaje na swoim miejscu. Odpowiedź jest załącznikiem, więc kończy się arkuszem
+          // zapisu z przyciskiem „Gotowe".
+          window.location.href = d.url;
         })
         .catch(fallback);
     });

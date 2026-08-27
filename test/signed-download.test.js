@@ -161,3 +161,15 @@ test('widok transferu: linki pobierania niosą marker data-dl dla skryptu iOS', 
     await cleanup(f);
   }
 });
+
+test('skrypt iOS: nawiguje bieżące okno, NIE używa window.open (pułapka zerwanego uchwytu)', async () => {
+  const res = await fetch(`${base}/js/pwa-downloads.js`);
+  assert.equal(res.status, 200);
+  const js = await res.text();
+  // W iOS standalone uchwyt zwrócony przez window.open jest zerwany — podstawienie
+  // `win.location` nie ma skutku i wewnętrzna przeglądarka zostaje na about:blank
+  // (zgłoszone z iPhone'a po v1.0.3). Wolno o tym pisać w komentarzu, nie wolno WYWOŁYWAĆ.
+  assert.doesNotMatch(js, /window\.open\s*\(/, 'żadnego wywołania window.open');
+  assert.match(js, /window\.location\.href = d\.url/, 'nawigacja bieżącego okna na podpisany link');
+  assert.match(js, /navigator\.standalone/, 'bramka: tylko zainstalowana aplikacja');
+});
