@@ -1,3 +1,11 @@
+<%
+  // Kropka „nowa wiadomość". Dla pozycji Wiadomości renderujemy ją ZAWSZE (ukrytą, gdy nie ma nowej),
+  // żeby polling mógł ją tylko odsłonić — bez dorabiania markupu w JS (wzorzec z badges.js).
+  function msgDot(s, cls) {
+    if (s.action !== 'messages') return s.dot ? '<span class="' + cls + '"></span>' : '';
+    return '<span data-msg-dot class="' + cls + (s.dot ? '' : ' hidden') + '"></span>';
+  }
+%>
 <%# Nawigacja sekcji portali klienta — Settings.layout.portalNav.
     Części: 'side'/'tabs' (w karcie), 'page-top'/'page-side' (pływające), 'chrome-top' (nagłówek/
     banner/panel; tone bg|white|brand), 'rail' (brandowy pas pionowy — zwijany, railOpen z wrappera).
@@ -34,7 +42,7 @@
           <%- icon(s.icon, { size: 16, cls: 'shrink-0' }) %>
           <span class="flex-1 truncate"><%= s.label %></span>
           <% if (s.badge) { %><span class="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700"><%= s.badge %></span><% } %>
-          <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
+          <%- msgDot(s, 'w-2 h-2 rounded-full bg-red-500 shrink-0') %>
         <%- s.href ? '</a>' : '</button>' %>
       </li>
     <% }); %>
@@ -53,7 +61,7 @@
       <%- icon(s.icon, { size: 15, cls: 'shrink-0' }) %>
       <span><%= s.label %></span>
       <% if (s.badge) { %><span class="text-[11px] px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700"><%= s.badge %></span><% } %>
-      <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
+      <%- msgDot(s, 'w-2 h-2 rounded-full bg-red-500 shrink-0') %>
     <%- s.href ? '</a>' : '</button>' %>
   <% }); %>
 </div>
@@ -73,7 +81,7 @@
       <%- icon(s.icon, { size: 15, cls: 'shrink-0' }) %>
       <span><%= s.label %></span>
       <% if (s.badge) { %><span class="text-[11px] px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700"><%= s.badge %></span><% } %>
-      <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
+      <%- msgDot(s, 'w-2 h-2 rounded-full bg-red-500 shrink-0') %>
     <%- s.href ? '</a>' : '</button>' %>
   <% }); %>
 </div>
@@ -93,7 +101,7 @@
           <%- icon(s.icon, { size: 16, cls: 'shrink-0' }) %>
           <span class="flex-1 truncate"><%= s.label %></span>
           <% if (s.badge) { %><span class="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-brand-100 text-brand-700"><%= s.badge %></span><% } %>
-          <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
+          <%- msgDot(s, 'w-2 h-2 rounded-full bg-red-500 shrink-0') %>
         <%- s.href ? '</a>' : '</button>' %>
       </li>
     <% }); %>
@@ -120,7 +128,7 @@
       <%- icon(s.icon, { size: 15, cls: 'shrink-0' }) %>
       <span><%= s.label %></span>
       <% if (s.badge) { %><span class="text-[11px] px-1.5 py-0.5 rounded-full <%= tn === 'brand' ? 'bg-white/20' : 'bg-brand-100 text-brand-700' %>"><%= s.badge %></span><% } %>
-      <% if (s.dot) { %><span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span><% } %>
+      <%- msgDot(s, 'w-2 h-2 rounded-full bg-red-500 shrink-0') %>
     <%- s.href ? '</a>' : '</button>' %>
   <% }); %>
   <% if (typeof withTheme !== 'undefined' && withTheme) { %>
@@ -151,7 +159,7 @@
           zwiniętym pasie spychała ikonę z centrum. Teraz ikona zostaje wyśrodkowana, kropka w rogu. %>
       <span class="relative shrink-0 inline-flex">
         <%- icon(s.icon, { size: 16, cls: 'shrink-0' }) %>
-        <% if (s.dot) { %><span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-brand-600"></span><% } %>
+        <%- msgDot(s, 'absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-brand-600') %>
       </span>
       <span class="flex-1 truncate" x-show="railOpen"><%= s.label %></span>
       <% if (s.badge) { %><span class="text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-white/20" x-show="railOpen"><%= s.badge %></span><% } %>

@@ -544,6 +544,7 @@ async function pollClientMessages(req, res, next) {
     await messagePoll.respond(res, {
       scope: { clientId: client.id },
       after: req.query.after,
+      meta: req.query.meta === '1',   // tryb kropki: bez renderu bąbelków
       msgContext: { page: `/c/${client.token}/wiadomosci` },
     });
   } catch (err) {

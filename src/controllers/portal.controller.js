@@ -158,6 +158,7 @@ async function pollMessages(req, res, next) {
     await messagePoll.respond(res, {
       scope: { projectId: project.id },
       after: req.query.after,
+      meta: req.query.meta === '1',   // tryb kropki: bez renderu bąbelków
       msgContext: { page: `/p/${project.clientToken}/wiadomosci` },
     });
   } catch (err) {

@@ -33,8 +33,10 @@ test('klient pisze → agencja odpowiada → wątek w panelu + badge u klienta',
     assert.equal(original.clientId, c.id, 'wiązanie z klientem z projektu');
     assert.equal(original.isRead, false);
 
-    // przed odpowiedzią — brak kropki nowej odpowiedzi (bg-red-500 przy pozycji Wiadomości/kopercie)
-    assert.ok(!/bg-red-500/.test(await (await fetch(`${base}/p/${token}`)).text()), 'przed odpowiedzią brak kropki');
+    // Kropka „nowa odpowiedź" jest w HTML ZAWSZE (żywa koperta odsłania ją pollingiem), więc
+    // sprawdzamy STAN: czy któryś `data-msg-dot` jest bez klasy `hidden`.
+    const dotVisible = (html) => /data-msg-dot[^>]*class="(?![^"]*\bhidden\b)[^"]*"/.test(html);
+    assert.ok(!dotVisible(await (await fetch(`${base}/p/${token}`)).text()), 'przed odpowiedzią kropka ukryta');
 
     // agencja odpowiada przez komunikator: send w kontekście projektu (scope p:<id>)
     const outBody = 'odpowiedz ' + Date.now();
@@ -50,7 +52,7 @@ test('klient pisze → agencja odpowiada → wątek w panelu + badge u klienta',
     assert.ok(ihtml.includes(inBody) && ihtml.includes(outBody), 'strumień pokazuje obie wiadomości');
 
     // po odpowiedzi — kropka nowej odpowiedzi u klienta; podstrona wiadomości pokazuje wątek
-    assert.match(await (await fetch(`${base}/p/${token}`)).text(), /bg-red-500/, 'po odpowiedzi kropka nowej odpowiedzi');
+    assert.ok(dotVisible(await (await fetch(`${base}/p/${token}`)).text()), 'po odpowiedzi kropka nowej odpowiedzi');
     const mhtml = await (await fetch(`${base}/p/${token}/wiadomosci`)).text();
     assert.ok(mhtml.includes(inBody) && mhtml.includes(outBody), 'podstrona wiadomości pokazuje wątek');
   } finally {

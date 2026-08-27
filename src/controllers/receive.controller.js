@@ -104,6 +104,7 @@ async function pollMessages(req, res, next) {
     await messagePoll.respond(res, {
       scope: { transferId: transfer.id },
       after: req.query.after,
+      meta: req.query.meta === '1',   // tryb kropki: bez renderu bąbelków
       msgContext: { page: `/upload/${transfer.token}/wiadomosci` },
     });
   } catch (err) {

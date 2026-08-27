@@ -9,8 +9,12 @@
 //
 // Konfiguracja z data-* kontenera wątku (`[data-live-thread]`):
 //   data-poll-url  — endpoint pollingu, data-last-id — kursor, data-notify — natywne powiadomienie.
+//
+// DRUGI BLOK (`[data-live-dot]`): na stronach portalu BEZ wątku (/p, /c, /t, /upload, /o) zapalamy
+// samą KROPKĘ przy kopercie — ten sam endpoint w trybie `?meta=1` (bez renderu bąbelków).
 (function () {
-  var EVERY = 5000; // ms — wątek odświeżamy częściej niż liczniki (badges.js: 60 s)
+  var EVERY = 5000;     // ms — wątek odświeżamy częściej niż liczniki (badges.js: 60 s)
+  var DOT_EVERY = 10000; // ms — sama kropka: rzadziej, bo to tylko sygnał „jest odpowiedź"
 
   function ready(fn) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
@@ -135,5 +139,51 @@
           .then(function () { if (btn) btn.disabled = false; });
       });
     }
+  });
+
+  // --- Kropka „nowa wiadomość" na stronach portalu (bez wątku) ---
+  //
+  // Dotąd kropka była liczona SERWEROWO przy wczytaniu strony (`msgHasReply`) — klient siedzący na
+  // /p czy /c nie widział nowej odpowiedzi, dopóki nie odświeżył. Tutaj tylko ją ODSŁANIAMY: markup
+  // jest w HTML zawsze (`[data-msg-dot]` z klasą `hidden`, wzorzec z badges.js), więc JS nie dorabia
+  // elementów — i nie trzeba pilnować klas w buildzie Tailwinda.
+  //
+  // Kropki NIE gasimy — gaśnie naturalnie po wejściu w wątek (serwerowy `msgSeen`).
+  ready(function () {
+    var hook = document.querySelector('[data-live-dot]');
+    if (!hook) return;
+    // Na podstronie wątku wiadomości i tak dopisują się na żywo — nie dublujemy zapytań.
+    if (document.querySelector('[data-live-thread]')) return;
+    var url = hook.getAttribute('data-poll-url');
+    if (!url) return;
+
+    var lastId = Number(hook.getAttribute('data-last-id')) || 0;
+    var busy = false;
+
+    function show() {
+      Array.prototype.forEach.call(document.querySelectorAll('[data-msg-dot]'), function (el) {
+        el.classList.remove('hidden');
+      });
+    }
+
+    function poll() {
+      if (busy || document.visibilityState !== 'visible') return;
+      busy = true;
+      var sep = url.indexOf('?') === -1 ? '?' : '&';
+      fetch(url + sep + 'after=' + lastId, { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (!d) return;
+          if (d.lastId) lastId = d.lastId;
+          if (d.fromAgency > 0) show();   // tylko `out` — własna wiadomość klienta nie zapala mu kropki
+        })
+        .catch(function () { /* offline / wygasła sesja — spróbujemy za chwilę */ })
+        .then(function () { busy = false; });
+    }
+
+    setInterval(poll, DOT_EVERY);
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') poll();
+    });
   });
 })();

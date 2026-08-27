@@ -57,6 +57,48 @@ test('polling klienta: oddaje TYLKO wiadomości nowsze od kursora + bąbelek z d
   }
 });
 
+test('kropka: tryb ?meta=1 oddaje sam licznik wiadomości OD AGENCJI (bez renderu bąbelków)', async () => {
+  const f = await fixture('dot');
+  try {
+    const mine = await prisma.message.create({ data: { body: 'OD KLIENTA', direction: 'in', clientId: f.client.id, projectId: f.project.id } });
+    const url = `${base}/p/${f.project.clientToken}/wiadomosci/poll?meta=1`;
+
+    // Własna wiadomość klienta NIE ma zapalać mu kropki — liczymy tylko `out`.
+    const own = await (await json(`${url}&after=0`)).json();
+    assert.equal(own.fromAgency, 0, 'wiadomość klienta nie zapala jego kropki');
+    assert.equal(own.lastId, mine.id);
+    assert.equal(own.html, undefined, 'tryb meta nie renderuje bąbelków');
+    assert.equal(own.readIds, undefined);
+
+    const reply = await prisma.message.create({ data: { body: 'ODPOWIEDŹ', direction: 'out', clientId: f.client.id, projectId: f.project.id } });
+    const after = await (await json(`${url}&after=${mine.id}`)).json();
+    assert.equal(after.fromAgency, 1, 'odpowiedź agencji zapala kropkę');
+    assert.equal(after.lastId, reply.id);
+
+    const none = await (await json(`${url}&after=${reply.id}`)).json();
+    assert.equal(none.fromAgency, 0, 'nic nowego = kropka bez zmian');
+    assert.equal(none.lastId, reply.id, 'kursor nie cofa się przy pustej odpowiedzi');
+
+    const res = await json(`${url}&after=0`);
+    assert.match(res.headers.get('cache-control') || '', /no-store/);
+  } finally {
+    await cleanup(f);
+  }
+});
+
+test('kropka: obcy token nie widzi cudzych wiadomości (ta sama bramka co wątek)', async () => {
+  const a = await fixture('dota'); const b = await fixture('dotb');
+  try {
+    await prisma.message.create({ data: { body: 'DO A', direction: 'out', clientId: a.client.id, projectId: a.project.id } });
+    const foreign = await (await json(`${base}/p/${b.project.clientToken}/wiadomosci/poll?meta=1&after=0`)).json();
+    assert.equal(foreign.fromAgency, 0, 'wątek klienta B nie zapala się od wiadomości klienta A');
+    const bad = await json(`${base}/p/nieistniejacy-token/wiadomosci/poll?meta=1&after=0`);
+    assert.equal(bad.status, 404, 'nieznany token = 404 (bramka jak przy wątku)');
+  } finally {
+    await cleanup(a); await cleanup(b);
+  }
+});
+
 test('polling klienta: wątki są odseparowane (obcy token nie widzi cudzych wiadomości)', async () => {
   const a = await fixture('liva');
   const b = await fixture('livb');

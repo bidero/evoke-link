@@ -167,6 +167,7 @@ async function pollMessages(req, res, next) {
     await messagePoll.respond(res, {
       scope: { clientId: offer.clientId },
       after: req.query.after,
+      meta: req.query.meta === '1',   // tryb kropki: bez renderu bąbelków
       msgContext: { page: `/o/${offer.token}/wiadomosci` },
     });
   } catch (err) {

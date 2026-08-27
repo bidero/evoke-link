@@ -129,13 +129,24 @@
     </button>
     <% } %>
 
+    <%# Żywa koperta: na stronach portalu (nie na podstronie wątku) odpytujemy lekki endpoint
+        `?meta=1` i zapalamy kropkę, gdy przyjdzie wiadomość od agencji. Kursor = id ostatniej
+        wiadomości znanej przy renderze (wątek i tak jest już wczytany dla `msgHasReply`). %>
+    <% if (typeof msgContext !== 'undefined' && msgContext && msgContext.page) { %>
+      <span data-live-dot class="hidden"
+            data-poll-url="<%= msgContext.page %>/poll?meta=1"
+            data-last-id="<%= (typeof msgThread !== 'undefined' && msgThread && msgThread.length) ? msgThread[msgThread.length - 1].id : 0 %>"></span>
+    <% } %>
+
     <% if (typeof msgContext !== 'undefined' && msgContext && msgContext.page && !msgInMenu) { %>
     <%# Wiadomości: pływająca koperta-LINK na podstronę wątku (dawny popup zastąpiony podstroną
         public/messages.ejs; gdy nawigacja ma pozycję „Wiadomości" — koperta znika). %>
-    <a href="<%= msgContext.page %>" title="Wiadomości" aria-label="Wiadomości"
+    <a href="<%= msgContext.page %>" title="Wiadomości" aria-label="Wiadomości" data-msg-fab
        class="fixed top-4 right-16 z-30 w-10 h-10 inline-flex items-center justify-center rounded-full <%= fabCls %> backdrop-blur transition">
       <%- icon('mail', { size: 18, cls: '' }) %>
-      <% if (typeof msgHasReply !== 'undefined' && msgHasReply) { %><span class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 ring-2 ring-white"></span><% } %>
+      <%# Kropka renderowana ZAWSZE (ukryta bez nowej wiadomości) — polling ją tylko odsłania,
+          bez dorabiania markupu w JS. Pozycjonuje się względem `fixed` na <a> (brak `relative` — celowo). %>
+      <span data-msg-dot class="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-500 ring-2 ring-white<%= (typeof msgHasReply !== 'undefined' && msgHasReply) ? '' : ' hidden' %>"></span>
     </a>
     <% } %>
 
