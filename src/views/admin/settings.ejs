@@ -1400,7 +1400,7 @@
             <div class="flex items-center gap-3 px-3 py-2">
               <span class="min-w-0 flex-1 truncate text-slate-700" title="<%= b.name %>"><%= b.name %></span>
               <span class="text-xs text-slate-400 shrink-0 whitespace-nowrap"><%= fmt.bytes(b.size) %> · <%= fmt.date(b.mtime) %></span>
-              <a href="/admin/settings/backups/<%= encodeURIComponent(b.name) %>" class="text-brand-700 hover:text-brand-800 shrink-0" title="Pobierz"><%- icon('download', { size: 15, cls: '' }) %></a>
+              <a href="/admin/settings/backups/<%= encodeURIComponent(b.name) %>" download class="text-brand-700 hover:text-brand-800 shrink-0" title="Pobierz"><%- icon('download', { size: 15, cls: '' }) %></a>
               <form method="POST" action="/admin/settings/backups/<%= encodeURIComponent(b.name) %>/delete" onsubmit="return confirm('Usunąć kopię <%= b.name %>?')" class="shrink-0 leading-none">
                 <button type="submit" class="text-slate-400 hover:text-red-600 transition" title="Usuń"><%- icon('trash', { size: 15, cls: '' }) %></button>
               </form>

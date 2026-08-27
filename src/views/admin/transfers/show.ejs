@@ -145,7 +145,11 @@
           </span>
         </form>
         <% if (transfer.files.length) { %>
-          <a href="/admin/transfers/<%= transfer.id %>/zip" class="text-sm text-brand-700 hover:underline">Pobierz ZIP</a>
+          <%# `download`: to POBRANIE, nie nawigacja. W zainstalowanej aplikacji (PWA) zwykły
+              link otwiera plik W OKNIE APKI (panel jest w `scope`, więc zasięg tu nie pomoże
+              i nie powinien). Atrybut mówi przeglądarce „oddaj to menedżerowi pobierania";
+              nazwę bierze z `Content-Disposition` (bez wartości — nie nadpisujemy jej). %>
+          <a href="/admin/transfers/<%= transfer.id %>/zip" download class="text-sm text-brand-700 hover:underline">Pobierz ZIP</a>
         <% } %>
       </span>
     </div>
@@ -171,12 +175,12 @@
                 <button type="button" @click="open(<%= _ii %>)" class="min-w-0 truncate text-left text-slate-700 hover:text-brand-700"><%= f.originalName %></button>
               <% } else { %>
                 <span class="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0"><%- icon(_m.icon, { size: 22, cls: _m.color }) %></span>
-                <a href="<%= _dl %>" class="min-w-0 truncate text-slate-700 hover:text-brand-700"><%= f.originalName %></a>
+                <a href="<%= _dl %>" download class="min-w-0 truncate text-slate-700 hover:text-brand-700"><%= f.originalName %></a>
               <% } %>
             </div>
             <span class="flex items-center gap-3 shrink-0">
               <span class="text-slate-400"><%= fmt.bytes(f.size) %></span>
-              <a href="<%= _dl %>" class="text-slate-400 hover:text-brand-700 opacity-0 group-hover:opacity-100 transition" aria-label="Pobierz" title="Pobierz"><%- icon('download', { size: 16 }) %></a>
+              <a href="<%= _dl %>" download class="text-slate-400 hover:text-brand-700 opacity-0 group-hover:opacity-100 transition" aria-label="Pobierz" title="Pobierz"><%- icon('download', { size: 16 }) %></a>
               <%# Nazwa pliku przez JSON.stringify (nie wklejana wprost w apostrofy) — inaczej
                   cudzysłów albo backslash w nazwie rozwala literał JS w atrybucie. %>
               <form method="POST" action="/admin/transfers/<%= transfer.id %>/file/<%= f.id %>/delete"
@@ -201,7 +205,7 @@
         <div class="flex items-center gap-4 text-white text-sm">
           <span class="truncate max-w-[60vw]" x-text="cur.name"></span>
           <span class="text-white/50" x-show="items.length > 1" x-text="(i + 1) + ' / ' + items.length"></span>
-          <a :href="cur.dl" class="underline hover:text-white/80">Pobierz</a>
+          <a :href="cur.dl" download class="underline hover:text-white/80">Pobierz</a>
         </div>
       </div>
     </div>
