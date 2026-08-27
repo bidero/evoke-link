@@ -10,10 +10,20 @@
   var threadTransfers = {};
   (messages || []).forEach(function (m) { if (m.transfer) threadTransfers[m.transfer.id] = m.transfer.title || ('Transfer #' + m.transfer.id); });
   var lastMsg = (messages || [])[(messages || []).length - 1];
+  var tabs = (typeof threads !== 'undefined' && threads) ? threads : [];
+  var tab = (typeof activeThread !== 'undefined' && activeThread) ? activeThread : 'all';
+  var oneThread = tab !== 'all';                    // w konkretnym wątku piszesz DOKŁADNIE tam, gdzie patrzysz
+  var tabLabel = (tabs.find(function (t) { return t.key === tab; }) || {}).label || 'Ogólne';
+  // Kontekst wysyłki: w zakładce wątku = ta zakładka; w „Wszystko" = wątek ostatniej wiadomości.
   var defScope = 'c';
   if (lastMsg) { if (lastMsg.projectId) defScope = 'p:' + lastMsg.projectId; else if (lastMsg.transferId) defScope = 't:' + lastMsg.transferId; }
-  // Podpowiedź kontekstu z linku „Napisz do klienta" na stronie projektu (?scope=p:<id>) — wygrywa.
   if (typeof scopeHint !== 'undefined' && scopeHint) defScope = scopeHint;
+  if (oneThread) defScope = tab;
+  // Ostrzeżenie w „Wszystko": piszesz gdzie indziej niż ostatnia wiadomość OD KLIENTA.
+  var lastIn = null;
+  (messages || []).forEach(function (m) { if (m.direction === 'in') lastIn = m; });
+  var lastInScope = lastIn ? (lastIn.projectId ? 'p:' + lastIn.projectId : (lastIn.transferId ? 't:' + lastIn.transferId : 'c')) : null;
+  var lastInLabel = lastIn ? (lastIn.project ? lastIn.project.name : (lastIn.transfer ? (lastIn.transfer.title || 'Transfer') : 'Ogólne')) : '';
 %>
 <div class="md:h-[calc(100vh-8rem)] md:flex md:gap-4">
   <!-- LEWA: lista rozmów (klienci) -->
@@ -65,9 +75,24 @@
         <form method="POST" action="/admin/messages/<%= selected %>/delete" onsubmit="return confirm('Usunąć całą rozmowę?');"><button type="submit" class="text-slate-400 hover:text-red-600 shrink-0" title="Usuń rozmowę"><%- icon('trash', { size: 16, cls: '' }) %></button></form>
       </div>
 
+      <%# Zakładki wątków: to, co widzisz, JEST tym, gdzie piszesz — koniec pomyłek kontekstu
+          (wcześniej strumień był scalony, a wysyłka szła w scope z selecta). %>
+      <% if (tabs.length > 1 || tab === 'all') { %>
+      <div class="px-3 pt-2 pb-1 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto">
+        <% tabs.forEach(function (t) { var on = t.key === tab; %>
+          <a href="/admin/messages?client=<%= selected %>&thread=<%= encodeURIComponent(t.key) %>"
+             class="shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition <%= on ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' %>">
+            <%= t.label %>
+            <% if (t.unread > 0) { %><span data-thread-badge="<%= t.key %>" class="inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full <%= on ? 'bg-white/25' : 'bg-brand-600 text-white' %> text-[10px] font-bold"><%= t.unread %></span><% } else { %><span data-thread-badge="<%= t.key %>" class="hidden"></span><% } %>
+          </a>
+        <% }); %>
+        <a href="/admin/messages?client=<%= selected %>&thread=all"
+           class="shrink-0 rounded-full px-3 py-1 text-xs font-medium transition <%= tab === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200' %>">Wszystko</a>
+      </div>
+      <% } %>
       <div id="msg-stream" class="flex-1 overflow-y-auto px-4 py-4 space-y-3"
            data-live-thread data-notify
-           data-poll-url="/admin/messages/poll?client=<%= selected %>"
+           data-poll-url="/admin/messages/poll?client=<%= selected %>&thread=<%= encodeURIComponent(tab) %>"
            data-last-id="<%= messages.length ? messages[messages.length - 1].id : 0 %>">
         <% if (!messages.length) { %><p class="text-center text-sm text-slate-400 py-10">Brak wiadomości. Napisz pierwszy — klient dostanie powiadomienie.</p><% } %>
         <% var prevChip = null; %>
@@ -81,14 +106,27 @@
       <form method="POST" action="/admin/messages/<%= convClient.id %>/send" enctype="multipart/form-data" data-live-form class="border-t border-slate-100 p-3" x-data="{ fileName: '', body: '' }">
         <%# Kontekst wysyłki + powiadomienie mailem (kompaktowy rząd nad polem). %>
         <div class="flex items-center gap-2 flex-wrap text-xs mb-2">
-          <label class="text-slate-500">Kontekst:</label>
-          <select name="scope" class="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
-            <option value="c" <%= defScope === 'c' ? 'selected' : '' %>>Ogólne</option>
-            <% (projects || []).forEach(function (p) { %><option value="p:<%= p.id %>" <%= defScope === 'p:' + p.id ? 'selected' : '' %>>Projekt: <%= p.name %></option><% }); %>
-            <% Object.keys(threadTransfers).forEach(function (tid) { %><option value="t:<%= tid %>" <%= defScope === 't:' + tid ? 'selected' : '' %>>Transfer: <%= threadTransfers[tid] %></option><% }); %>
-          </select>
+          <% if (oneThread) { %>
+            <%# Zakładka wątku = jedyne możliwe miejsce wysyłki. Brak selecta = brak pomyłki. %>
+            <input type="hidden" name="scope" value="<%= tab %>" />
+            <span class="inline-flex items-center gap-1.5 text-slate-500">Piszesz w: <span class="font-medium text-slate-700"><%= tabLabel %></span></span>
+          <% } else { %>
+            <label class="text-slate-500">Kontekst:</label>
+            <select name="scope" class="rounded-lg border border-slate-300 px-2 py-1 text-xs text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+              <option value="c" <%= defScope === 'c' ? 'selected' : '' %>>Ogólne</option>
+              <% (projects || []).forEach(function (p) { %><option value="p:<%= p.id %>" <%= defScope === 'p:' + p.id ? 'selected' : '' %>>Projekt: <%= p.name %></option><% }); %>
+              <% Object.keys(threadTransfers).forEach(function (tid) { %><option value="t:<%= tid %>" <%= defScope === 't:' + tid ? 'selected' : '' %>>Transfer: <%= threadTransfers[tid] %></option><% }); %>
+            </select>
+          <% } %>
           <label class="inline-flex items-center gap-1.5 text-slate-500 ml-auto"><input type="checkbox" name="notify" checked class="rounded border-slate-300" /> Powiadom mailem<% if (!convClient.email) { %> <span class="text-slate-300">(brak e-maila)</span><% } %></label>
         </div>
+        <% if (!oneThread && lastInScope && lastInScope !== defScope) { %>
+          <div class="mb-2 flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs px-2.5 py-1.5">
+            <%- icon('alert', { size: 13, cls: 'mt-0.5 shrink-0' }) %>
+            <span>Piszesz w innym wątku niż ostatnia wiadomość klienta (<b><%= lastInLabel %></b>) — klient zobaczy ją w innym miejscu.
+              <a href="/admin/messages?client=<%= selected %>&thread=<%= encodeURIComponent(lastInScope) %>" class="underline font-medium">Przejdź do tamtego wątku</a></span>
+          </div>
+        <% } %>
         <%# Chip wybranego pliku (po wyborze) + „×" czyszczący input. %>
         <div x-show="fileName" x-cloak class="mb-2 flex items-center gap-2 text-xs text-slate-600">
           <%- icon('file', { size: 13, cls: 'text-brand-600 shrink-0' }) %><span class="truncate max-w-[240px]" x-text="fileName"></span>

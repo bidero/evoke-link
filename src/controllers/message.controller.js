@@ -16,6 +16,34 @@ function parseScope(scope, client) {
   return {};
 }
 
+// --- Zakładki wątków w rozmowie -----------------------------------------------------------
+// Klucz wątku wiadomości — ten sam alfabet co `scope` w composerze ('c' | 'p:<id>' | 't:<id>'),
+// żeby „gdzie patrzę" i „gdzie piszę" były TĄ SAMĄ wartością (stąd brak pomyłek kontekstu).
+const threadKeyOf = (m) => (m.projectId ? 'p:' + m.projectId : (m.transferId ? 't:' + m.transferId : 'c'));
+
+// Lista zakładek + liczniki nieprzeczytanych — z już wczytanej rozmowy, bez dodatkowych zapytań.
+function buildThreads(messages) {
+  const map = new Map();
+  (messages || []).forEach((m) => {
+    const key = threadKeyOf(m);
+    const label = m.project ? m.project.name : (m.transfer ? (m.transfer.title || 'Transfer') : 'Ogólne');
+    const t = map.get(key) || { key, label, unread: 0, lastId: 0 };
+    if (m.direction === 'in' && !m.isRead) t.unread += 1;
+    if (m.id > t.lastId) t.lastId = m.id;
+    map.set(key, t);
+  });
+  // „Ogólne" zawsze pierwsze, reszta wg najnowszej aktywności.
+  return Array.from(map.values()).sort((a, b) => (a.key === 'c' ? -1 : b.key === 'c' ? 1 : b.lastId - a.lastId));
+}
+
+// scope (obiekt do zapytań) z klucza zakładki. 'all' → null = cała rozmowa.
+function scopeFromKey(key, clientId) {
+  if (!key || key === 'all') return null;
+  if (key.startsWith('p:')) return { projectId: Number(key.slice(2)) };
+  if (key.startsWith('t:')) return { transferId: Number(key.slice(2)) };
+  return { clientId: Number(clientId) };
+}
+
 // --- Live (polling / wysyłka bez przeładowania) ------------------------------------------
 // Chip kontekstu wiadomości (musi zgadzać się z `_bubble.ejs`).
 const chipOf = (m) => (m && m.project ? m.project.name : (m && m.transfer ? (m.transfer.title || 'Transfer') : null));
@@ -50,10 +78,12 @@ async function pollConversation(req, res, next) {
       if (!client) return res.status(404).json({ error: 'not_found' });
       clientId = client.id;
     }
-    const fresh = await messageService.conversationNewerThan(clientId, after);
+    const scope = scopeFromKey(req.query.thread, clientId);
+    const fresh = await messageService.conversationNewerThan(clientId, after, scope);
     // Otwarta rozmowa w WIDOCZNEJ karcie = czytam ją → nowe przychodzące oznaczamy jako przeczytane.
     if (clientId && fresh.some((m) => m.direction === 'in')) {
-      await messageService.markClientRead(clientId);
+      if (scope) await messageService.markScopeRead(clientId, scope);
+      else await messageService.markClientRead(clientId);
       res.locals.unreadMessages = await messageService.unreadCount();
     }
     const prevChip = chipOf(await messageService.conversationLastBefore(clientId, after));
@@ -63,6 +93,8 @@ async function pollConversation(req, res, next) {
       lastId: fresh.length ? fresh[fresh.length - 1].id : after,
       html,
       readIds,
+      // Plakietki zakładek (inne wątki mogły dostać nowe wiadomości, choć patrzysz na jeden).
+      threads: clientId ? buildThreads(await messageService.conversation(clientId)).map((t) => ({ key: t.key, unread: t.unread })) : [],
       unread: typeof res.locals.unreadMessages === 'number' ? res.locals.unreadMessages : undefined,
     });
   } catch (err) {
@@ -73,22 +105,33 @@ async function pollConversation(req, res, next) {
 async function listMessages(req, res, next) {
   try {
     const selId = req.query.client;
-    let client = null, messages = [], projects = [], selected = null;
+    let client = null, messages = [], projects = [], selected = null, threads = [], activeThread = 'all';
     if (selId === 'none') { selected = 'none'; messages = await messageService.conversation(null); }
     else if (selId) {
       client = await clientService.getById(Number(selId));
       if (client) {
         selected = String(client.id);
-        await messageService.markClientRead(client.id);          // otwarcie = trwałe przeczytanie
+        const all = await messageService.conversation(client.id);
+        threads = buildThreads(all);
+        // Domyślna zakładka = wątek NAJNOWSZEJ wiadomości (a nie „Wszystko"): otwierasz rozmowę
+        // i jesteś od razu tam, gdzie klient napisał — odpowiedź nie ma jak trafić w inny wątek.
+        // ?scope=… z linku „Napisz do klienta" (kartoteka/projekt) ma pierwszeństwo.
+        const wanted = req.query.thread || req.query.scope || (all.length ? threadKeyOf(all[all.length - 1]) : 'c');
+        activeThread = wanted === 'all' || threads.some((t) => t.key === wanted) ? wanted : 'c';
+        const scope = scopeFromKey(activeThread, client.id);
+        // Przeczytane oznaczamy TYLKO w otwartym wątku (pozostałe zachowują plakietkę).
+        if (scope) await messageService.markScopeRead(client.id, scope);
+        else await messageService.markClientRead(client.id);
         res.locals.unreadMessages = await messageService.unreadCount(); // odśwież badge w menu (po read)
-        messages = await messageService.conversation(client.id);
+        messages = scope ? all.filter((m) => threadKeyOf(m) === activeThread) : all;
+        threads = buildThreads(all); // po oznaczeniu — plakietki aktualne
         projects = client.projects || [];
       }
     }
     // Lista PO markClientRead → badge wybranego klienta od razu = 0.
     const conversations = await messageService.conversationList();
     const allClients = await clientService.options(); // do „+ Nowa rozmowa" (klienci bez wiadomości też)
-    res.render('admin/messages/index', { title: 'Wiadomości', active: 'messages', conversations, selected, messages, convClient: client, projects, allClients, scopeHint: req.query.scope || null });
+    res.render('admin/messages/index', { title: 'Wiadomości', active: 'messages', conversations, selected, messages, convClient: client, projects, allClients, threads, activeThread, scopeHint: req.query.scope || null });
   } catch (err) {
     next(err);
   }

@@ -297,6 +297,17 @@ function markClientRead(clientId) {
   return prisma.message.updateMany({ where: { clientId: Number(clientId), direction: 'in', isRead: false }, data: { isRead: true } });
 }
 
+// Przeczytanie JEDNEGO wątku klienta (zakładka w komunikatorze) — pozostałe wątki zachowują
+// swoją plakietkę nieprzeczytanych. `markClientRead` zeruje całego klienta (zakładka „Wszystko").
+function markScopeRead(clientId, scope) {
+  const where = scopeWhere(scope);
+  if (!where || !clientId) return Promise.resolve({ count: 0 });
+  return prisma.message.updateMany({
+    where: { ...where, clientId: Number(clientId), direction: 'in', isRead: false },
+    data: { isRead: true },
+  });
+}
+
 // Usuń całą rozmowę klienta (z załącznikami z dysku).
 async function deleteClientConversation(clientId) {
   const scope = clientId ? { clientId: Number(clientId) } : { clientId: null };
@@ -305,4 +316,4 @@ async function deleteClientConversation(clientId) {
   return prisma.message.deleteMany({ where: scope });
 }
 
-module.exports = { create, listInbox, listThreads, unreadCount, getById, thread, scopeWhere, newerThan, conversationNewerThan, conversationLastBefore, readIdsFor, reply, markThreadRead, deleteThread, attachment, attachmentInThread, hasUnseen, markRead, markAllRead, remove, conversationList, conversation, send, markClientRead, markThreadOutRead, deleteClientConversation };
+module.exports = { create, listInbox, listThreads, unreadCount, getById, thread, scopeWhere, newerThan, conversationNewerThan, conversationLastBefore, readIdsFor, reply, markThreadRead, deleteThread, attachment, attachmentInThread, hasUnseen, markRead, markAllRead, remove, conversationList, conversation, send, markClientRead, markScopeRead, markThreadOutRead, deleteClientConversation };

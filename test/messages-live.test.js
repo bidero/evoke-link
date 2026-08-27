@@ -161,3 +161,70 @@ test('ptaszki: bąbelek własnej wiadomości niesie znacznik statusu (data-ticks
     await cleanup(f);
   }
 });
+
+test('zakładki wątków: domyślnie wątek najnowszej wiadomości, strumień filtrowany, composer bez selecta', async () => {
+  const f = await fixture('livz');
+  try {
+    const cookie = await login();
+    if (!cookie) return;
+    await prisma.message.create({ data: { body: 'OGOLNA-X', direction: 'in', clientId: f.client.id } });
+    await prisma.message.create({ data: { body: 'PROJEKTOWA-X', direction: 'in', clientId: f.client.id, projectId: f.project.id } });
+
+    // Sam STRUMIEŃ rozmowy (lista po lewej pokazuje podgląd ostatniej wiadomości — to nie strumień).
+    const stream = (html) => html.slice(html.indexOf('id="msg-stream"'), html.indexOf('data-live-form'));
+
+    // bez parametru → zakładka wątku NAJNOWSZEJ wiadomości (projekt), a nie „Wszystko"
+    const html = await (await fetch(`${base}/admin/messages?client=${f.client.id}`, { headers: { Cookie: cookie } })).text();
+    assert.match(stream(html), /PROJEKTOWA-X/);
+    assert.doesNotMatch(stream(html), /OGOLNA-X/, 'strumień pokazuje TYLKO otwarty wątek');
+    assert.match(html, new RegExp(`name="scope" value="p:${f.project.id}"`), 'kontekst wysyłki = otwarta zakładka (hidden, bez selecta)');
+    assert.doesNotMatch(html, /<select name="scope"/, 'w zakładce wątku nie ma selecta — nie da się pomylić kontekstu');
+
+    // „Wszystko" → strumień scalony + select kontekstu
+    const allHtml = await (await fetch(`${base}/admin/messages?client=${f.client.id}&thread=all`, { headers: { Cookie: cookie } })).text();
+    assert.match(stream(allHtml), /OGOLNA-X/);
+    assert.match(stream(allHtml), /PROJEKTOWA-X/);
+    assert.match(allHtml, /<select name="scope"/);
+
+    // zakładka „Ogólne" filtruje w drugą stronę
+    const genHtml = await (await fetch(`${base}/admin/messages?client=${f.client.id}&thread=c`, { headers: { Cookie: cookie } })).text();
+    assert.match(stream(genHtml), /OGOLNA-X/);
+    assert.doesNotMatch(stream(genHtml), /PROJEKTOWA-X/, 'zakładka „Ogólne" nie pokazuje wątku projektu');
+  } finally {
+    await cleanup(f);
+  }
+});
+
+test('zakładki: markScopeRead zeruje TYLKO swój wątek (pozostałe zachowują plakietkę)', async () => {
+  const f = await fixture('livm');
+  try {
+    const general = await prisma.message.create({ data: { body: 'G', direction: 'in', clientId: f.client.id } });
+    const inProject = await prisma.message.create({ data: { body: 'P', direction: 'in', clientId: f.client.id, projectId: f.project.id } });
+
+    await messageService.markScopeRead(f.client.id, { projectId: f.project.id });
+    assert.equal((await prisma.message.findUnique({ where: { id: inProject.id } })).isRead, true, 'wątek projektu przeczytany');
+    assert.equal((await prisma.message.findUnique({ where: { id: general.id } })).isRead, false, 'wątek ogólny nadal nieprzeczytany');
+
+    await messageService.markScopeRead(f.client.id, { clientId: f.client.id });
+    assert.equal((await prisma.message.findUnique({ where: { id: general.id } })).isRead, true, 'po otwarciu „Ogólne" — przeczytany');
+  } finally {
+    await cleanup(f);
+  }
+});
+
+test('polling: parametr thread ogranicza dopisywanie do oglądanego wątku', async () => {
+  const f = await fixture('livq');
+  try {
+    const cookie = await login();
+    if (!cookie) return;
+    await prisma.message.create({ data: { body: 'TYLKO-OGOLNA', direction: 'in', clientId: f.client.id } });
+    await prisma.message.create({ data: { body: 'TYLKO-PROJEKT', direction: 'in', clientId: f.client.id, projectId: f.project.id } });
+
+    const d = await (await json(`${base}/admin/messages/poll?client=${f.client.id}&thread=p:${f.project.id}&after=0`, { headers: { Cookie: cookie } })).json();
+    assert.match(d.html, /TYLKO-PROJEKT/);
+    assert.doesNotMatch(d.html, /TYLKO-OGOLNA/, 'polling nie wstrzykuje wiadomości z innego wątku');
+    assert.ok(Array.isArray(d.threads), 'plakietki zakładek do odświeżenia');
+  } finally {
+    await cleanup(f);
+  }
+});
