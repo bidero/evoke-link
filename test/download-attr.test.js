@@ -28,6 +28,31 @@ before(async () => {
 });
 after(async () => { await new Promise((r) => server.close(r)); await prisma.$disconnect(); });
 
+test('brakujący plik na dysku = 404, a NIE wiszące żądanie', async (t) => {
+  if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
+  // Wiersz File istnieje, pliku na dysku NIE MA (niepełne odtworzenie kopii, ręczne sprzątanie).
+  // Przed poprawką `readStream(...).pipe(res)` bez obsługi błędu zostawiał żądanie otwarte
+  // w nieskończoność — na Passengerze blokowało to proces roboczy.
+  const stamp = Date.now();
+  const transfer = await prisma.transfer.create({ data: { token: 'dlmiss_' + stamp, direction: 'outgoing', title: 'Brak pliku', status: 'active' } });
+  const ghost = await prisma.file.create({ data: { transferId: transfer.id, originalName: 'znikniety.txt', storedName: 'znikniety.txt', storedPath: `${transfer.token}/znikniety.txt`, size: BigInt(123), mimeType: 'text/plain' } });
+  try {
+    const res = await fetch(`${base}/admin/transfers/${transfer.id}/file/${ghost.id}`, {
+      headers: { Cookie: cookie }, signal: AbortSignal.timeout(5000),
+    });
+    assert.equal(res.status, 404);
+    // Zdjęty Content-Length jest tu istotą rzeczy: zostawiony kazałby klientowi czekać na
+    // bajty, których nigdy nie będzie (czyli dalej „wisi", mimo statusu 404).
+    assert.equal(res.headers.get('content-length'), null, 'nagłówki pliku zdjęte przed 404');
+    assert.equal(res.headers.get('content-disposition'), null);
+    await res.arrayBuffer();
+  } finally {
+    await prisma.file.deleteMany({ where: { transferId: transfer.id } });
+    await prisma.event.deleteMany({ where: { transferId: transfer.id } });
+    await prisma.transfer.delete({ where: { id: transfer.id } });
+  }
+});
+
 test('transfer: linki pobierania mają `download`, podgląd (inline) NIE ma', async (t) => {
   if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
   const stamp = Date.now();

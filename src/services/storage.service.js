@@ -48,6 +48,24 @@ function readStream(storedPath) {
   return fs.createReadStream(absolutePath(storedPath));
 }
 
+// Pobranie „na odpowiedź". UŻYWAĆ ZAMIAST `readStream(...).pipe(res)`.
+// DLACZEGO: gdy wiersz File istnieje, a pliku NIE MA na dysku (niepełne odtworzenie kopii,
+// ręczne sprzątanie), sam `pipe` zostawia żądanie WISZĄCE w nieskończoność — na Passengerze
+// blokuje to proces roboczy. Tu strumień ma obsługę błędu i kończy 404.
+function pipeDownload(res, storedPath) {
+  const stream = readStream(storedPath);
+  stream.on('error', () => {
+    // Po pierwszym bajcie nagłówków już nie cofniemy — zrywamy połączenie (klient zobaczy
+    // przerwane pobieranie zamiast pliku, który i tak jest niekompletny).
+    if (res.headersSent) return res.destroy();
+    // Nagłówki pliku SĄ już ustawione; zostawiony Content-Length kazałby klientowi czekać
+    // na bajty, których nie będzie — dlatego zdejmujemy je przed 404.
+    ['Content-Length', 'Content-Disposition', 'Content-Type'].forEach((h) => res.removeHeader(h));
+    res.status(404).end();
+  });
+  return stream.pipe(res);
+}
+
 // Usuwa cały katalog transferu (przy kasowaniu transferu).
 function removeTransfer(token) {
   fs.rmSync(transferDir(token), { recursive: true, force: true });
@@ -119,6 +137,7 @@ module.exports = {
   moveToTransfer,
   absolutePath,
   readStream,
+  pipeDownload,
   removeTransfer,
   removeTmp,
   saveMessageFile,

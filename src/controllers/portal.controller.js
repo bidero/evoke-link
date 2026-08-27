@@ -196,7 +196,7 @@ async function downloadMessageAttachment(req, res, next) {
     if (!att) return res.status(404).end();
     res.setHeader('Content-Type', att.mime);
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.name)}"`);
-    storage.readStream(att.path).on('error', () => res.status(404).end()).pipe(res);
+    storage.pipeDownload(res, att.path);
   } catch (err) {
     next(err);
   }
@@ -301,7 +301,7 @@ async function downloadFile(req, res, next) {
     // originalName może być ścieżką z folderu ('katalog/plik.pdf') — do nagłówka sama nazwa.
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(file.originalName.split('/').pop())}`);
     res.setHeader('Content-Length', Number(file.size));
-    storage.readStream(file.storedPath).pipe(res);
+    storage.pipeDownload(res, file.storedPath);
   } catch (err) {
     next(err);
   }
@@ -325,7 +325,7 @@ async function previewFile(req, res, next) {
     res.setHeader('Content-Disposition', 'inline');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'private, max-age=300');
-    storage.readStream(file.storedPath).pipe(res);
+    storage.pipeDownload(res, file.storedPath);
   } catch (err) {
     next(err);
   }

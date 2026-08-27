@@ -271,7 +271,7 @@ async function adminDownloadFile(req, res, next) {
     // originalName może być ścieżką z folderu ('katalog/plik.pdf') — do nagłówka sama nazwa.
     res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(file.originalName.split('/').pop())}`);
     res.setHeader('Content-Length', Number(file.size));
-    storage.readStream(file.storedPath).pipe(res);
+    storage.pipeDownload(res, file.storedPath);
   } catch (err) {
     next(err);
   }
@@ -287,7 +287,7 @@ async function adminPreviewFile(req, res, next) {
     res.setHeader('Content-Disposition', 'inline');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Cache-Control', 'private, max-age=300');
-    storage.readStream(file.storedPath).pipe(res);
+    storage.pipeDownload(res, file.storedPath);
   } catch (err) {
     next(err);
   }

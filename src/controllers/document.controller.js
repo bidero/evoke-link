@@ -9,7 +9,7 @@ const back = (clientId, status) => `/admin/clients/${clientId}?tab=dokumenty&sen
 function sendFile(res, doc) {
   res.setHeader('Content-Type', doc.mime || 'application/octet-stream');
   res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(doc.name || 'dokument')}"`);
-  storage.readStream(doc.storedPath).on('error', () => res.status(404).end()).pipe(res);
+  storage.pipeDownload(res, doc.storedPath);
 }
 
 // --- Admin ---

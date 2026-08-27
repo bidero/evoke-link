@@ -204,7 +204,7 @@ async function downloadMessageAttachment(req, res, next) {
     if (!att) return res.status(404).end();
     res.setHeader('Content-Type', att.mime);
     res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(att.name)}"`);
-    storage.readStream(att.path).on('error', () => res.status(404).end()).pipe(res);
+    storage.pipeDownload(res, att.path);
   } catch (err) {
     next(err);
   }
