@@ -148,3 +148,27 @@ test('offcanvas na telefonie: pełna szerokość, zamykanie i sekcja konta + syn
   assert.match(html, /nav-open/, 'klasa nav-open steruje źródłem koloru');
   assert.match(html, /toggleTheme[\s\S]{0,220}evokeSyncThemeColor/, 'zmiana dark mode przelicza kolor paska');
 });
+
+test('powiadomienia: akcje w stosie na telefonie + krótka etykieta + większy obszar dotyku', async (t) => {
+  const cookie = await login();
+  if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
+  // Przyciski nagłówka renderują się tylko, gdy JEST co czyścić (a „przeczytane" — gdy są nowe).
+  const ev = await prisma.event.create({ data: { type: 'uploaded', message: 'TEST notif mobile ' + Date.now(), isRead: false } });
+  try {
+    const html = await (await fetch(`${base}/admin/notifications`, { headers: { Cookie: cookie } })).text();
+
+    // Stos na telefonie, rząd od sm: — w jednym rzędzie przyciski wychodziły poza 390 px.
+    assert.match(html, /flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between/);
+    assert.doesNotMatch(html, /flex items-center gap-2 shrink-0/, 'grupa akcji nie może być bezwarunkowo shrink-0');
+    assert.match(html, /class="flex-1 sm:flex-none"/, 'formularze dzielą rząd po połowie');
+
+    // Długa etykieta skrócona na telefonie, pełna od sm:.
+    assert.match(html, /<span class="sm:hidden">Przeczytane<\/span>/);
+    assert.match(html, /<span class="hidden sm:inline">Oznacz wszystkie jako przeczytane<\/span>/);
+
+    // Kosz przy pozycji: 32 px to za mało na palec.
+    assert.match(html, /class="p-3 sm:p-2 rounded-lg text-slate-300/);
+  } finally {
+    await prisma.event.delete({ where: { id: ev.id } });
+  }
+});
