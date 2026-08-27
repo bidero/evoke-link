@@ -32,6 +32,9 @@ test('manifest: struktura + wartości z ustawień + typ MIME', async () => {
   assert.equal(m.name, 'Moja Apka');
   assert.equal(m.short_name, 'Apka');
   assert.equal(m.start_url, '/admin');
+  assert.equal(m.id, '/admin', 'tożsamość zainstalowanej aplikacji nie zmienia się');
+  // Zasięg = tylko panel: strony klienta (/c /p /t /upload /o) wychodzą do przeglądarki.
+  assert.equal(m.scope, '/admin');
   assert.equal(m.display, 'standalone');
   assert.equal(m.theme_color, '#123456');
   assert.ok(m.icons.some((i) => i.src === '/pwa/icon.svg'), 'fallback SVG zawsze w icons');

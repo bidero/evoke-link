@@ -90,7 +90,14 @@ function manifest(s) {
     short_name: shortName(s),
     id: '/admin',
     start_url: '/admin',
-    scope: '/',
+    // ZASIĘG = TYLKO PANEL. To narzędzie agencji; strony klienta (/c /p /t /upload /o /onboard) są
+    // „na zewnątrz" i mają otwierać się w PRZEGLĄDARCE, nie w oknie zainstalowanej aplikacji.
+    // `scope` to jedyny mechanizm, który łapie WSZYSTKIE takie linki naraz (także przyszłe) —
+    // `target="_blank"` na pojedynczych linkach bywa w standalone honorowany niekonsekwentnie.
+    // Bez końcowego ukośnika CELOWO: dopasowanie jest prefiksowe, a `start_url` (/admin, bez
+    // ukośnika) musi mieścić się w zasięgu — '/admin/' by go wykluczyło. Kolizji nie ma:
+    // żadna inna trasa nie zaczyna się od „/admin".
+    scope: '/admin',
     display: (s.pwa && s.pwa.display) || 'standalone',
     theme_color: themeColor(s),
     background_color: bgColor(s),
