@@ -283,6 +283,15 @@ async function send({ clientId, projectId, transferId, body, file }) {
   });
 }
 
+// Klient otworzył wątek → wiadomości AGENCJI (out) w tym wątku są przeczytane (ptaszki ✓✓).
+// `isRead` znaczy więc „przeczytane przez drugą stronę" dla OBU kierunków. Dzwonek/licznik liczy
+// wyłącznie `in && !isRead`, więc to go NIE rusza (pilnuje tego test).
+function markThreadOutRead(scope) {
+  const where = scopeWhere(scope);
+  if (!where) return Promise.resolve({ count: 0 });
+  return prisma.message.updateMany({ where: { ...where, direction: 'out', isRead: false }, data: { isRead: true } });
+}
+
 // Trwałe oznaczenie przeczytania: wszystkie przychodzące (in) danego klienta → isRead.
 function markClientRead(clientId) {
   return prisma.message.updateMany({ where: { clientId: Number(clientId), direction: 'in', isRead: false }, data: { isRead: true } });
@@ -296,4 +305,4 @@ async function deleteClientConversation(clientId) {
   return prisma.message.deleteMany({ where: scope });
 }
 
-module.exports = { create, listInbox, listThreads, unreadCount, getById, thread, scopeWhere, newerThan, conversationNewerThan, conversationLastBefore, readIdsFor, reply, markThreadRead, deleteThread, attachment, attachmentInThread, hasUnseen, markRead, markAllRead, remove, conversationList, conversation, send, markClientRead, deleteClientConversation };
+module.exports = { create, listInbox, listThreads, unreadCount, getById, thread, scopeWhere, newerThan, conversationNewerThan, conversationLastBefore, readIdsFor, reply, markThreadRead, deleteThread, attachment, attachmentInThread, hasUnseen, markRead, markAllRead, remove, conversationList, conversation, send, markClientRead, markThreadOutRead, deleteClientConversation };

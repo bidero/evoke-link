@@ -8,6 +8,6 @@
     <% if (mm.attachmentName) { %>
       <a href="<%= msgContext.page %>/<%= mm.id %>/attachment" data-turbo="false" class="mt-1 inline-flex items-center gap-1.5 text-xs underline decoration-dotted underline-offset-2 <%= out ? 'text-slate-600 hover:text-brand-700' : 'text-white/90 hover:text-white' %>"><%- icon('file', { size: 12, cls: '' }) %><%= mm.attachmentName %></a>
     <% } %>
-    <div class="mt-0.5 text-[11px] text-slate-400 <%= out ? '' : 'text-right' %>"><%= fmt.date(mm.createdAt) %></div>
+    <div class="mt-0.5 text-[11px] text-slate-400 <%= out ? '' : 'text-right' %>"><%= fmt.date(mm.createdAt) %><% if (!out) { %><span data-ticks data-read="<%= mm.isRead ? 1 : 0 %>" class="inline-flex items-center align-middle ml-1 [&>svg]:inline [&>svg]:w-3.5 [&>svg]:h-3.5 data-[read=1]:text-sky-500"><span class="data-[read=1]:hidden" data-read="<%= mm.isRead ? 1 : 0 %>" title="Wysłane"><%- icon('tick', { size: 14, cls: '' }) %></span><span class="hidden data-[read=1]:inline" data-read="<%= mm.isRead ? 1 : 0 %>" title="Przeczytane"><%- icon('checkCheck', { size: 14, cls: '' }) %></span></span><% } %></div>
   </div>
 </div>

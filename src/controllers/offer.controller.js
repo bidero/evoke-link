@@ -146,6 +146,8 @@ async function showMessages(req, res, next) {
     res.locals.msgThread = await messageService.thread({ clientId: offer.clientId });
     req.session.msgSeen = req.session.msgSeen || {};
     req.session.msgSeen[offer.token] = Date.now();
+    // Otwarcie wątku = przeczytanie wiadomości agencji → ptaszki ✓✓ po jej stronie.
+    await messageService.markThreadOutRead({ clientId: offer.clientId });
     const back = { href: `/o/${offer.token}`, label: offer.title };
     res.render('public/messages', {
       title: 'Wiadomości', layout: PUBLIC_LAYOUT, msgBack: back,

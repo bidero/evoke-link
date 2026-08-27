@@ -133,6 +133,8 @@ async function showMessages(req, res, next) {
     // Wejście na podstronę = obejrzenie wątku (chowa kropkę nowej odpowiedzi).
     req.session.msgSeen = req.session.msgSeen || {};
     req.session.msgSeen[project.clientToken] = Date.now();
+    // Otwarcie wątku = przeczytanie wiadomości agencji → ptaszki ✓✓ po jej stronie.
+    await messageService.markThreadOutRead({ projectId: project.id });
     const backToPortal = project.client && req.session.cPortal && req.session.cPortal[project.client.token]
       ? `/c/${project.client.token}` : null;
     // Sekcje jako LINKI wstecz do portalu (linkBase) — na podstronie nie ma treści sekcji.

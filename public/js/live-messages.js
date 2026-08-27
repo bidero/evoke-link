@@ -54,7 +54,11 @@
       if (!ids || !ids.length) return;
       ids.forEach(function (id) {
         var el = box.querySelector('[data-msg-id="' + id + '"] [data-ticks]');
-        if (el) el.setAttribute('data-read', '1');
+        if (!el) return;
+        el.setAttribute('data-read', '1');
+        // Wariant `data-[read=1]:` działa NA DANYM elemencie, więc znacznik ustawiamy też na
+        // obu ikonach (pojedynczy ptaszek chowamy, podwójny pokazujemy).
+        Array.prototype.forEach.call(el.querySelectorAll('[data-read]'), function (s) { s.setAttribute('data-read', '1'); });
       });
     }
 

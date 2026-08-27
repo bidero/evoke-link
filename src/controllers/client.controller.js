@@ -561,6 +561,8 @@ async function showClientMessages(req, res, next) {
     // Wejście na podstronę = obejrzenie wątku (chowa kropkę nowej odpowiedzi).
     req.session.msgSeen = req.session.msgSeen || {};
     req.session.msgSeen[client.token] = Date.now();
+    // Otwarcie wątku = przeczytanie wiadomości agencji → ptaszki ✓✓ po jej stronie.
+    await messageService.markThreadOutRead({ clientId: client.id });
     // Minimalna nawigacja podstrony: powrót do portalu + Wiadomości (aktywne).
     const portalNav = {
       sections: [

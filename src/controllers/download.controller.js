@@ -107,6 +107,8 @@ async function showMessages(req, res, next) {
     // Wejście na podstronę = obejrzenie wątku (chowa kropkę nowej odpowiedzi).
     req.session.msgSeen = req.session.msgSeen || {};
     req.session.msgSeen[transfer.token] = Date.now();
+    // Otwarcie wątku = przeczytanie wiadomości agencji → ptaszki ✓✓ po jej stronie.
+    await messageService.markThreadOutRead({ transferId: transfer.id });
     const back = { href: `/t/${transfer.token}`, label: transfer.title || 'Pobierz pliki' };
     res.render('public/messages', {
       title: 'Wiadomości', layout: PUBLIC_LAYOUT, msgBack: back,

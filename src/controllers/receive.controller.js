@@ -80,6 +80,8 @@ async function showMessages(req, res, next) {
     res.locals.msgThread = await messageService.thread({ transferId: transfer.id });
     req.session.msgSeen = req.session.msgSeen || {};
     req.session.msgSeen[transfer.token] = Date.now();
+    // Otwarcie wątku = przeczytanie wiadomości agencji → ptaszki ✓✓ po jej stronie.
+    await messageService.markThreadOutRead({ transferId: transfer.id });
     const back = { href: `/upload/${transfer.token}`, label: transfer.title || 'Prześlij pliki' };
     res.render('public/messages', {
       title: 'Wiadomości', layout: PUBLIC_LAYOUT, msgBack: back,

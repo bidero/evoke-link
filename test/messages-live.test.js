@@ -124,3 +124,40 @@ test('scopeWhere: jeden kształt wątku dla widoku, pollingu i oznaczania', () =
   assert.deepEqual(messageService.scopeWhere({ clientId: 3 }), { clientId: 3, projectId: null, transferId: null });
   assert.equal(messageService.scopeWhere({}), null, 'pusty scope → null (wołający zwraca pustkę)');
 });
+
+test('ptaszki: markThreadOutRead oznacza TYLKO wiadomości agencji i nie rusza licznika dzwonka', async () => {
+  const f = await fixture('livt');
+  try {
+    const incoming = await prisma.message.create({ data: { body: 'OD-KLIENTA', direction: 'in', clientId: f.client.id, projectId: f.project.id } });
+    const outgoing = await prisma.message.create({ data: { body: 'OD-AGENCJI', direction: 'out', clientId: f.client.id, projectId: f.project.id } });
+    const unreadBefore = await messageService.unreadCount();
+
+    await messageService.markThreadOutRead({ projectId: f.project.id });
+
+    assert.equal((await prisma.message.findUnique({ where: { id: outgoing.id } })).isRead, true, 'wiadomość agencji przeczytana przez klienta');
+    assert.equal((await prisma.message.findUnique({ where: { id: incoming.id } })).isRead, false, 'wiadomość klienta NIE tknięta');
+    assert.equal(await messageService.unreadCount(), unreadBefore, 'licznik dzwonka (in && !isRead) bez zmian');
+
+    // pusty scope nie może masowo oznaczać wszystkiego
+    const r = await messageService.markThreadOutRead({});
+    assert.equal(r.count, 0, 'pusty scope = brak zmian');
+  } finally {
+    await cleanup(f);
+  }
+});
+
+test('ptaszki: bąbelek własnej wiadomości niesie znacznik statusu (data-ticks/data-read)', async () => {
+  const f = await fixture('livk');
+  try {
+    await prisma.message.create({ data: { body: 'MOJA', direction: 'in', clientId: f.client.id, projectId: f.project.id } });
+    const d = await (await json(`${base}/p/${f.project.clientToken}/wiadomosci/poll?after=0`)).json();
+    assert.match(d.html, /data-ticks/, 'u klienta ptaszek przy JEGO wiadomości (direction in)');
+    assert.match(d.html, /data-read="0"/, 'świeża wiadomość = wysłane (jeszcze nieprzeczytana)');
+
+    await messageService.markClientRead(f.client.id);
+    const after = await (await json(`${base}/p/${f.project.clientToken}/wiadomosci/poll?after=0`)).json();
+    assert.match(after.html, /data-read="1"/, 'po przeczytaniu przez agencję → ✓✓');
+  } finally {
+    await cleanup(f);
+  }
+});
