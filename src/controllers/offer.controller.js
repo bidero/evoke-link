@@ -9,6 +9,7 @@ const messageService = require('../services/message.service');
 const storage = require('../services/storage.service');
 const { contentRailNav, contentMsgNav } = require('../utils/contentNav');
 const config = require('../config');
+const messagePoll = require('../utils/messagePoll');
 
 const PUBLIC_LAYOUT = 'layouts/public';
 const back = (clientId, status) => `/admin/clients/${clientId}?tab=oferty&sent=${status}#oferty`;
@@ -156,6 +157,21 @@ async function showMessages(req, res, next) {
   }
 }
 
+// Polling wątku klienta-właściciela oferty (live).
+async function pollMessages(req, res, next) {
+  try {
+    const offer = await offerService.getByToken(req.params.token);
+    if (!offer) return res.status(404).json({ error: 'not_found' });
+    await messagePoll.respond(res, {
+      scope: { clientId: offer.clientId },
+      after: req.query.after,
+      msgContext: { page: `/o/${offer.token}/wiadomosci` },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Wiadomość od klienta ze strony oferty (/o) → wątek klienta + mail do agencji.
 async function submitMessage(req, res, next) {
   try {
@@ -164,6 +180,12 @@ async function submitMessage(req, res, next) {
     const { body, senderName, senderEmail } = req.body;
     const msg = await messageService.create({ body, senderName, senderEmail, clientId: offer.clientId, ip: req.ip, file: req.file });
     if (msg) mail.sendNewMessageNotification({ message: msg, client: offer.client }).catch((e) => console.error('[mail] wiadomość:', e.message));
+    // Wysyłka bez przeładowania (live): oddaj gotowy bąbelek zamiast redirectu.
+    // Fallback bez JS (zwykły submit) → dotychczasowy redirect z ?msg=1 i toastem.
+    if ((req.get('accept') || '').includes('application/json')) {
+      const html = msg ? await messagePoll.renderToString(res, 'public/_msg_bubble', { mm: msg, msgContext: { page: `/o/${offer.token}/wiadomosci` } }) : '';
+      return res.set('Cache-Control', 'no-store').json({ ok: !!msg, lastId: msg ? msg.id : 0, html });
+    }
     res.redirect(`/o/${offer.token}/wiadomosci?msg=1`);
   } catch (err) {
     next(err);
@@ -224,4 +246,4 @@ async function submitDecision(req, res, next) {
   }
 }
 
-module.exports = { showPipeline, createOffer, editOffer, deleteOffer, sendOffer, showOffer, showMessages, submitMessage, downloadMessageAttachment, submitDecision };
+module.exports = { showPipeline, createOffer, editOffer, deleteOffer, sendOffer, showOffer, showMessages, submitMessage, downloadMessageAttachment, submitDecision, pollMessages, };

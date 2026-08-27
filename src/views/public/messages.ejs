@@ -13,25 +13,17 @@
       <p class="text-sm text-slate-500 mt-1"><%= msgContext.scope %></p>
     <% } %>
 
-    <% if (typeof msgThread !== 'undefined' && msgThread && msgThread.length) { %>
-      <div class="mt-6 max-h-[50vh] overflow-y-auto space-y-2 pr-1">
-        <% msgThread.forEach(function(mm){ var out = mm.direction === 'out'; %>
-          <div class="flex <%= out ? 'justify-start' : 'justify-end' %>">
-            <div class="max-w-[85%]">
-              <div class="rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words <%= out ? 'bg-slate-100 text-slate-800' : 'bg-brand-600 text-white' %>"><%= mm.body %></div>
-              <% if (mm.attachmentName) { %>
-                <a href="<%= msgContext.page %>/<%= mm.id %>/attachment" data-turbo="false" class="mt-1 inline-flex items-center gap-1.5 text-xs underline decoration-dotted underline-offset-2 <%= out ? 'text-slate-600 hover:text-brand-700' : 'text-white/90 hover:text-white' %>"><%- icon('file', { size: 12, cls: '' }) %><%= mm.attachmentName %></a>
-              <% } %>
-              <div class="mt-0.5 text-[11px] text-slate-400 <%= out ? '' : 'text-right' %>"><%= fmt.date(mm.createdAt) %></div>
-            </div>
-          </div>
-        <% }); %>
-      </div>
-    <% } else { %>
-      <p class="mt-6 text-sm text-slate-400">Brak wiadomości — napisz do nas poniżej.</p>
-    <% } %>
+    <%# Kontener wątku istnieje ZAWSZE (także pusty) — jest celem dopisywania nowych bąbelków
+        (live). data-* konfiguruje polling: skąd pytać i od którego id. %>
+    <% const _thread = (typeof msgThread !== 'undefined' && msgThread) ? msgThread : []; %>
+    <div id="msg-thread" class="mt-6 max-h-[50vh] overflow-y-auto space-y-2 pr-1"
+         data-live-thread data-poll-url="<%= msgContext.page %>/poll"
+         data-last-id="<%= _thread.length ? _thread[_thread.length - 1].id : 0 %>">
+      <% if (!_thread.length) { %><p data-empty class="text-sm text-slate-400">Brak wiadomości — napisz do nas poniżej.</p><% } %>
+      <% _thread.forEach(function(mm){ %><%- include('_msg_bubble', { mm: mm, msgContext: msgContext }) %><% }); %>
+    </div>
 
-    <form method="POST" action="<%= msgContext.action %>" enctype="multipart/form-data" data-turbo="false" class="mt-6 pt-6 border-t border-slate-100 space-y-3" x-data="{ fileName: '' }">
+    <form method="POST" action="<%= msgContext.action %>" enctype="multipart/form-data" data-turbo="false" data-live-form class="mt-6 pt-6 border-t border-slate-100 space-y-3" x-data="{ fileName: '' }">
       <%# Enter wysyła, Shift+Enter = nowa linia (jak w komunikatorze). requestSubmit() respektuje
           `required` i normalny submit (formularz jest data-turbo="false").
           Skrótu NIE piszemy w placeholderze — zaśmiecał pole; zachowanie jest oczywiste. %>

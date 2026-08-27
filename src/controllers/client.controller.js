@@ -18,6 +18,7 @@ const fmt = require('../utils/format');
 const backlink = require('../utils/backlink');
 const { sanitizeIfSvg } = require('../utils/svgSanitize');
 const csv = require('../utils/csv');
+const messagePoll = require('../utils/messagePoll');
 
 const PUBLIC_LAYOUT = 'layouts/public';
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -535,6 +536,21 @@ function markSeen(req, res) {
 }
 
 // Podstrona wiadomości (/c/:token/wiadomosci) — wątek + formularz (zastępuje dawny popup).
+// Polling wątku klienta (live) — ta sama bramka (token) co showClientMessages.
+async function pollClientMessages(req, res, next) {
+  try {
+    const client = await clientService.getByToken(req.params.token);
+    if (!client) return res.status(404).json({ error: 'not_found' });
+    await messagePoll.respond(res, {
+      scope: { clientId: client.id },
+      after: req.query.after,
+      msgContext: { page: `/c/${client.token}/wiadomosci` },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function showClientMessages(req, res, next) {
   try {
     const client = await clientService.getByToken(req.params.token);
@@ -571,6 +587,12 @@ async function submitClientMessage(req, res, next) {
     const { body, senderName, senderEmail } = req.body;
     const msg = await messageService.create({ body, senderName, senderEmail, clientId: client.id, ip: req.ip, file: req.file });
     if (msg) mail.sendNewMessageNotification({ message: msg, client }).catch((e) => console.error('[mail] wiadomość:', e.message));
+    // Wysyłka bez przeładowania (live): oddaj gotowy bąbelek zamiast redirectu.
+    // Fallback bez JS (zwykły submit) → dotychczasowy redirect z ?msg=1 i toastem.
+    if ((req.get('accept') || '').includes('application/json')) {
+      const html = msg ? await messagePoll.renderToString(res, 'public/_msg_bubble', { mm: msg, msgContext: { page: `/c/${client.token}/wiadomosci` } }) : '';
+      return res.set('Cache-Control', 'no-store').json({ ok: !!msg, lastId: msg ? msg.id : 0, html });
+    }
     res.redirect(`/c/${client.token}/wiadomosci?msg=1`);
   } catch (err) {
     next(err);
@@ -592,4 +614,4 @@ async function downloadMessageAttachment(req, res, next) {
   }
 }
 
-module.exports = { listClients, listClientsCsv, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, createFollowup, showClientPortal, showClientMessages, submitClientMessage, downloadMessageAttachment, submitPaidDeclaration, markSeen };
+module.exports = { listClients, listClientsCsv, showCreateForm, showClient, createClient, showEditForm, updateClient, addNote, addCharge, updateCharge, toggleCharge, deleteCharge, clientStatementPdf, clientChargesCsv, sendStatement, deleteClient, sendPanel, createFollowup, showClientPortal, showClientMessages, submitClientMessage, downloadMessageAttachment, submitPaidDeclaration, markSeen, pollClientMessages, };

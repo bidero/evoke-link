@@ -72,14 +72,65 @@ function getById(id) {
   });
 }
 
-// Wątek (rozmowa) dla kontekstu — chronologicznie; klient widzi go w popupie (in + out).
+// Wspólny `where` wątku (kontekstu). scope: { transferId } | { projectId } | { clientId }.
+// null = scope pusty (wołający zwraca pustą listę). Jedno miejsce na tę logikę — używa go `thread`,
+// polling (`newerThan`) i oznaczanie przeczytanych, żeby wątek znaczył wszędzie DOKŁADNIE to samo.
+function scopeWhere(scope) {
+  const s = scope || {};
+  if (s.transferId) return { transferId: Number(s.transferId) };
+  if (s.projectId) return { projectId: Number(s.projectId) };
+  if (s.clientId) return { clientId: Number(s.clientId), projectId: null, transferId: null };
+  return null;
+}
+
+// Wątek (rozmowa) dla kontekstu — chronologicznie; klient widzi go na podstronie wiadomości (in + out).
 function thread(scope, limit = 50) {
-  let where;
-  if (scope.transferId) where = { transferId: Number(scope.transferId) };
-  else if (scope.projectId) where = { projectId: Number(scope.projectId) };
-  else if (scope.clientId) where = { clientId: Number(scope.clientId), projectId: null, transferId: null };
-  else return Promise.resolve([]);
+  const where = scopeWhere(scope);
+  if (!where) return Promise.resolve([]);
   return prisma.message.findMany({ where, orderBy: { createdAt: 'asc' }, take: limit });
+}
+
+// --- Polling wątku (live) ---------------------------------------------------------------
+// Wiadomości wątku NOWSZE niż kursor `afterId`; pusto, gdy nic nie doszło.
+function newerThan(scope, afterId, limit = 100) {
+  const where = scopeWhere(scope);
+  if (!where) return Promise.resolve([]);
+  return prisma.message.findMany({
+    where: { ...where, id: { gt: Number(afterId) || 0 } },
+    orderBy: { createdAt: 'asc' },
+    take: limit,
+  });
+}
+
+// j.w. dla komunikatora agencji: cała rozmowa klienta (scope=null) albo JEDEN jej wątek.
+// Z `include`, bo widok bąbelka rysuje chip kontekstu (projekt / transfer).
+function conversationNewerThan(clientId, afterId, scope = null, limit = 100) {
+  const base = scope ? scopeWhere(scope) : (clientId ? { clientId: Number(clientId) } : { clientId: null });
+  if (!base) return Promise.resolve([]);
+  return prisma.message.findMany({
+    where: { ...base, id: { gt: Number(afterId) || 0 } },
+    orderBy: { createdAt: 'asc' },
+    take: limit,
+    include: { project: { select: { id: true, name: true, clientToken: true } }, transfer: { select: { id: true, title: true } } },
+  });
+}
+
+// Ostatnia wiadomość rozmowy PRZED kursorem — żeby dopisywany bąbelek nie powtarzał chipa kontekstu.
+function conversationLastBefore(clientId, afterId) {
+  const base = clientId ? { clientId: Number(clientId) } : { clientId: null };
+  return prisma.message.findFirst({
+    where: { ...base, id: { lte: Number(afterId) || 0 } },
+    orderBy: { id: 'desc' },
+    include: { project: { select: { id: true, name: true } }, transfer: { select: { id: true, title: true } } },
+  });
+}
+
+// Id WŁASNYCH wiadomości przeczytanych już przez drugą stronę (ptaszki ✓✓).
+// direction: 'out' = widok agencji, 'in' = widok klienta. `where` gotowe (np. z scopeWhere).
+async function readIdsFor(where, direction) {
+  if (!where) return [];
+  const rows = await prisma.message.findMany({ where: { ...where, direction, isRead: true }, select: { id: true } });
+  return rows.map((r) => r.id);
 }
 
 // Odpowiedź agencji — nowa wiadomość direction 'out' w tym samym kontekście co oryginał.
@@ -245,4 +296,4 @@ async function deleteClientConversation(clientId) {
   return prisma.message.deleteMany({ where: scope });
 }
 
-module.exports = { create, listInbox, listThreads, unreadCount, getById, thread, reply, markThreadRead, deleteThread, attachment, attachmentInThread, hasUnseen, markRead, markAllRead, remove, conversationList, conversation, send, markClientRead, deleteClientConversation };
+module.exports = { create, listInbox, listThreads, unreadCount, getById, thread, scopeWhere, newerThan, conversationNewerThan, conversationLastBefore, readIdsFor, reply, markThreadRead, deleteThread, attachment, attachmentInThread, hasUnseen, markRead, markAllRead, remove, conversationList, conversation, send, markClientRead, deleteClientConversation };

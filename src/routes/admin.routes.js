@@ -79,6 +79,7 @@ router.post('/tasks/:id/toggle', tasks.toggle);
 router.post('/tasks/:id/delete', tasks.remove);
 
 router.get('/messages', messages.listMessages); // dwupanel: ?client=<id|none> = wybrana rozmowa
+router.get('/messages/poll', messages.pollConversation);   // live: nowe wiadomości po kursorze ?after=
 router.post('/messages/read-all', messages.markAllRead);
 router.get('/messages/:id/attachment', messages.downloadAttachment); // :id = id wiadomości
 router.post('/messages/:clientId/send', messageUpload, messages.sendMessage); // odpowiedź/zagajenie (scope + opcjonalny załącznik)

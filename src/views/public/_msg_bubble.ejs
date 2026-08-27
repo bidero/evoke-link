@@ -1,0 +1,13 @@
+<%# Pojedynczy bąbelek w wątku po stronie KLIENTA. Reużywany w renderze i w odpowiedzi pollingu/
+    wysyłki (live) — markup tylko tutaj. Locals: mm (wiadomość), msgContext (dla linku załącznika).
+    Uwaga na perspektywę: u klienta „moje" to `in`, a `out` = od agencji (odwrotnie niż w panelu). %>
+<% var out = mm.direction === 'out'; %>
+<div data-msg-id="<%= mm.id %>" class="flex <%= out ? 'justify-start' : 'justify-end' %>">
+  <div class="max-w-[85%]">
+    <div class="rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words <%= out ? 'bg-slate-100 text-slate-800' : 'bg-brand-600 text-white' %>"><%= mm.body %></div>
+    <% if (mm.attachmentName) { %>
+      <a href="<%= msgContext.page %>/<%= mm.id %>/attachment" data-turbo="false" class="mt-1 inline-flex items-center gap-1.5 text-xs underline decoration-dotted underline-offset-2 <%= out ? 'text-slate-600 hover:text-brand-700' : 'text-white/90 hover:text-white' %>"><%- icon('file', { size: 12, cls: '' }) %><%= mm.attachmentName %></a>
+    <% } %>
+    <div class="mt-0.5 text-[11px] text-slate-400 <%= out ? '' : 'text-right' %>"><%= fmt.date(mm.createdAt) %></div>
+  </div>
+</div>

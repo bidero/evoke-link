@@ -16,6 +16,60 @@ function parseScope(scope, client) {
   return {};
 }
 
+// --- Live (polling / wysyłka bez przeładowania) ------------------------------------------
+// Chip kontekstu wiadomości (musi zgadzać się z `_bubble.ejs`).
+const chipOf = (m) => (m && m.project ? m.project.name : (m && m.transfer ? (m.transfer.title || 'Transfer') : null));
+
+// Render widoku do STRINGA (bez layoutu) — bąbelki wracają tym samym partialem co render strony,
+// więc markup istnieje w jednym miejscu (zero duplikowania HTML-a w JS).
+function renderToString(res, view, locals) {
+  return new Promise((resolve, reject) => {
+    res.render(view, { ...locals, layout: false }, (err, html) => (err ? reject(err) : resolve(html)));
+  });
+}
+
+async function renderBubbles(res, messages, prevChip = null) {
+  let prev = prevChip;
+  let html = '';
+  for (const m of messages) {
+    html += await renderToString(res, 'admin/messages/_bubble', { m, prevChip: prev });
+    prev = chipOf(m);
+  }
+  return html;
+}
+
+// Polling otwartej rozmowy: TYLKO wiadomości nowsze od kursora `after`.
+// Zwraca gotowe bąbelki + nowy kursor + id przeczytanych (ptaszki ✓✓).
+async function pollConversation(req, res, next) {
+  try {
+    const selId = req.query.client;
+    const after = Number(req.query.after) || 0;
+    let clientId = null;
+    if (selId && selId !== 'none') {
+      const client = await clientService.getById(Number(selId));
+      if (!client) return res.status(404).json({ error: 'not_found' });
+      clientId = client.id;
+    }
+    const fresh = await messageService.conversationNewerThan(clientId, after);
+    // Otwarta rozmowa w WIDOCZNEJ karcie = czytam ją → nowe przychodzące oznaczamy jako przeczytane.
+    if (clientId && fresh.some((m) => m.direction === 'in')) {
+      await messageService.markClientRead(clientId);
+      res.locals.unreadMessages = await messageService.unreadCount();
+    }
+    const prevChip = chipOf(await messageService.conversationLastBefore(clientId, after));
+    const html = fresh.length ? await renderBubbles(res, fresh, prevChip) : '';
+    const readIds = await messageService.readIdsFor(clientId ? { clientId } : { clientId: null }, 'out');
+    res.set('Cache-Control', 'no-store').json({
+      lastId: fresh.length ? fresh[fresh.length - 1].id : after,
+      html,
+      readIds,
+      unread: typeof res.locals.unreadMessages === 'number' ? res.locals.unreadMessages : undefined,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function listMessages(req, res, next) {
   try {
     const selId = req.query.client;
@@ -34,7 +88,7 @@ async function listMessages(req, res, next) {
     // Lista PO markClientRead → badge wybranego klienta od razu = 0.
     const conversations = await messageService.conversationList();
     const allClients = await clientService.options(); // do „+ Nowa rozmowa" (klienci bez wiadomości też)
-    res.render('admin/messages/index', { title: 'Wiadomości', active: 'messages', conversations, selected, messages, client, projects, allClients, scopeHint: req.query.scope || null });
+    res.render('admin/messages/index', { title: 'Wiadomości', active: 'messages', conversations, selected, messages, convClient: client, projects, allClients, scopeHint: req.query.scope || null });
   } catch (err) {
     next(err);
   }
@@ -62,6 +116,14 @@ async function sendMessage(req, res, next) {
           }))
           .catch((e) => console.error('[mail] wiadomość:', e.message));
       }
+    }
+    // Wysyłka bez przeładowania (live): zwróć gotowy bąbelek zamiast redirectu.
+    // Fallback bez JS (zwykły submit formularza) → dotychczasowy redirect.
+    if ((req.get('accept') || '').includes('application/json')) {
+      const withCtx = msg ? await messageService.conversationNewerThan(client.id, msg.id - 1) : [];
+      const prevChip = msg ? chipOf(await messageService.conversationLastBefore(client.id, msg.id - 1)) : null;
+      const html = withCtx.length ? await renderBubbles(res, withCtx, prevChip) : '';
+      return res.set('Cache-Control', 'no-store').json({ ok: !!msg, lastId: msg ? msg.id : 0, html });
     }
     res.redirect(`/admin/messages?client=${client.id}`);
   } catch (err) {
@@ -101,4 +163,4 @@ async function downloadAttachment(req, res, next) {
   }
 }
 
-module.exports = { listMessages, sendMessage, markAllRead, deleteConversation, downloadAttachment };
+module.exports = { listMessages, pollConversation, sendMessage, markAllRead, deleteConversation, downloadAttachment };

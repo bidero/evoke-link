@@ -9,6 +9,7 @@ const events = require('../services/event.service');
 const messageService = require('../services/message.service');
 const fileRequestService = require('../services/fileRequest.service');
 const { isRaster } = require('../utils/fileIcon');
+const messagePoll = require('../utils/messagePoll');
 
 const PUBLIC_LAYOUT = 'layouts/public';
 
@@ -146,6 +147,22 @@ async function showMessages(req, res, next) {
   }
 }
 
+// Polling wątku (live) — TA SAMA bramka co showMessages; różni się tylko odpowiedzią (JSON).
+async function pollMessages(req, res, next) {
+  try {
+    const project = await projectService.getByClientToken(req.params.token);
+    if (!project || project.status === 'deleted') return res.status(404).json({ error: 'not_found' });
+    if (projectService.requiresClientPassword(project) && !isUnlocked(req, project.clientToken)) return res.status(403).json({ error: 'locked' });
+    await messagePoll.respond(res, {
+      scope: { projectId: project.id },
+      after: req.query.after,
+      msgContext: { page: `/p/${project.clientToken}/wiadomosci` },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Wiadomość od klienta z panelu projektu (/p) → skrzynka + mail do agencji.
 async function submitMessage(req, res, next) {
   try {
@@ -154,6 +171,12 @@ async function submitMessage(req, res, next) {
     const { body, senderName, senderEmail } = req.body;
     const msg = await messageService.create({ body, senderName, senderEmail, projectId: project.id, clientId: project.clientId, ip: req.ip, file: req.file });
     if (msg) mail.sendNewMessageNotification({ message: msg, client: project.client, project }).catch((e) => console.error('[mail] wiadomość:', e.message));
+    // Wysyłka bez przeładowania (live): oddaj gotowy bąbelek zamiast redirectu.
+    // Fallback bez JS (zwykły submit) → dotychczasowy redirect z ?msg=1 i toastem.
+    if ((req.get('accept') || '').includes('application/json')) {
+      const html = msg ? await messagePoll.renderToString(res, 'public/_msg_bubble', { mm: msg, msgContext: { page: `/p/${project.clientToken}/wiadomosci` } }) : '';
+      return res.set('Cache-Control', 'no-store').json({ ok: !!msg, lastId: msg ? msg.id : 0, html });
+    }
     res.redirect(`/p/${project.clientToken}/wiadomosci?msg=1`);
   } catch (err) {
     next(err);
@@ -363,4 +386,4 @@ async function submitDecision(req, res, next) {
   }
 }
 
-module.exports = { showPortal, showMessages, submitMessage, downloadMessageAttachment, submitDecision, markSeen, submitPassword, submitUpload, downloadFile, previewFile, downloadAllZip };
+module.exports = { showPortal, showMessages, submitMessage, downloadMessageAttachment, submitDecision, markSeen, submitPassword, submitUpload, downloadFile, previewFile, downloadAllZip, pollMessages, };

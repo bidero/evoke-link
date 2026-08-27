@@ -5,6 +5,7 @@ const mail = require('../services/mail.service');
 const events = require('../services/event.service');
 const messageService = require('../services/message.service');
 const { contentRailNav, contentMsgNav } = require('../utils/contentNav');
+const messagePoll = require('../utils/messagePoll');
 
 const PUBLIC_LAYOUT = 'layouts/public';
 
@@ -90,6 +91,24 @@ async function showMessages(req, res, next) {
   }
 }
 
+// Polling wątku (live) — ta sama bramka (typ incoming + dostępność + hasło) co showMessages.
+async function pollMessages(req, res, next) {
+  try {
+    const transfer = await transferService.getByToken(req.params.token);
+    if (!transfer || transfer.direction !== 'incoming') return res.status(404).json({ error: 'not_found' });
+    const { ok } = transferService.checkAvailability(transfer);
+    if (!ok) return res.status(404).json({ error: 'not_found' });
+    if (transferService.requiresPassword(transfer) && !isUnlocked(req, transfer.token)) return res.status(403).json({ error: 'locked' });
+    await messagePoll.respond(res, {
+      scope: { transferId: transfer.id },
+      after: req.query.after,
+      msgContext: { page: `/upload/${transfer.token}/wiadomosci` },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 // Wiadomość od klienta ze strony uploadu (/upload) → skrzynka + mail do agencji.
 async function submitMessage(req, res, next) {
   try {
@@ -98,6 +117,12 @@ async function submitMessage(req, res, next) {
     const { body, senderName, senderEmail } = req.body;
     const msg = await messageService.create({ body, senderName, senderEmail, transferId: transfer.id, projectId: transfer.projectId, clientId: transfer.project ? transfer.project.clientId : null, ip: req.ip, file: req.file });
     if (msg) mail.sendNewMessageNotification({ message: msg, project: transfer.project, transfer }).catch((e) => console.error('[mail] wiadomość:', e.message));
+    // Wysyłka bez przeładowania (live): oddaj gotowy bąbelek zamiast redirectu.
+    // Fallback bez JS (zwykły submit) → dotychczasowy redirect z ?msg=1 i toastem.
+    if ((req.get('accept') || '').includes('application/json')) {
+      const html = msg ? await messagePoll.renderToString(res, 'public/_msg_bubble', { mm: msg, msgContext: { page: `/upload/${transfer.token}/wiadomosci` } }) : '';
+      return res.set('Cache-Control', 'no-store').json({ ok: !!msg, lastId: msg ? msg.id : 0, html });
+    }
     res.redirect(`/upload/${transfer.token}/wiadomosci?msg=1`);
   } catch (err) {
     next(err);
@@ -197,4 +222,4 @@ async function submitUpload(req, res, next) {
   }
 }
 
-module.exports = { showUploadPage, showMessages, submitMessage, downloadMessageAttachment, submitPassword, submitUpload };
+module.exports = { showUploadPage, showMessages, submitMessage, downloadMessageAttachment, submitPassword, submitUpload, pollMessages, };

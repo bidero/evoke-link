@@ -29,6 +29,7 @@ router.post('/t/:token/decision', messageLimiter, download.submitDecision);
 router.get('/t/:token/preview/:fileId', download.previewFile);
 router.get('/t/:token/file/:fileId', download.downloadFile);
 router.get('/t/:token/wiadomosci', download.showMessages); // podstrona wiadomości (zamiast popupu)
+router.get('/t/:token/wiadomosci/poll', download.pollMessages);   // live: nowe wiadomości po kursorze ?after=
 router.get('/t/:token/wiadomosci/:msgId/attachment', download.downloadMessageAttachment);
 router.post('/t/:token/message', messageLimiter, messageUpload, download.submitMessage);
 router.post('/t/:token/messages/seen', download.markSeen);
@@ -36,6 +37,7 @@ router.post('/t/:token/messages/seen', download.markSeen);
 // Publiczny upload od klienta (Etap 2).
 router.get('/upload/:token', receive.showUploadPage);
 router.get('/upload/:token/wiadomosci', receive.showMessages);
+router.get('/upload/:token/wiadomosci/poll', receive.pollMessages);   // live: nowe wiadomości po kursorze ?after=
 router.get('/upload/:token/wiadomosci/:msgId/attachment', receive.downloadMessageAttachment);
 router.post('/upload/:token/message', messageLimiter, messageUpload, receive.submitMessage);
 router.post('/upload/:token/password', passwordLimiter, receive.submitPassword);
@@ -45,6 +47,7 @@ router.post('/upload/:token', receiveUpload('files'), receive.submitUpload);
 // Panel klienta na poziomie projektu (/p/:token).
 router.get('/p/:token', portal.showPortal);
 router.get('/p/:token/wiadomosci', portal.showMessages); // podstrona wiadomości (zamiast popupu)
+router.get('/p/:token/wiadomosci/poll', portal.pollMessages);   // live: nowe wiadomości po kursorze ?after=
 router.get('/p/:token/wiadomosci/:msgId/attachment', portal.downloadMessageAttachment);
 router.post('/p/:token/password', passwordLimiter, portal.submitPassword);
 router.get('/p/:token/zip', portal.downloadAllZip);
@@ -59,6 +62,7 @@ router.post('/p/:token/messages/seen', portal.markSeen);
 // Portal klienta — wszystkie projekty przypisane do klienta (/c/:token).
 router.get('/c/:token', clientCtrl.showClientPortal);
 router.get('/c/:token/wiadomosci', clientCtrl.showClientMessages); // podstrona wiadomości (zamiast popupu)
+router.get('/c/:token/wiadomosci/poll', clientCtrl.pollClientMessages);   // live: nowe wiadomości po kursorze ?after=
 router.get('/c/:token/wiadomosci/:msgId/attachment', clientCtrl.downloadMessageAttachment);
 router.post('/c/:token/message', messageLimiter, messageUpload, clientCtrl.submitClientMessage);
 router.post('/c/:token/messages/seen', clientCtrl.markSeen);
@@ -69,6 +73,7 @@ router.get('/c/:token/documents/:docId', require('../controllers/document.contro
 const offerCtrl = require('../controllers/offer.controller');
 router.get('/o/:token', offerCtrl.showOffer);
 router.get('/o/:token/wiadomosci', offerCtrl.showMessages); // podstrona wiadomości (wątek klienta)
+router.get('/o/:token/wiadomosci/poll', offerCtrl.pollMessages);   // live: nowe wiadomości po kursorze ?after=
 router.get('/o/:token/wiadomosci/:msgId/attachment', offerCtrl.downloadMessageAttachment);
 router.post('/o/:token/message', messageLimiter, messageUpload, offerCtrl.submitMessage);
 router.post('/o/:token/decision', messageLimiter, offerCtrl.submitDecision);

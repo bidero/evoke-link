@@ -1,0 +1,14 @@
+<%# Pojedynczy bąbelek w komunikatorze agencji. Reużywany w renderze strumienia I w odpowiedzi
+    pollingu/wysyłki (live) — dlatego markup MUSI być tylko tutaj, nigdy dublowany w JS.
+    Locals: m (wiadomość z include project/transfer), prevChip (nazwa kontekstu poprzedniej
+    wiadomości — chip pokazujemy tylko przy ZMIANIE kontekstu). %>
+<% var out = m.direction === 'out'; %>
+<% var chip = m.project ? m.project.name : (m.transfer ? (m.transfer.title || 'Transfer') : null); %>
+<% if (chip && chip !== prevChip) { %><div class="flex justify-center"><span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">· <%= chip %></span></div><% } %>
+<div data-msg-id="<%= m.id %>" class="flex <%= out ? 'justify-end' : 'justify-start' %>">
+  <div class="max-w-[75%]">
+    <div class="rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words <%= out ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-800' %>"><%= m.body %></div>
+    <% if (m.attachmentName) { %><a href="/admin/messages/<%= m.id %>/attachment" class="mt-1 inline-flex items-center gap-1.5 text-xs text-brand-700 hover:underline"><%- icon('file', { size: 13, cls: '' }) %> <%= m.attachmentName %><% if (m.attachmentSize) { %> <span class="text-slate-400">(<%= fmt.bytes(m.attachmentSize) %>)</span><% } %></a><% } %>
+    <div class="text-[11px] text-slate-400 mt-0.5 <%= out ? 'text-right' : '' %>"><%= out ? 'Ty' : (m.senderName || 'Klient') %> · <%= fmt.date(m.createdAt) %></div>
+  </div>
+</div>
