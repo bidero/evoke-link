@@ -7,6 +7,7 @@ const portal = require('../controllers/portal.controller');
 const clientCtrl = require('../controllers/client.controller');
 const onboarding = require('../controllers/onboarding.controller');
 const pwaCtrl = require('../controllers/pwa.controller');
+const signedDownload = require('../controllers/signedDownload.controller');
 const { chunkParser, receiveChunk, receiveUpload } = require('../middleware/chunkUpload');
 const messageUpload = require('../middleware/messageUpload');
 const { passwordLimiter, messageLimiter } = require('../middleware/rateLimit');
@@ -20,6 +21,12 @@ router.get('/pwa/icon.svg', pwaCtrl.icon);
 // Strona główna — w MVP przekierowuje do panelu.
 // Docelowo (Etap 6) może to być brandowana strona-wizytówka.
 router.get('/', (req, res) => res.redirect('/admin'));
+
+// Pobranie przez krótkotrwały podpisany link. CELOWO poza `/admin`: adres wypada poza `scope`
+// manifestu, więc w zainstalowanej aplikacji otwiera się POZA jej oknem (na iOS to jedyny
+// sposób, żeby pobranie nie zostawiło użytkownika bez drogi powrotnej). Autoryzuje podpis,
+// nie sesja — web-apka ma w iOS osobne ciasteczka niż Safari.
+router.get('/dl/:token', signedDownload.serve);
 
 // Publiczne pobieranie (Etap 1).
 router.get('/t/:token', download.showDownloadPage);

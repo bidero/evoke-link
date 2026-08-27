@@ -14,6 +14,7 @@ const documents = require('../controllers/document.controller');
 const documentUpload = require('../middleware/documentUpload');
 const messageUpload = require('../middleware/messageUpload');
 const notifications = require('../controllers/notification.controller');
+const signedDownload = require('../controllers/signedDownload.controller');
 const settings = require('../controllers/settings.controller');
 const search = require('../controllers/search.controller');
 const push = require('../controllers/push.controller');
@@ -174,6 +175,8 @@ router.post('/push/subscribe', push.subscribe);
 router.post('/push/unsubscribe', push.unsubscribe);
 router.post('/push/test', push.test);
 router.get('/badges.json', notifications.badgeCounts); // liczniki dla otwartej karty (dzwonek, menu, ikona PWA)
+// Wystawienie krótkotrwałego podpisanego linku pobierania (PWA na iOS — patrz utils/signedLink.js).
+router.post('/dl-token', signedDownload.mintToken);
 router.get('/notifications', notifications.index);
 router.post('/notifications/read-all', notifications.readAll);
 router.post('/notifications/clear', notifications.clearAll); // przed :id

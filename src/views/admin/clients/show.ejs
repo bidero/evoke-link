@@ -627,7 +627,7 @@
               <div class="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-3">
                 <span class="shrink-0"><%- icon('fileText', { size: 18, cls: 'text-slate-400' }) %></span>
                 <div class="min-w-0 flex-1">
-                  <a href="/admin/clients/<%= client.id %>/documents/<%= d.id %>" download class="text-sm font-medium text-slate-800 hover:text-brand-700 truncate block"><%= d.label || d.name %></a>
+                  <a href="/admin/clients/<%= client.id %>/documents/<%= d.id %>" download data-dl="document:<%= d.id %>" class="text-sm font-medium text-slate-800 hover:text-brand-700 truncate block"><%= d.label || d.name %></a>
                   <div class="text-xs text-slate-400 mt-0.5"><% if (d.label) { %><%= d.name %> · <% } %><% if (d.size) { %><%= fmt.bytes(d.size) %> · <% } %><%= fmt.date(d.createdAt) %></div>
                 </div>
                 <% if (d.visibleToClient) { %><span class="shrink-0 text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700">widoczny dla klienta</span><% } %>
@@ -635,7 +635,7 @@
                   <form method="POST" action="/admin/clients/<%= client.id %>/documents/<%= d.id %>/toggle">
                     <button type="submit" class="text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50 transition"><%= d.visibleToClient ? 'Ukryj przed klientem' : 'Pokaż klientowi' %></button>
                   </form>
-                  <a href="/admin/clients/<%= client.id %>/documents/<%= d.id %>" download class="text-slate-400 hover:text-brand-700 transition" title="Pobierz"><%- icon('download', { size: 16, cls: '' }) %></a>
+                  <a href="/admin/clients/<%= client.id %>/documents/<%= d.id %>" download data-dl="document:<%= d.id %>" class="text-slate-400 hover:text-brand-700 transition" title="Pobierz"><%- icon('download', { size: 16, cls: '' }) %></a>
                   <form method="POST" action="/admin/clients/<%= client.id %>/documents/<%= d.id %>/delete" onsubmit="return confirm('Usunąć dokument? Plik zniknie z dysku.')">
                     <button type="submit" class="text-slate-400 hover:text-red-600 transition" title="Usuń"><%- icon('trash', { size: 15, cls: '' }) %></button>
                   </form>
