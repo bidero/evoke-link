@@ -3,7 +3,9 @@
 <a href="<%= downloadHref %>" data-turbo="false" class="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-slate-50 transition group">
   <span class="shrink-0">
     <% if (_m.thumb && typeof previewHref !== 'undefined' && previewHref) { %>
-      <img src="<%= previewHref %>" alt="" loading="lazy" class="w-9 h-9 rounded-lg object-cover border border-slate-200 bg-slate-50" />
+      <%# ?t=1 → miniatura z cache'u. Klient często ogląda to przez komórkę, więc pobieranie
+          pełnych oryginałów tylko po to, żeby pokazać listę, było najdroższym miejscem strony. %>
+      <img src="<%= previewHref %>?t=1" alt="" loading="lazy" decoding="async" class="w-9 h-9 rounded-lg object-cover border border-slate-200 bg-slate-50" />
     <% } else { %>
       <span class="w-9 h-9 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center"><%- icon(_m.icon, { size: 18, cls: _m.color }) %></span>
     <% } %>

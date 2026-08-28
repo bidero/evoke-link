@@ -171,7 +171,9 @@
             <div class="flex items-center gap-3 min-w-0 mr-3">
               <% if (_m.thumb) { %>
                 <button type="button" @click="open(<%= _ii %>)" class="shrink-0" title="Podgląd (Quick Look)">
-                  <img src="<%= _prev %>" alt="" loading="lazy" class="w-12 h-12 rounded-lg object-cover border border-slate-200 bg-slate-50" />
+                  <%# ?t=1 → mały JPEG z cache'u zamiast pełnego oryginału (miniatura 48 px
+                      ładowała wcześniej cały plik, np. 7 MB). Lightbox niżej bierze oryginał. %>
+                  <img src="<%= _prev %>?t=1" alt="" loading="lazy" decoding="async" class="w-12 h-12 rounded-lg object-cover border border-slate-200 bg-slate-50" />
                 </button>
                 <button type="button" @click="open(<%= _ii %>)" class="min-w-0 truncate text-left text-slate-700 hover:text-brand-700"><%= f.originalName %></button>
               <% } else { %>

@@ -3,6 +3,7 @@
 const projectService = require('../services/project.service');
 const transferService = require('../services/transfer.service');
 const storage = require('../services/storage.service');
+const thumbService = require('../services/thumb.service');
 const zip = require('../services/zip.service');
 const mail = require('../services/mail.service');
 const events = require('../services/event.service');
@@ -321,11 +322,8 @@ async function previewFile(req, res, next) {
       if (f) { file = f; break; }
     }
     if (!file || !isRaster(file.originalName, file.mimeType)) return res.status(404).end();
-    res.setHeader('Content-Type', file.mimeType || 'image/jpeg');
-    res.setHeader('Content-Disposition', 'inline');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Cache-Control', 'private, max-age=300');
-    storage.pipeDownload(res, file.storedPath);
+    // `?t=1` = miniatura z listy plików; bez tego pełny podgląd (Quick Look).
+    await thumbService.send(res, file, req.query.t === '1');
   } catch (err) {
     next(err);
   }
