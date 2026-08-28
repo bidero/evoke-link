@@ -1,7 +1,7 @@
 // Podpisany link pobierania (`/dl/:token`) — obejście pułapki PWA na iOS.
 //
 // TO JEST POWIERZCHNIA PUBLICZNA (pomija `requireAuth`), więc test pilnuje całego modelu
-// bezpieczeństwa: podpisu, czasu życia, związania z jednym zasobem i jednorazowości.
+// bezpieczeństwa: podpisu, czasu życia i związania z jednym zasobem.
 const { test, before, after } = require('node:test');
 const assert = require('node:assert');
 const fs = require('fs');
@@ -78,10 +78,8 @@ test('podpis: token po czasie życia jest odrzucany', () => {
   assert.ok(signed.verify(t), 'w oknie TTL dalej działa');
 });
 
-test('jednorazowość: drugie zużycie tego samego nonce nie przechodzi', () => {
-  const nonce = 'test-' + Date.now();
-  assert.equal(signed.consume(nonce), true);
-  assert.equal(signed.consume(nonce), false, 'drugi raz = odmowa');
+test('okno ważności: 5 minut (tyle, ile ma sens „otwórz link" z arkusza zapisu na iOS)', () => {
+  assert.equal(signed.TTL_MS, 5 * 60 * 1000);
 });
 
 test('wystawianie linku wymaga logowania i istniejącego zasobu', async (t) => {
@@ -109,7 +107,7 @@ test('wystawianie linku wymaga logowania i istniejącego zasobu', async (t) => {
   }
 });
 
-test('pobranie linkiem: oddaje bajty, potem link jest zużyty', async (t) => {
+test('pobranie linkiem: oddaje bajty i działa ponownie w oknie ważności', async (t) => {
   if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
   const content = 'zawartosc pliku ' + Date.now();
   const f = await fixture('sdget', content);
@@ -122,13 +120,16 @@ test('pobranie linkiem: oddaje bajty, potem link jest zużyty', async (t) => {
     assert.match(res.headers.get('content-disposition') || '', /^attachment/);
     assert.equal(await res.text(), content, 'bajty zgodne z plikiem');
 
+    // Wielokrotny w oknie ważności — na iOS arkusz zapisu ma opcję „otwórz link",
+    // która trafiała na zużyty adres i pokazywała błąd (zgłoszone z iPhone'a).
     const again = await fetch(base + url);
-    assert.equal(again.status, 410, 'link jednorazowy — drugie wejście odrzucone');
-    await again.arrayBuffer();
+    assert.equal(again.status, 200, 'ten sam link działa ponownie w oknie ważności');
+    assert.equal(await again.text(), content);
 
     const forged = await fetch(`${base}/dl/podrobiony.token`);
     assert.equal(forged.status, 404);
-    await forged.arrayBuffer();
+    // Komunikat ma tłumaczyć, co zrobić — dotąd mówił mylące „ten link nie istnieje".
+    assert.match(await forged.text(), /Wróć do panelu/);
   } finally {
     await cleanup(f);
   }

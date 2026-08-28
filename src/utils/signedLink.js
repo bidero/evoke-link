@@ -1,4 +1,4 @@
-// Krótkotrwałe, JEDNORAZOWE linki pobierania (poza `/admin`).
+// Krótkotrwałe linki pobierania (poza `/admin`).
 //
 // PO CO: w zainstalowanej aplikacji na iOS (standalone) WebKit ignoruje atrybut `download`
 // i nawiguje okno apki na plik — a okno standalone nie ma paska przeglądarki, więc nie ma
@@ -6,17 +6,18 @@
 // oknem, ale wtedy nie ma sesji: web-apka z ekranu głównego ma w iOS OSOBNE ciasteczka niż
 // Safari. Dlatego zamiast sesji autoryzuje tu podpis.
 //
-// MODEL BEZPIECZEŃSTWA: podpis HMAC-SHA256 sekretem serwera, ważny 60 s, związany z JEDNYM
-// konkretnym zasobem (rodzaj + id), zużywany przy pierwszym użyciu. Link wystawia wyłącznie
-// zalogowany użytkownik (mint za `requireAuth`).
+// MODEL BEZPIECZEŃSTWA: podpis HMAC-SHA256 sekretem serwera, ważny 5 minut, związany
+// z JEDNYM konkretnym zasobem (rodzaj + id). Link wystawia wyłącznie zalogowany użytkownik
+// (mint za `requireAuth`).
+//
+// DLACZEGO NIE JEDNORAZOWY (zmiana z v1.0.6): pierwotnie link zużywał się przy pierwszym
+// użyciu, ale w arkuszu zapisu na iOS jest opcja „otwórz link" — a ta trafiała już na
+// zużyty adres i pokazywała błąd (zgłoszone z iPhone'a). W oknie ważności link działa więc
+// wielokrotnie. Ochroną zostaje krótki czas życia i związanie z jednym plikiem.
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
 const config = require('../config');
-const storage = require('../services/storage.service');
 
-const TTL_MS = 60 * 1000;                 // okno na kliknięcie i start pobierania
-const USED_DIR = path.join(storage.TMP_DIR, 'dl');
+const TTL_MS = 5 * 60 * 1000;             // tyle czasu ma sens „otwórz link" z arkusza zapisu
 const KINDS = ['file', 'zip', 'document', 'attachment']; // whitelist — nic spoza listy nie przejdzie
 
 const b64 = (buf) => Buffer.from(buf).toString('base64url');
@@ -61,30 +62,4 @@ function verify(token) {
   return { kind: data.k, id: data.i, extra: data.x || null, nonce: data.n };
 }
 
-// Jednorazowość MIĘDZY PROCESAMI (Passenger uruchamia ich kilka, więc pamięć procesu nie
-// wystarcza): znacznik tworzony flagą 'wx' — atomowe „utwórz albo poległ".
-function consume(nonce) {
-  try {
-    fs.mkdirSync(USED_DIR, { recursive: true });
-    fs.closeSync(fs.openSync(path.join(USED_DIR, nonce.replace(/[^\w-]/g, '')), 'wx'));
-    return true;
-  } catch (_) {
-    return false; // już użyty (EEXIST) albo dysk nie pozwala — w obu wypadkach nie wydajemy pliku
-  }
-}
-
-// Sprzątanie znaczników starszych niż godzina (wołane przy starcie, wzorzec chunk.sweepOld).
-function sweepUsed() {
-  try {
-    const cutoff = Date.now() - 60 * 60 * 1000;
-    for (const name of fs.readdirSync(USED_DIR)) {
-      const p = path.join(USED_DIR, name);
-      try { if (fs.statSync(p).mtimeMs < cutoff) fs.rmSync(p, { force: true }); } catch (_) { /* wyścig */ }
-    }
-  } catch (_) { /* katalogu jeszcze nie ma */ }
-}
-
-// Sprzątanie przy starcie (wzorzec chunk.service.sweepOld).
-try { sweepUsed(); } catch (_) {}
-
-module.exports = { sign, verify, consume, sweepUsed, KINDS, TTL_MS };
+module.exports = { sign, verify, KINDS, TTL_MS };

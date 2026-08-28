@@ -41,10 +41,9 @@ async function mintToken(req, res, next) {
 async function serve(req, res, next) {
   try {
     const data = signed.verify(req.params.token);
-    // Ten sam komunikat dla złego podpisu i przeterminowania — nie podpowiadamy, co poszło nie tak.
-    if (!data) return res.status(404).render('public/unavailable', { title: 'Link wygasł', layout: 'layouts/public', reason: 'not_found' });
-    // Zużycie PRZED wydaniem: przy drugim kliknięciu nie ma już czego wydać.
-    if (!signed.consume(data.nonce)) return res.status(410).render('public/unavailable', { title: 'Link już wykorzystany', layout: 'layouts/public', reason: 'not_found' });
+    // Ten sam komunikat dla złego podpisu i przeterminowania — nie podpowiadamy, co poszło
+    // nie tak. Powód `dl_expired` tłumaczy, co zrobić dalej (dotąd było mylące „nie znaleziono").
+    if (!data) return res.status(404).render('public/unavailable', { title: 'Link wygasł', layout: 'layouts/public', reason: 'dl_expired' });
 
     if (data.kind === 'zip') {
       const transfer = await transferService.getById(data.id);
