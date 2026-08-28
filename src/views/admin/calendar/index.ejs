@@ -47,12 +47,15 @@
 
   <!-- KALENDARZ -->
   <div :class="sideOpen ? 'lg:col-span-2' : 'lg:col-span-3'">
-    <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
+    <%# Na telefonie miesiąc dostaje CAŁĄ szerokość (strzałki po bokach), a pod nim rząd:
+        przełącznik widoku z lewej, „Przypomnienie" z prawej. Wcześniej wszystko tłoczyło się
+        w jednym rzędzie i zawijało (zgłoszone). Od `sm:` układ jak dotąd — jeden rząd. %>
+    <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
       <div class="flex items-center gap-2">
-        <a href="<%= prevLink %>" class="btn-icon border border-slate-300 w-8 h-8" aria-label="Poprzedni"><%- icon('arrowLeft', { size: 16, cls: '' }) %></a>
-        <h2 class="text-base font-semibold text-slate-800 capitalize min-w-[150px] text-center"><%= label %></h2>
-        <a href="<%= nextLink %>" class="btn-icon border border-slate-300 w-8 h-8" aria-label="Następny"><%- icon('arrowRight', { size: 16, cls: '' }) %></a>
-        <% if (!isToday) { %><a href="<%= todayLink %>" class="ml-1 text-sm text-brand-700 hover:underline">Dziś</a><% } %>
+        <a href="<%= prevLink %>" class="btn-icon border border-slate-300 w-8 h-8 shrink-0" aria-label="Poprzedni"><%- icon('arrowLeft', { size: 16, cls: '' }) %></a>
+        <h2 class="flex-1 sm:flex-none text-base font-semibold text-slate-800 capitalize sm:min-w-[150px] text-center"><%= label %></h2>
+        <a href="<%= nextLink %>" class="btn-icon border border-slate-300 w-8 h-8 shrink-0" aria-label="Następny"><%- icon('arrowRight', { size: 16, cls: '' }) %></a>
+        <% if (!isToday) { %><a href="<%= todayLink %>" class="ml-1 text-sm text-brand-700 hover:underline shrink-0">Dziś</a><% } %>
       </div>
       <div class="flex items-center gap-2">
         <%# Zwiń/rozwiń panel boczny (Nadchodzące/Zrobione) — kalendarz na pełną szerokość. %>
@@ -61,12 +64,12 @@
           <span x-show="!sideOpen" x-cloak><%- icon('arrowLeft', { size: 16, cls: '' }) %></span>
         </button>
         <%# Przełącznik widoku: miesiąc / tydzień / dzień (data referencyjna = viewDate). %>
-        <div class="inline-flex rounded-lg border border-slate-300 overflow-hidden text-sm">
+        <div class="inline-flex rounded-lg border border-slate-300 overflow-hidden text-sm shrink-0">
           <a href="/admin/calendar?month=<%= curMonth %>" class="px-3 py-1.5 <%= view === 'month' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50' %>">Miesiąc</a>
           <a href="/admin/calendar?view=week&date=<%= viewDate %>" class="px-3 py-1.5 border-l border-slate-300 <%= view === 'week' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50' %>">Tydzień</a>
           <a href="/admin/calendar?view=day&date=<%= viewDate %>" class="px-3 py-1.5 border-l border-slate-300 <%= view === 'day' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50' %>">Dzień</a>
         </div>
-        <button type="button" @click="openNew('<%= viewDate %>')" class="btn btn-sm btn-primary"><%- icon('plus', { size: 15, cls: '' }) %> <span class="hidden sm:inline">Przypomnienie</span></button>
+        <button type="button" @click="openNew('<%= viewDate %>')" class="btn btn-sm btn-primary ml-auto sm:ml-0"><%- icon('plus', { size: 15, cls: '' }) %> <span class="hidden sm:inline">Przypomnienie</span></button>
       </div>
     </div>
 

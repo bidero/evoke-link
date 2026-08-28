@@ -97,22 +97,33 @@
       </div>
     </div>
     <div class="flex flex-wrap items-center gap-2 shrink-0">
-      <a href="/admin/projects/new?client=<%= client.id %>" class="btn btn-primary">+ Nowy projekt</a>
-      <a href="/admin/messages?client=<%= client.id %>" class="btn btn-secondary"><%- icon('mail', { size: 15, cls: '' }) %> Napisz</a>
-      <a href="/admin/clients/<%= client.id %>/edit" class="btn btn-secondary">Edytuj</a>
+      <%# „Edytuj" jako przycisk-ikona — trzy pełne etykiety nie mieściły się w jednym
+          rzędzie na telefonie i łamały się na dwie linie. %>
+      <a href="/admin/projects/new?client=<%= client.id %>" class="btn btn-primary flex-1 sm:flex-none">+ Nowy projekt</a>
+      <a href="/admin/messages?client=<%= client.id %>" class="btn btn-secondary flex-1 sm:flex-none"><%- icon('mail', { size: 15, cls: '' }) %> Napisz</a>
+      <a href="/admin/clients/<%= client.id %>/edit" class="btn-icon border border-slate-300 shrink-0" title="Edytuj klienta" aria-label="Edytuj klienta"><%- icon('pencil', { size: 16, cls: '' }) %></a>
     </div>
   </div>
-  <div class="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
-    <div class="text-sm min-w-0 flex-1">
-      <span class="text-slate-500">Portal klienta:</span>
-      <a href="<%= portalUrl %>" target="_blank" class="text-brand-700 hover:underline break-all"><%= portalUrl %></a>
+  <%# Adres w polu zamiast gołego linku — długi URL zawijał się na telefonie na trzy linie.
+      Pole ucina go w jednej linii, a akcje (kopiuj/otwórz/wyślij) są obok, jak przy projekcie. %>
+  <div class="mt-4 pt-4 border-t border-slate-100" x-data="{ copied: false }">
+    <span class="label">Portal klienta</span>
+    <div class="flex items-center gap-2">
+      <input type="text" readonly value="<%= portalUrl %>" x-ref="url" @focus="$event.target.select()"
+             class="field flex-1 min-w-0 bg-slate-50 text-slate-600" />
+      <button type="button" class="btn-icon border border-slate-300 shrink-0" title="Kopiuj adres" aria-label="Kopiuj adres"
+              @click="navigator.clipboard.writeText($refs.url.value); copied = true; setTimeout(() => copied = false, 1500)">
+        <span x-show="!copied"><%- icon('copy', { size: 16, cls: '' }) %></span>
+        <span x-show="copied" x-cloak class="text-green-600"><%- icon('check', { size: 16, cls: '' }) %></span>
+      </button>
+      <a href="<%= portalUrl %>" target="_blank" class="btn-icon border border-slate-300 shrink-0" title="Otwórz portal" aria-label="Otwórz portal"><%- icon('externalLink', { size: 16, cls: '' }) %></a>
+      <% if (client.email) { %>
+        <form method="POST" action="/admin/clients/<%= client.id %>/send-panel" class="shrink-0">
+          <input type="hidden" name="redirect" value="show" />
+          <button type="submit" class="btn-icon border border-slate-300" title="Wyślij link na <%= client.email %>" aria-label="Wyślij link e-mailem"><%- icon('mail', { size: 16, cls: '' }) %></button>
+        </form>
+      <% } %>
     </div>
-    <% if (client.email) { %>
-      <form method="POST" action="/admin/clients/<%= client.id %>/send-panel" class="shrink-0 sm:ml-auto">
-        <input type="hidden" name="redirect" value="show" />
-        <button type="submit" title="Wyślij link panelu na <%= client.email %>" class="btn btn-secondary"><%- icon('mail', { size: 15 }) %> Wyślij</button>
-      </form>
-    <% } %>
   </div>
 
   <!-- Onboarding — jednorazowy link, przez który klient sam uzupełnia dane -->
@@ -360,7 +371,7 @@
         <% } else { %>
           <div class="px-5 py-4 text-center text-xs text-slate-400">Brak cyklicznych pozycji. Dodaj abonament poniżej — co miesiąc sam utworzy pozycję rozliczeniową z terminem płatności.</div>
         <% } %>
-        <form method="POST" action="/admin/clients/<%= client.id %>/retainers" class="px-5 py-3 border-t border-slate-100 bg-slate-50">
+        <form method="POST" action="/admin/clients/<%= client.id %>/retainers" class="px-5 pt-3 pb-4 border-t border-slate-100 bg-slate-50">
           <div class="grid grid-cols-2 lg:grid-cols-6 gap-3">
             <label class="col-span-2 lg:col-span-2"><span class="label">Nazwa</span>
               <input name="label" type="text" required placeholder="np. Abonament — obsługa www" class="field w-full" />
@@ -521,7 +532,7 @@
           <div class="px-5 py-6 text-center text-sm text-slate-400">Brak pozycji rozliczeniowych. Dodaj pierwszą poniżej.</div>
         <% } %>
 
-        <form method="POST" action="/admin/clients/<%= client.id %>/charges" class="px-5 py-3 border-t border-slate-100 bg-slate-50">
+        <form method="POST" action="/admin/clients/<%= client.id %>/charges" class="px-5 pt-3 pb-4 border-t border-slate-100 bg-slate-50">
           <div class="grid grid-cols-2 lg:grid-cols-6 gap-3">
             <label class="col-span-2"><span class="label">Nazwa</span>
               <input name="label" type="text" placeholder="np. Sesja, Zaliczka" class="field w-full" />
@@ -722,7 +733,7 @@
         <% } else { %>
           <div class="px-5 py-6 text-center text-sm text-slate-400">Brak dokumentów. Wgraj pierwszy poniżej.</div>
         <% } %>
-        <form method="POST" action="/admin/clients/<%= client.id %>/documents" enctype="multipart/form-data" class="form-row px-5 py-3 border-t border-slate-100 bg-slate-50" x-data="{ fileName: '' }">
+        <form method="POST" action="/admin/clients/<%= client.id %>/documents" enctype="multipart/form-data" class="form-row px-5 pt-3 pb-4 border-t border-slate-100 bg-slate-50" x-data="{ fileName: '' }">
           <label class="btn btn-secondary shrink-0 cursor-pointer">
             <%- icon('cloudUpload', { size: 15, cls: '' }) %> <span x-text="fileName || 'Wybierz plik'"></span>
             <input type="file" name="document" required class="hidden" @change="fileName = $event.target.files.length ? $event.target.files[0].name : ''" />
