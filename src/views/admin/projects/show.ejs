@@ -14,13 +14,13 @@
     <% } %>
     <% if (project.description) { %><p class="text-sm text-slate-500 mt-2 max-w-2xl whitespace-pre-line"><%= project.description %></p><% } %>
   </div>
-  <a href="/admin/projects/<%= project.id %>/edit" class="shrink-0 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">Edytuj</a>
+  <a href="/admin/projects/<%= project.id %>/edit" class="btn btn-secondary shrink-0">Edytuj</a>
 </div>
 
 <!-- Akcje -->
 <div class="mt-4 flex flex-wrap items-center gap-2">
-  <a href="/admin/transfers/new?project=<%= project.id %>" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">+ Wyślij pliki klientowi</a>
-  <a href="/admin/transfers/new-upload?project=<%= project.id %>" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">+ Link uploadu</a>
+  <a href="/admin/transfers/new?project=<%= project.id %>" class="btn btn-primary">+ Wyślij pliki klientowi</a>
+  <a href="/admin/transfers/new-upload?project=<%= project.id %>" class="btn btn-secondary">+ Link uploadu</a>
   <% if (project.client) { %><a href="/admin/messages?client=<%= project.client.id %>&scope=p:<%= project.id %>" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-sm font-medium px-4 py-2 transition"><%- icon('mail', { size: 15, cls: '' }) %> Napisz do klienta</a><% } %>
   <form method="POST" action="/admin/projects/<%= project.id %>/archive" class="ml-auto">
     <% const _arch = project.status === 'archived'; %>
@@ -49,10 +49,10 @@
     <input readonly value="<%= portalUrl %>" x-ref="purl" class="flex-1 min-w-0 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700" />
     <div class="flex gap-2">
       <button type="button" @click="navigator.clipboard.writeText($refs.purl.value); copied = true; setTimeout(()=>copied=false,1500)"
-              class="flex-1 sm:flex-none rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">
+              class="btn btn-primary flex-1 sm:flex-none">
         <span x-show="!copied">Kopiuj</span><span x-show="copied">Skopiowano ✓</span>
       </button>
-      <button type="button" @click="send()" class="flex-1 sm:flex-none rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition whitespace-nowrap">Wyślij</button>
+      <button type="button" @click="send()" class="btn btn-secondary flex-1 sm:flex-none">Wyślij</button>
       <a href="<%= portalUrl %>" target="_blank" class="flex-1 sm:flex-none text-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition whitespace-nowrap">Otwórz</a>
     </div>
   </div>
@@ -73,9 +73,9 @@
   <p class="text-xs text-slate-400 mb-3">Klient widzi tę checklistę w swoim panelu i przy wysyłce plików może wskazać, czego dotyczą — punkt odhacza się sam. Możesz też odhaczać ręcznie.</p>
 
   <form x-show="add" x-cloak method="POST" action="/admin/projects/<%= project.id %>/requests" class="mb-3 flex flex-col sm:flex-row gap-2">
-    <input name="label" type="text" required maxlength="200" placeholder="np. Logo w wektorze (AI/SVG)" class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-    <input name="note" type="text" maxlength="500" placeholder="Podpowiedź (opcjonalnie)" class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-    <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition shrink-0">Dodaj</button>
+    <input name="label" type="text" required maxlength="200" placeholder="np. Logo w wektorze (AI/SVG)" class="field flex-1" />
+    <input name="note" type="text" maxlength="500" placeholder="Podpowiedź (opcjonalnie)" class="field flex-1" />
+    <button type="submit" class="btn btn-primary shrink-0">Dodaj</button>
   </form>
 
   <% const _reqs = project.fileRequests || []; %>
@@ -207,13 +207,13 @@
       <form method="POST" action="/admin/projects/<%= project.id %>/charges" class="px-5 py-3 border-t border-slate-100 bg-slate-50 space-y-2">
         <div class="flex flex-wrap items-end gap-2">
           <label class="flex-1 min-w-[150px] text-[11px] text-slate-500">Nazwa
-            <input name="label" type="text" placeholder="np. Sesja, Zaliczka" class="mt-0.5 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+            <input name="label" type="text" placeholder="np. Sesja, Zaliczka" class="field mt-0.5" />
           </label>
           <label class="text-[11px] text-slate-500">Netto zł
-            <input name="amount" type="text" inputmode="decimal" required placeholder="0,00" class="mt-0.5 w-32 rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+            <input name="amount" type="text" inputmode="decimal" required placeholder="0,00" class="field mt-0.5 w-32" />
           </label>
           <label class="text-[11px] text-slate-500">VAT
-            <select name="vatRate" class="mt-0.5 w-24 rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+            <select name="vatRate" class="field field-sm mt-0.5 w-24">
               <option value="">bez</option>
               <option value="23">23%</option>
               <option value="8">8%</option>
@@ -224,12 +224,12 @@
         </div>
         <div class="flex flex-wrap items-end gap-2">
           <label class="text-[11px] text-slate-500">Data
-            <input name="date" type="date" value="<%= new Date().toISOString().slice(0,10) %>" class="mt-0.5 w-40 rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+            <input name="date" type="date" value="<%= new Date().toISOString().slice(0,10) %>" class="field field-sm mt-0.5 w-40" />
           </label>
           <label class="text-[11px] text-slate-500">Termin
-            <input name="dueDate" type="date" title="Termin płatności (opcjonalnie)" class="mt-0.5 w-40 rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-800 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+            <input name="dueDate" type="date" title="Termin płatności (opcjonalnie)" class="field field-sm mt-0.5 w-40" />
           </label>
-          <button type="submit" class="ml-auto rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2 transition whitespace-nowrap">Dodaj</button>
+          <button type="submit" class="btn btn-lg btn-primary ml-auto">Dodaj</button>
         </div>
       </form>
     </div>

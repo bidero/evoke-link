@@ -159,15 +159,17 @@ test('powiadomienia: akcje w stosie na telefonie + krótka etykieta + większy o
 
     // Stos na telefonie, rząd od sm: — w jednym rzędzie przyciski wychodziły poza 390 px.
     assert.match(html, /flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between/);
-    assert.doesNotMatch(html, /flex items-center gap-2 shrink-0/, 'grupa akcji nie może być bezwarunkowo shrink-0');
-    assert.match(html, /class="flex-1 sm:flex-none"/, 'formularze dzielą rząd po połowie');
+    // Pasek akcji z warstwy komponentów: dzieli rząd na telefonie i zawija zamiast wypychać.
+    assert.match(html, /class="actions sm:shrink-0"/);
+    assert.match(html, /class="btn btn-secondary/, 'przyciski z warstwy komponentów, nie klasy ad hoc');
+    assert.match(html, /class="btn btn-danger/);
 
     // Długa etykieta skrócona na telefonie, pełna od sm:.
     assert.match(html, /<span class="sm:hidden">Przeczytane<\/span>/);
     assert.match(html, /<span class="hidden sm:inline">Oznacz wszystkie jako przeczytane<\/span>/);
 
-    // Kosz przy pozycji: 32 px to za mało na palec.
-    assert.match(html, /class="p-3 sm:p-2 rounded-lg text-slate-300/);
+    // Kosz: obszar dotyku pilnuje teraz .btn-icon (min 44 px poniżej md).
+    assert.match(html, /class="btn-icon/);
   } finally {
     await prisma.event.delete({ where: { id: ev.id } });
   }

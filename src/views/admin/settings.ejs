@@ -88,7 +88,7 @@
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Nazwa aplikacji</label>
         <input name="appName" type="text" value="<%= settings.appName %>"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+               class="field" />
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -703,10 +703,10 @@
           Ukryj dane sprzedawcy na wydruku <span class="text-slate-400">(sam wykaz pozycji, bez „Sprzedawcy" i nr konta)</span>
         </label>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input name="sellerName" type="text" value="<%= settings.pdf.seller.name %>" placeholder="Nazwa / firma (sprzedawca)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-          <input name="sellerNip" type="text" value="<%= settings.pdf.seller.nip %>" placeholder="NIP" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-          <input name="sellerAddress" type="text" value="<%= settings.pdf.seller.address %>" placeholder="Adres (ul., kod, miasto)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-          <input name="sellerBank" type="text" value="<%= settings.pdf.seller.bank %>" placeholder="Nr konta (IBAN)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <input name="sellerName" type="text" value="<%= settings.pdf.seller.name %>" placeholder="Nazwa / firma (sprzedawca)" class="field" />
+          <input name="sellerNip" type="text" value="<%= settings.pdf.seller.nip %>" placeholder="NIP" class="field" />
+          <input name="sellerAddress" type="text" value="<%= settings.pdf.seller.address %>" placeholder="Adres (ul., kod, miasto)" class="field" />
+          <input name="sellerBank" type="text" value="<%= settings.pdf.seller.bank %>" placeholder="Nr konta (IBAN)" class="field" />
         </div>
       </div>
       <div class="border-t border-slate-100 pt-4 space-y-1">
@@ -744,17 +744,17 @@
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Nagłówek (hero)</label>
         <input name="heroTitle" type="text" value="<%= settings.texts.heroTitle %>" placeholder="np. Bezpieczna wymiana plików"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+               class="field" />
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Podtytuł</label>
         <input name="heroSubtitle" type="text" value="<%= settings.texts.heroSubtitle %>"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+               class="field" />
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Stopka</label>
         <input name="footer" type="text" value="<%= settings.texts.footer %>"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+               class="field" />
       </div>
     </div>
 
@@ -804,28 +804,28 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <label class="block">
           <span class="block text-xs font-medium text-slate-500 mb-1">Nagłówek</span>
-          <input name="loginTitle" value="<%= LG.title %>" maxlength="80" placeholder="Zaloguj się" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <input name="loginTitle" value="<%= LG.title %>" maxlength="80" placeholder="Zaloguj się" class="field" />
         </label>
         <label class="block">
           <span class="block text-xs font-medium text-slate-500 mb-1">Podpis pod nagłówkiem</span>
-          <input name="loginSubtitle" value="<%= LG.subtitle %>" maxlength="160" placeholder="Panel administracyjny agencji." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <input name="loginSubtitle" value="<%= LG.subtitle %>" maxlength="160" placeholder="Panel administracyjny agencji." class="field" />
         </label>
       </div>
 
       <div x-show="lStyle==='split' || lStyle==='panel'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <label class="block">
           <span class="block text-xs font-medium text-slate-500 mb-1">Hero — tytuł <span class="text-slate-400 font-normal">(obok formularza)</span></span>
-          <input name="loginHeroTitle" value="<%= LG.heroTitle %>" maxlength="120" placeholder="<%= settings.appName %>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <input name="loginHeroTitle" value="<%= LG.heroTitle %>" maxlength="120" placeholder="<%= settings.appName %>" class="field" />
         </label>
         <label class="block">
           <span class="block text-xs font-medium text-slate-500 mb-1">Hero — podpis</span>
-          <input name="loginHeroSubtitle" value="<%= LG.heroSubtitle %>" maxlength="240" placeholder="Bezpieczna wymiana plików z klientami." class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <input name="loginHeroSubtitle" value="<%= LG.heroSubtitle %>" maxlength="240" placeholder="Bezpieczna wymiana plików z klientami." class="field" />
         </label>
       </div>
 
       <label class="block max-w-md">
         <span class="block text-xs font-medium text-slate-500 mb-1">Stopka <span class="text-slate-400 font-normal">(puste = jak na stronach klienta)</span></span>
-        <input name="loginFooter" value="<%= LG.footer %>" maxlength="200" placeholder="<%= settings.texts.footer || (settings.appName + ' · prywatny system wymiany plików') %>" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <input name="loginFooter" value="<%= LG.footer %>" maxlength="200" placeholder="<%= settings.texts.footer || (settings.appName + ' · prywatny system wymiany plików') %>" class="field" />
       </label>
 
       <div class="pt-3 border-t border-slate-100">
@@ -878,7 +878,7 @@
 
         <div x-show="lbType==='gradient'" x-cloak>
           <label class="block text-xs font-medium text-slate-600 mb-1">Preset</label>
-          <select name="lbPreset" class="w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+          <select name="lbPreset" class="field max-w-xs">
             <% Object.entries(presets).forEach(function(pr){ %><option value="<%= pr[0] %>" <%= LB && LB.preset === pr[0] ? 'selected' : '' %>><%= pr[1].label %></option><% }); %>
           </select>
         </div>
@@ -954,22 +954,22 @@
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: link do plików</label>
           <input name="linkSubject" data-phfield="linkSubject" type="text" value="<%= settings.emails.linkSubject %>" placeholder="domyślny"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="field" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: powiadomienie o uploadzie</label>
           <input name="uploadSubject" data-phfield="uploadSubject" type="text" value="<%= settings.emails.uploadSubject %>" placeholder="domyślny"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="field" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: powiadomienie o pobraniu</label>
           <input name="downloadSubject" data-phfield="downloadSubject" type="text" value="<%= settings.emails.downloadSubject %>" placeholder="domyślny"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="field" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: panel (projekt / klient)</label>
           <input name="panelSubject" data-phfield="panelSubject" type="text" value="<%= settings.emails.panelSubject %>" placeholder="np. {nazwa-projektu} — Twój panel"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="field" />
         </div>
       </div>
       <div>
@@ -982,7 +982,7 @@
             <button type="button" data-cmd="createLink" title="Wstaw link" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Link</button>
             <button type="button" data-cmd="removeFormat" title="Wyczyść formatowanie" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Wyczyść</button>
           </div>
-          <div class="rte-ed w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[64px] focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" contenteditable="true"></div>
+          <div class="field rte-ed min-h-[64px]" contenteditable="true"></div>
           <input type="hidden" name="linkIntro" value="<%= settings.emails.linkIntro %>" />
         </div>
       </div>
@@ -996,7 +996,7 @@
             <button type="button" data-cmd="createLink" title="Wstaw link" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Link</button>
             <button type="button" data-cmd="removeFormat" title="Wyczyść formatowanie" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Wyczyść</button>
           </div>
-          <div class="rte-ed w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[64px] focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" contenteditable="true"></div>
+          <div class="field rte-ed min-h-[64px]" contenteditable="true"></div>
           <input type="hidden" name="panelIntro" value="<%= settings.emails.panelIntro %>" />
         </div>
       </div>
@@ -1007,12 +1007,12 @@
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: link onboardingowy</label>
           <input name="onboardSubject" data-phfield="onboardSubject" type="text" value="<%= settings.emails.onboardSubject %>" placeholder="domyślny"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="field" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Wstęp w mailu z linkiem onboardingowym</label>
           <textarea name="onboardIntro" data-phfield="onboardIntro" rows="2" placeholder="Wstęp wiadomości (domyślny)"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= settings.emails.onboardIntro %></textarea>
+                 class="field"><%= settings.emails.onboardIntro %></textarea>
         </div>
       </div>
 
@@ -1023,9 +1023,9 @@
         </label>
         <p class="text-xs text-slate-400 -mt-1">Gdy cron (lub „Generuj teraz") utworzy pozycję z retainera: kwota brutto, termin, dane do przelewu i link do portalu klienta. Wymaga e-maila w kartotece.</p>
         <input name="retainerSubject" data-phfield="retainerSubject" type="text" value="<%= settings.emails.retainerSubject %>" placeholder="Temat wiadomości (domyślny)"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+               class="field" />
         <textarea name="retainerIntro" data-phfield="retainerIntro" rows="2" placeholder="Wstęp wiadomości (domyślny)"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= settings.emails.retainerIntro %></textarea>
+               class="field"><%= settings.emails.retainerIntro %></textarea>
       </div>
 
       <div class="border-t border-slate-100 pt-4 space-y-3">
@@ -1034,7 +1034,7 @@
           Wyślij klientowi potwierdzenie po przesłaniu plików (gdy podał e-mail)
         </label>
         <input name="clientConfirmSubject" data-phfield="clientConfirmSubject" type="text" value="<%= settings.emails.clientConfirmSubject %>" placeholder="Temat potwierdzenia (domyślny)"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+               class="field" />
         <div class="rte">
           <div class="flex flex-wrap gap-1 mb-1">
             <button type="button" data-cmd="bold" title="Pogrubienie" class="text-xs font-bold rounded border border-slate-300 w-7 h-7 hover:bg-slate-50">B</button>
@@ -1043,7 +1043,7 @@
             <button type="button" data-cmd="createLink" title="Wstaw link" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Link</button>
             <button type="button" data-cmd="removeFormat" title="Wyczyść formatowanie" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Wyczyść</button>
           </div>
-          <div class="rte-ed w-full rounded-lg border border-slate-300 px-3 py-2 text-sm min-h-[64px] focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" contenteditable="true"></div>
+          <div class="field rte-ed min-h-[64px]" contenteditable="true"></div>
           <input type="hidden" name="clientConfirmBody" value="<%= settings.emails.clientConfirmBody %>" />
         </div>
       </div>
@@ -1055,9 +1055,9 @@
         </label>
         <p class="text-xs text-slate-400 -mt-1">Wymaga włączonego SMTP i terminu (dueDate) na pozycjach. Uruchamiane cronem (<code>npm run reminders</code>); jeden klient nie częściej niż co kilka dni.</p>
         <input name="reminderSubject" data-phfield="reminderSubject" type="text" value="<%= settings.emails.reminderSubject %>" placeholder="Temat przypomnienia (domyślny)"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+               class="field" />
         <textarea name="reminderIntro" data-phfield="reminderIntro" rows="2" placeholder="Wstęp wiadomości (domyślny)"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= settings.emails.reminderIntro %></textarea>
+               class="field"><%= settings.emails.reminderIntro %></textarea>
       </div>
 
       <div class="border-t border-slate-100 pt-4 space-y-1">
@@ -1181,7 +1181,7 @@
             </label>
             <% if (it.key === 'settings') { %><input type="hidden" name="menuShow_settings" value="on" /><% } %>
             <input type="text" name="menuLabel_<%= it.key %>" value="<%= it.label !== it.defaultLabel ? it.label : '' %>" maxlength="30" placeholder="<%= it.defaultLabel %>"
-                   class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                   class="field field-sm flex-1 min-w-0" />
           </div>
         <% }); %>
       </div>
@@ -1207,7 +1207,7 @@
       <h2 class="text-sm font-semibold text-slate-700">Własny CSS <span class="text-slate-400 font-normal">(zaawansowane)</span></h2>
       <p class="text-xs text-slate-400">Wstrzykiwany na wszystkich stronach (panel i strony klienta), na końcu — nadpisuje style. Użyj, gdy chcesz zmienić coś ponad dostępne opcje. Znaki <code>&lt;</code> są usuwane ze względów bezpieczeństwa.</p>
       <textarea name="customCss" rows="6" spellcheck="false" placeholder="np. .max-w-2xl { max-width: 60rem; }"
-                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= settings.customCss %></textarea>
+                class="field font-mono"><%= settings.customCss %></textarea>
     </div>
 
     <!-- Aplikacja (PWA) — instaluj panel jako okno na Macu / telefonie (zaawansowane) -->
@@ -1224,12 +1224,12 @@
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Nazwa aplikacji <span class="text-slate-400 font-normal">(puste = „<%= settings.appName %>")</span></label>
           <input name="pwaName" type="text" value="<%= settings.pwa.name %>" maxlength="60" placeholder="<%= settings.appName %>"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="field" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Krótka nazwa <span class="text-slate-400 font-normal">(pod ikoną)</span></label>
           <input name="pwaShortName" type="text" value="<%= settings.pwa.shortName %>" maxlength="30" placeholder="Evoke"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="field" />
         </div>
       </div>
 
@@ -1245,7 +1245,7 @@
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Tryb okna</label>
           <% const _disp = settings.pwa.display; %>
-          <select name="pwaDisplay" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+          <select name="pwaDisplay" class="field">
             <option value="standalone" <%= _disp === 'standalone' ? 'selected' : '' %>>Samodzielne okno</option>
             <option value="minimal-ui" <%= _disp === 'minimal-ui' ? 'selected' : '' %>>Okno z paskiem</option>
             <option value="fullscreen" <%= _disp === 'fullscreen' ? 'selected' : '' %>>Pełny ekran</option>
@@ -1258,12 +1258,12 @@
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Splash — czas <span class="text-slate-400 font-normal">(ms, 0 = wył.)</span></label>
           <input name="pwaSplashMs" type="number" min="0" max="5000" step="100" value="<%= settings.pwa.splashMs %>"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="field" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Zawartość splashu</label>
           <% const _sm = settings.pwa.splashMode || 'icon'; %>
-          <select name="pwaSplashMode" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+          <select name="pwaSplashMode" class="field">
             <option value="icon" <%= _sm === 'icon' ? 'selected' : '' %>>Ikona + nazwa</option>
             <option value="logo" <%= _sm === 'logo' ? 'selected' : '' %>>Logo aplikacji</option>
             <option value="name" <%= _sm === 'name' ? 'selected' : '' %>>Sama nazwa</option>
@@ -1272,7 +1272,7 @@
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Wielkość grafiki <span class="text-slate-400 font-normal">(px, bez limitu)</span></label>
           <input name="pwaSplashSize" type="number" min="48" step="4" value="<%= settings.pwa.splashSize %>"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="field" />
         </div>
       </div>
       <p class="text-[11px] text-slate-400 -mt-1">Po otwarciu <strong>zainstalowanej</strong> aplikacji pokazuje wybraną treść na „tle startowym" przez podany czas, potem znika. Raz na uruchomienie; w przeglądarce nie działa. „Wielkość grafiki" dotyczy ikony/logo. Tryb „Logo aplikacji" bierze <strong>logo na splash</strong> (pole niżej), a gdy go brak — logo z Brandingu.</p>
@@ -1318,7 +1318,7 @@
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Rozmiar grafiki w ikonie <span class="text-slate-400 font-normal">(30–100%)</span></label>
         <input name="pwaLogoScale" type="number" min="30" max="100" step="2" value="<%= settings.pwa.logoScale %>"
-               class="w-full sm:w-48 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+               class="field sm:w-48" />
         <p class="text-[11px] text-slate-400 mt-1">Ile miejsca w kafelku zajmuje grafika. Mniejsza wartość = więcej marginesu (bezpieczniejsze pod maskę na telefonie).</p>
       </div>
 
@@ -1336,7 +1336,7 @@
       </div>
     </div>
 
-    <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Zapisz ustawienia</button>
+    <button type="submit" class="btn btn-lg btn-primary">Zapisz ustawienia</button>
   </form>
 
   <!-- E-mail (SMTP z .env) — osobny formularz poza głównym -->
@@ -1355,8 +1355,8 @@
     <% } %>
     <form method="POST" action="/admin/settings/test-email" class="flex flex-col sm:flex-row gap-2">
       <input name="testTo" type="email" value="<%= adminEmail %>" placeholder="adres@twojadomena.pl"
-             class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-      <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition whitespace-nowrap">Wyślij test</button>
+             class="field flex-1" />
+      <button type="submit" class="btn btn-secondary">Wyślij test</button>
     </form>
   </div>
 
@@ -1373,7 +1373,7 @@
           <label class="cursor-pointer"><input type="radio" name="scope" value="db" class="peer sr-only" /><span class="block rounded-lg border border-slate-300 px-3 py-1.5 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition">Tylko baza</span></label>
         </div>
       </div>
-      <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition inline-flex items-center gap-1.5"><%- icon('download', { size: 15, cls: '' }) %> Pobierz kopię</button>
+      <button type="submit" class="btn btn-primary"><%- icon('download', { size: 15, cls: '' }) %> Pobierz kopię</button>
     </form>
 
     <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
@@ -1384,7 +1384,7 @@
       <form method="POST" action="/admin/settings/backup-auto">
         <% if (autoBackupDisabled) { %>
           <input type="hidden" name="enable" value="on" />
-          <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">Włącz</button>
+          <button type="submit" class="btn btn-secondary">Włącz</button>
         <% } else { %>
           <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-sm font-medium px-4 py-2 transition">Wyłącz</button>
         <% } %>
@@ -1422,11 +1422,11 @@
 
     <div class="flex flex-wrap items-center gap-2">
       <button type="button" @click="check" :disabled="checking || running"
-              class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition disabled:opacity-40 disabled:cursor-not-allowed">
+              class="btn btn-secondary">
         <span x-show="!checking">Sprawdź aktualizacje</span><span x-show="checking" x-cloak>Sprawdzanie…</span>
       </button>
       <button type="button" x-show="info && !info.upToDate && !done" x-cloak @click="start" :disabled="running"
-              class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition disabled:opacity-40 disabled:cursor-not-allowed">
+              class="btn btn-primary">
         <span x-show="!running">Aktualizuj <span x-show="info && info.remote">do v<span x-text="info ? info.remote : ''"></span></span></span>
         <span x-show="running" x-cloak>Aktualizuję…</span>
       </button>
@@ -1483,7 +1483,7 @@
       <form method="POST" action="/admin/update/notify">
         <% if (updateNotifyDisabled) { %>
           <input type="hidden" name="enable" value="on" />
-          <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">Włącz</button>
+          <button type="submit" class="btn btn-secondary">Włącz</button>
         <% } else { %>
           <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-sm font-medium px-4 py-2 transition">Wyłącz</button>
         <% } %>

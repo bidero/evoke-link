@@ -66,7 +66,7 @@
           <a href="/admin/calendar?view=week&date=<%= viewDate %>" class="px-3 py-1.5 border-l border-slate-300 <%= view === 'week' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50' %>">Tydzień</a>
           <a href="/admin/calendar?view=day&date=<%= viewDate %>" class="px-3 py-1.5 border-l border-slate-300 <%= view === 'day' ? 'bg-brand-600 text-white' : 'text-slate-600 hover:bg-slate-50' %>">Dzień</a>
         </div>
-        <button type="button" @click="openNew('<%= viewDate %>')" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-3 py-1.5 transition inline-flex items-center gap-1.5"><%- icon('plus', { size: 15, cls: '' }) %> <span class="hidden sm:inline">Przypomnienie</span></button>
+        <button type="button" @click="openNew('<%= viewDate %>')" class="btn btn-sm btn-primary"><%- icon('plus', { size: 15, cls: '' }) %> <span class="hidden sm:inline">Przypomnienie</span></button>
       </div>
     </div>
 
@@ -259,17 +259,17 @@
     <form method="POST" :action="form.id ? '/admin/calendar/reminders/' + form.id : '/admin/calendar/reminders'" class="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
       <input type="hidden" name="month" value="<%= curMonth %>" /><input type="hidden" name="view" value="<%= view %>" /><input type="hidden" name="date" value="<%= viewDate %>" />
       <div class="text-base font-semibold text-slate-800 mb-4" x-text="form.id ? 'Edytuj przypomnienie' : 'Nowe przypomnienie'"></div>
-      <input name="title" x-model="form.title" required maxlength="200" placeholder="Co zrobić?" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      <input name="title" x-model="form.title" required maxlength="200" placeholder="Co zrobić?" class="field" />
 
       <%# Początek + koniec (koniec puste = 1 godz.). %>
       <div class="grid grid-cols-2 gap-3 mt-3">
         <label class="block">
           <span class="block text-[11px] font-medium text-slate-500 mb-1">Początek</span>
-          <input name="dueAt" type="datetime-local" x-model="form.dueAt" required class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <input name="dueAt" type="datetime-local" x-model="form.dueAt" required class="field field-sm" />
         </label>
         <label class="block">
           <span class="block text-[11px] font-medium text-slate-500 mb-1">Koniec <span class="text-slate-400 font-normal">· puste = 1 godz.</span></span>
-          <input name="endAt" type="datetime-local" x-model="form.endAt" :min="form.dueAt" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <input name="endAt" type="datetime-local" x-model="form.endAt" :min="form.dueAt" class="field field-sm" />
         </label>
       </div>
 
@@ -277,7 +277,7 @@
       <div class="grid grid-cols-2 gap-3 mt-3">
         <label class="block">
           <span class="block text-[11px] font-medium text-slate-500 mb-1">Priorytet</span>
-          <select name="priority" x-model="form.priority" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+          <select name="priority" x-model="form.priority" class="field field-sm">
             <option value="low">Niski</option><option value="normal">Normalny</option><option value="high">Wysoki</option>
           </select>
         </label>
@@ -297,13 +297,13 @@
       <div x-show="!form.id" class="mt-3">
         <span class="block text-[11px] font-medium text-slate-500 mb-1">Powtarzaj</span>
         <div class="flex items-center gap-2 flex-wrap">
-          <select name="repeat" x-model="form.repeat" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+          <select name="repeat" x-model="form.repeat" class="field field-sm">
             <option value="none">Nie</option><option value="daily">Codziennie</option><option value="weekly">Co tydzień</option><option value="monthly">Co miesiąc</option>
           </select>
           <template x-if="form.repeat !== 'none'">
             <div class="flex items-center gap-1.5">
               <span class="text-xs text-slate-500">do</span>
-              <input name="repeatUntil" type="date" x-model="form.repeatUntil" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+              <input name="repeatUntil" type="date" x-model="form.repeatUntil" class="field field-sm" />
               <span class="text-[11px] text-slate-400">puste = 6 mies.</span>
             </div>
           </template>
@@ -315,22 +315,22 @@
       <div class="grid grid-cols-2 gap-3 mt-3">
         <label class="block">
           <span class="block text-[11px] font-medium text-slate-500 mb-1">Klient</span>
-          <select name="clientId" x-model="form.clientId" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+          <select name="clientId" x-model="form.clientId" class="field field-sm">
             <option value="">—</option>
             <% clients.forEach(function(c){ %><option value="<%= c.id %>"><%= c.name %></option><% }); %>
           </select>
         </label>
         <label class="block">
           <span class="block text-[11px] font-medium text-slate-500 mb-1">Projekt</span>
-          <select name="projectId" x-model="form.projectId" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+          <select name="projectId" x-model="form.projectId" class="field field-sm">
             <option value="">—</option>
             <% projects.forEach(function(p){ %><option value="<%= p.id %>"><%= p.name %></option><% }); %>
           </select>
         </label>
       </div>
-      <textarea name="note" x-model="form.note" rows="2" placeholder="Notatka (opcjonalnie)" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm mt-3 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+      <textarea name="note" x-model="form.note" rows="2" placeholder="Notatka (opcjonalnie)" class="field mt-3"></textarea>
       <div class="flex items-center gap-2 mt-3">
-        <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">Zapisz</button>
+        <button type="submit" class="btn btn-primary">Zapisz</button>
         <button type="button" @click="formOpen=false" class="text-sm text-slate-500 hover:text-slate-700 px-2">Anuluj</button>
         <button type="button" x-show="form.id && form.seriesId" x-cloak @click="if(confirm('Usunąć CAŁĄ serię powtórzeń?')) action('/admin/calendar/reminders/' + form.id + '/delete', { series: 1 })" class="ml-auto text-sm text-red-600 hover:underline">Usuń serię</button>
       </div>

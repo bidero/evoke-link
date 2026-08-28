@@ -97,9 +97,9 @@
       </div>
     </div>
     <div class="flex flex-wrap items-center gap-2 shrink-0">
-      <a href="/admin/projects/new?client=<%= client.id %>" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">+ Nowy projekt</a>
+      <a href="/admin/projects/new?client=<%= client.id %>" class="btn btn-primary">+ Nowy projekt</a>
       <a href="/admin/messages?client=<%= client.id %>" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-sm font-medium px-4 py-2 transition"><%- icon('mail', { size: 15, cls: '' }) %> Napisz</a>
-      <a href="/admin/clients/<%= client.id %>/edit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">Edytuj</a>
+      <a href="/admin/clients/<%= client.id %>/edit" class="btn btn-secondary">Edytuj</a>
     </div>
   </div>
   <div class="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -361,19 +361,19 @@
           <div class="px-5 py-4 text-center text-xs text-slate-400">Brak cyklicznych pozycji. Dodaj abonament poniżej — co miesiąc sam utworzy pozycję rozliczeniową z terminem płatności.</div>
         <% } %>
         <form method="POST" action="/admin/clients/<%= client.id %>/retainers" class="flex flex-col sm:flex-row sm:items-center gap-2 px-5 py-3 border-t border-slate-100 bg-slate-50">
-          <input name="label" type="text" required placeholder="Nazwa (np. Abonament — obsługa www)" class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-          <input name="amount" type="text" inputmode="decimal" required placeholder="Netto zł/mc" title="Kwota netto miesięcznie (zł)" class="shrink-0 w-24 rounded-lg border border-slate-300 px-2 py-2 text-sm text-right focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-          <select name="vatRate" title="Stawka VAT" class="shrink-0 w-[4.5rem] rounded-lg border border-slate-300 px-1.5 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+          <input name="label" type="text" required placeholder="Nazwa (np. Abonament — obsługa www)" class="field flex-1 min-w-0" />
+          <input name="amount" type="text" inputmode="decimal" required placeholder="Netto zł/mc" title="Kwota netto miesięcznie (zł)" class="field field-sm shrink-0 w-24 text-right" />
+          <select name="vatRate" title="Stawka VAT" class="field shrink-0 w-[4.5rem]">
             <option value="">bez</option>
             <% [23,8,5,0].forEach(function(rr){ %><option value="<%= rr %>"><%= rr %>%</option><% }); %>
           </select>
           <label class="shrink-0 flex items-center gap-1.5 text-xs text-slate-500" title="Którego dnia miesiąca tworzyć pozycję (1–28)">dzień
-            <input name="dayOfMonth" type="number" min="1" max="28" value="1" class="w-14 rounded-lg border border-slate-300 px-2 py-2 text-sm text-right focus:border-brand-500 outline-none" />
+            <input name="dayOfMonth" type="number" min="1" max="28" value="1" class="field field-sm w-14 text-right" />
           </label>
           <label class="shrink-0 flex items-center gap-1.5 text-xs text-slate-500" title="Termin płatności: ile dni od wygenerowania">termin +
-            <input name="dueDays" type="number" min="0" max="60" value="7" class="w-14 rounded-lg border border-slate-300 px-2 py-2 text-sm text-right focus:border-brand-500 outline-none" />
+            <input name="dueDays" type="number" min="0" max="60" value="7" class="field field-sm w-14 text-right" />
           </label>
-          <button type="submit" class="shrink-0 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">Dodaj</button>
+          <button type="submit" class="btn btn-primary shrink-0">Dodaj</button>
         </form>
       </div>
 
@@ -425,21 +425,21 @@
               <% } %>
               <form method="POST" action="/admin/clients/<%= client.id %>/charges/<%= ch.id %>"<%- ch.paidAt ? ' x-show="!hideSettled"' : '' %> class="flex flex-col sm:flex-row sm:items-center gap-2 px-5 py-2.5">
                 <button type="submit" formaction="/admin/clients/<%= client.id %>/charges/<%= ch.id %>/toggle" title="<%= ch.paidAt ? 'Oznacz jako nierozliczone' : 'Oznacz jako rozliczone' %>" class="shrink-0 w-5 h-5 rounded border flex items-center justify-center transition <%= ch.paidAt ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 text-transparent hover:border-brand-400' %>"><%- icon('check', { size: 13, cls: '' }) %></button>
-                <select name="projectId" title="Przypisanie do projektu" class="shrink-0 sm:w-40 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none">
+                <select name="projectId" title="Przypisanie do projektu" class="field field-sm shrink-0 sm:w-40">
                   <option value="">— bez projektu —</option>
                   <% client.projects.forEach(function(p){ %>
                     <option value="<%= p.id %>" <%= ch.projectId === p.id ? 'selected' : '' %>><%= p.name %></option>
                   <% }); %>
                 </select>
-                <input name="label" type="text" value="<%= ch.label || '' %>" placeholder="Nazwa pozycji" class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm focus:border-brand-500 outline-none <%= ch.paidAt ? 'text-slate-400' : '' %>" />
-                <input name="date" type="date" value="<%= ch.date ? new Date(ch.date).toISOString().slice(0,10) : '' %>" title="Data pozycji" class="shrink-0 rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none" />
+                <input name="label" type="text" value="<%= ch.label || '' %>" placeholder="Nazwa pozycji" class="field field-sm flex-1 min-w-0 <%= ch.paidAt ? 'text-slate-400' : '' %>" />
+                <input name="date" type="date" value="<%= ch.date ? new Date(ch.date).toISOString().slice(0,10) : '' %>" title="Data pozycji" class="field field-sm shrink-0" />
                 <% const _od = ch.dueDate && !ch.paidAt && new Date(ch.dueDate) < new Date(); %>
-                <input name="dueDate" type="date" value="<%= ch.dueDate ? new Date(ch.dueDate).toISOString().slice(0,10) : '' %>" title="Termin płatności<%= _od ? ' — po terminie!' : '' %>" class="shrink-0 rounded-lg border px-2 py-1.5 text-sm outline-none <%= _od ? 'border-red-400 text-red-600' : 'border-slate-300 focus:border-brand-500' %>" />
+                <input name="dueDate" type="date" value="<%= ch.dueDate ? new Date(ch.dueDate).toISOString().slice(0,10) : '' %>" title="Termin płatności<%= _od ? ' — po terminie!' : '' %>" class="field field-sm shrink-0 w-auto <%= _od ? 'border-red-400 text-red-600' : '' %>" />
                 <% if (ch.paidAt) { %>
                   <input name="paidAt" type="date" value="<%= new Date(ch.paidAt).toISOString().slice(0,10) %>" onchange="this.form.submit()" title="Data rozliczenia" class="shrink-0 rounded-lg border border-green-300 text-green-700 bg-green-50 px-2 py-1.5 text-sm focus:border-green-500 outline-none" />
                 <% } %>
-                <input name="amount" type="text" inputmode="decimal" value="<%= (ch.amount/100).toFixed(2) %>" title="Kwota netto (zł)" class="shrink-0 w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-right tabular-nums focus:border-brand-500 outline-none" />
-                <select name="vatRate" title="Stawka VAT" class="shrink-0 w-[4.5rem] rounded-lg border border-slate-300 px-1.5 py-1.5 text-sm focus:border-brand-500 outline-none">
+                <input name="amount" type="text" inputmode="decimal" value="<%= (ch.amount/100).toFixed(2) %>" title="Kwota netto (zł)" class="field field-sm shrink-0 w-20 text-right tabular-nums" />
+                <select name="vatRate" title="Stawka VAT" class="field field-sm shrink-0 w-[4.5rem]">
                   <option value="" <%= ch.vatRate == null ? 'selected' : '' %>>bez</option>
                   <% [23,8,5,0].forEach(function(r){ %><option value="<%= r %>" <%= ch.vatRate === r ? 'selected' : '' %>><%= r %>%</option><% }); %>
                 </select>
@@ -462,21 +462,21 @@
 
         <form method="POST" action="/admin/clients/<%= client.id %>/charges" class="flex flex-col sm:flex-row sm:items-center gap-2 px-5 py-3 border-t border-slate-100 bg-slate-50">
           <span class="hidden sm:block shrink-0 w-5"></span>
-          <select name="projectId" title="Przypisanie do projektu" class="shrink-0 sm:w-44 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-brand-500 outline-none">
+          <select name="projectId" title="Przypisanie do projektu" class="field field-sm shrink-0 sm:w-44">
             <option value="">— bez projektu —</option>
             <% client.projects.forEach(function(p){ %>
               <option value="<%= p.id %>"><%= p.name %></option>
             <% }); %>
           </select>
-          <input name="label" type="text" placeholder="Nazwa (np. Sesja, Zaliczka)" class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-          <input name="date" type="date" value="<%= new Date().toISOString().slice(0,10) %>" title="Data pozycji" class="shrink-0 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-brand-500 outline-none" />
-          <input name="dueDate" type="date" title="Termin płatności (opcjonalnie)" class="shrink-0 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-brand-500 outline-none" />
-          <input name="amount" type="text" inputmode="decimal" required placeholder="Netto zł" title="Kwota netto (zł)" class="shrink-0 w-20 rounded-lg border border-slate-300 px-2 py-2 text-sm text-right focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-          <select name="vatRate" title="Stawka VAT" class="shrink-0 w-[4.5rem] rounded-lg border border-slate-300 px-1.5 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+          <input name="label" type="text" placeholder="Nazwa (np. Sesja, Zaliczka)" class="field flex-1 min-w-0" />
+          <input name="date" type="date" value="<%= new Date().toISOString().slice(0,10) %>" title="Data pozycji" class="field field-sm shrink-0" />
+          <input name="dueDate" type="date" title="Termin płatności (opcjonalnie)" class="field field-sm shrink-0" />
+          <input name="amount" type="text" inputmode="decimal" required placeholder="Netto zł" title="Kwota netto (zł)" class="field field-sm shrink-0 w-20 text-right" />
+          <select name="vatRate" title="Stawka VAT" class="field shrink-0 w-[4.5rem]">
             <option value="">bez</option>
             <% [23,8,5,0].forEach(function(r){ %><option value="<%= r %>"><%= r %>%</option><% }); %>
           </select>
-          <button type="submit" class="shrink-0 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">Dodaj</button>
+          <button type="submit" class="btn btn-primary shrink-0">Dodaj</button>
         </form>
       </div>
 
@@ -486,10 +486,10 @@
         <h2 class="text-sm font-medium text-slate-700 mb-3">Wydruk i wysyłka (PDF)</h2>
         <form method="GET" action="/admin/clients/<%= client.id %>/rozliczenie.pdf" target="_blank" class="space-y-3">
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <label class="block text-xs text-slate-500">Od<input type="date" name="from" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none" /></label>
-            <label class="block text-xs text-slate-500">Do<input type="date" name="to" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none" /></label>
+            <label class="block text-xs text-slate-500">Od<input type="date" name="from" class="field field-sm mt-1" /></label>
+            <label class="block text-xs text-slate-500">Do<input type="date" name="to" class="field field-sm mt-1" /></label>
             <label class="block text-xs text-slate-500">Status
-              <select name="status" class="mt-1 w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 outline-none">
+              <select name="status" class="field field-sm mt-1">
                 <option value="">Wszystkie</option>
                 <option value="unpaid">Nierozliczone</option>
                 <option value="paid">Rozliczone</option>
@@ -512,10 +512,10 @@
             <% }); %>
           </div>
           <div class="flex flex-col sm:flex-row gap-2">
-            <button type="submit" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition"><%- icon('file', { size: 15 }) %> Pobierz PDF</button>
-            <button type="submit" formaction="/admin/clients/<%= client.id %>/pozycje.csv" title="Eksport pozycji do CSV (księgowość)" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition"><%- icon('sheet', { size: 15 }) %> Pobierz CSV</button>
+            <button type="submit" class="btn btn-secondary flex-1"><%- icon('file', { size: 15 }) %> Pobierz PDF</button>
+            <button type="submit" formaction="/admin/clients/<%= client.id %>/pozycje.csv" title="Eksport pozycji do CSV (księgowość)" class="btn btn-secondary flex-1"><%- icon('sheet', { size: 15 }) %> Pobierz CSV</button>
             <% if (client.email) { %>
-              <button type="submit" formaction="/admin/clients/<%= client.id %>/rozliczenie/send" formmethod="post" formtarget="_self" title="Wyślij PDF na <%= client.email %>" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition"><%- icon('mail', { size: 15, cls: '' }) %> Wyślij e-mailem</button>
+              <button type="submit" formaction="/admin/clients/<%= client.id %>/rozliczenie/send" formmethod="post" formtarget="_self" title="Wyślij PDF na <%= client.email %>" class="btn btn-primary flex-1"><%- icon('mail', { size: 15, cls: '' }) %> Wyślij e-mailem</button>
             <% } %>
           </div>
         </form>
@@ -586,11 +586,11 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">Tytuł *</label>
-            <input name="title" x-model="form.title" type="text" required placeholder="np. Projekt strony www" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+            <input name="title" x-model="form.title" type="text" required placeholder="np. Projekt strony www" class="field" />
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">Projekt (opcjonalnie)</label>
-            <select name="projectId" x-model="form.projectId" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 outline-none">
+            <select name="projectId" x-model="form.projectId" class="field">
               <option value="">— bez projektu —</option>
               <% client.projects.forEach(function(p){ %><option value="<%= p.id %>"><%= p.name %></option><% }); %>
             </select>
@@ -598,19 +598,19 @@
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Wstęp / opis (opcjonalnie)</label>
-          <textarea name="intro" x-model="form.intro" rows="2" placeholder="Kilka zdań wprowadzenia dla klienta" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+          <textarea name="intro" x-model="form.intro" rows="2" placeholder="Kilka zdań wprowadzenia dla klienta" class="field"></textarea>
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Pozycje — jedna na linię</label>
           <textarea name="itemsText" x-model="form.itemsText" rows="4" spellcheck="false" required placeholder="Projekt graficzny | 3000 | 23&#10;Wdrożenie | 2500 | 23&#10;Sesja zdjęciowa | 800 | 23 | 2"
-                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+                    class="field font-mono"></textarea>
           <p class="text-xs text-slate-400 mt-1">Format: <code>Etykieta | netto | VAT% | ilość</code> (VAT i ilość opcjonalne; netto w zł).</p>
         </div>
         <div class="max-w-xs">
           <label class="block text-xs font-medium text-slate-600 mb-1">Ważna do (opcjonalnie)</label>
-          <input name="validUntil" x-model="form.validUntil" type="date" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 outline-none" />
+          <input name="validUntil" x-model="form.validUntil" type="date" class="field" />
         </div>
-        <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 transition" x-text="editId ? 'Zapisz i wznów ofertę' : 'Utwórz ofertę'"></button>
+        <button type="submit" class="btn btn-lg btn-primary" x-text="editId ? 'Zapisz i wznów ofertę' : 'Utwórz ofertę'"></button>
       </form>
     </div>
 
@@ -651,11 +651,11 @@
             <%- icon('cloudUpload', { size: 15, cls: '' }) %> <span x-text="fileName || 'Wybierz plik'"></span>
             <input type="file" name="document" required class="hidden" @change="fileName = $event.target.files.length ? $event.target.files[0].name : ''" />
           </label>
-          <input name="label" type="text" placeholder="Opis (opcjonalnie, np. Umowa 2026)" class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <input name="label" type="text" placeholder="Opis (opcjonalnie, np. Umowa 2026)" class="field flex-1 min-w-0" />
           <label class="shrink-0 inline-flex items-center gap-1.5 text-xs text-slate-500" title="Pokaż ten dokument klientowi w portalu">
             <input type="checkbox" name="visibleToClient" class="rounded border-slate-300" /> widoczny dla klienta
           </label>
-          <button type="submit" class="shrink-0 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">Wgraj</button>
+          <button type="submit" class="btn btn-primary shrink-0">Wgraj</button>
         </form>
       </div>
     </div>
@@ -694,21 +694,21 @@
         </div>
         <form method="POST" action="/admin/clients/<%= client.id %>/note" class="px-5 py-3 border-b border-slate-100">
           <div class="flex flex-col sm:flex-row gap-2">
-            <select name="kind" title="Rodzaj interakcji" class="shrink-0 sm:w-36 rounded-lg border border-slate-300 px-2 py-2 text-sm focus:border-brand-500 outline-none">
+            <select name="kind" title="Rodzaj interakcji" class="field field-sm shrink-0 sm:w-36">
               <option value="note">Notatka</option>
               <option value="call">Telefon</option>
               <option value="meeting">Spotkanie</option>
               <option value="email">E-mail</option>
             </select>
-            <textarea name="note" rows="2" required placeholder="Co ustaliliście?…" class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+            <textarea name="note" rows="2" required placeholder="Co ustaliliście?…" class="field flex-1"></textarea>
           </div>
           <div class="mt-2 flex flex-wrap items-center justify-between gap-3">
             <label class="inline-flex items-center gap-1.5 text-xs text-slate-500" title="Utworzy przypomnienie „Follow-up" w kalendarzu (puste = bez przypomnienia)">
               follow-up za
-              <input name="followupDays" type="number" min="1" max="365" placeholder="—" class="w-16 rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-right focus:border-brand-500 outline-none" />
+              <input name="followupDays" type="number" min="1" max="365" placeholder="—" class="field field-sm w-16 text-right" />
               dni
             </label>
-            <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium px-3 py-1.5 transition"><%- icon('pencil', { size: 13, cls: '' }) %> Dodaj</button>
+            <button type="submit" class="btn btn-sm btn-primary text-xs"><%- icon('pencil', { size: 13, cls: '' }) %> Dodaj</button>
           </div>
         </form>
         <% if (!events.length) { %>

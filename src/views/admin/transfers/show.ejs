@@ -22,7 +22,7 @@
              class="flex-1 min-w-0 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700" />
       <div class="flex gap-2">
         <button @click="navigator.clipboard.writeText($refs.url.value); copied = true; setTimeout(()=>copied=false, 1500)"
-                class="flex-1 sm:flex-none rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">
+                class="btn btn-primary flex-1 sm:flex-none">
           <span x-show="!copied">Kopiuj</span>
           <span x-show="copied">Skopiowano ✓</span>
         </button>
@@ -45,11 +45,11 @@
       <div class="flex flex-col sm:flex-row gap-2">
         <input name="email" type="email" required placeholder="adres@klienta.pl"
                value="<%= (transfer.project && transfer.project.client && transfer.project.client.email) || '' %>"
-               class="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-        <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">Wyślij link</button>
+               class="field flex-1" />
+        <button type="submit" class="btn btn-primary">Wyślij link</button>
       </div>
       <textarea name="message" rows="2" placeholder="Wiadomość do klienta (opcjonalnie)"
-                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+                class="field"></textarea>
       <% if (!mailReady) { %>
         <p class="text-xs text-amber-600">SMTP nie jest skonfigurowany w .env — wiadomość trafi do logów serwera zamiast do klienta.</p>
       <% } %>
@@ -71,10 +71,10 @@
 
   <form method="POST" action="/admin/transfers/<%= transfer.id %>/extend" class="mt-3 flex items-center gap-2 flex-wrap">
     <span class="text-sm text-slate-500">Przedłuż ważność o</span>
-    <select name="days" class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+    <select name="days" class="field field-sm">
       <option value="7">7 dni</option><option value="14" selected>14 dni</option><option value="30">30 dni</option><option value="90">90 dni</option>
     </select>
-    <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-3 py-1.5 transition">Przedłuż<%= transfer.status === 'expired' ? ' i reaktywuj' : '' %></button>
+    <button type="submit" class="btn btn-sm btn-secondary">Przedłuż<%= transfer.status === 'expired' ? ' i reaktywuj' : '' %></button>
   </form>
 
   <% if (transfer.proofing && !incoming) { %>
@@ -100,7 +100,7 @@
   <% } %>
 
   <div class="mt-3">
-    <a href="/admin/transfers/<%= transfer.id %>/edit" class="inline-block rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">
+    <a href="/admin/transfers/<%= transfer.id %>/edit" class="btn btn-secondary inline-block">
       Edytuj ustawienia
     </a>
   </div>

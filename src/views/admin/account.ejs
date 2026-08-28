@@ -40,17 +40,17 @@
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Imię i nazwisko / nazwa</label>
           <input name="name" type="text" value="<%= pName %>" maxlength="120" placeholder="np. Radek Biedermann"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="field" />
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Rola / stanowisko</label>
           <input name="role" type="text" value="<%= (profile && profile.role) ? profile.role : '' %>" maxlength="120" placeholder="np. Właściciel"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="field" />
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Telefon</label>
           <input name="phone" type="text" value="<%= (profile && profile.phone) ? profile.phone : '' %>" maxlength="60" placeholder="np. 600 100 200"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="field" />
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">E-mail logowania</label>
@@ -71,7 +71,7 @@
           <% } %>
         </div>
       </div>
-      <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Zapisz profil</button>
+      <button type="submit" class="btn btn-lg btn-primary">Zapisz profil</button>
     </form>
   </div>
 
@@ -86,21 +86,21 @@
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1" for="currentPassword">Obecne hasło</label>
         <input id="currentPassword" name="currentPassword" type="password" required autocomplete="current-password"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+               class="field" />
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1" for="newPassword">Nowe hasło <span class="text-slate-400 font-normal">(min. 8)</span></label>
           <input id="newPassword" name="newPassword" type="password" required minlength="8" autocomplete="new-password"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="field" />
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1" for="confirmPassword">Powtórz nowe hasło</label>
           <input id="confirmPassword" name="confirmPassword" type="password" required minlength="8" autocomplete="new-password"
-                 class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                 class="field" />
         </div>
       </div>
-      <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Zmień hasło</button>
+      <button type="submit" class="btn btn-lg btn-primary">Zmień hasło</button>
     </form>
 
     <%# ── Passkeys (WebAuthn) ────────────────────────────────────────────── %>
@@ -122,7 +122,7 @@
           <button type="button" x-show="window.evokePasskey && window.evokePasskey.supported()" x-cloak
                   :disabled="busy"
                   @click="err=''; busy=true; window.evokePasskey.register(label).then(()=>location.reload()).catch(e=>{ err = e.message || 'Nie udało się dodać klucza.'; busy=false; })"
-                  class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition disabled:opacity-60">
+                  class="btn btn-primary">
             <span x-show="!busy">Dodaj passkey</span><span x-show="busy" x-cloak>Czekam na urządzenie…</span>
           </button>
         <% } %>
@@ -188,7 +188,7 @@
             <button type="button" x-show="on" x-cloak :disabled="busy" @click="sendTest()"
                     class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-3 py-2 transition disabled:opacity-60">Wyślij testowe</button>
             <button type="button" :disabled="busy || blocked" @click="toggle()"
-                    :class="on ? 'border border-slate-300 text-slate-700 hover:bg-slate-50' : 'bg-brand-600 hover:bg-brand-700 text-white'"
+                    :class="on ? 'btn-secondary' : 'btn-primary'"
                     class="rounded-lg text-sm font-medium px-4 py-2 transition disabled:opacity-60">
               <span x-show="!busy" x-text="on ? 'Wyłącz' : 'Włącz powiadomienia'"></span>
               <span x-show="busy" x-cloak>Chwileczkę…</span>
@@ -222,7 +222,7 @@
         </div>
         <% if (canUse2fa && !twoFaOn && !setupSecret) { %>
           <form method="POST" action="/admin/account/2fa/start">
-            <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">Włącz 2FA</button>
+            <button type="submit" class="btn btn-primary">Włącz 2FA</button>
           </form>
         <% } %>
         <% if (twoFaOn) { %>
@@ -244,9 +244,9 @@
                 <label class="block">
                   <span class="block text-[11px] font-medium text-slate-500 mb-1">Kod z aplikacji</span>
                   <input name="token" required autofocus inputmode="numeric" autocomplete="one-time-code" placeholder="123456"
-                         class="w-36 rounded-lg border border-slate-300 px-3 py-2 text-sm tracking-widest focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+                         class="field w-36 tracking-widest" />
                 </label>
-                <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">Potwierdź i włącz</button>
+                <button type="submit" class="btn btn-primary">Potwierdź i włącz</button>
               </form>
             </div>
           </div>
@@ -272,7 +272,7 @@
           <form method="POST" action="/admin/account/2fa/disable" class="flex items-end gap-2" onsubmit="return confirm('Wyłączyć uwierzytelnianie dwuetapowe?');">
             <label class="block">
               <span class="block text-[11px] font-medium text-slate-500 mb-1">Hasło (potwierdzenie)</span>
-              <input name="password" type="password" required autocomplete="current-password" class="w-44 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+              <input name="password" type="password" required autocomplete="current-password" class="field w-44" />
             </label>
             <button type="submit" class="rounded-lg border border-red-200 text-red-600 hover:bg-red-50 text-sm px-4 py-2 transition">Wyłącz 2FA</button>
           </form>

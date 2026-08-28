@@ -5,15 +5,15 @@
   <p class="text-sm text-slate-500">Nowe pliki od klientów, pobrania, wypełnione onboardingi i błędy.</p>
   <% const anyUnread = notifications.some(function(n){ return !n.isRead; }); %>
   <% if (notifications.length) { %>
-    <div class="flex items-center gap-2 sm:shrink-0">
+    <div class="actions sm:shrink-0">
       <% if (anyUnread) { %>
-        <form method="POST" action="/admin/notifications/read-all" class="flex-1 sm:flex-none">
+        <form method="POST" action="/admin/notifications/read-all">
           <%# Pełna etykieta jest za długa na telefon — skracamy ją tam do jednego słowa. %>
-          <button type="submit" class="w-full inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition"><span class="sm:hidden">Przeczytane</span><span class="hidden sm:inline">Oznacz wszystkie jako przeczytane</span></button>
+          <button type="submit" class="btn btn-secondary w-full"><span class="sm:hidden">Przeczytane</span><span class="hidden sm:inline">Oznacz wszystkie jako przeczytane</span></button>
         </form>
       <% } %>
-      <form method="POST" action="/admin/notifications/clear" class="flex-1 sm:flex-none" onsubmit="return confirm('Wyczyścić wszystkie powiadomienia? Historia projektów pozostanie nienaruszona.')">
-        <button type="submit" class="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-sm font-medium px-4 py-2 transition"><%- icon('trash', { size: 15 }) %> Wyczyść</button>
+      <form method="POST" action="/admin/notifications/clear" onsubmit="return confirm('Wyczyścić wszystkie powiadomienia? Historia projektów pozostanie nienaruszona.')">
+        <button type="submit" class="btn btn-danger w-full"><%- icon('trash', { size: 15 }) %> Wyczyść</button>
       </form>
     </div>
   <% } %>
@@ -39,7 +39,7 @@
             <% if (!n.isRead) { %><span class="mt-1 w-2 h-2 rounded-full bg-brand-600 shrink-0"></span><% } %>
           </a>
           <form method="POST" action="/admin/notifications/<%= n.id %>/dismiss" class="flex items-center pr-3 shrink-0">
-            <button type="submit" title="Usuń powiadomienie" aria-label="Usuń powiadomienie" class="p-3 sm:p-2 rounded-lg text-slate-300 hover:text-red-600 hover:bg-red-50 transition"><%- icon('trash', { size: 16 }) %></button>
+            <button type="submit" title="Usuń powiadomienie" aria-label="Usuń powiadomienie" class="btn-icon hover:text-red-600 hover:bg-red-50"><%- icon('trash', { size: 16 }) %></button>
           </form>
         </li>
       <% }); %>

@@ -44,7 +44,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div class="sm:col-span-2">
         <label class="block text-sm font-medium text-slate-700 mb-1">Projekt (opcjonalnie)</label>
-        <select name="projectId" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+        <select name="projectId" class="field">
           <option value="">— bez projektu —</option>
           <% projects.forEach(function(p){ %>
             <option value="<%= p.id %>" <%= selectedProjectId === p.id ? 'selected' : '' %>><%= p.name %><%= p.clientName ? ' (' + p.clientName + ')' : '' %></option>
@@ -53,26 +53,26 @@
       </div>
       <div class="sm:col-span-2">
         <label class="block text-sm font-medium text-slate-700 mb-1">Tytuł (opcjonalnie)</label>
-        <input name="title" type="text" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <input name="title" type="text" class="field" />
       </div>
       <div class="sm:col-span-2">
         <label class="block text-sm font-medium text-slate-700 mb-1">Wiadomość (opcjonalnie)</label>
-        <textarea name="message" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+        <textarea name="message" rows="2" class="field"></textarea>
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Hasło (opcjonalnie)</label>
         <div class="flex gap-2">
-          <input x-ref="pwd" name="password" type="text" autocomplete="off" placeholder="bez hasła" class="flex-1 min-w-0 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+          <input x-ref="pwd" name="password" type="text" autocomplete="off" placeholder="bez hasła" class="field flex-1 min-w-0" />
           <button type="button" @click="$refs.pwd.value = genPwd()" title="Wygeneruj mocne hasło" class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm px-3 transition whitespace-nowrap">Generuj</button>
         </div>
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Limit pobrań (opcjonalnie)</label>
-        <input name="maxDownloads" type="number" min="1" placeholder="bez limitu" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <input name="maxDownloads" type="number" min="1" placeholder="bez limitu" class="field" />
       </div>
       <div class="sm:col-span-2">
         <label class="block text-sm font-medium text-slate-700 mb-1">Data wygaśnięcia (opcjonalnie)</label>
-        <input x-ref="exp" name="expiresAt" type="datetime-local" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <input x-ref="exp" name="expiresAt" type="datetime-local" class="field" />
         <div class="flex flex-wrap gap-2 mt-2">
           <% [['1','1 dzień'],['7','7 dni'],['30','30 dni']].forEach(function(o){ %>
             <button type="button" @click="$refs.exp.value = expIn(<%= o[0] %>)" class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-xs px-2.5 py-1 transition"><%= o[1] %></button>
@@ -107,7 +107,7 @@
 
     <div class="flex items-center gap-3">
       <button type="submit" :disabled="uploading || !files.length"
-              class="rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium px-5 py-2.5 text-sm transition">
+              class="btn btn-lg btn-primary">
         <span x-show="!uploading">Utwórz transfer</span>
         <span x-show="uploading" x-text="finalizing ? 'Finalizowanie…' : ('Wysyłanie… ' + progress + '%')"></span>
       </button>

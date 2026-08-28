@@ -60,24 +60,24 @@
     <h2 class="text-sm font-medium text-slate-700">Nowy szablon</h2>
     <div>
       <label class="block text-xs font-medium text-slate-600 mb-1">Nazwa *</label>
-      <input name="name" type="text" required placeholder="np. Strona www" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      <input name="name" type="text" required placeholder="np. Strona www" class="field" />
     </div>
     <div>
       <label class="block text-xs font-medium text-slate-600 mb-1">Opis (opcjonalnie)</label>
-      <input name="description" type="text" placeholder="np. standardowy projekt strony z CMS" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      <input name="description" type="text" placeholder="np. standardowy projekt strony z CMS" class="field" />
     </div>
     <div>
       <label class="block text-xs font-medium text-slate-600 mb-1">Lista braków — jedna pozycja na linię</label>
       <textarea name="fileRequestsText" rows="5" spellcheck="false" placeholder="Logo w wektorze | AI lub SVG&#10;Teksty na stronę&#10;Zdjęcia produktów"
-                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+                class="field font-mono"></textarea>
       <p class="text-xs text-slate-400 mt-1">Format: <code>Etykieta</code> lub <code>Etykieta | notatka</code>. Klient zobaczy checklistę w panelu projektu.</p>
     </div>
     <div>
       <label class="block text-xs font-medium text-slate-600 mb-1">Przypomnienia — jedno na linię</label>
       <textarea name="remindersText" rows="5" spellcheck="false" placeholder="Wysłać brief | +1&#10;Pierwsza wersja do klienta | +7 | high&#10;Follow-up po wdrożeniu | +30"
-                class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"></textarea>
+                class="field font-mono"></textarea>
       <p class="text-xs text-slate-400 mt-1">Format: <code>Tytuł | +dni | priorytet</code> (dni od utworzenia projektu; priorytet <code>low</code>/<code>high</code>, domyślnie normalny).</p>
     </div>
-    <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-5 py-2.5 transition">Zapisz szablon</button>
+    <button type="submit" class="btn btn-lg btn-primary">Zapisz szablon</button>
   </form>
 </div>

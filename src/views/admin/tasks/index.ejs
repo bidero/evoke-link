@@ -9,16 +9,16 @@
 <div>
   <%# Szybkie dodanie zadania (tytuł + kubełek + priorytet). %>
   <form method="POST" action="/admin/tasks" class="mb-4 flex items-center gap-2 flex-wrap bg-white rounded-2xl border border-slate-200 p-3">
-    <input name="title" required maxlength="200" placeholder="Nowe zadanie…" class="flex-1 min-w-[180px] rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
-    <select name="bucket" class="rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+    <input name="title" required maxlength="200" placeholder="Nowe zadanie…" class="field flex-1 min-w-[180px]" />
+    <select name="bucket" class="field field-sm text-slate-600">
       <option value="dzis">Dziś</option>
       <option value="tydzien">Ten tydzień</option>
       <option value="pozniej">Później</option>
     </select>
-    <select name="priority" class="rounded-lg border border-slate-300 px-2 py-2 text-sm text-slate-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+    <select name="priority" class="field field-sm text-slate-600">
       <option value="low">Niski</option><option value="normal" selected>Normalny</option><option value="high">Wysoki</option>
     </select>
-    <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 inline-flex items-center gap-1.5 transition"><%- icon('plus', { size: 15, cls: '' }) %> Dodaj</button>
+    <button type="submit" class="btn btn-primary"><%- icon('plus', { size: 15, cls: '' }) %> Dodaj</button>
   </form>
 
   <%# Kanban: 4 kubełki czasowe + „Zrobione". Drag&drop = zmiana terminu / oznaczenie. %>

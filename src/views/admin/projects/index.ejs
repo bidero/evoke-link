@@ -8,20 +8,20 @@
       <% }); %>
     </div>
     <div class="flex items-center gap-2 shrink-0">
-      <a href="/admin/projects/templates" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">Szablony</a>
-      <a href="/admin/projects/board" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition">Tablica</a>
-      <a href="/admin/projects/new" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">+ Nowy projekt</a>
+      <a href="/admin/projects/templates" class="btn btn-secondary">Szablony</a>
+      <a href="/admin/projects/board" class="btn btn-secondary">Tablica</a>
+      <a href="/admin/projects/new" class="btn btn-primary">+ Nowy projekt</a>
     </div>
   </div>
   <form method="GET" action="/admin/projects" class="flex flex-col gap-2 sm:flex-row sm:items-center">
     <% if (filter.status) { %><input type="hidden" name="status" value="<%= filter.status %>" /><% } %>
     <div class="relative w-full sm:max-w-xs">
       <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><%- icon('search', { size: 16 }) %></span>
-      <input type="search" name="q" value="<%= filter.q %>" placeholder="Szukaj projektu lub klienta…" class="w-full rounded-lg border border-slate-300 pl-9 pr-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+      <input type="search" name="q" value="<%= filter.q %>" placeholder="Szukaj projektu lub klienta…" class="field pl-9 pr-3" />
     </div>
     <div class="flex items-center gap-2 text-sm sm:ml-auto">
       <label class="text-slate-500 shrink-0">Sortuj:</label>
-      <select name="sort" onchange="this.form.submit()" class="rounded-lg border border-slate-300 pl-3 pr-9 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+      <select name="sort" onchange="this.form.submit()" class="field pl-3 pr-9">
         <% [['activity','Ostatnia aktywność'],['created','Najnowsze'],['name','Nazwa A-Z'],['manual','Ręczna kolejność']].forEach(function(o){ %>
           <option value="<%= o[0] %>" <%= filter.sort === o[0] ? 'selected' : '' %>><%= o[1] %></option>
         <% }); %>

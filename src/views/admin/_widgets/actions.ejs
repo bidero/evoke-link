@@ -6,7 +6,7 @@
       <p class="text-sm text-slate-400 py-2">Brak akcji — dodaj w Ustawienia → Panel.</p>
     <% } %>
     <% _acts.forEach(function(a){ %>
-      <a href="<%= a.href %>" class="block rounded-lg text-sm font-medium px-4 py-2.5 text-center transition <%= a.primary ? 'bg-brand-600 hover:bg-brand-700 text-white' : 'border border-slate-300 text-slate-700 hover:bg-slate-50' %>"><%= a.label %></a>
+      <a href="<%= a.href %>" class="btn btn-lg w-full <%= a.primary ? 'btn-primary' : 'btn-secondary' %>"><%= a.label %></a>
     <% }); %>
   </div>
 </div>

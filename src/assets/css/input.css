@@ -69,6 +69,58 @@
 /* Przyciski objęte kształtem z ustawień (zaokrąglony/pigułka). */
 .evoke-btn { border-radius: var(--btn-radius) !important; }
 
+/* ==========================================================================
+   WARSTWA KOMPONENTÓW PANELU — jedno miejsce na wygląd pól i przycisków.
+   Powód: w widokach panelu było 47 różnych wariantów przycisku głównego, 17 wtórnego
+   i 48 zestawów klas na polach formularzy — stąd „brak konsekwencji", najbardziej
+   widoczny na telefonie. Zamiast powielać klasy w 46 widokach, definiujemy je RAZ.
+   ZASADA: te klasy opisują WYGLĄD; układ (w-full, flex-1, shrink-0, ml-auto) zostaje
+   w widoku jako klasy Tailwinda — warstwa components jest przed utilities, więc
+   utility zawsze wygrywa i można nadpisać np. szerokość.
+   ========================================================================== */
+@layer components {
+  /* --- Pola formularzy --- */
+  .field {
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition;
+  }
+  .field:focus { @apply border-brand-500 ring-2 ring-brand-200; }
+  .field:disabled { @apply bg-slate-50 text-slate-400 cursor-not-allowed; }
+  .field-sm { @apply px-2 py-1.5; }
+  .label { @apply block text-sm font-medium text-slate-700 mb-1; }
+  .hint { @apply mt-1 text-xs text-slate-500; }
+
+  /* --- Przyciski ---
+     `.btn` daje kształt i rozmiar, wariant daje kolor. Zawsze inline-flex, więc ikona
+     i podpis są wyrównane bez dokładania klas w widoku. */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition whitespace-nowrap;
+  }
+  .btn:disabled { @apply opacity-40 cursor-not-allowed; }
+  .btn-lg { @apply px-5 py-2.5; }
+  .btn-sm { @apply px-3 py-1.5; }
+  .btn-primary { @apply bg-brand-600 text-white hover:bg-brand-700; }
+  .btn-secondary { @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50; }
+  .btn-danger { @apply border border-slate-300 text-slate-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600; }
+  .btn-ghost { @apply text-slate-600 hover:bg-slate-100 hover:text-slate-800; }
+  /* Przycisk-ikona (kosz, pobieranie, menu) — kwadratowy, bez podpisu. */
+  .btn-icon { @apply inline-flex items-center justify-center rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-brand-700; }
+
+  /* --- Pasek akcji ---
+     Na telefonie STOS (rząd przycisków z długimi etykietami nie mieści się w 390 px
+     i wypychał stronę w bok), od `sm:` rząd. Przyciski w środku dzielą szerokość. */
+  .actions { @apply flex flex-wrap items-center gap-2; }
+  .actions > form, .actions > .btn { @apply flex-1 sm:flex-none; }
+  .actions > form > .btn { @apply w-full; }
+}
+
+/* Telefon: wygodny obszar dotyku. Małe przyciski (.btn-sm) potrafiły mieć 27 px wysokości,
+   a przyciski-ikon 32 px — na palec za mało. Wymuszamy minimum tylko poniżej `md`,
+   więc gęste paski narzędzi na desktopie zostają bez zmian. */
+@media (max-width: 767.98px) {
+  .btn { min-height: 2.5rem; }
+  .btn-icon { min-width: 2.75rem; min-height: 2.75rem; }
+}
+
 /* Pasek postępu Turbo (nawigacja portali klienta bez reloadu) — w kolorze przewodnim. */
 .turbo-progress-bar { background-color: rgb(var(--brand-600)); }
 

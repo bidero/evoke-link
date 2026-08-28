@@ -49,18 +49,18 @@
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-3">
             <label class="block">
               <span class="block text-[11px] font-medium text-slate-500 mb-1">Nazwa</span>
-              <input name="name" value="<%= u.name || '' %>" maxlength="120" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+              <input name="name" value="<%= u.name || '' %>" maxlength="120" class="field field-sm" />
             </label>
             <label class="block">
               <span class="block text-[11px] font-medium text-slate-500 mb-1">Rola</span>
-              <select name="role" <%= u.id === meId ? 'disabled' : '' %> class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none disabled:bg-slate-50 disabled:text-slate-400">
+              <select name="role" <%= u.id === meId ? 'disabled' : '' %> class="field field-sm disabled:bg-slate-50 disabled:text-slate-400">
                 <option value="admin" <%= u.role !== 'staff' ? 'selected' : '' %>>Administrator</option>
                 <option value="staff" <%= u.role === 'staff' ? 'selected' : '' %>>Pracownik</option>
               </select>
             </label>
             <label class="block">
               <span class="block text-[11px] font-medium text-slate-500 mb-1">Nowe hasło <span class="text-slate-400 font-normal">(opc.)</span></span>
-              <input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="min. 8 znaków" class="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+              <input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="min. 8 znaków" class="field field-sm" />
             </label>
             <div class="flex items-end gap-2">
               <% if (u.id !== meId) { %>
@@ -68,7 +68,7 @@
                   <input type="checkbox" name="active" <%= u.active !== false ? 'checked' : '' %> class="rounded border-slate-300 text-brand-600 focus:ring-brand-200" /> Aktywne
                 </label>
               <% } %>
-              <button type="submit" class="ml-auto rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition">Zapisz</button>
+              <button type="submit" class="btn btn-primary ml-auto">Zapisz</button>
             </div>
           </div>
         </form>
@@ -85,25 +85,25 @@
     <form method="POST" action="/admin/users" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <label class="block">
         <span class="block text-[11px] font-medium text-slate-500 mb-1">E-mail *</span>
-        <input name="email" type="email" required class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <input name="email" type="email" required class="field" />
       </label>
       <label class="block">
         <span class="block text-[11px] font-medium text-slate-500 mb-1">Nazwa</span>
-        <input name="name" maxlength="120" placeholder="np. Anna Kowalska" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <input name="name" maxlength="120" placeholder="np. Anna Kowalska" class="field" />
       </label>
       <label class="block">
         <span class="block text-[11px] font-medium text-slate-500 mb-1">Hasło * <span class="text-slate-400 font-normal">(min. 8 znaków)</span></span>
-        <input name="password" type="password" required minlength="8" autocomplete="new-password" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <input name="password" type="password" required minlength="8" autocomplete="new-password" class="field" />
       </label>
       <label class="block">
         <span class="block text-[11px] font-medium text-slate-500 mb-1">Rola</span>
-        <select name="role" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+        <select name="role" class="field">
           <option value="staff" selected>Pracownik</option>
           <option value="admin">Administrator</option>
         </select>
       </label>
       <div class="sm:col-span-2">
-        <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Dodaj konto</button>
+        <button type="submit" class="btn btn-lg btn-primary">Dodaj konto</button>
       </div>
     </form>
   </div>

@@ -8,7 +8,7 @@
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Nazwa klienta *</label>
       <input name="name" type="text" required value="<%= client.name %>"
-             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+             class="field" />
       <p class="text-xs text-slate-400 mt-1">Nazwa wyświetlana (firma lub osoba). Imię/nazwisko poniżej służą tylko do personalizacji maili.</p>
     </div>
     <%# Awatar: podgląd bieżącego (wgrane logo albo inicjał) + podmiana / usunięcie. %>
@@ -33,36 +33,36 @@
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Imię <span class="text-slate-400 font-normal">(do powitań w mailu)</span></label>
         <input name="firstName" type="text" value="<%= client.firstName || '' %>" placeholder="np. Radek"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+               class="field" />
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Nazwisko</label>
         <input name="lastName" type="text" value="<%= client.lastName || '' %>" placeholder="np. Biedermann"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+               class="field" />
       </div>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
         <input name="email" type="email" value="<%= client.email || '' %>"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+               class="field" />
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Telefon</label>
         <input name="phone" type="text" value="<%= client.phone || '' %>"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+               class="field" />
       </div>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Firma</label>
         <input name="company" type="text" value="<%= client.company || '' %>"
-               class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+               class="field" />
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
         <% const _st = client.status || 'active'; %>
-        <select name="status" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+        <select name="status" class="field">
           <option value="lead" <%= _st === 'lead' ? 'selected' : '' %>>Lead</option>
           <option value="active" <%= _st === 'active' ? 'selected' : '' %>>Aktywny</option>
           <option value="inactive" <%= _st === 'inactive' ? 'selected' : '' %>>Nieaktywny</option>
@@ -71,7 +71,7 @@
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Rytm kontaktu <span class="text-slate-400 font-normal">(przypominaj co)</span></label>
         <% const _ce = client.contactEveryDays || ''; %>
-        <select name="contactEveryDays" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none">
+        <select name="contactEveryDays" class="field">
           <option value="">— bez rytmu —</option>
           <option value="7" <%= _ce == 7 ? 'selected' : '' %>>co tydzień (7 dni)</option>
           <option value="14" <%= _ce == 14 ? 'selected' : '' %>>co 2 tygodnie (14 dni)</option>
@@ -85,17 +85,17 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">NIP <span class="text-slate-400 font-normal">(na dokument)</span></label>
-        <input name="nip" type="text" value="<%= client.nip || '' %>" placeholder="np. 123-456-78-90" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <input name="nip" type="text" value="<%= client.nip || '' %>" placeholder="np. 123-456-78-90" class="field" />
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Adres <span class="text-slate-400 font-normal">(na dokument)</span></label>
-        <input name="address" type="text" value="<%= client.address || '' %>" placeholder="ul., kod, miasto" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+        <input name="address" type="text" value="<%= client.address || '' %>" placeholder="ul., kod, miasto" class="field" />
       </div>
     </div>
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Tagi <span class="text-slate-400 font-normal">(po przecinku)</span></label>
       <input name="tags" type="text" value="<%= client.tags || '' %>" placeholder="np. VIP, foto, retainer"
-             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+             class="field" />
       <% if (typeof tagCloud !== 'undefined' && tagCloud.length) { %>
         <div class="flex flex-wrap items-center gap-1.5 mt-2">
           <span class="text-xs text-slate-400">Często używane:</span>
@@ -119,10 +119,10 @@
     </div>
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Notatka</label>
-      <textarea name="note" rows="2" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none"><%= client.note || '' %></textarea>
+      <textarea name="note" rows="2" class="field"><%= client.note || '' %></textarea>
     </div>
     <div class="flex items-center gap-3">
-      <button type="submit" class="rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 text-sm transition">Zapisz</button>
+      <button type="submit" class="btn btn-lg btn-primary">Zapisz</button>
       <a href="/admin/clients" class="text-sm text-slate-500 hover:text-slate-700">Anuluj</a>
     </div>
   </form>
@@ -141,10 +141,10 @@
       <input readonly value="<%= portalUrl %>" x-ref="purl" class="flex-1 min-w-0 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700" />
       <div class="flex gap-2">
         <button type="button" @click="navigator.clipboard.writeText($refs.purl.value); copied = true; setTimeout(()=>copied=false,1500)"
-                class="flex-1 sm:flex-none rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 transition whitespace-nowrap">
+                class="btn btn-primary flex-1 sm:flex-none">
           <span x-show="!copied">Kopiuj</span><span x-show="copied">Skopiowano ✓</span>
         </button>
-        <button type="button" @click="send()" class="flex-1 sm:flex-none rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition whitespace-nowrap">Wyślij</button>
+        <button type="button" @click="send()" class="btn btn-secondary flex-1 sm:flex-none">Wyślij</button>
         <a href="<%= portalUrl %>" target="_blank" class="flex-1 sm:flex-none text-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition whitespace-nowrap">Otwórz</a>
       </div>
     </div>

@@ -4,10 +4,10 @@
     <label class="block text-sm font-medium text-slate-700 mb-1" for="token">Kod</label>
     <input id="token" name="token" type="text" required autofocus autocomplete="one-time-code" inputmode="numeric"
            placeholder="123456 lub kod zapasowy"
-           class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm tracking-widest focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none" />
+           class="field tracking-widest" />
   </div>
   <button type="submit"
-          class="<%= useLayout ? 'evoke-btn' : '' %> w-full rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 text-sm transition">
+          class="<%= useLayout ? 'evoke-btn' : '' %> btn btn-lg btn-primary w-full">
     Zweryfikuj
   </button>
 </form>
