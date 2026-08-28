@@ -1,7 +1,7 @@
 <%# Na telefonie opis i akcje w STOSIE (wzorzec z projects/index.ejs) — w jednym rzędzie
     przyciski nie mieściły się w 390 px i wychodziły poza szerokość strony. Od `sm:` rząd
     jak dotąd. Formularze są dziećmi flexa, więc to ONE dostają `flex-1`, nie przyciski. %>
-<div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+<div class="page-head mb-6">
   <p class="text-sm text-slate-500">Nowe pliki od klientów, pobrania, wypełnione onboardingi i błędy.</p>
   <% const anyUnread = notifications.some(function(n){ return !n.isRead; }); %>
   <% if (notifications.length) { %>

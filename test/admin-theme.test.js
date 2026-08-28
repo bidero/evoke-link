@@ -158,7 +158,7 @@ test('powiadomienia: akcje w stosie na telefonie + krótka etykieta + większy o
     const html = await (await fetch(`${base}/admin/notifications`, { headers: { Cookie: cookie } })).text();
 
     // Stos na telefonie, rząd od sm: — w jednym rzędzie przyciski wychodziły poza 390 px.
-    assert.match(html, /flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between/);
+    assert.match(html, /class="page-head mb-6"/, 'nagłówek ekranu z warstwy komponentów');
     // Pasek akcji z warstwy komponentów: dzieli rząd na telefonie i zawija zamiast wypychać.
     assert.match(html, /class="actions sm:shrink-0"/);
     assert.match(html, /class="btn btn-secondary/, 'przyciski z warstwy komponentów, nie klasy ad hoc');

@@ -90,6 +90,24 @@
   .field:focus { @apply border-brand-500 ring-2 ring-brand-200; }
   .field:disabled { @apply bg-slate-50 text-slate-400 cursor-not-allowed; }
   .field-sm { @apply px-2 py-1.5; }
+
+  /* Pola dat i czasu. NATYWNA kontrolka ma własną szerokość wewnętrzną i NIE kurczy się
+     do kontenera — bez tego data wystaje poza sąsiednie pola (zgłoszone z telefonu na
+     czterech ekranach naraz: rozliczenia klienta, rozliczenia projektu, ustawienia
+     transferu, nowe przypomnienie). `-webkit-appearance:none` zdejmuje narzucony rozmiar
+     w Safari; `min-width:0` pozwala polu kurczyć się w rzędzie flex. */
+  input[type="date"].field,
+  input[type="datetime-local"].field,
+  input[type="time"].field,
+  input[type="month"].field {
+    @apply w-full min-w-0;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  /* iOS centruje tekst w polu daty; wyrównujemy do lewej jak w polach tekstowych. */
+  input[type="date"].field::-webkit-date-and-time-value,
+  input[type="datetime-local"].field::-webkit-date-and-time-value,
+  input[type="time"].field::-webkit-date-and-time-value { text-align: left; }
   .label { @apply block text-sm font-medium text-slate-700 mb-1; }
   .hint { @apply mt-1 text-xs text-slate-500; }
 
@@ -108,6 +126,17 @@
   .btn-ghost { @apply text-slate-600 hover:bg-slate-100 hover:text-slate-800; }
   /* Przycisk-ikona (kosz, pobieranie, menu) — kwadratowy, bez podpisu. */
   .btn-icon { @apply inline-flex items-center justify-center rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-brand-700; }
+
+  /* --- Nagłówek ekranu ---
+     Tytuł/opis po lewej, akcje po prawej; na telefonie stos. Każdy ekran układał to
+     inaczej, stąd „przyciski w dwóch liniach" i „nie zajmują całej szerokości". */
+  .page-head { @apply flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between; }
+  .page-head > .page-head-main { @apply min-w-0; }
+
+  /* --- Pasek filtrów (segmenty) ---
+     Na telefonie pozycje DZIELĄ całą szerokość, od `sm:` naturalna szerokość. */
+  .seg { @apply flex w-full items-center gap-2 sm:w-auto; }
+  .seg > * { @apply flex-1 justify-center text-center sm:flex-none; }
 
   /* --- Wiersz formularza ---
      Rzędy pól (edycja pozycji, dodawanie) na telefonie stają się STOSEM. Bez tego pola

@@ -1,6 +1,6 @@
 <div class="flex flex-col gap-3 mb-6">
-  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-    <div class="flex flex-wrap items-center gap-2 text-sm">
+  <div class="page-head">
+    <div class="seg text-sm">
       <% const tabs = [
         { label: 'Wszystkie', q: '' },
         { label: 'Aktywne', q: 'status=active' },
@@ -10,12 +10,12 @@
       <% function withFilter(over){ const p = new URLSearchParams(); Object.entries(Object.assign({}, filter, over)).forEach(function(e){ if (e[1]) p.set(e[0], e[1]); }); const s = p.toString(); return '/admin/transfers' + (s ? '?' + s : ''); } %>
       <% tabs.forEach(function(t){ const _st = t.q.split('=')[1] || ''; const isActive = (filter.status||'') === _st; %>
         <a href="<%= withFilter({ status: _st }) %>"
-           class="px-3 py-1.5 rounded-lg <%= isActive ? 'bg-brand-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' %>">
+           class="btn btn-sm <%= isActive ? 'btn-primary' : 'btn-secondary' %>">
           <%= t.label %>
         </a>
       <% }); %>
     </div>
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="actions sm:shrink-0">
       <a href="/admin/transfers/new-upload" class="btn btn-secondary">
         + Link uploadu
       </a>

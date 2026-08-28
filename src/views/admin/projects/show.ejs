@@ -139,7 +139,7 @@
     <%# „Ukryj rozliczone" — filtr wizualny (x-show), stan w localStorage pod tym samym kluczem
         co na karcie klienta 360°, więc przełącznik przenosi się między ekranami. %>
     <div id="rozliczenia" class="bg-white rounded-2xl border border-slate-200 overflow-hidden"
-         x-data="{ hideSettled: (localStorage.getItem('evoke-hide-settled') === '1') }"
+         x-data="{ hideSettled: (localStorage.getItem('evoke-hide-settled') === '1'), open: null }"
          x-init="$watch('hideSettled', function(v){ try { localStorage.setItem('evoke-hide-settled', v ? '1' : '0'); } catch(e) {} })">
       <div class="px-5 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <div class="flex items-center gap-3">
@@ -170,28 +170,48 @@
         <% const _anyUnpaid = project.charges.some(function(c){ return !c.paidAt; }); %>
         <ul class="divide-y divide-slate-100">
           <% project.charges.forEach(function(ch){ const _vat = ch.vatRate ? Math.round(ch.amount * ch.vatRate / 100) : 0; const _gross = ch.amount + _vat; %>
-            <li<%- ch.paidAt ? ' x-show="!hideSettled"' : '' %> class="flex items-center gap-3 px-5 py-3">
-              <form method="POST" action="/admin/projects/<%= project.id %>/charges/<%= ch.id %>/toggle" class="shrink-0">
-                <button type="submit" title="<%= ch.paidAt ? 'Oznacz jako nierozliczone' : 'Oznacz jako rozliczone' %>" class="w-5 h-5 rounded border flex items-center justify-center transition <%= ch.paidAt ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 text-transparent hover:border-brand-400' %>"><%- icon('check', { size: 13, cls: '' }) %></button>
-              </form>
-              <span class="min-w-0 flex-1">
-                <span class="block text-sm <%= ch.paidAt ? 'line-through text-slate-400' : 'text-slate-800' %>"><%= ch.label || 'Pozycja' %><% if (ch.date) { %> <span class="text-xs font-normal text-slate-400">· <%= fmt.dateOnly(ch.date) %></span><% } %></span>
-                <% if (ch.note) { %><span class="block text-xs text-slate-400"><%= ch.note %></span><% } %>
-                <% if (ch.dueDate && !ch.paidAt) { const _od = new Date(ch.dueDate) < new Date(); %><span class="block text-xs <%= _od ? 'text-red-600' : 'text-slate-400' %>">termin: <%= fmt.dateOnly(ch.dueDate) %><%= _od ? ' — po terminie' : '' %></span><% } %>
+            <%# Wiersz zwarty i IDENTYCZNY z kartoteką klienta (klik rozwija edycję).
+                Na tym ekranie edytowalna jest tylko data rozliczenia — pełna edycja pozycji
+                jest w kartotece 360°, bo tam prowadzi endpoint aktualizacji. %>
+            <% const _od = ch.dueDate && !ch.paidAt && new Date(ch.dueDate) < new Date(); %>
+            <li<%- ch.paidAt ? ' x-show="!hideSettled"' : '' %>>
+              <div class="flex items-center gap-3 px-5 py-2.5 cursor-pointer hover:bg-slate-50 transition"
+                   @click="open = open === <%= ch.id %> ? null : <%= ch.id %>">
+                <form method="POST" action="/admin/projects/<%= project.id %>/charges/<%= ch.id %>/toggle" @click.stop class="shrink-0">
+                  <button type="submit" title="<%= ch.paidAt ? 'Oznacz jako nierozliczone' : 'Oznacz jako rozliczone' %>" class="w-5 h-5 rounded border flex items-center justify-center transition <%= ch.paidAt ? 'bg-green-500 border-green-500 text-white' : 'border-slate-300 text-transparent hover:border-brand-400' %>"><%- icon('check', { size: 13, cls: '' }) %></button>
+                </form>
+                <div class="min-w-0 flex-1">
+                  <div class="truncate text-sm <%= ch.paidAt ? 'text-slate-400 line-through' : 'text-slate-800' %>"><%= ch.label || 'Pozycja' %></div>
+                  <div class="text-xs text-slate-400 truncate">
+                    <%= ch.date ? fmt.dateOnly(ch.date) : '—' %><% if (ch.dueDate) { %> · termin <%= fmt.dateOnly(ch.dueDate) %><% } %><% if (ch.vatRate != null) { %> · <%= fmt.money(ch.amount) %> netto + <%= ch.vatRate %>% VAT<% } %>
+                  </div>
+                </div>
                 <% if (ch.paidAt) { %>
-                  <form method="POST" action="/admin/projects/<%= project.id %>/charges/<%= ch.id %>/paid-date" class="flex items-center gap-1">
-                    <span class="text-xs text-green-600">rozliczono</span>
-                    <input type="date" name="paidAt" value="<%= new Date(ch.paidAt).toISOString().slice(0,10) %>" onchange="this.form.submit()" title="Zmień datę rozliczenia" class="text-xs text-green-700 bg-transparent border border-transparent hover:border-green-300 focus:border-green-400 rounded px-1 py-0.5 outline-none cursor-pointer" />
-                  </form>
+                  <span class="chip shrink-0 hidden sm:inline-flex border-green-200 bg-green-50 text-green-700">Rozliczono <%= fmt.dateOnly(ch.paidAt) %></span>
+                <% } else if (_od) { %>
+                  <span class="chip shrink-0 hidden sm:inline-flex border-red-200 bg-red-50 text-red-600">Po terminie</span>
                 <% } %>
-              </span>
-              <span class="shrink-0 text-right">
-                <span class="block text-sm font-medium tabular-nums <%= ch.paidAt ? 'text-slate-400' : 'text-slate-800' %>"><%= fmt.money(_gross) %></span>
-                <% if (ch.vatRate != null) { %><span class="block text-[11px] text-slate-400 tabular-nums"><%= fmt.money(ch.amount) %> netto + <%= ch.vatRate %>% VAT</span><% } %>
-              </span>
-              <form method="POST" action="/admin/projects/<%= project.id %>/charges/<%= ch.id %>/delete" class="shrink-0" onsubmit="return confirm('Usunąć pozycję rozliczeniową?')">
-                <button type="submit" title="Usuń pozycję" class="p-1 text-slate-300 hover:text-red-600 transition"><%- icon('trash', { size: 15 }) %></button>
-              </form>
+                <span class="shrink-0 text-sm font-medium tabular-nums <%= ch.paidAt ? 'text-slate-400' : 'text-slate-800' %>"><%= fmt.money(_gross) %></span>
+                <span class="shrink-0 text-slate-300 transition" :class="open === <%= ch.id %> && 'rotate-180'"><%- icon('chevronDown', { size: 16, cls: '' }) %></span>
+              </div>
+
+              <div x-show="open === <%= ch.id %>" x-cloak x-transition.opacity class="px-5 pb-4 pt-3 bg-slate-50/70 border-t border-slate-100">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <form method="POST" action="/admin/projects/<%= project.id %>/charges/<%= ch.id %>/paid-date" data-autosave>
+                    <label class="block"><span class="label">Data rozliczenia</span>
+                      <input type="date" name="paidAt" value="<%= ch.paidAt ? new Date(ch.paidAt).toISOString().slice(0,10) : '' %>" class="field w-full <%= ch.paidAt ? 'border-green-300 text-green-700' : '' %>" />
+                    </label>
+                    <span data-saved class="mt-1 block text-xs font-medium text-green-600 opacity-0 transition-opacity">Zapisano</span>
+                    <button type="submit" data-nojs-save class="btn btn-secondary btn-sm mt-2">Zapisz</button>
+                  </form>
+                </div>
+                <div class="mt-3 flex items-center justify-between gap-2">
+                  <a href="/admin/clients/<%= project.clientId %>?tab=rozliczenia" class="text-xs text-brand-700 hover:underline">Pełna edycja w kartotece klienta →</a>
+                  <form method="POST" action="/admin/projects/<%= project.id %>/charges/<%= ch.id %>/delete" onsubmit="return confirm('Usunąć pozycję rozliczeniową?')">
+                    <button type="submit" class="btn btn-danger"><%- icon('trash', { size: 15, cls: '' }) %> Usuń</button>
+                  </form>
+                </div>
+              </div>
             </li>
           <% }); %>
         </ul>

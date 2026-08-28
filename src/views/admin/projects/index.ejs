@@ -1,13 +1,13 @@
 <div class="flex flex-col gap-3 mb-6">
-  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-    <div class="flex flex-wrap items-center gap-2 text-sm">
+  <div class="page-head">
+    <div class="seg text-sm">
       <% const tabs = [ { label: 'Aktywne', q: 'active' }, { label: 'Zarchiwizowane', q: 'archived' }, { label: 'Wszystkie', q: '' } ]; %>
       <% tabs.forEach(function(t){ const isActive = (filter.status||'') === t.q; %>
         <a href="/admin/projects?status=<%= t.q || 'all' %>"
-           class="px-3 py-1.5 rounded-lg <%= isActive ? 'bg-brand-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50' %>"><%= t.label %></a>
+           class="btn btn-sm <%= isActive ? 'btn-primary' : 'btn-secondary' %>"><%= t.label %></a>
       <% }); %>
     </div>
-    <div class="flex items-center gap-2 shrink-0">
+    <div class="actions sm:shrink-0">
       <a href="/admin/projects/templates" class="btn btn-secondary">Szablony</a>
       <a href="/admin/projects/board" class="btn btn-secondary">Tablica</a>
       <a href="/admin/projects/new" class="btn btn-primary">+ Nowy projekt</a>

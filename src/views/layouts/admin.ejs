@@ -41,6 +41,7 @@
       są prawdziwe tylko w chwili wczytania strony. %>
   <script defer src="/js/badges.js"></script>
   <script defer src="/js/pwa-downloads.js"></script>
+  <script defer src="/js/autosave.js"></script>
   <script defer src="/js/live-messages.js"></script>
   <script defer src="/js/alpine.min.js"></script>
   <%# Licznik na ikonie ZAINSTALOWANEJ aplikacji (Badging API): nieprzeczytane powiadomienia
@@ -193,11 +194,17 @@
             <input name="q" value="<%= typeof q !== 'undefined' ? q : '' %>" placeholder="Szukaj…" aria-label="Szukaj"
                    onmousedown="event.preventDefault(); this.blur(); window.dispatchEvent(new CustomEvent('open-search'))"
                    onfocus="window.dispatchEvent(new CustomEvent('open-search'))"
-                   class="w-full rounded-lg border border-slate-300 bg-white/80 pl-9 pr-12 py-1.5 text-sm text-slate-700 focus:border-brand-500 focus:ring-2 focus:ring-brand-200 outline-none cursor-pointer" />
+                   class="field field-sm w-full bg-white/80 pl-9 pr-12 cursor-pointer" />
             <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-[11px] font-medium text-slate-400 border border-slate-200 rounded px-1 py-0.5 pointer-events-none">⌘K</span>
           </div>
         </form>
         <div class="flex items-center gap-4">
+          <%# Na telefonie pole szukania jest ukryte (brak miejsca), więc lupa otwiera TĘ SAMĄ
+              paletę co Cmd/Ctrl+K — inaczej wyszukiwarka była na telefonie nieosiągalna. %>
+          <button type="button" class="sm:hidden opacity-70 hover:opacity-100" title="Szukaj" aria-label="Szukaj"
+                  onclick="window.dispatchEvent(new CustomEvent('open-search'))">
+            <%- icon('search', { size: 20, cls: '' }) %>
+          </button>
           <button type="button" onclick="window.toggleTheme&&window.toggleTheme()" class="opacity-70 hover:opacity-100" title="Tryb jasny/ciemny" aria-label="Przełącz tryb">
             <span class="dark:hidden"><%- icon('moon', { size: 19, cls: '' }) %></span>
             <span class="hidden dark:inline"><%- icon('sun', { size: 19, cls: '' }) %></span>
