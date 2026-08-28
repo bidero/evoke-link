@@ -1,16 +1,16 @@
 <div class="max-w-xl">
   <% if (error) { %>
-    <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
+    <div class="alert alert-error mb-4"><%= error %></div>
   <% } %>
   <form method="POST" action="/admin/projects" class="space-y-5 bg-white rounded-2xl border border-slate-200 p-6">
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Nazwa projektu *</label>
       <input name="name" type="text" required placeholder="np. Billboard dla marki odzieżowej"
-             class="field" />
+             class="field w-full" />
     </div>
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Klient (z bazy)</label>
-      <select name="clientId" class="field">
+      <select name="clientId" class="field w-full">
         <option value="">— brak / spoza bazy —</option>
         <% clients.forEach(function(c){ %><option value="<%= c.id %>" <%= (typeof selectedClientId !== 'undefined' && selectedClientId === c.id) ? 'selected' : '' %>><%= c.name %><%= c.email ? ' (' + c.email + ')' : '' %></option><% }); %>
       </select>
@@ -19,17 +19,17 @@
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">…lub nazwa klienta (wolny tekst)</label>
       <input name="clientName" type="text" placeholder="np. Marka XYZ"
-             class="field" />
+             class="field w-full" />
     </div>
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Opis (opcjonalnie)</label>
       <textarea name="description" rows="3"
-                class="field"></textarea>
+                class="field w-full"></textarea>
     </div>
     <% if (typeof templates !== 'undefined' && templates.length) { %>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Szablon (opcjonalnie)</label>
-        <select name="templateId" class="field">
+        <select name="templateId" class="field w-full">
           <option value="">— bez szablonu —</option>
           <% templates.forEach(function(t){ %><option value="<%= t.id %>"><%= t.name %><%= t.description ? ' — ' + t.description : '' %></option><% }); %>
         </select>

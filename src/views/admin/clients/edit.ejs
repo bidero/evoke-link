@@ -1,14 +1,14 @@
 <div class="max-w-xl" x-data="{ copied: false, send() { var to = '<%= client.email || '' %>'; if (!to) { to = (prompt('Wyślij link panelu na adres e-mail:') || '').trim(); if (!to) return; } this.$refs.sendEmail.value = to; this.$refs.sendForm.submit(); } }">
   <a href="/admin/clients" class="text-sm text-slate-500 hover:text-slate-700">← Wszyscy klienci</a>
   <% if (error) { %>
-    <div class="mt-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
+    <div class="alert alert-error mt-4"><%= error %></div>
   <% } %>
 
   <form method="POST" action="/admin/clients/<%= client.id %>" enctype="multipart/form-data" class="mt-4 space-y-5 bg-white rounded-2xl border border-slate-200 p-6">
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Nazwa klienta *</label>
       <input name="name" type="text" required value="<%= client.name %>"
-             class="field" />
+             class="field w-full" />
       <p class="text-xs text-slate-400 mt-1">Nazwa wyświetlana (firma lub osoba). Imię/nazwisko poniżej służą tylko do personalizacji maili.</p>
     </div>
     <%# Awatar: podgląd bieżącego (wgrane logo albo inicjał) + podmiana / usunięcie. %>
@@ -33,36 +33,36 @@
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Imię <span class="text-slate-400 font-normal">(do powitań w mailu)</span></label>
         <input name="firstName" type="text" value="<%= client.firstName || '' %>" placeholder="np. Radek"
-               class="field" />
+               class="field w-full" />
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Nazwisko</label>
         <input name="lastName" type="text" value="<%= client.lastName || '' %>" placeholder="np. Biedermann"
-               class="field" />
+               class="field w-full" />
       </div>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">E-mail</label>
         <input name="email" type="email" value="<%= client.email || '' %>"
-               class="field" />
+               class="field w-full" />
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Telefon</label>
         <input name="phone" type="text" value="<%= client.phone || '' %>"
-               class="field" />
+               class="field w-full" />
       </div>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Firma</label>
         <input name="company" type="text" value="<%= client.company || '' %>"
-               class="field" />
+               class="field w-full" />
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
         <% const _st = client.status || 'active'; %>
-        <select name="status" class="field">
+        <select name="status" class="field w-full">
           <option value="lead" <%= _st === 'lead' ? 'selected' : '' %>>Lead</option>
           <option value="active" <%= _st === 'active' ? 'selected' : '' %>>Aktywny</option>
           <option value="inactive" <%= _st === 'inactive' ? 'selected' : '' %>>Nieaktywny</option>
@@ -71,7 +71,7 @@
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Rytm kontaktu <span class="text-slate-400 font-normal">(przypominaj co)</span></label>
         <% const _ce = client.contactEveryDays || ''; %>
-        <select name="contactEveryDays" class="field">
+        <select name="contactEveryDays" class="field w-full">
           <option value="">— bez rytmu —</option>
           <option value="7" <%= _ce == 7 ? 'selected' : '' %>>co tydzień (7 dni)</option>
           <option value="14" <%= _ce == 14 ? 'selected' : '' %>>co 2 tygodnie (14 dni)</option>
@@ -85,17 +85,17 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">NIP <span class="text-slate-400 font-normal">(na dokument)</span></label>
-        <input name="nip" type="text" value="<%= client.nip || '' %>" placeholder="np. 123-456-78-90" class="field" />
+        <input name="nip" type="text" value="<%= client.nip || '' %>" placeholder="np. 123-456-78-90" class="field w-full" />
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Adres <span class="text-slate-400 font-normal">(na dokument)</span></label>
-        <input name="address" type="text" value="<%= client.address || '' %>" placeholder="ul., kod, miasto" class="field" />
+        <input name="address" type="text" value="<%= client.address || '' %>" placeholder="ul., kod, miasto" class="field w-full" />
       </div>
     </div>
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Tagi <span class="text-slate-400 font-normal">(po przecinku)</span></label>
       <input name="tags" type="text" value="<%= client.tags || '' %>" placeholder="np. VIP, foto, retainer"
-             class="field" />
+             class="field w-full" />
       <% if (typeof tagCloud !== 'undefined' && tagCloud.length) { %>
         <div class="flex flex-wrap items-center gap-1.5 mt-2">
           <span class="text-xs text-slate-400">Często używane:</span>
@@ -119,7 +119,7 @@
     </div>
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Notatka</label>
-      <textarea name="note" rows="2" class="field"><%= client.note || '' %></textarea>
+      <textarea name="note" rows="2" class="field w-full"><%= client.note || '' %></textarea>
     </div>
     <div class="flex items-center gap-3">
       <button type="submit" class="btn btn-lg btn-primary">Zapisz</button>
@@ -131,21 +131,21 @@
   <div class="mt-4 bg-white rounded-2xl border border-slate-200 p-5">
     <div class="text-sm font-medium text-slate-700 mb-2">Portal klienta (wszystkie jego projekty)</div>
     <% if (panel === 'sent') { %>
-      <div class="mb-3 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Wysłano link panelu.</div>
+      <div class="alert alert-ok mb-3"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Wysłano link panelu.</div>
     <% } else if (panel === 'invalid') { %>
-      <div class="mb-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Podaj poprawny adres e-mail (klient nie ma zapisanego e-maila).</div>
+      <div class="alert alert-error mb-3">Podaj poprawny adres e-mail (klient nie ma zapisanego e-maila).</div>
     <% } else if (panel === 'error') { %>
-      <div class="mb-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie udało się wysłać. Sprawdź SMTP.</div>
+      <div class="alert alert-error mb-3">Nie udało się wysłać. Sprawdź SMTP.</div>
     <% } %>
     <div class="flex flex-col sm:flex-row gap-2">
-      <input readonly value="<%= portalUrl %>" x-ref="purl" class="flex-1 min-w-0 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700" />
+      <input readonly value="<%= portalUrl %>" x-ref="purl" class="field flex-1 min-w-0 bg-slate-50" />
       <div class="flex gap-2">
         <button type="button" @click="navigator.clipboard.writeText($refs.purl.value); copied = true; setTimeout(()=>copied=false,1500)"
                 class="btn btn-primary flex-1 sm:flex-none">
           <span x-show="!copied">Kopiuj</span><span x-show="copied">Skopiowano ✓</span>
         </button>
         <button type="button" @click="send()" class="btn btn-secondary flex-1 sm:flex-none">Wyślij</button>
-        <a href="<%= portalUrl %>" target="_blank" class="flex-1 sm:flex-none text-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition whitespace-nowrap">Otwórz</a>
+        <a href="<%= portalUrl %>" target="_blank" class="btn btn-secondary flex-1 sm:flex-none">Otwórz</a>
       </div>
     </div>
     <div class="mt-3" x-data="{ qr: false }">

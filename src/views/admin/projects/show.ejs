@@ -1,8 +1,10 @@
 <% if (typeof back !== 'undefined' && back) { %><a href="<%= back.href %>" class="text-sm text-slate-500 hover:text-slate-700">← <%= back.label %></a><% } else { %><a href="/admin/projects" class="text-sm text-slate-500 hover:text-slate-700">← Wszystkie projekty</a><% } %>
 
 <!-- Nagłówek projektu -->
+<%# min-w-0: bez tego długi tytuł projektu nie pozwala kolumnie się skurczyć
+    i wypycha „Edytuj" poza ekran telefonu. %>
 <div class="mt-4 flex items-start justify-between gap-4">
-  <div>
+  <div class="min-w-0">
     <div class="flex items-center gap-2">
       <h1 class="text-2xl font-semibold tracking-tight"><%= project.name %></h1>
       <% if (project.status === 'archived') { %><span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">archiwum</span><% } %>
@@ -21,10 +23,10 @@
 <div class="mt-4 flex flex-wrap items-center gap-2">
   <a href="/admin/transfers/new?project=<%= project.id %>" class="btn btn-primary">+ Wyślij pliki klientowi</a>
   <a href="/admin/transfers/new-upload?project=<%= project.id %>" class="btn btn-secondary">+ Link uploadu</a>
-  <% if (project.client) { %><a href="/admin/messages?client=<%= project.client.id %>&scope=p:<%= project.id %>" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 text-sm font-medium px-4 py-2 transition"><%- icon('mail', { size: 15, cls: '' }) %> Napisz do klienta</a><% } %>
-  <form method="POST" action="/admin/projects/<%= project.id %>/archive" class="ml-auto">
+  <% if (project.client) { %><a href="/admin/messages?client=<%= project.client.id %>&scope=p:<%= project.id %>" class="btn btn-secondary"><%- icon('mail', { size: 15, cls: '' }) %> Napisz do klienta</a><% } %>
+  <form method="POST" action="/admin/projects/<%= project.id %>/archive" class="w-full sm:w-auto sm:ml-auto">
     <% const _arch = project.status === 'archived'; %>
-    <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition"><%- icon(_arch ? 'arrowLeft' : 'archive', { size: 15, cls: '' }) %> <%= _arch ? 'Przywróć z archiwum' : 'Archiwizuj' %></button>
+    <button type="submit" class="btn btn-secondary w-full sm:w-auto"><%- icon(_arch ? 'arrowLeft' : 'archive', { size: 15, cls: '' }) %> <%= _arch ? 'Przywróć z archiwum' : 'Archiwizuj' %></button>
   </form>
 </div>
 
@@ -39,21 +41,21 @@
   </div>
   <p class="text-xs text-slate-400 mb-3">Klient widzi tu tylko transfery oznaczone „widoczny dla klienta" i może wgrywać pliki. Hasło ustawisz w „Edytuj".</p>
   <% if (panel === 'sent') { %>
-    <div class="mb-3 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Wysłano link panelu.</div>
+    <div class="alert alert-ok mb-3"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Wysłano link panelu.</div>
   <% } else if (panel === 'invalid') { %>
-    <div class="mb-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Podaj poprawny adres e-mail.</div>
+    <div class="alert alert-error mb-3">Podaj poprawny adres e-mail.</div>
   <% } else if (panel === 'error') { %>
-    <div class="mb-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie udało się wysłać. Sprawdź SMTP.</div>
+    <div class="alert alert-error mb-3">Nie udało się wysłać. Sprawdź SMTP.</div>
   <% } %>
   <div class="flex flex-col sm:flex-row gap-2">
-    <input readonly value="<%= portalUrl %>" x-ref="purl" class="flex-1 min-w-0 rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700" />
+    <input readonly value="<%= portalUrl %>" x-ref="purl" class="field flex-1 min-w-0 bg-slate-50" />
     <div class="flex gap-2">
       <button type="button" @click="navigator.clipboard.writeText($refs.purl.value); copied = true; setTimeout(()=>copied=false,1500)"
               class="btn btn-primary flex-1 sm:flex-none">
         <span x-show="!copied">Kopiuj</span><span x-show="copied">Skopiowano ✓</span>
       </button>
       <button type="button" @click="send()" class="btn btn-secondary flex-1 sm:flex-none">Wyślij</button>
-      <a href="<%= portalUrl %>" target="_blank" class="flex-1 sm:flex-none text-center rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-4 py-2 transition whitespace-nowrap">Otwórz</a>
+      <a href="<%= portalUrl %>" target="_blank" class="btn btn-secondary flex-1 sm:flex-none">Otwórz</a>
     </div>
   </div>
   <div class="mt-3" x-data="{ qr: false }">
@@ -205,15 +207,15 @@
       <% } %>
 
       <form method="POST" action="/admin/projects/<%= project.id %>/charges" class="px-5 py-3 border-t border-slate-100 bg-slate-50 space-y-2">
-        <div class="flex flex-wrap items-end gap-2">
-          <label class="flex-1 min-w-[150px] text-[11px] text-slate-500">Nazwa
-            <input name="label" type="text" placeholder="np. Sesja, Zaliczka" class="field mt-0.5" />
+        <div class="form-row sm:items-end">
+          <label class="sm:flex-1 sm:min-w-[150px]"><span class="label text-xs">Nazwa</span>
+            <input name="label" type="text" placeholder="np. Sesja, Zaliczka" class="field w-full" />
           </label>
-          <label class="text-[11px] text-slate-500">Netto zł
-            <input name="amount" type="text" inputmode="decimal" required placeholder="0,00" class="field mt-0.5 w-32" />
+          <label><span class="label text-xs">Netto zł</span>
+            <input name="amount" type="text" inputmode="decimal" required placeholder="0,00" class="field w-full sm:w-32" />
           </label>
-          <label class="text-[11px] text-slate-500">VAT
-            <select name="vatRate" class="field field-sm mt-0.5 w-24">
+          <label><span class="label text-xs">VAT</span>
+            <select name="vatRate" class="field w-full sm:w-24">
               <option value="">bez</option>
               <option value="23">23%</option>
               <option value="8">8%</option>
@@ -221,15 +223,13 @@
               <option value="0">0%</option>
             </select>
           </label>
-        </div>
-        <div class="flex flex-wrap items-end gap-2">
-          <label class="text-[11px] text-slate-500">Data
-            <input name="date" type="date" value="<%= new Date().toISOString().slice(0,10) %>" class="field field-sm mt-0.5 w-40" />
+          <label><span class="label text-xs">Data</span>
+            <input name="date" type="date" value="<%= new Date().toISOString().slice(0,10) %>" class="field w-full sm:w-40" />
           </label>
-          <label class="text-[11px] text-slate-500">Termin
-            <input name="dueDate" type="date" title="Termin płatności (opcjonalnie)" class="field field-sm mt-0.5 w-40" />
+          <label><span class="label text-xs">Termin</span>
+            <input name="dueDate" type="date" title="Termin płatności (opcjonalnie)" class="field w-full sm:w-40" />
           </label>
-          <button type="submit" class="btn btn-lg btn-primary ml-auto">Dodaj</button>
+          <button type="submit" class="btn btn-primary w-full sm:w-auto sm:ml-auto">Dodaj</button>
         </div>
       </form>
     </div>

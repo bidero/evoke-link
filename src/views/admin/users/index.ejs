@@ -10,10 +10,10 @@
 %>
 <div class="max-w-4xl space-y-6">
   <% if (msg && MSG[msg]) { %>
-    <div class="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> <%= MSG[msg] %></div>
+    <div class="alert alert-ok"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> <%= MSG[msg] %></div>
   <% } %>
   <% if (error && ERR[error]) { %>
-    <div class="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= ERR[error] %></div>
+    <div class="alert alert-error"><%= ERR[error] %></div>
   <% } %>
 
   <!-- LISTA KONT -->
@@ -49,18 +49,18 @@
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-3">
             <label class="block">
               <span class="block text-[11px] font-medium text-slate-500 mb-1">Nazwa</span>
-              <input name="name" value="<%= u.name || '' %>" maxlength="120" class="field field-sm" />
+              <input name="name" value="<%= u.name || '' %>" maxlength="120" class="field field-sm w-full" />
             </label>
             <label class="block">
               <span class="block text-[11px] font-medium text-slate-500 mb-1">Rola</span>
-              <select name="role" <%= u.id === meId ? 'disabled' : '' %> class="field field-sm disabled:bg-slate-50 disabled:text-slate-400">
+              <select name="role" <%= u.id === meId ? 'disabled' : '' %> class="field field-sm w-full disabled:bg-slate-50 disabled:text-slate-400">
                 <option value="admin" <%= u.role !== 'staff' ? 'selected' : '' %>>Administrator</option>
                 <option value="staff" <%= u.role === 'staff' ? 'selected' : '' %>>Pracownik</option>
               </select>
             </label>
             <label class="block">
               <span class="block text-[11px] font-medium text-slate-500 mb-1">Nowe hasło <span class="text-slate-400 font-normal">(opc.)</span></span>
-              <input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="min. 8 znaków" class="field field-sm" />
+              <input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="min. 8 znaków" class="field field-sm w-full" />
             </label>
             <div class="flex items-end gap-2">
               <% if (u.id !== meId) { %>
@@ -85,19 +85,19 @@
     <form method="POST" action="/admin/users" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <label class="block">
         <span class="block text-[11px] font-medium text-slate-500 mb-1">E-mail *</span>
-        <input name="email" type="email" required class="field" />
+        <input name="email" type="email" required class="field w-full" />
       </label>
       <label class="block">
         <span class="block text-[11px] font-medium text-slate-500 mb-1">Nazwa</span>
-        <input name="name" maxlength="120" placeholder="np. Anna Kowalska" class="field" />
+        <input name="name" maxlength="120" placeholder="np. Anna Kowalska" class="field w-full" />
       </label>
       <label class="block">
         <span class="block text-[11px] font-medium text-slate-500 mb-1">Hasło * <span class="text-slate-400 font-normal">(min. 8 znaków)</span></span>
-        <input name="password" type="password" required minlength="8" autocomplete="new-password" class="field" />
+        <input name="password" type="password" required minlength="8" autocomplete="new-password" class="field w-full" />
       </label>
       <label class="block">
         <span class="block text-[11px] font-medium text-slate-500 mb-1">Rola</span>
-        <select name="role" class="field">
+        <select name="role" class="field w-full">
           <option value="staff" selected>Pracownik</option>
           <option value="admin">Administrator</option>
         </select>

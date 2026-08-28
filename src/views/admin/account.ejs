@@ -4,17 +4,17 @@
 %>
 <div class="max-w-3xl space-y-6">
   <% if (savedProfile) { %>
-    <div class="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">
+    <div class="alert alert-ok">
       <%- icon('check', { size: 16, cls: 'text-green-600' }) %> Profil zapisany.
     </div>
   <% } %>
   <% if (saved) { %>
-    <div class="flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">
+    <div class="alert alert-ok">
       <%- icon('check', { size: 16, cls: 'text-green-600' }) %> Hasło zostało zmienione.
     </div>
   <% } %>
   <% if (error) { %>
-    <div class="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
+    <div class="alert alert-error"><%= error %></div>
   <% } %>
 
   <!-- PROFIL -->
@@ -40,28 +40,28 @@
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Imię i nazwisko / nazwa</label>
           <input name="name" type="text" value="<%= pName %>" maxlength="120" placeholder="np. Radek Biedermann"
-                 class="field" />
+                 class="field w-full" />
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Rola / stanowisko</label>
           <input name="role" type="text" value="<%= (profile && profile.role) ? profile.role : '' %>" maxlength="120" placeholder="np. Właściciel"
-                 class="field" />
+                 class="field w-full" />
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Telefon</label>
           <input name="phone" type="text" value="<%= (profile && profile.phone) ? profile.phone : '' %>" maxlength="60" placeholder="np. 600 100 200"
-                 class="field" />
+                 class="field w-full" />
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">E-mail logowania</label>
           <input type="text" value="<%= email %>" disabled
-                 class="w-full rounded-lg border border-slate-200 bg-slate-50 text-slate-400 px-3 py-2 text-sm outline-none cursor-not-allowed" />
+                 class="field w-full bg-slate-50 text-slate-400 cursor-not-allowed" />
         </div>
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Avatar <span class="text-slate-400 font-normal">(kwadrat, PNG/JPG/SVG)</span></label>
         <div class="flex items-center gap-3 flex-wrap">
-          <label class="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-600 cursor-pointer hover:bg-brand-50 hover:text-brand-700 hover:border-brand-300 transition">
+          <label class="btn btn-secondary border-dashed cursor-pointer hover:border-brand-300">
             <%- icon('cloudUpload', { size: 16, cls: '' }) %> Wgraj avatar
             <input type="file" name="avatar" accept="image/*" class="hidden" @change="avatar = $event.target.files.length ? $event.target.files[0].name : ''" />
           </label>
@@ -86,18 +86,18 @@
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1" for="currentPassword">Obecne hasło</label>
         <input id="currentPassword" name="currentPassword" type="password" required autocomplete="current-password"
-               class="field" />
+               class="field w-full" />
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1" for="newPassword">Nowe hasło <span class="text-slate-400 font-normal">(min. 8)</span></label>
           <input id="newPassword" name="newPassword" type="password" required minlength="8" autocomplete="new-password"
-                 class="field" />
+                 class="field w-full" />
         </div>
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1" for="confirmPassword">Powtórz nowe hasło</label>
           <input id="confirmPassword" name="confirmPassword" type="password" required minlength="8" autocomplete="new-password"
-                 class="field" />
+                 class="field w-full" />
         </div>
       </div>
       <button type="submit" class="btn btn-lg btn-primary">Zmień hasło</button>
@@ -186,7 +186,7 @@
         <% if (settings.pwa && settings.pwa.enabled && settings.pwa.push) { %>
           <div class="flex items-center gap-2" x-show="supported" x-cloak>
             <button type="button" x-show="on" x-cloak :disabled="busy" @click="sendTest()"
-                    class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm font-medium px-3 py-2 transition disabled:opacity-60">Wyślij testowe</button>
+                    class="btn btn-secondary">Wyślij testowe</button>
             <button type="button" :disabled="busy || blocked" @click="toggle()"
                     :class="on ? 'btn-secondary' : 'btn-primary'"
                     class="rounded-lg text-sm font-medium px-4 py-2 transition disabled:opacity-60">
@@ -267,7 +267,7 @@
       <% if (twoFaOn) { %>
         <div class="mt-4 flex items-center gap-3 flex-wrap">
           <form method="POST" action="/admin/account/2fa/recovery" onsubmit="return confirm('Wygenerować nowe kody zapasowe? Poprzednie przestaną działać.');">
-            <button type="submit" class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm px-4 py-2 transition">Nowe kody zapasowe</button>
+            <button type="submit" class="btn btn-secondary">Nowe kody zapasowe</button>
           </form>
           <form method="POST" action="/admin/account/2fa/disable" class="flex items-end gap-2" onsubmit="return confirm('Wyłączyć uwierzytelnianie dwuetapowe?');">
             <label class="block">
@@ -290,7 +290,7 @@
         <div class="text-xs text-slate-400">Zakończ bieżącą sesję w tej przeglądarce.</div>
       </div>
       <form method="POST" action="/admin/logout">
-        <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 px-4 py-2 text-sm transition"><%- icon('arrowRight', { size: 15, cls: '' }) %> Wyloguj</button>
+        <button type="submit" class="btn btn-secondary"><%- icon('arrowRight', { size: 15, cls: '' }) %> Wyloguj</button>
       </form>
     </div>
   </div>

@@ -51,10 +51,10 @@
           <div class="shrink-0 flex items-center gap-1.5">
             <% if (o.client.email) { %>
               <form method="POST" action="/admin/clients/<%= o.clientId %>/offers/<%= o.id %>/send" title="Wyślij ofertę ponownie na <%= o.client.email %>">
-                <button type="submit" class="text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-brand-50 hover:text-brand-700 hover:border-brand-200 transition">Ponaglij</button>
+                <button type="submit" class="chip chip-action">Ponaglij</button>
               </form>
             <% } %>
-            <a href="/admin/clients/<%= o.clientId %>?tab=oferty" class="text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50 transition">Otwórz</a>
+            <a href="/admin/clients/<%= o.clientId %>?tab=oferty" class="chip">Otwórz</a>
           </div>
         </div>
       <% }); %>
@@ -79,7 +79,7 @@
           </div>
         </div>
         <span class="shrink-0 text-sm text-slate-500"><%= fmt.money(o.gross) %></span>
-        <a href="/admin/clients/<%= o.clientId %>?tab=oferty" class="shrink-0 text-xs px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50 transition">Otwórz</a>
+        <a href="/admin/clients/<%= o.clientId %>?tab=oferty" class="shrink-0 chip">Otwórz</a>
       </div>
     <% }); %>
   </div>

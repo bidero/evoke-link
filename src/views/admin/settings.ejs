@@ -48,7 +48,7 @@
 <div class="max-w-4xl" x-data="Object.assign(settingsForm(<%= JSON.stringify(formState) %>), { tab: '<%= tabInit %>' })">
 
   <% if (saved) { %>
-    <div class="mb-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">
+    <div class="alert alert-ok mb-4">
       <%- icon('check', { size: 16, cls: 'text-green-600' }) %> Zapisano ustawienia.
     </div>
   <% } %>
@@ -67,7 +67,7 @@
       <% Object.entries(themes).forEach(function(entry){ const key = entry[0], t = entry[1]; %>
         <form method="POST" action="/admin/settings/apply-theme">
           <input type="hidden" name="theme" value="<%= key %>" />
-          <button type="submit" class="w-full flex items-center gap-2 rounded-lg border border-slate-300 hover:border-brand-400 hover:bg-brand-50 px-3 py-2 text-sm text-slate-700 transition">
+          <button type="submit" class="btn btn-secondary w-full">
             <span class="w-4 h-4 rounded-full shrink-0 border border-slate-300" style="background: <%= (t.colors && t.colors.primary) || '#6e00a5' %>"></span>
             <span class="truncate text-left"><%= t.label %></span>
           </button>
@@ -88,7 +88,7 @@
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Nazwa aplikacji</label>
         <input name="appName" type="text" value="<%= settings.appName %>"
-               class="field" />
+               class="field w-full" />
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -201,7 +201,7 @@
       <h2 class="text-sm font-semibold text-slate-700 mb-3">Kolor przewodni</h2>
       <div class="flex items-center gap-3 flex-wrap">
         <input type="color" name="primary" x-model="primary" class="h-10 w-14 rounded border border-slate-300 cursor-pointer" />
-        <input type="text" x-model="primary" maxlength="7" class="w-28 rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono" />
+        <input type="text" x-model="primary" maxlength="7" class="field w-28 font-mono" />
         <span class="inline-flex items-center gap-2 text-sm text-slate-500">
           podgląd:
           <span class="rounded-lg px-3 py-1.5 text-white text-sm font-medium" :style="'background:' + primary">Przycisk</span>
@@ -221,7 +221,7 @@
             <label class="block text-xs font-medium text-slate-600 mb-1">Akcent (przyciski, aktywne)</label>
             <div class="flex items-center gap-2">
               <input type="color" :value="adminAccent || primary" @input="adminAccent = $event.target.value" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
-              <input type="text" name="adminAccent" x-model="adminAccent" maxlength="7" placeholder="(jak przewodni)" class="w-32 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-mono" />
+              <input type="text" name="adminAccent" x-model="adminAccent" maxlength="7" placeholder="(jak przewodni)" class="field field-sm w-32 font-mono" />
               <button type="button" x-show="adminAccent" @click="adminAccent=''" class="text-xs text-slate-400 hover:text-slate-600 underline">wyczyść</button>
             </div>
           </div>
@@ -229,7 +229,7 @@
             <label class="block text-xs font-medium text-slate-600 mb-1">Kolor czcionki</label>
             <div class="flex items-center gap-2">
               <input type="color" :value="adminText || textAuto()" @input="adminText = $event.target.value" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
-              <input type="text" name="adminText" x-model="adminText" maxlength="7" placeholder="(auto-kontrast)" class="w-32 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-mono" />
+              <input type="text" name="adminText" x-model="adminText" maxlength="7" placeholder="(auto-kontrast)" class="field field-sm w-32 font-mono" />
               <button type="button" x-show="adminText" @click="adminText=''" class="text-xs text-slate-400 hover:text-slate-600 underline">wyczyść</button>
             </div>
           </div>
@@ -237,14 +237,14 @@
             <label class="block text-xs font-medium text-slate-600 mb-1">Tło sidebara</label>
             <div class="flex items-center gap-2">
               <input type="color" name="adminSidebar" x-model="adminSidebar" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
-              <input type="text" x-model="adminSidebar" maxlength="7" class="w-32 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-mono" />
+              <input type="text" x-model="adminSidebar" maxlength="7" class="field field-sm w-32 font-mono" />
             </div>
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">Pasek nagłówka (góra) <span class="text-slate-400 font-normal">(puste = jak sidebar)</span></label>
             <div class="flex items-center gap-2">
               <input type="color" :value="adminHeader || adminSidebar" @input="adminHeader = $event.target.value" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
-              <input type="text" name="adminHeader" x-model="adminHeader" maxlength="7" placeholder="(jak sidebar)" class="w-32 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-mono" />
+              <input type="text" name="adminHeader" x-model="adminHeader" maxlength="7" placeholder="(jak sidebar)" class="field field-sm w-32 font-mono" />
               <button type="button" x-show="adminHeader" @click="adminHeader=''" class="text-xs text-slate-400 hover:text-slate-600 underline">wyczyść</button>
             </div>
           </div>
@@ -252,7 +252,7 @@
             <label class="block text-xs font-medium text-slate-600 mb-1">Tło panelu</label>
             <div class="flex items-center gap-2">
               <input type="color" name="adminBg" x-model="adminBg" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
-              <input type="text" x-model="adminBg" maxlength="7" class="w-32 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-mono" />
+              <input type="text" x-model="adminBg" maxlength="7" class="field field-sm w-32 font-mono" />
             </div>
           </div>
         </div>
@@ -295,7 +295,7 @@
       <!-- Gradient: wybór presetu -->
       <div x-show="bgType==='gradient'">
         <label class="block text-xs font-medium text-slate-600 mb-1">Preset gradientu</label>
-        <select name="bgPreset" x-model="bgPreset" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
+        <select name="bgPreset" x-model="bgPreset" class="field w-full">
           <% Object.entries(presets).forEach(function([key, p]){ %>
             <option value="<%= key %>"><%= p.label %></option>
           <% }); %>
@@ -330,7 +330,7 @@
         <label class="block text-xs font-medium text-slate-600 mb-1">Kolor tła</label>
         <div class="flex items-center gap-2">
           <input type="color" name="bgColor" x-model="bgColor" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
-          <input type="text" x-model="bgColor" maxlength="7" class="w-32 rounded-lg border border-slate-300 px-2 py-1.5 text-sm font-mono" />
+          <input type="text" x-model="bgColor" maxlength="7" class="field field-sm w-32 font-mono" />
         </div>
       </div>
 
@@ -356,7 +356,7 @@
                   <input type="checkbox" name="bgRotate" <%= settings.background.rotate ? 'checked' : '' %> class="rounded border-slate-300" /> Rotacja obrazów (slideshow)
                 </label>
                 <div class="flex items-center gap-2 text-xs text-slate-500 mt-1.5">Zmiana co
-                  <input type="number" name="bgRotateSec" value="<%= settings.background.rotateSec || 8 %>" min="3" max="30" class="w-16 rounded-lg border border-slate-300 px-2 py-1 text-sm" /> s
+                  <input type="number" name="bgRotateSec" value="<%= settings.background.rotateSec || 8 %>" min="3" max="30" class="field field-sm w-16" /> s
                 </div>
               <% } else { %>
                 <p class="text-xs text-slate-400 mt-2">Dodaj 2+ obrazy, aby włączyć rotację.</p>
@@ -703,10 +703,10 @@
           Ukryj dane sprzedawcy na wydruku <span class="text-slate-400">(sam wykaz pozycji, bez „Sprzedawcy" i nr konta)</span>
         </label>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input name="sellerName" type="text" value="<%= settings.pdf.seller.name %>" placeholder="Nazwa / firma (sprzedawca)" class="field" />
-          <input name="sellerNip" type="text" value="<%= settings.pdf.seller.nip %>" placeholder="NIP" class="field" />
-          <input name="sellerAddress" type="text" value="<%= settings.pdf.seller.address %>" placeholder="Adres (ul., kod, miasto)" class="field" />
-          <input name="sellerBank" type="text" value="<%= settings.pdf.seller.bank %>" placeholder="Nr konta (IBAN)" class="field" />
+          <input name="sellerName" type="text" value="<%= settings.pdf.seller.name %>" placeholder="Nazwa / firma (sprzedawca)" class="field w-full" />
+          <input name="sellerNip" type="text" value="<%= settings.pdf.seller.nip %>" placeholder="NIP" class="field w-full" />
+          <input name="sellerAddress" type="text" value="<%= settings.pdf.seller.address %>" placeholder="Adres (ul., kod, miasto)" class="field w-full" />
+          <input name="sellerBank" type="text" value="<%= settings.pdf.seller.bank %>" placeholder="Nr konta (IBAN)" class="field w-full" />
         </div>
       </div>
       <div class="border-t border-slate-100 pt-4 space-y-1">
@@ -744,17 +744,17 @@
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Nagłówek (hero)</label>
         <input name="heroTitle" type="text" value="<%= settings.texts.heroTitle %>" placeholder="np. Bezpieczna wymiana plików"
-               class="field" />
+               class="field w-full" />
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Podtytuł</label>
         <input name="heroSubtitle" type="text" value="<%= settings.texts.heroSubtitle %>"
-               class="field" />
+               class="field w-full" />
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Stopka</label>
         <input name="footer" type="text" value="<%= settings.texts.footer %>"
-               class="field" />
+               class="field w-full" />
       </div>
     </div>
 
@@ -804,28 +804,28 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <label class="block">
           <span class="block text-xs font-medium text-slate-500 mb-1">Nagłówek</span>
-          <input name="loginTitle" value="<%= LG.title %>" maxlength="80" placeholder="Zaloguj się" class="field" />
+          <input name="loginTitle" value="<%= LG.title %>" maxlength="80" placeholder="Zaloguj się" class="field w-full" />
         </label>
         <label class="block">
           <span class="block text-xs font-medium text-slate-500 mb-1">Podpis pod nagłówkiem</span>
-          <input name="loginSubtitle" value="<%= LG.subtitle %>" maxlength="160" placeholder="Panel administracyjny agencji." class="field" />
+          <input name="loginSubtitle" value="<%= LG.subtitle %>" maxlength="160" placeholder="Panel administracyjny agencji." class="field w-full" />
         </label>
       </div>
 
       <div x-show="lStyle==='split' || lStyle==='panel'" x-cloak class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <label class="block">
           <span class="block text-xs font-medium text-slate-500 mb-1">Hero — tytuł <span class="text-slate-400 font-normal">(obok formularza)</span></span>
-          <input name="loginHeroTitle" value="<%= LG.heroTitle %>" maxlength="120" placeholder="<%= settings.appName %>" class="field" />
+          <input name="loginHeroTitle" value="<%= LG.heroTitle %>" maxlength="120" placeholder="<%= settings.appName %>" class="field w-full" />
         </label>
         <label class="block">
           <span class="block text-xs font-medium text-slate-500 mb-1">Hero — podpis</span>
-          <input name="loginHeroSubtitle" value="<%= LG.heroSubtitle %>" maxlength="240" placeholder="Bezpieczna wymiana plików z klientami." class="field" />
+          <input name="loginHeroSubtitle" value="<%= LG.heroSubtitle %>" maxlength="240" placeholder="Bezpieczna wymiana plików z klientami." class="field w-full" />
         </label>
       </div>
 
       <label class="block max-w-md">
         <span class="block text-xs font-medium text-slate-500 mb-1">Stopka <span class="text-slate-400 font-normal">(puste = jak na stronach klienta)</span></span>
-        <input name="loginFooter" value="<%= LG.footer %>" maxlength="200" placeholder="<%= settings.texts.footer || (settings.appName + ' · prywatny system wymiany plików') %>" class="field" />
+        <input name="loginFooter" value="<%= LG.footer %>" maxlength="200" placeholder="<%= settings.texts.footer || (settings.appName + ' · prywatny system wymiany plików') %>" class="field w-full" />
       </label>
 
       <div class="pt-3 border-t border-slate-100">
@@ -878,7 +878,7 @@
 
         <div x-show="lbType==='gradient'" x-cloak>
           <label class="block text-xs font-medium text-slate-600 mb-1">Preset</label>
-          <select name="lbPreset" class="field max-w-xs">
+          <select name="lbPreset" class="field w-full max-w-xs">
             <% Object.entries(presets).forEach(function(pr){ %><option value="<%= pr[0] %>" <%= LB && LB.preset === pr[0] ? 'selected' : '' %>><%= pr[1].label %></option><% }); %>
           </select>
         </div>
@@ -888,7 +888,7 @@
           <input type="color" name="lbC1" value="<%= LB ? LB.custom.c1 : '#6e00a5' %>" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
           <input type="color" name="lbC2" value="<%= LB ? LB.custom.c2 : '#a31fde' %>" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
           <label class="text-xs font-medium text-slate-600 ml-2">Kąt:</label>
-          <input type="number" name="lbAngle" min="0" max="360" value="<%= LB ? LB.custom.angle : 135 %>" class="w-20 rounded-lg border border-slate-300 px-2 py-1.5 text-sm" />
+          <input type="number" name="lbAngle" min="0" max="360" value="<%= LB ? LB.custom.angle : 135 %>" class="field field-sm w-20" />
         </div>
 
         <div x-show="lbType==='solid'" x-cloak class="flex items-center gap-3">
@@ -954,22 +954,22 @@
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: link do plików</label>
           <input name="linkSubject" data-phfield="linkSubject" type="text" value="<%= settings.emails.linkSubject %>" placeholder="domyślny"
-                 class="field" />
+                 class="field w-full" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: powiadomienie o uploadzie</label>
           <input name="uploadSubject" data-phfield="uploadSubject" type="text" value="<%= settings.emails.uploadSubject %>" placeholder="domyślny"
-                 class="field" />
+                 class="field w-full" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: powiadomienie o pobraniu</label>
           <input name="downloadSubject" data-phfield="downloadSubject" type="text" value="<%= settings.emails.downloadSubject %>" placeholder="domyślny"
-                 class="field" />
+                 class="field w-full" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: panel (projekt / klient)</label>
           <input name="panelSubject" data-phfield="panelSubject" type="text" value="<%= settings.emails.panelSubject %>" placeholder="np. {nazwa-projektu} — Twój panel"
-                 class="field" />
+                 class="field w-full" />
         </div>
       </div>
       <div>
@@ -982,7 +982,7 @@
             <button type="button" data-cmd="createLink" title="Wstaw link" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Link</button>
             <button type="button" data-cmd="removeFormat" title="Wyczyść formatowanie" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Wyczyść</button>
           </div>
-          <div class="field rte-ed min-h-[64px]" contenteditable="true"></div>
+          <div class="field rte-ed w-full min-h-[64px]" contenteditable="true"></div>
           <input type="hidden" name="linkIntro" value="<%= settings.emails.linkIntro %>" />
         </div>
       </div>
@@ -996,7 +996,7 @@
             <button type="button" data-cmd="createLink" title="Wstaw link" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Link</button>
             <button type="button" data-cmd="removeFormat" title="Wyczyść formatowanie" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Wyczyść</button>
           </div>
-          <div class="field rte-ed min-h-[64px]" contenteditable="true"></div>
+          <div class="field rte-ed w-full min-h-[64px]" contenteditable="true"></div>
           <input type="hidden" name="panelIntro" value="<%= settings.emails.panelIntro %>" />
         </div>
       </div>
@@ -1007,12 +1007,12 @@
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Temat: link onboardingowy</label>
           <input name="onboardSubject" data-phfield="onboardSubject" type="text" value="<%= settings.emails.onboardSubject %>" placeholder="domyślny"
-                 class="field" />
+                 class="field w-full" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Wstęp w mailu z linkiem onboardingowym</label>
           <textarea name="onboardIntro" data-phfield="onboardIntro" rows="2" placeholder="Wstęp wiadomości (domyślny)"
-                 class="field"><%= settings.emails.onboardIntro %></textarea>
+                 class="field w-full"><%= settings.emails.onboardIntro %></textarea>
         </div>
       </div>
 
@@ -1023,9 +1023,9 @@
         </label>
         <p class="text-xs text-slate-400 -mt-1">Gdy cron (lub „Generuj teraz") utworzy pozycję z retainera: kwota brutto, termin, dane do przelewu i link do portalu klienta. Wymaga e-maila w kartotece.</p>
         <input name="retainerSubject" data-phfield="retainerSubject" type="text" value="<%= settings.emails.retainerSubject %>" placeholder="Temat wiadomości (domyślny)"
-               class="field" />
+               class="field w-full" />
         <textarea name="retainerIntro" data-phfield="retainerIntro" rows="2" placeholder="Wstęp wiadomości (domyślny)"
-               class="field"><%= settings.emails.retainerIntro %></textarea>
+               class="field w-full"><%= settings.emails.retainerIntro %></textarea>
       </div>
 
       <div class="border-t border-slate-100 pt-4 space-y-3">
@@ -1034,7 +1034,7 @@
           Wyślij klientowi potwierdzenie po przesłaniu plików (gdy podał e-mail)
         </label>
         <input name="clientConfirmSubject" data-phfield="clientConfirmSubject" type="text" value="<%= settings.emails.clientConfirmSubject %>" placeholder="Temat potwierdzenia (domyślny)"
-               class="field" />
+               class="field w-full" />
         <div class="rte">
           <div class="flex flex-wrap gap-1 mb-1">
             <button type="button" data-cmd="bold" title="Pogrubienie" class="text-xs font-bold rounded border border-slate-300 w-7 h-7 hover:bg-slate-50">B</button>
@@ -1043,7 +1043,7 @@
             <button type="button" data-cmd="createLink" title="Wstaw link" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Link</button>
             <button type="button" data-cmd="removeFormat" title="Wyczyść formatowanie" class="text-xs rounded border border-slate-300 px-2 h-7 hover:bg-slate-50">Wyczyść</button>
           </div>
-          <div class="field rte-ed min-h-[64px]" contenteditable="true"></div>
+          <div class="field rte-ed w-full min-h-[64px]" contenteditable="true"></div>
           <input type="hidden" name="clientConfirmBody" value="<%= settings.emails.clientConfirmBody %>" />
         </div>
       </div>
@@ -1055,9 +1055,9 @@
         </label>
         <p class="text-xs text-slate-400 -mt-1">Wymaga włączonego SMTP i terminu (dueDate) na pozycjach. Uruchamiane cronem (<code>npm run reminders</code>); jeden klient nie częściej niż co kilka dni.</p>
         <input name="reminderSubject" data-phfield="reminderSubject" type="text" value="<%= settings.emails.reminderSubject %>" placeholder="Temat przypomnienia (domyślny)"
-               class="field" />
+               class="field w-full" />
         <textarea name="reminderIntro" data-phfield="reminderIntro" rows="2" placeholder="Wstęp wiadomości (domyślny)"
-               class="field"><%= settings.emails.reminderIntro %></textarea>
+               class="field w-full"><%= settings.emails.reminderIntro %></textarea>
       </div>
 
       <div class="border-t border-slate-100 pt-4 space-y-1">
@@ -1207,7 +1207,7 @@
       <h2 class="text-sm font-semibold text-slate-700">Własny CSS <span class="text-slate-400 font-normal">(zaawansowane)</span></h2>
       <p class="text-xs text-slate-400">Wstrzykiwany na wszystkich stronach (panel i strony klienta), na końcu — nadpisuje style. Użyj, gdy chcesz zmienić coś ponad dostępne opcje. Znaki <code>&lt;</code> są usuwane ze względów bezpieczeństwa.</p>
       <textarea name="customCss" rows="6" spellcheck="false" placeholder="np. .max-w-2xl { max-width: 60rem; }"
-                class="field font-mono"><%= settings.customCss %></textarea>
+                class="field w-full font-mono"><%= settings.customCss %></textarea>
     </div>
 
     <!-- Aplikacja (PWA) — instaluj panel jako okno na Macu / telefonie (zaawansowane) -->
@@ -1224,12 +1224,12 @@
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Nazwa aplikacji <span class="text-slate-400 font-normal">(puste = „<%= settings.appName %>")</span></label>
           <input name="pwaName" type="text" value="<%= settings.pwa.name %>" maxlength="60" placeholder="<%= settings.appName %>"
-                 class="field" />
+                 class="field w-full" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Krótka nazwa <span class="text-slate-400 font-normal">(pod ikoną)</span></label>
           <input name="pwaShortName" type="text" value="<%= settings.pwa.shortName %>" maxlength="30" placeholder="Evoke"
-                 class="field" />
+                 class="field w-full" />
         </div>
       </div>
 
@@ -1245,7 +1245,7 @@
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Tryb okna</label>
           <% const _disp = settings.pwa.display; %>
-          <select name="pwaDisplay" class="field">
+          <select name="pwaDisplay" class="field w-full">
             <option value="standalone" <%= _disp === 'standalone' ? 'selected' : '' %>>Samodzielne okno</option>
             <option value="minimal-ui" <%= _disp === 'minimal-ui' ? 'selected' : '' %>>Okno z paskiem</option>
             <option value="fullscreen" <%= _disp === 'fullscreen' ? 'selected' : '' %>>Pełny ekran</option>
@@ -1258,12 +1258,12 @@
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Splash — czas <span class="text-slate-400 font-normal">(ms, 0 = wył.)</span></label>
           <input name="pwaSplashMs" type="number" min="0" max="5000" step="100" value="<%= settings.pwa.splashMs %>"
-                 class="field" />
+                 class="field w-full" />
         </div>
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Zawartość splashu</label>
           <% const _sm = settings.pwa.splashMode || 'icon'; %>
-          <select name="pwaSplashMode" class="field">
+          <select name="pwaSplashMode" class="field w-full">
             <option value="icon" <%= _sm === 'icon' ? 'selected' : '' %>>Ikona + nazwa</option>
             <option value="logo" <%= _sm === 'logo' ? 'selected' : '' %>>Logo aplikacji</option>
             <option value="name" <%= _sm === 'name' ? 'selected' : '' %>>Sama nazwa</option>
@@ -1272,7 +1272,7 @@
         <div>
           <label class="block text-xs font-medium text-slate-600 mb-1">Wielkość grafiki <span class="text-slate-400 font-normal">(px, bez limitu)</span></label>
           <input name="pwaSplashSize" type="number" min="48" step="4" value="<%= settings.pwa.splashSize %>"
-                 class="field" />
+                 class="field w-full" />
         </div>
       </div>
       <p class="text-[11px] text-slate-400 -mt-1">Po otwarciu <strong>zainstalowanej</strong> aplikacji pokazuje wybraną treść na „tle startowym" przez podany czas, potem znika. Raz na uruchomienie; w przeglądarce nie działa. „Wielkość grafiki" dotyczy ikony/logo. Tryb „Logo aplikacji" bierze <strong>logo na splash</strong> (pole niżej), a gdy go brak — logo z Brandingu.</p>
@@ -1318,7 +1318,7 @@
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Rozmiar grafiki w ikonie <span class="text-slate-400 font-normal">(30–100%)</span></label>
         <input name="pwaLogoScale" type="number" min="30" max="100" step="2" value="<%= settings.pwa.logoScale %>"
-               class="field sm:w-48" />
+               class="field w-full sm:w-48" />
         <p class="text-[11px] text-slate-400 mt-1">Ile miejsca w kafelku zajmuje grafika. Mniejsza wartość = więcej marginesu (bezpieczniejsze pod maskę na telefonie).</p>
       </div>
 
@@ -1347,11 +1347,11 @@
       <% if (mailReady) { %><span class="text-green-600 font-medium">skonfigurowany</span><% } else { %><span class="text-amber-600 font-medium">niewłączony — maile trafiają do logów serwera</span><% } %>
     </p>
     <% if (test === 'sent') { %>
-      <div class="mb-3 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Wysłano testowy e-mail.</div>
+      <div class="alert alert-ok mb-3"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> Wysłano testowy e-mail.</div>
     <% } else if (test === 'dev') { %>
-      <div class="mb-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 text-sm px-3 py-2">SMTP niewłączony — treść testu trafiła do logów serwera (konsola).</div>
+      <div class="alert alert-warn mb-3 text-amber-700">SMTP niewłączony — treść testu trafiła do logów serwera (konsola).</div>
     <% } else if (test === 'error') { %>
-      <div class="mb-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2">Nie udało się wysłać testu — sprawdź dane SMTP w .env.</div>
+      <div class="alert alert-error mb-3">Nie udało się wysłać testu — sprawdź dane SMTP w .env.</div>
     <% } %>
     <form method="POST" action="/admin/settings/test-email" class="flex flex-col sm:flex-row gap-2">
       <input name="testTo" type="email" value="<%= adminEmail %>" placeholder="adres@twojadomena.pl"
@@ -1386,7 +1386,7 @@
           <input type="hidden" name="enable" value="on" />
           <button type="submit" class="btn btn-secondary">Włącz</button>
         <% } else { %>
-          <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-sm font-medium px-4 py-2 transition">Wyłącz</button>
+          <button type="submit" class="btn btn-danger">Wyłącz</button>
         <% } %>
       </form>
     </div>
@@ -1438,11 +1438,11 @@
     </label>
 
     <template x-if="err">
-      <div class="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2" x-text="err"></div>
+      <div class="alert alert-error" x-text="err"></div>
     </template>
 
     <template x-if="info && info.upToDate && !done">
-      <div class="rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">Masz najnowszą wersję (v<span x-text="info.current"></span>).</div>
+      <div class="alert alert-ok">Masz najnowszą wersję (v<span x-text="info.current"></span>).</div>
     </template>
 
     <template x-if="info && !info.upToDate && !running && !done">
@@ -1469,7 +1469,7 @@
     </div>
 
     <template x-if="done">
-      <div class="rounded-lg bg-green-50 border border-green-200 text-green-800 text-sm px-3 py-2">
+      <div class="alert alert-ok">
         Zaktualizowano do <span class="font-semibold" x-text="to ? 'v' + to : 'nowej wersji'"></span>.
         <a href="/admin/settings?tab=advanced" class="underline font-medium">Odśwież stronę</a>, aby korzystać z nowej wersji.
       </div>
@@ -1485,7 +1485,7 @@
           <input type="hidden" name="enable" value="on" />
           <button type="submit" class="btn btn-secondary">Włącz</button>
         <% } else { %>
-          <button type="submit" class="rounded-lg border border-slate-300 text-slate-700 hover:bg-red-50 hover:text-red-700 hover:border-red-200 text-sm font-medium px-4 py-2 transition">Wyłącz</button>
+          <button type="submit" class="btn btn-danger">Wyłącz</button>
         <% } %>
       </form>
     </div>

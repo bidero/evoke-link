@@ -40,7 +40,7 @@
             <h1 class="text-xl font-semibold mb-1"><%= heading %></h1>
             <% if (sub) { %><p class="text-sm text-slate-500 mb-6"><%= sub %></p><% } %>
           <% } %>
-          <% if (error) { %><div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div><% } %>
+          <% if (error) { %><div class="alert alert-error mb-4"><%= error %></div><% } %>
           <%- include(inner, { email: typeof email !== 'undefined' ? email : '', useLayout }) %>
         </div>
       </div>
@@ -67,7 +67,7 @@
           <h1 class="text-xl font-semibold mb-1"><%= heading %></h1>
           <% if (sub) { %><p class="text-sm text-slate-500 mb-6"><%= sub %></p><% } %>
         <% } %>
-        <% if (error) { %><div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div><% } %>
+        <% if (error) { %><div class="alert alert-error mb-4"><%= error %></div><% } %>
         <%- include(inner, { email: typeof email !== 'undefined' ? email : '', useLayout }) %>
       </div>
       <% if (showHero) { %>
@@ -88,7 +88,7 @@
         <h1 class="text-xl font-semibold mb-1"><%= heading %></h1>
         <% if (sub) { %><p class="text-sm text-slate-500 mb-6"><%= sub %></p><% } %>
       <% } %>
-      <% if (error) { %><div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div><% } %>
+      <% if (error) { %><div class="alert alert-error mb-4"><%= error %></div><% } %>
       <%- include(inner, { email: typeof email !== 'undefined' ? email : '', useLayout }) %>
     </div>
     <% if (!lg.hideFooter) { %><p class="text-center text-xs mt-6 <%= dark ? 'text-white/80' : 'text-slate-500' %>"><%= lFooter %></p><% } %>

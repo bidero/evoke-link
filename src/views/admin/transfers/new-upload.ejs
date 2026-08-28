@@ -1,6 +1,6 @@
 <div class="max-w-2xl" x-data="{ genPwd(){ const c='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*'; const a=new Uint32Array(16); (window.crypto&&window.crypto.getRandomValues)?window.crypto.getRandomValues(a):a.forEach((_,i)=>a[i]=Math.floor(Math.random()*1e9)); let s=''; for(let i=0;i<16;i++) s+=c[a[i]%c.length]; return s; }, expIn(d){ const x=new Date(Date.now()+d*86400000); const p=n=>String(n).padStart(2,'0'); return x.getFullYear()+'-'+p(x.getMonth()+1)+'-'+p(x.getDate())+'T'+p(x.getHours())+':'+p(x.getMinutes()); } }">
   <% if (error) { %>
-    <div class="mb-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
+    <div class="alert alert-error mb-4"><%= error %></div>
   <% } %>
 
   <p class="text-sm text-slate-500 mb-4">
@@ -10,7 +10,7 @@
   <form method="POST" action="/admin/transfers/upload" class="space-y-5 bg-white rounded-2xl border border-slate-200 p-6">
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Projekt (opcjonalnie)</label>
-      <select name="projectId" class="field">
+      <select name="projectId" class="field w-full">
         <option value="">— bez projektu —</option>
         <% projects.forEach(function(p){ %>
           <option value="<%= p.id %>" <%= selectedProjectId === p.id ? 'selected' : '' %>><%= p.name %><%= p.clientName ? ' (' + p.clientName + ')' : '' %></option>
@@ -20,12 +20,12 @@
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Nagłówek (widoczny dla klienta)</label>
       <input name="title" type="text" placeholder="np. Prześlij materiały do projektu"
-             class="field" />
+             class="field w-full" />
     </div>
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Opis / instrukcja (opcjonalnie)</label>
       <textarea name="message" rows="3" placeholder="np. Wgraj logo w wektorze, zdjęcia i teksty."
-                class="field"></textarea>
+                class="field w-full"></textarea>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
@@ -33,18 +33,18 @@
         <div class="flex gap-2">
           <input x-ref="pwd" name="password" type="text" autocomplete="off" placeholder="bez hasła"
                  class="field flex-1 min-w-0" />
-          <button type="button" @click="$refs.pwd.value = genPwd()" title="Wygeneruj mocne hasło" class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm px-3 transition whitespace-nowrap">Generuj</button>
+          <button type="button" @click="$refs.pwd.value = genPwd()" title="Wygeneruj mocne hasło" class="btn btn-secondary">Generuj</button>
         </div>
       </div>
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Data wygaśnięcia (opcjonalnie)</label>
         <input x-ref="exp" name="expiresAt" type="datetime-local"
-               class="field" />
+               class="field w-full" />
         <div class="flex flex-wrap gap-2 mt-2">
           <% [['1','1 dzień'],['7','7 dni'],['30','30 dni']].forEach(function(o){ %>
-            <button type="button" @click="$refs.exp.value = expIn(<%= o[0] %>)" class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-xs px-2.5 py-1 transition"><%= o[1] %></button>
+            <button type="button" @click="$refs.exp.value = expIn(<%= o[0] %>)" class="btn btn-sm btn-secondary text-xs"><%= o[1] %></button>
           <% }); %>
-          <button type="button" @click="$refs.exp.value = ''" class="rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50 text-xs px-2.5 py-1 transition">wyczyść</button>
+          <button type="button" @click="$refs.exp.value = ''" class="btn btn-sm btn-secondary text-slate-500">wyczyść</button>
         </div>
       </div>
     </div>

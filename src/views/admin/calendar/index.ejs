@@ -49,14 +49,14 @@
   <div :class="sideOpen ? 'lg:col-span-2' : 'lg:col-span-3'">
     <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
       <div class="flex items-center gap-2">
-        <a href="<%= prevLink %>" class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50" aria-label="Poprzedni"><%- icon('arrowLeft', { size: 16, cls: '' }) %></a>
+        <a href="<%= prevLink %>" class="btn-icon border border-slate-300 w-8 h-8" aria-label="Poprzedni"><%- icon('arrowLeft', { size: 16, cls: '' }) %></a>
         <h2 class="text-base font-semibold text-slate-800 capitalize min-w-[150px] text-center"><%= label %></h2>
-        <a href="<%= nextLink %>" class="w-8 h-8 inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50" aria-label="Następny"><%- icon('arrowRight', { size: 16, cls: '' }) %></a>
+        <a href="<%= nextLink %>" class="btn-icon border border-slate-300 w-8 h-8" aria-label="Następny"><%- icon('arrowRight', { size: 16, cls: '' }) %></a>
         <% if (!isToday) { %><a href="<%= todayLink %>" class="ml-1 text-sm text-brand-700 hover:underline">Dziś</a><% } %>
       </div>
       <div class="flex items-center gap-2">
         <%# Zwiń/rozwiń panel boczny (Nadchodzące/Zrobione) — kalendarz na pełną szerokość. %>
-        <button type="button" @click="sideOpen = !sideOpen" :title="sideOpen ? 'Zwiń panel — szerszy kalendarz' : 'Rozwiń panel'" class="w-8 h-8 hidden lg:inline-flex items-center justify-center rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50">
+        <button type="button" @click="sideOpen = !sideOpen" :title="sideOpen ? 'Zwiń panel — szerszy kalendarz' : 'Rozwiń panel'" class="btn-icon border border-slate-300 w-8 h-8 hidden lg:inline-flex">
           <span x-show="sideOpen"><%- icon('arrowRight', { size: 16, cls: '' }) %></span>
           <span x-show="!sideOpen" x-cloak><%- icon('arrowLeft', { size: 16, cls: '' }) %></span>
         </button>
@@ -259,17 +259,17 @@
     <form method="POST" :action="form.id ? '/admin/calendar/reminders/' + form.id : '/admin/calendar/reminders'" class="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
       <input type="hidden" name="month" value="<%= curMonth %>" /><input type="hidden" name="view" value="<%= view %>" /><input type="hidden" name="date" value="<%= viewDate %>" />
       <div class="text-base font-semibold text-slate-800 mb-4" x-text="form.id ? 'Edytuj przypomnienie' : 'Nowe przypomnienie'"></div>
-      <input name="title" x-model="form.title" required maxlength="200" placeholder="Co zrobić?" class="field" />
+      <input name="title" x-model="form.title" required maxlength="200" placeholder="Co zrobić?" class="field w-full" />
 
       <%# Początek + koniec (koniec puste = 1 godz.). %>
       <div class="grid grid-cols-2 gap-3 mt-3">
         <label class="block">
           <span class="block text-[11px] font-medium text-slate-500 mb-1">Początek</span>
-          <input name="dueAt" type="datetime-local" x-model="form.dueAt" required class="field field-sm" />
+          <input name="dueAt" type="datetime-local" x-model="form.dueAt" required class="field field-sm w-full" />
         </label>
         <label class="block">
           <span class="block text-[11px] font-medium text-slate-500 mb-1">Koniec <span class="text-slate-400 font-normal">· puste = 1 godz.</span></span>
-          <input name="endAt" type="datetime-local" x-model="form.endAt" :min="form.dueAt" class="field field-sm" />
+          <input name="endAt" type="datetime-local" x-model="form.endAt" :min="form.dueAt" class="field field-sm w-full" />
         </label>
       </div>
 
@@ -277,7 +277,7 @@
       <div class="grid grid-cols-2 gap-3 mt-3">
         <label class="block">
           <span class="block text-[11px] font-medium text-slate-500 mb-1">Priorytet</span>
-          <select name="priority" x-model="form.priority" class="field field-sm">
+          <select name="priority" x-model="form.priority" class="field field-sm w-full">
             <option value="low">Niski</option><option value="normal">Normalny</option><option value="high">Wysoki</option>
           </select>
         </label>
@@ -315,20 +315,20 @@
       <div class="grid grid-cols-2 gap-3 mt-3">
         <label class="block">
           <span class="block text-[11px] font-medium text-slate-500 mb-1">Klient</span>
-          <select name="clientId" x-model="form.clientId" class="field field-sm">
+          <select name="clientId" x-model="form.clientId" class="field field-sm w-full">
             <option value="">—</option>
             <% clients.forEach(function(c){ %><option value="<%= c.id %>"><%= c.name %></option><% }); %>
           </select>
         </label>
         <label class="block">
           <span class="block text-[11px] font-medium text-slate-500 mb-1">Projekt</span>
-          <select name="projectId" x-model="form.projectId" class="field field-sm">
+          <select name="projectId" x-model="form.projectId" class="field field-sm w-full">
             <option value="">—</option>
             <% projects.forEach(function(p){ %><option value="<%= p.id %>"><%= p.name %></option><% }); %>
           </select>
         </label>
       </div>
-      <textarea name="note" x-model="form.note" rows="2" placeholder="Notatka (opcjonalnie)" class="field mt-3"></textarea>
+      <textarea name="note" x-model="form.note" rows="2" placeholder="Notatka (opcjonalnie)" class="field w-full mt-3"></textarea>
       <div class="flex items-center gap-2 mt-3">
         <button type="submit" class="btn btn-primary">Zapisz</button>
         <button type="button" @click="formOpen=false" class="text-sm text-slate-500 hover:text-slate-700 px-2">Anuluj</button>

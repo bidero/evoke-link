@@ -35,7 +35,7 @@
     </div>
     <%# „+ Nowa rozmowa": wybór DOWOLNEGO klienta (także bez wiadomości) → otwiera pustą rozmowę z polem pisania. %>
     <div class="px-3 py-2 border-b border-slate-100">
-      <select onchange="if(this.value)window.location='/admin/messages?client='+this.value" class="field field-sm text-slate-600">
+      <select onchange="if(this.value)window.location='/admin/messages?client='+this.value" class="field field-sm w-full text-slate-600">
         <option value="">+ Nowa rozmowa — wybierz klienta…</option>
         <% (allClients || []).forEach(function (cl) { %><option value="<%= cl.id %>"><%= cl.name %></option><% }); %>
       </select>
@@ -121,7 +121,7 @@
           <label class="inline-flex items-center gap-1.5 text-slate-500 ml-auto"><input type="checkbox" name="notify" checked class="rounded border-slate-300" /> Powiadom mailem<% if (!convClient.email) { %> <span class="text-slate-300">(brak e-maila)</span><% } %></label>
         </div>
         <% if (!oneThread && lastInScope && lastInScope !== defScope) { %>
-          <div class="mb-2 flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs px-2.5 py-1.5">
+          <div class="alert alert-warn mb-2 items-start gap-1.5 text-xs">
             <%- icon('alert', { size: 13, cls: 'mt-0.5 shrink-0' }) %>
             <span>Piszesz w innym wątku niż ostatnia wiadomość klienta (<b><%= lastInLabel %></b>) — klient zobaczy ją w innym miejscu.
               <a href="/admin/messages?client=<%= selected %>&thread=<%= encodeURIComponent(lastInScope) %>" class="underline font-medium">Przejdź do tamtego wątku</a></span>
@@ -141,7 +141,7 @@
           </label>
           <div class="relative flex-1">
             <textarea name="body" x-model="body" :required="!fileName" rows="1" maxlength="4000" placeholder="Napisz wiadomość…" data-enter-send
-              class="field block resize-none rounded-2xl pl-4 pr-14 leading-5"></textarea>
+              class="field block w-full resize-none rounded-2xl pl-4 pr-14 leading-5"></textarea>
             <%# Przycisk = zaokrąglony prostokąt wpisany w pole: RÓWNY odstęp 6 px od górnej,
                 prawej i dolnej krawędzi (`inset-y-1.5 right-1.5`), więc rośnie razem z polem. %>
             <button type="submit" title="Wyślij" aria-label="Wyślij"

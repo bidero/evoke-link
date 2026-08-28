@@ -80,8 +80,12 @@
    ========================================================================== */
 @layer components {
   /* --- Pola formularzy --- */
+  /* UWAGA: `.field` NIE ustawia szerokości. Gdy miało `w-full`, pole w wierszu flex
+     z `shrink-0` brało 100% i odmawiało kurczenia — sąsiednie pola znikały, a wiersz
+     wychodził poza kartę (zgłoszone zrzutami z rozliczeń). Szerokość deklaruje WIDOK:
+     `w-full` w formularzu pionowym, `w-20`/`flex-1` w wierszu. */
   .field {
-    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition;
+    @apply rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition;
   }
   .field:focus { @apply border-brand-500 ring-2 ring-brand-200; }
   .field:disabled { @apply bg-slate-50 text-slate-400 cursor-not-allowed; }
@@ -104,6 +108,30 @@
   .btn-ghost { @apply text-slate-600 hover:bg-slate-100 hover:text-slate-800; }
   /* Przycisk-ikona (kosz, pobieranie, menu) — kwadratowy, bez podpisu. */
   .btn-icon { @apply inline-flex items-center justify-center rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-brand-700; }
+
+  /* --- Wiersz formularza ---
+     Rzędy pól (edycja pozycji, dodawanie) na telefonie stają się STOSEM. Bez tego pola
+     miały szerokość treści i lista wyglądała poszarpanie (zgłoszone zrzutami z telefonu).
+     Szerokości projektowe (`w-20`, `sm:w-40`) nadpisują to same — utilities są po components. */
+  .form-row { @apply flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center; }
+  .form-row > .field,
+  .form-row > label,
+  .form-row > .btn { @apply w-full sm:w-auto; }
+  /* Etykieta OWIJAJĄCA pole: podpis zawsze nad polem, nigdy obok. */
+  .form-row label > .label { @apply mb-0.5; }
+
+  /* --- Pigułki (chipy) ---
+     Małe, zaokrąglone akcje/filtry — osobny kształt niż `.btn`, ale też jeden. */
+  .chip { @apply inline-flex items-center gap-1 rounded-full border border-slate-300 px-2.5 py-1 text-xs text-slate-600 transition hover:bg-slate-50; }
+  .chip-action { @apply hover:border-brand-200 hover:bg-brand-50 hover:text-brand-700; }
+
+  /* --- Komunikaty (alerty) ---
+     Ten sam prostokąt powtarzał się w kilkudziesięciu miejscach w czterech kolorach. */
+  .alert { @apply rounded-lg border px-3 py-2 text-sm; }
+  .alert-error { @apply border-red-200 bg-red-50 text-red-700; }
+  .alert-ok { @apply border-green-200 bg-green-50 text-green-800; }
+  .alert-warn { @apply border-amber-200 bg-amber-50 text-amber-800; }
+  .alert-info { @apply border-brand-200 bg-brand-50 text-brand-700; }
 
   /* --- Pasek akcji ---
      Na telefonie STOS (rząd przycisków z długimi etykietami nie mieści się w 390 px

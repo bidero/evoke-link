@@ -2,13 +2,13 @@
   <a href="/admin/transfers/<%= transfer.id %>" class="text-sm text-slate-500 hover:text-slate-700">← Wróć do transferu</a>
 
   <% if (error) { %>
-    <div class="mt-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-3 py-2"><%= error %></div>
+    <div class="alert alert-error mt-4"><%= error %></div>
   <% } %>
 
   <form method="POST" action="/admin/transfers/<%= transfer.id %>" class="mt-4 space-y-5 bg-white rounded-2xl border border-slate-200 p-6">
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Projekt</label>
-      <select name="projectId" class="field">
+      <select name="projectId" class="field w-full">
         <option value="">— bez projektu —</option>
         <% projects.forEach(function(p){ %>
           <option value="<%= p.id %>" <%= transfer.projectId === p.id ? 'selected' : '' %>><%= p.name %><%= p.clientName ? ' (' + p.clientName + ')' : '' %></option>
@@ -18,25 +18,25 @@
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Tytuł</label>
       <input name="title" type="text" value="<%= transfer.title || '' %>"
-             class="field" />
+             class="field w-full" />
     </div>
 
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Wiadomość</label>
       <textarea name="message" rows="2"
-                class="field"><%= transfer.message || '' %></textarea>
+                class="field w-full"><%= transfer.message || '' %></textarea>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
         <label class="block text-sm font-medium text-slate-700 mb-1">Data wygaśnięcia</label>
         <input x-ref="exp" name="expiresAt" type="datetime-local" value="<%= expiresLocal %>"
-               class="field" />
+               class="field w-full" />
         <div class="flex flex-wrap gap-2 mt-2">
           <% [['1','1 dzień'],['7','7 dni'],['30','30 dni']].forEach(function(o){ %>
-            <button type="button" @click="$refs.exp.value = expIn(<%= o[0] %>)" class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-xs px-2.5 py-1 transition"><%= o[1] %></button>
+            <button type="button" @click="$refs.exp.value = expIn(<%= o[0] %>)" class="btn btn-sm btn-secondary text-xs"><%= o[1] %></button>
           <% }); %>
-          <button type="button" @click="$refs.exp.value = ''" class="rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50 text-xs px-2.5 py-1 transition">wyczyść</button>
+          <button type="button" @click="$refs.exp.value = ''" class="btn btn-sm btn-secondary text-slate-500">wyczyść</button>
         </div>
         <p class="text-xs text-slate-400 mt-1">Puste = nigdy. Wydłużenie reaktywuje wygasły transfer.</p>
       </div>
@@ -45,7 +45,7 @@
         <div>
           <label class="block text-sm font-medium text-slate-700 mb-1">Limit pobrań</label>
           <input name="maxDownloads" type="number" min="1" value="<%= transfer.maxDownloads || '' %>" placeholder="bez limitu"
-                 class="field" />
+                 class="field w-full" />
           <p class="text-xs text-slate-400 mt-1">Dotąd pobrano: <%= transfer.downloadCount %>.</p>
         </div>
       <% } %>
@@ -57,7 +57,7 @@
         <input x-ref="pwd" name="password" type="text" autocomplete="off"
                placeholder="<%= transfer.passwordHash ? 'wpisz, aby zmienić (puste = bez zmian)' : 'ustaw hasło (puste = brak)' %>"
                class="field flex-1 min-w-0" />
-        <button type="button" @click="$refs.pwd.value = genPwd()" title="Wygeneruj mocne hasło" class="rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50 text-sm px-3 transition whitespace-nowrap">Generuj</button>
+        <button type="button" @click="$refs.pwd.value = genPwd()" title="Wygeneruj mocne hasło" class="btn btn-secondary">Generuj</button>
       </div>
       <% if (transfer.passwordHash) { %>
         <label class="inline-flex items-center gap-2 mt-2 text-sm text-slate-600">
