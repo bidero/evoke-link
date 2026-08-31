@@ -49,18 +49,18 @@
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-3">
             <label class="block">
               <span class="block text-[11px] font-medium text-slate-500 mb-1">Nazwa</span>
-              <input name="name" value="<%= u.name || '' %>" maxlength="120" class="field field-sm w-full" />
+              <input name="name" value="<%= u.name || '' %>" maxlength="120" class="field w-full" />
             </label>
             <label class="block">
               <span class="block text-[11px] font-medium text-slate-500 mb-1">Rola</span>
-              <select name="role" <%= u.id === meId ? 'disabled' : '' %> class="field field-sm w-full disabled:bg-slate-50 disabled:text-slate-400">
+              <select name="role" <%= u.id === meId ? 'disabled' : '' %> class="field w-full disabled:bg-slate-50 disabled:text-slate-400">
                 <option value="admin" <%= u.role !== 'staff' ? 'selected' : '' %>>Administrator</option>
                 <option value="staff" <%= u.role === 'staff' ? 'selected' : '' %>>Pracownik</option>
               </select>
             </label>
             <label class="block">
               <span class="block text-[11px] font-medium text-slate-500 mb-1">Nowe hasło <span class="text-slate-400 font-normal">(opc.)</span></span>
-              <input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="min. 8 znaków" class="field field-sm w-full" />
+              <input name="password" type="password" minlength="8" autocomplete="new-password" placeholder="min. 8 znaków" class="field w-full" />
             </label>
             <div class="flex items-end gap-2">
               <% if (u.id !== meId) { %>

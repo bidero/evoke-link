@@ -35,7 +35,7 @@
     </div>
     <%# „+ Nowa rozmowa": wybór DOWOLNEGO klienta (także bez wiadomości) → otwiera pustą rozmowę z polem pisania. %>
     <div class="px-3 py-2 border-b border-slate-100">
-      <select onchange="if(this.value)window.location='/admin/messages?client='+this.value" class="field field-sm w-full text-slate-600">
+      <select onchange="if(this.value)window.location='/admin/messages?client='+this.value" class="field w-full text-slate-600">
         <option value="">+ Nowa rozmowa — wybierz klienta…</option>
         <% (allClients || []).forEach(function (cl) { %><option value="<%= cl.id %>"><%= cl.name %></option><% }); %>
       </select>
@@ -112,7 +112,7 @@
             <span class="inline-flex items-center gap-1.5 text-slate-500">Piszesz w: <span class="font-medium text-slate-700"><%= tabLabel %></span></span>
           <% } else { %>
             <label class="text-slate-500">Kontekst:</label>
-            <select name="scope" class="field field-sm text-xs text-slate-700">
+            <select name="scope" class="field text-xs text-slate-700">
               <option value="c" <%= defScope === 'c' ? 'selected' : '' %>>Ogólne</option>
               <% (projects || []).forEach(function (p) { %><option value="p:<%= p.id %>" <%= defScope === 'p:' + p.id ? 'selected' : '' %>>Projekt: <%= p.name %></option><% }); %>
               <% Object.keys(threadTransfers).forEach(function (tid) { %><option value="t:<%= tid %>" <%= defScope === 't:' + tid ? 'selected' : '' %>>Transfer: <%= threadTransfers[tid] %></option><% }); %>

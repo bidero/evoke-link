@@ -30,6 +30,13 @@
   --card-border-color: transparent;
   --card-shadow: 0 20px 25px -5px rgb(var(--brand-600) / 0.18), 0 8px 10px -6px rgb(var(--brand-600) / 0.12);
   --btn-radius: 0.75rem;
+  /* Wysokość WSZYSTKICH kontrolek panelu (pola, selecty, przyciski, przyciski-ikony).
+     Jedno miejsce — inaczej wysokości rozjeżdżają się per typ elementu. */
+  --control-h: 2.375rem;      /* 38 px — pola, selecty, przyciski, przyciski-ikony */
+  --control-h-sm: 2rem;       /* 32 px — TYLKO szukajka w nagłówku (gęsty pasek) */
+}
+@media (max-width: 767.98px) {
+  :root { --control-h: 2.75rem; --control-h-sm: 2.5rem; }  /* wygodny obszar dotyku */
 }
 
 /* Wspólna powierzchnia karty na stronach klienta/logowania. Styl steruje się
@@ -87,6 +94,14 @@
   .field {
     @apply rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none transition;
   }
+  /* JEDNA wysokość dla WSZYSTKICH kontrolek. Bez tego wysokość brała się z zawartości:
+     select wychodził 32 px, puste pole daty 36 px, pole tekstowe 38 px, a przyciski-ikony
+     34 lub 42 px — stąd „VAT jest mniejszy" i „puste pole terminu jest płaskie".
+     Textarea celowo wyłączona: tam o wysokości decyduje `rows`. */
+  /* Wysokość JAWNA, nie `min-height`: pola dat mają własną zawartość (ikona kalendarza),
+     więc przy `min-height` wychodziły 40 px, a puste 36 — zamiast równych 38. */
+  .field:not(textarea) { height: var(--control-h); }
+  .field-sm:not(textarea) { height: var(--control-h-sm); }
   .field:focus { @apply border-brand-500 ring-2 ring-brand-200; }
   .field:disabled { @apply bg-slate-50 text-slate-400 cursor-not-allowed; }
   .field-sm { @apply px-2 py-1.5; }
@@ -116,16 +131,20 @@
      i podpis są wyrównane bez dokładania klas w widoku. */
   .btn {
     @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition whitespace-nowrap;
+    min-height: var(--control-h);
   }
   .btn:disabled { @apply opacity-40 cursor-not-allowed; }
   .btn-lg { @apply px-5 py-2.5; }
-  .btn-sm { @apply px-3 py-1.5; }
   .btn-primary { @apply bg-brand-600 text-white hover:bg-brand-700; }
   .btn-secondary { @apply border border-slate-300 bg-white text-slate-700 hover:bg-slate-50; }
   .btn-danger { @apply border border-slate-300 text-slate-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600; }
   .btn-ghost { @apply text-slate-600 hover:bg-slate-100 hover:text-slate-800; }
   /* Przycisk-ikona (kosz, pobieranie, menu) — kwadratowy, bez podpisu. */
-  .btn-icon { @apply inline-flex items-center justify-center rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-brand-700; }
+  .btn-icon {
+    @apply inline-flex shrink-0 items-center justify-center rounded-lg p-0 text-slate-400 transition hover:bg-slate-100 hover:text-brand-700;
+    width: var(--control-h);
+    height: var(--control-h);
+  }
 
   /* --- Nagłówek ekranu ---
      Tytuł/opis po lewej, akcje po prawej; na telefonie stos. Każdy ekran układał to
@@ -170,13 +189,7 @@
   .actions > form > .btn { @apply w-full; }
 }
 
-/* Telefon: wygodny obszar dotyku. Małe przyciski (.btn-sm) potrafiły mieć 27 px wysokości,
-   a przyciski-ikon 32 px — na palec za mało. Wymuszamy minimum tylko poniżej `md`,
-   więc gęste paski narzędzi na desktopie zostają bez zmian. */
-@media (max-width: 767.98px) {
-  .btn { min-height: 2.5rem; }
-  .btn-icon { min-width: 2.75rem; min-height: 2.75rem; }
-}
+/* (Wysokość kontrolek na telefonie ustawia --control-h w :root — patrz wyżej.) */
 
 /* Pasek postępu Turbo (nawigacja portali klienta bez reloadu) — w kolorze przewodnim. */
 .turbo-progress-bar { background-color: rgb(var(--brand-600)); }

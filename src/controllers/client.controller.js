@@ -86,7 +86,8 @@ async function showCreateForm(req, res, next) {
 // Strona klienta 360° — kontakt + jego projekty + ostatnie transfery + oś czasu.
 async function showClient(req, res, next) {
   try {
-    const data = await clientService.overview(req.params.id);
+    const projectSort = clientService.PROJECT_SORTS[req.query.psort] ? req.query.psort : 'activity';
+    const data = await clientService.overview(req.params.id, { projectSort });
     if (!data) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
     const TABS = ['przeglad', 'projekty', 'rozliczenia', 'oferty', 'dokumenty', 'transfery', 'historia'];
     res.render('admin/clients/show', {
@@ -97,6 +98,7 @@ async function showClient(req, res, next) {
       events: data.events,
       billing: data.billing,
       charges: data.charges,
+      projectSort,
       retainers: data.retainers,
       offers: data.offers.map((o) => ({ ...o, gross: offerService.totals(o.items).gross, st: offerService.state(o), itemsText: offerService.itemsToText(o.items) })),
       offerBaseUrl: config.appUrl,

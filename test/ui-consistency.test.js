@@ -42,12 +42,15 @@ test('widoki panelu nie sklejają własnych przycisków ani pól', () => {
 test('warstwa komponentów jest w zbudowanym CSS (produkcja nie buduje Tailwinda)', () => {
   const css = fs.readFileSync('public/css/app.css', 'utf8');
   for (const cls of ['.btn', '.btn-primary', '.btn-secondary', '.btn-danger', '.btn-icon',
-                     '.btn-lg', '.btn-sm', '.field', '.field-sm', '.actions', '.form-row',
+                     '.btn-lg', '.field', '.field-sm', '.actions', '.form-row',
                      '.alert', '.alert-error', '.alert-ok', '.chip', '.label']) {
     assert.ok(css.includes(cls + '{') || css.includes(cls + ' '), `brak ${cls} w app.css — zrób npm run build:css`);
   }
-  // Obszar dotyku na telefonie: 32 px to za mało na palec.
-  assert.match(css, /\.btn-icon\{min-width:2\.75rem;min-height:2\.75rem\}/, 'reguła mobilna dla .btn-icon');
+  // JEDNA wysokość dla wszystkich kontrolek — inaczej select wychodzi 32 px, puste pole
+  // daty 36 px, a przycisk-ikona 34 lub 42 (zmierzone przed poprawką).
+  assert.match(css, /--control-h:2\.375rem/, 'zmienna wysokości kontrolek');
+  assert.match(css, /--control-h:2\.75rem/, 'większy obszar dotyku na telefonie');
+  assert.match(css, /\.field:not\(textarea\)\{height:var\(--control-h\)\}/, 'pola trzymają wysokość');
 });
 
 test('definicja komponentów żyje w JEDNYM miejscu', () => {

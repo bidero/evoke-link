@@ -4,7 +4,7 @@
       <% const tabs = [ { label: 'Aktywne', q: 'active' }, { label: 'Zarchiwizowane', q: 'archived' }, { label: 'Wszystkie', q: '' } ]; %>
       <% tabs.forEach(function(t){ const isActive = (filter.status||'') === t.q; %>
         <a href="/admin/projects?status=<%= t.q || 'all' %>"
-           class="btn btn-sm <%= isActive ? 'btn-primary' : 'btn-secondary' %>"><%= t.label %></a>
+           class="btn <%= isActive ? 'btn-primary' : 'btn-secondary' %>"><%= t.label %></a>
       <% }); %>
     </div>
     <div class="actions sm:shrink-0">

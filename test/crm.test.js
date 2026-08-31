@@ -252,3 +252,26 @@ test('portal /c: „Do zapłaty" — pozycje brutto, suma, dane do przelewu i QR
     await prisma.settings.update({ where: { id: 1 }, data: { pdf: snap ? snap.pdf : null } });
   }
 });
+
+test('kartoteka: sortowanie projektów (?psort) z whitelisty, domyślnie ostatnia aktywność', async () => {
+  const clientService = require('../src/services/client.service');
+  const st = Date.now();
+  const c = await prisma.client.create({ data: { name: 'Sort ' + st, token: 'srt_' + st } });
+  // „Stary" utworzony wcześniej, ale ruszany później — inaczej testy sortowań by się nie różniły.
+  const stary = await prisma.project.create({ data: { name: 'Alfa', clientId: c.id, clientToken: 'srtp1_' + st, createdAt: new Date('2026-01-01'), updatedAt: new Date('2026-09-01') } });
+  const nowy = await prisma.project.create({ data: { name: 'Beta', clientId: c.id, clientToken: 'srtp2_' + st, createdAt: new Date('2026-08-01'), updatedAt: new Date('2026-02-01') } });
+  try {
+    const names = async (sort) => (await clientService.overview(c.id, { projectSort: sort })).client.projects.map((p) => p.name);
+
+    assert.deepEqual(await names('activity'), ['Alfa', 'Beta'], 'domyślnie po ostatniej aktywności');
+    assert.deepEqual(await names('newest'), ['Beta', 'Alfa'], 'najnowsze wg daty utworzenia');
+    assert.deepEqual(await names('oldest'), ['Alfa', 'Beta'], 'najstarsze wg daty utworzenia');
+    assert.deepEqual(await names('name'), ['Alfa', 'Beta'], 'po nazwie');
+    // Wartość idzie z adresu, więc śmieć nie może zmienić zapytania.
+    assert.deepEqual(await names('DROP TABLE'), ['Alfa', 'Beta'], 'nieznana wartość → domyślne sortowanie');
+  } finally {
+    await prisma.project.deleteMany({ where: { clientId: c.id } });
+    await prisma.event.deleteMany({ where: { clientId: c.id } });
+    await prisma.client.delete({ where: { id: c.id } });
+  }
+});

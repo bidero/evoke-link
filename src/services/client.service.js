@@ -92,14 +92,23 @@ function getById(id) {
 
 // Dane do strony klienta 360°: klient + jego projekty (z licznikiem transferów),
 // ostatnie transfery ze wszystkich jego projektów oraz oś czasu aktywności.
-async function overview(id) {
+// Sortowanie projektów w kartotece — whitelista, bo wartość idzie wprost z adresu.
+const PROJECT_SORTS = {
+  activity: { updatedAt: 'desc' },   // domyślne: ostatnia aktywność
+  newest: { createdAt: 'desc' },
+  oldest: { createdAt: 'asc' },
+  name: { name: 'asc' },
+};
+
+async function overview(id, opts) {
   const cid = Number(id);
+  const projectOrder = PROJECT_SORTS[(opts && opts.projectSort) || ''] || PROJECT_SORTS.activity;
   const client = await prisma.client.findUnique({
     where: { id: cid },
     include: {
       projects: {
         include: { _count: { select: { transfers: true } } },
-        orderBy: { updatedAt: 'desc' },
+        orderBy: projectOrder,
       },
     },
   });
@@ -345,6 +354,7 @@ async function remove(id) {
 }
 
 module.exports = {
+  PROJECT_SORTS,
   list, getById, overview, getByToken, options, tagCloud, create, update, remove, SORTS,
   staleClients, clientMetrics,
   generateOnboarding, getByOnboardingToken, onboardingState, completeOnboarding,

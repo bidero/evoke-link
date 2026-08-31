@@ -91,7 +91,7 @@
               <% if (c.email) { %>
                 <form method="POST" action="/admin/clients/<%= c.id %>/send-panel">
                   <input type="hidden" name="redirect" value="list" />
-                  <button type="submit" title="Wyślij link panelu na <%= c.email %>" class="btn btn-sm btn-secondary text-xs"><%- icon('mail', { size: 14 }) %> Wyślij</button>
+                  <button type="submit" title="Wyślij link panelu na <%= c.email %>" class="btn btn-secondary text-xs"><%- icon('mail', { size: 14 }) %> Wyślij</button>
                 </form>
               <% } else { %>
                 <span class="text-xs text-slate-300">brak e-maila</span>
@@ -128,7 +128,7 @@
           <% if (c.email) { %>
             <form method="POST" action="/admin/clients/<%= c.id %>/send-panel" class="shrink-0">
               <input type="hidden" name="redirect" value="list" />
-              <button type="submit" title="Wyślij link panelu na <%= c.email %>" class="btn btn-sm btn-secondary text-xs"><%- icon('mail', { size: 14 }) %> Wyślij</button>
+              <button type="submit" title="Wyślij link panelu na <%= c.email %>" class="btn btn-secondary text-xs"><%- icon('mail', { size: 14 }) %> Wyślij</button>
             </form>
           <% } %>
         </div>

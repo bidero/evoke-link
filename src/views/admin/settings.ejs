@@ -221,7 +221,7 @@
             <label class="block text-xs font-medium text-slate-600 mb-1">Akcent (przyciski, aktywne)</label>
             <div class="flex items-center gap-2">
               <input type="color" :value="adminAccent || primary" @input="adminAccent = $event.target.value" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
-              <input type="text" name="adminAccent" x-model="adminAccent" maxlength="7" placeholder="(jak przewodni)" class="field field-sm w-32 font-mono" />
+              <input type="text" name="adminAccent" x-model="adminAccent" maxlength="7" placeholder="(jak przewodni)" class="field w-32 font-mono" />
               <button type="button" x-show="adminAccent" @click="adminAccent=''" class="text-xs text-slate-400 hover:text-slate-600 underline">wyczyść</button>
             </div>
           </div>
@@ -229,7 +229,7 @@
             <label class="block text-xs font-medium text-slate-600 mb-1">Kolor czcionki</label>
             <div class="flex items-center gap-2">
               <input type="color" :value="adminText || textAuto()" @input="adminText = $event.target.value" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
-              <input type="text" name="adminText" x-model="adminText" maxlength="7" placeholder="(auto-kontrast)" class="field field-sm w-32 font-mono" />
+              <input type="text" name="adminText" x-model="adminText" maxlength="7" placeholder="(auto-kontrast)" class="field w-32 font-mono" />
               <button type="button" x-show="adminText" @click="adminText=''" class="text-xs text-slate-400 hover:text-slate-600 underline">wyczyść</button>
             </div>
           </div>
@@ -237,14 +237,14 @@
             <label class="block text-xs font-medium text-slate-600 mb-1">Tło sidebara</label>
             <div class="flex items-center gap-2">
               <input type="color" name="adminSidebar" x-model="adminSidebar" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
-              <input type="text" x-model="adminSidebar" maxlength="7" class="field field-sm w-32 font-mono" />
+              <input type="text" x-model="adminSidebar" maxlength="7" class="field w-32 font-mono" />
             </div>
           </div>
           <div>
             <label class="block text-xs font-medium text-slate-600 mb-1">Pasek nagłówka (góra) <span class="text-slate-400 font-normal">(puste = jak sidebar)</span></label>
             <div class="flex items-center gap-2">
               <input type="color" :value="adminHeader || adminSidebar" @input="adminHeader = $event.target.value" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
-              <input type="text" name="adminHeader" x-model="adminHeader" maxlength="7" placeholder="(jak sidebar)" class="field field-sm w-32 font-mono" />
+              <input type="text" name="adminHeader" x-model="adminHeader" maxlength="7" placeholder="(jak sidebar)" class="field w-32 font-mono" />
               <button type="button" x-show="adminHeader" @click="adminHeader=''" class="text-xs text-slate-400 hover:text-slate-600 underline">wyczyść</button>
             </div>
           </div>
@@ -252,7 +252,7 @@
             <label class="block text-xs font-medium text-slate-600 mb-1">Tło panelu</label>
             <div class="flex items-center gap-2">
               <input type="color" name="adminBg" x-model="adminBg" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
-              <input type="text" x-model="adminBg" maxlength="7" class="field field-sm w-32 font-mono" />
+              <input type="text" x-model="adminBg" maxlength="7" class="field w-32 font-mono" />
             </div>
           </div>
         </div>
@@ -330,7 +330,7 @@
         <label class="block text-xs font-medium text-slate-600 mb-1">Kolor tła</label>
         <div class="flex items-center gap-2">
           <input type="color" name="bgColor" x-model="bgColor" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
-          <input type="text" x-model="bgColor" maxlength="7" class="field field-sm w-32 font-mono" />
+          <input type="text" x-model="bgColor" maxlength="7" class="field w-32 font-mono" />
         </div>
       </div>
 
@@ -356,7 +356,7 @@
                   <input type="checkbox" name="bgRotate" <%= settings.background.rotate ? 'checked' : '' %> class="rounded border-slate-300" /> Rotacja obrazów (slideshow)
                 </label>
                 <div class="flex items-center gap-2 text-xs text-slate-500 mt-1.5">Zmiana co
-                  <input type="number" name="bgRotateSec" value="<%= settings.background.rotateSec || 8 %>" min="3" max="30" class="field field-sm w-16" /> s
+                  <input type="number" name="bgRotateSec" value="<%= settings.background.rotateSec || 8 %>" min="3" max="30" class="field w-16" /> s
                 </div>
               <% } else { %>
                 <p class="text-xs text-slate-400 mt-2">Dodaj 2+ obrazy, aby włączyć rotację.</p>
@@ -888,7 +888,7 @@
           <input type="color" name="lbC1" value="<%= LB ? LB.custom.c1 : '#6e00a5' %>" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
           <input type="color" name="lbC2" value="<%= LB ? LB.custom.c2 : '#a31fde' %>" class="h-9 w-12 rounded border border-slate-300 cursor-pointer" />
           <label class="text-xs font-medium text-slate-600 ml-2">Kąt:</label>
-          <input type="number" name="lbAngle" min="0" max="360" value="<%= LB ? LB.custom.angle : 135 %>" class="field field-sm w-20" />
+          <input type="number" name="lbAngle" min="0" max="360" value="<%= LB ? LB.custom.angle : 135 %>" class="field w-20" />
         </div>
 
         <div x-show="lbType==='solid'" x-cloak class="flex items-center gap-3">
@@ -1181,7 +1181,7 @@
             </label>
             <% if (it.key === 'settings') { %><input type="hidden" name="menuShow_settings" value="on" /><% } %>
             <input type="text" name="menuLabel_<%= it.key %>" value="<%= it.label !== it.defaultLabel ? it.label : '' %>" maxlength="30" placeholder="<%= it.defaultLabel %>"
-                   class="field field-sm flex-1 min-w-0" />
+                   class="field flex-1 min-w-0" />
           </div>
         <% }); %>
       </div>

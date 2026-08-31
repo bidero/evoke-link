@@ -42,9 +42,9 @@
                class="field w-full" />
         <div class="flex flex-wrap gap-2 mt-2">
           <% [['1','1 dzień'],['7','7 dni'],['30','30 dni']].forEach(function(o){ %>
-            <button type="button" @click="$refs.exp.value = expIn(<%= o[0] %>)" class="btn btn-sm btn-secondary text-xs"><%= o[1] %></button>
+            <button type="button" @click="$refs.exp.value = expIn(<%= o[0] %>)" class="btn btn-secondary text-xs"><%= o[1] %></button>
           <% }); %>
-          <button type="button" @click="$refs.exp.value = ''" class="btn btn-sm btn-secondary text-slate-500">wyczyść</button>
+          <button type="button" @click="$refs.exp.value = ''" class="btn btn-secondary text-slate-500">wyczyść</button>
         </div>
       </div>
     </div>

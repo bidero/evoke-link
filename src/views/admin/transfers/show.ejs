@@ -173,29 +173,31 @@
             const _prev = `/admin/transfers/${transfer.id}/preview/${f.id}`;
             const _ii = _m.thumb ? _imgs.indexOf(f) : -1;
           %>
-          <div class="flex items-center justify-between px-5 py-2.5 text-sm hover:bg-slate-50 transition group">
-            <div class="flex items-center gap-3 min-w-0 mr-3">
-              <% if (_m.thumb) { %>
-                <button type="button" @click="open(<%= _ii %>)" class="shrink-0" title="Podgląd (Quick Look)">
-                  <%# ?t=1 → mały JPEG z cache'u zamiast pełnego oryginału (miniatura 48 px
-                      ładowała wcześniej cały plik, np. 7 MB). Lightbox niżej bierze oryginał. %>
-                  <img src="<%= _prev %>?t=1" alt="" loading="lazy" decoding="async" class="w-12 h-12 rounded-lg object-cover border border-slate-200 bg-slate-50" />
-                </button>
-                <button type="button" @click="open(<%= _ii %>)" class="min-w-0 truncate text-left text-slate-700 hover:text-brand-700"><%= f.originalName %></button>
-              <% } else { %>
-                <span class="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0"><%- icon(_m.icon, { size: 22, cls: _m.color }) %></span>
-                <a href="<%= _dl %>" download data-dl="file:<%= transfer.id %>:<%= f.id %>" class="min-w-0 truncate text-slate-700 hover:text-brand-700"><%= f.originalName %></a>
-              <% } %>
-            </div>
-            <span class="flex items-center gap-3 shrink-0">
-              <span class="text-slate-400"><%= fmt.bytes(f.size) %></span>
-              <a href="<%= _dl %>" download data-dl="file:<%= transfer.id %>:<%= f.id %>" class="text-slate-400 hover:text-brand-700 opacity-0 group-hover:opacity-100 transition" aria-label="Pobierz" title="Pobierz"><%- icon('download', { size: 16 }) %></a>
-              <%# Nazwa pliku przez JSON.stringify (nie wklejana wprost w apostrofy) — inaczej
-                  cudzysłów albo backslash w nazwie rozwala literał JS w atrybucie. %>
-              <form method="POST" action="/admin/transfers/<%= transfer.id %>/file/<%= f.id %>/delete"
-                    onsubmit="return confirm('Usunąć plik ' + <%= JSON.stringify(f.originalName) %> + '? Zniknie też z dysku — tej operacji nie można cofnąć.')">
-                <button type="submit" class="text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition" aria-label="Usuń plik" title="Usuń plik"><%- icon('trash', { size: 16 }) %></button>
-              </form>
+          <%# Rozmiar stoi PRZY PRAWEJ KRAWĘDZI, a ikony akcji pojawiają się na hover
+              W TYM SAMYM miejscu (rozmiar znika). Wcześniej ikony rezerwowały miejsce zawsze,
+              więc rozmiar był odsunięty od krawędzi, a nazwa pliku ucinana wcześniej niż trzeba. %>
+          <div class="flex items-center gap-3 px-5 py-2.5 text-sm hover:bg-slate-50 transition group">
+            <% if (_m.thumb) { %>
+              <button type="button" @click="open(<%= _ii %>)" class="shrink-0" title="Podgląd (Quick Look)">
+                <%# ?t=1 → mały JPEG z cache'u zamiast pełnego oryginału. Lightbox bierze oryginał. %>
+                <img src="<%= _prev %>?t=1" alt="" loading="lazy" decoding="async" class="w-12 h-12 rounded-lg object-cover border border-slate-200 bg-slate-50" />
+              </button>
+              <button type="button" @click="open(<%= _ii %>)" class="min-w-0 flex-1 truncate text-left text-slate-700 hover:text-brand-700"><%= f.originalName %></button>
+            <% } else { %>
+              <span class="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center shrink-0"><%- icon(_m.icon, { size: 22, cls: _m.color }) %></span>
+              <a href="<%= _dl %>" download data-dl="file:<%= transfer.id %>:<%= f.id %>" class="min-w-0 flex-1 truncate text-slate-700 hover:text-brand-700"><%= f.originalName %></a>
+            <% } %>
+            <span class="relative shrink-0 w-24 h-9 flex items-center justify-end">
+              <span class="text-slate-400 tabular-nums transition-opacity group-hover:opacity-0"><%= fmt.bytes(f.size) %></span>
+              <span class="absolute inset-y-0 right-0 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <a href="<%= _dl %>" download data-dl="file:<%= transfer.id %>:<%= f.id %>" class="btn-icon" aria-label="Pobierz" title="Pobierz"><%- icon('download', { size: 16 }) %></a>
+                <%# Nazwa pliku przez JSON.stringify (nie wklejana wprost w apostrofy) — inaczej
+                    cudzysłów albo backslash w nazwie rozwala literał JS w atrybucie. %>
+                <form method="POST" action="/admin/transfers/<%= transfer.id %>/file/<%= f.id %>/delete"
+                      onsubmit="return confirm('Usunąć plik ' + <%= JSON.stringify(f.originalName) %> + '? Zniknie też z dysku — tej operacji nie można cofnąć.')">
+                  <button type="submit" class="btn-icon hover:text-red-600 hover:bg-red-50" aria-label="Usuń plik" title="Usuń plik"><%- icon('trash', { size: 16 }) %></button>
+                </form>
+              </span>
             </span>
           </div>
         <% }); %>
