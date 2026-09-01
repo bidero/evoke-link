@@ -22,10 +22,34 @@ function redact(s) {
   return String(s == null ? '' : s).replace(/(https?:\/\/)[^@/\s]+@/gi, '$1***@');
 }
 
+// Surowe błędy gita są dla użytkownika panelu bezużyteczne („RPC failed; HTTP 401 curl 22…
+// fatal: expected flush after ref listing"). Tłumaczymy najczęstsze na zdanie mówiące,
+// CO ZROBIĆ — oryginał (zredagowany) zostaje doklejony, żeby nic nie ginęło.
+const GIT_HINTS = [
+  [/HTTP 401|Authentication failed|could not read Username|Invalid username or password/i,
+   'Serwer nie ma już dostępu do repozytorium (401). Najczęściej wygasł albo został unieważniony token GitHuba zapisany w adresie „origin". Ustaw nowy: git remote set-url origin <adres z nowym tokenem> — albo przejdź na klucz wdrożeniowy (SSH), który nie wygasa.'],
+  [/HTTP 403|Permission .* denied|access rights/i,
+   'GitHub odmówił dostępu (403). Token istnieje, ale nie ma uprawnień do tego repozytorium — sprawdź jego zakres (odczyt zawartości) i czy repozytorium jest w nim zaznaczone.'],
+  [/Could not resolve host|Connection timed out|Failed to connect|network is unreachable/i,
+   'Serwer nie może połączyć się z GitHubem. Sprawdź łącze albo czy hosting nie blokuje wyjścia na zewnątrz.'],
+  [/not a git repository/i,
+   'Katalog aplikacji nie jest repozytorium gita — aktualizacja z panelu działa tylko dla wdrożenia przez „git clone".'],
+  [/local changes|would be overwritten|Your local changes/i,
+   'Na serwerze są lokalne zmiany w plikach aplikacji i blokują aktualizację. Cofnij je (git checkout -- .) albo zabezpiecz (git stash), potem spróbuj ponownie.'],
+  [/non-fast-forward|diverged|Not possible to fast-forward/i,
+   'Historia na serwerze rozjechała się z GitHubem, więc aktualizacja „do przodu" nie przejdzie. Wymaga ręcznego rozwiązania na serwerze.'],
+];
+
+function explainGitError(raw) {
+  const msg = redact(raw).trim();
+  const hit = GIT_HINTS.find(([re]) => re.test(msg));
+  return hit ? `${hit[1]}\n\n(Oryginalny błąd: ${msg})` : msg;
+}
+
 function git(args, opts = {}) {
   return new Promise((resolve, reject) => {
     execFile('git', args, { cwd: ROOT, timeout: opts.timeout || 60000, windowsHide: true }, (err, stdout, stderr) => {
-      if (err) return reject(new Error(redact(stderr || err.message).trim() || `git ${args[0]}: błąd`));
+      if (err) return reject(new Error(explainGitError(stderr || err.message) || `git ${args[0]}: błąd`));
       resolve(String(stdout).trim());
     });
   });
@@ -118,7 +142,7 @@ function setNotify(enabled) {
 
 module.exports = {
   ROOT, BRANCH, STATUS_FILE, LOG_FILE,
-  redact, git, currentVersion, parseCommits,
+  redact, explainGitError, git, currentVersion, parseCommits,
   readStatus, writeStatus, appendLog, tailLog,
   checkForUpdates, isRunning, startUpdate,
   isNotifyDisabled, setNotify,

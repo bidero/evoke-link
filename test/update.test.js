@@ -104,3 +104,27 @@ test('GET /admin/update/status: wymaga logowania, zwraca JSON ze stanem', async 
   assert.match(html, /Zainstalowana wersja/);
   assert.match(html, /tab: 'advanced'/, 'deep-link ?tab=advanced ustawia zakładkę');
 });
+
+test('błędy gita tłumaczone na zdanie mówiące CO ZROBIĆ (i bez wycieku tokenu)', () => {
+  const svc = require('../src/services/update.service');
+
+  // Dokładnie to, co zobaczył właściciel przy aktualizacji — samo w sobie nic nie mówi.
+  const auth = svc.explainGitError('error: RPC failed; HTTP 401 curl 22 The requested URL returned error: 401\nfatal: expected flush after ref listing');
+  assert.match(auth, /nie ma już dostępu do repozytorium \(401\)/);
+  assert.match(auth, /remote set-url|klucz wdrożeniowy/, 'komunikat podaje drogę wyjścia');
+  assert.match(auth, /Oryginalny błąd/, 'surowy błąd zachowany, nie ukryty');
+
+  assert.match(svc.explainGitError('remote: Permission to bidero/evoke-link.git denied\nHTTP 403'), /403/);
+  assert.match(svc.explainGitError('fatal: Could not resolve host: github.com'), /połączyć się z GitHubem/);
+  assert.match(svc.explainGitError('fatal: not a git repository (or any of the parent directories): .git'), /nie jest repozytorium/);
+  assert.match(svc.explainGitError('error: Your local changes to the following files would be overwritten by merge'), /lokalne zmiany/);
+  assert.match(svc.explainGitError('fatal: Not possible to fast-forward, aborting.'), /rozjechała/);
+
+  // Nieznany błąd przechodzi bez zmian (nie zgadujemy).
+  assert.equal(svc.explainGitError('fatal: coś zupełnie innego'), 'fatal: coś zupełnie innego');
+
+  // Token w adresie NIE MOŻE wyciec do panelu ani do logu.
+  const leaky = svc.explainGitError('remote: https://ghp_TAJNYTOKEN@github.com/bidero/evoke-link.git\nHTTP 401');
+  assert.doesNotMatch(leaky, /ghp_TAJNYTOKEN/);
+  assert.match(leaky, /https:\/\/\*\*\*@github\.com/);
+});
