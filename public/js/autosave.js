@@ -4,8 +4,16 @@
 // z body pełny obiekt pozycji, więc wysłanie samego zmienionego pola WYZEROWAŁOBY resztę
 // (nazwę, VAT, daty). Dlatego zawsze leci komplet.
 //
-// Odpowiedź to przekierowanie na stronę — `redirect: 'manual'` zatrzymuje je po naszej
-// stronie, żeby nie ściągać całego HTML-a przy każdej zmianie pola.
+// GOTCHA NA STAŁE (błąd z v1.3.0): body MUSI iść jako `application/x-www-form-urlencoded`.
+// `new FormData(form)` przekazany do fetch ustawia `multipart/form-data`, a aplikacja ma
+// wpięte TYLKO `express.urlencoded` i `express.json` (src/app.js) — multipart nikt nie
+// parsuje, więc `req.body` było PUSTE: kontroler nie miał czego zapisać, odpowiadał
+// przekierowaniem, a skrypt pokazywał „Zapisano" mimo że nic się nie zmieniło.
+// Stąd konwersja przez `URLSearchParams` (formularze auto-zapisu nie mają pól plikowych).
+//
+// Prosimy o JSON (`Accept`), żeby odróżnić sukces od odmowy zapisu — bez tego każda
+// odpowiedź serwera wygląda dla nas jak przekierowanie, czyli „udało się".
+// Zwykły submit (bez JS) dalej dostaje przekierowanie na stronę.
 (function () {
   function ready(fn) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn);
@@ -42,11 +50,13 @@
           method: 'POST',
           credentials: 'same-origin',
           redirect: 'manual',
-          body: new FormData(form),
+          headers: { Accept: 'application/json' },
+          body: new URLSearchParams(new FormData(form)),
         })
           .then(function (r) {
-            // 'opaqueredirect' = serwer odpowiedział przekierowaniem, czyli zapis przeszedł.
-            if (r.type === 'opaqueredirect' || r.ok) show('Zapisano');
+            // 204 = zapisane (odpowiedź dla auto-zapisu). 'opaqueredirect' = starsza ścieżka
+            // z przekierowaniem. Odmowa zapisu (np. błędna kwota) przychodzi jako 4xx.
+            if (r.ok || r.type === 'opaqueredirect') show('Zapisano');
             else show('Nie udało się zapisać', false);
           })
           .catch(function () { show('Brak połączenia — zmiana niezapisana', false); })

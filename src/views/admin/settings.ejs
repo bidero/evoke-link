@@ -932,7 +932,16 @@
             <label class="inline-flex items-center gap-1.5 text-xs text-slate-500"><input type="checkbox" name="removeMailLogo" class="rounded border-slate-300" /> usuń</label>
           </div>
         <% } %>
-        <input name="mailLogo" type="file" accept="image/*,.svg" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm" />
+        <input name="mailLogo" type="file" accept="image/png,image/jpeg,image/gif,image/webp" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:text-brand-700 file:px-3 file:py-1.5 file:text-sm" />
+        <%# Logo jedzie jako załącznik inline (cid:) — działa w Gmailu/Outlooku, w odróżnieniu
+            od data URI. Ale SVG nie renderuje w mailu ŻADEN liczący się klient, więc uprzedzamy
+            o tym wprost, zamiast pozwolić wysłać maile z samym wordmarkiem. %>
+        <% var _mailLogo = settings.emails.logoPath || settings.logoPath; %>
+        <% if (_mailLogo && /\.svg(\?|$)/i.test(_mailLogo)) { %>
+          <p class="alert alert-warn mt-2 text-xs">Obecne logo jest w formacie SVG, a klienty pocztowe (Gmail, Outlook) go nie wyświetlają — w mailach pojawi się sama nazwa aplikacji. Wgraj tu wersję PNG (najlepiej ok. 360 px szerokości).</p>
+        <% } else { %>
+          <p class="text-xs text-slate-400 mt-1.5">PNG lub JPG (ok. 360 px szerokości). SVG nie działa w mailach — Gmail i Outlook go nie renderują.</p>
+        <% } %>
       </div>
 
       <div>

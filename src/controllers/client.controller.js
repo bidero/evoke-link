@@ -17,6 +17,7 @@ const config = require('../config');
 const fmt = require('../utils/format');
 const backlink = require('../utils/backlink');
 const { sanitizeIfSvg } = require('../utils/svgSanitize');
+const autosave = require('../utils/autosave');
 const csv = require('../utils/csv');
 const messagePoll = require('../utils/messagePoll');
 
@@ -305,15 +306,16 @@ async function addCharge(req, res, next) {
 async function updateCharge(req, res, next) {
   try {
     const cid = Number(req.params.id);
+    const url = `/admin/clients/${cid}?tab=rozliczenia`;
     const charge = await chargeService.getByIdWithProject(req.params.chargeId);
-    if (charge && chargeService.ownerClientId(charge) === cid) {
-      const amount = chargeService.parseAmount(req.body.amount);
-      if (amount > 0) {
-        const projectId = await clientProjectId(parseProjectId(req.body.projectId), cid);
-        await chargeService.update(charge.id, { label: req.body.label, amount, vatRate: chargeService.parseVatRate(req.body.vatRate), date: req.body.date, dueDate: req.body.dueDate, paidAt: req.body.paidAt, projectId }, cid);
-      }
-    }
-    res.redirect(`/admin/clients/${cid}?tab=rozliczenia`);
+    if (!charge || chargeService.ownerClientId(charge) !== cid) return autosave.refused(req, res, url, 'Nie znaleziono pozycji', 404);
+    // Kwota jest jedynym polem wymaganym. Błędna (albo brak pola w żądaniu) = NIE zapisujemy
+    // i mówimy o tym wprost — wcześniej lądowało tu ciche przekierowanie udające sukces.
+    const amount = chargeService.parseAmount(req.body.amount);
+    if (!(amount > 0)) return autosave.refused(req, res, url, 'Podaj kwotę większą od zera');
+    const projectId = await clientProjectId(parseProjectId(req.body.projectId), cid);
+    await chargeService.update(charge.id, { label: req.body.label, amount, vatRate: chargeService.parseVatRate(req.body.vatRate), date: req.body.date, dueDate: req.body.dueDate, paidAt: req.body.paidAt, projectId }, cid);
+    return autosave.saved(req, res, url);
   } catch (err) {
     next(err);
   }

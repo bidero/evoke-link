@@ -14,21 +14,34 @@ const MAIL_THEMES = ['classic', 'minimal', 'rail', 'tint', 'badge'];
 const PUBLIC_DIR = path.join(__dirname, '..', '..', 'public'); // logo brandingu leży w public/branding/
 const LOGO_MIME = { svg: 'image/svg+xml', png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp' };
 
-// Logo maila OSADZONE inline (data URI), wczytane z pliku na dysku — ładuje się NATYCHMIAST z treścią
-// maila, bez zdalnego pobierania (koniec „logo ładuje się wieczność") i działa też gdy appUrl to
-// localhost / adres niedostępny z zewnątrz. SVG dozwolone (inline renderuje klient, który je wspiera,
-// jak wcześniej). Za duże (>48 KB — ryzyko przycięcia maila w Gmailu ~102 KB) albo brak pliku → null
-// (wtedy wrap() daje remote-URL dla rastra, a dla SVG/braku — czysty wordmark tekstowy).
-function logoDataUri(rawLogo) {
-  if (!rawLogo) return null;
-  const ext = (String(rawLogo).match(/\.([a-z0-9]+)(?:\?|$)/i) || [])[1];
-  const mime = ext && LOGO_MIME[ext.toLowerCase()];
-  if (!mime) return null;
+// Logo maila jedzie jako ZAŁĄCZNIK INLINE (`cid:`), a nie w treści HTML.
+//
+// GOTCHA NA STAŁE — DLACZEGO NIE data URI (regresja v0.99.25, naprawiona w v1.3.4):
+// Gmail (web/iOS/Android), Outlook (desktop i outlook.com) oraz Yahoo WYCINAJĄ obrazki
+// `data:` z `<img src>`. Data URI renderują tylko Apple Mail, Thunderbird i Samsung Mail —
+// dlatego logo wyglądało poprawnie u nas na Macu/iPhonie, a u klientów na Gmailu NIE BYŁO GO
+// WCALE. Załącznik `cid:` działa we wszystkich tych klientach i nie wymaga pobierania z sieci
+// (koniec „logo ładuje się wieczność", od którego zaczęło się data URI).
+//
+// DRUGA GOTCHA: tylko RASTER (PNG/JPG/GIF/WebP). Żaden liczący się klient pocztowy nie
+// renderuje SVG w `<img>` — dla SVG (albo braku pliku) świadomie zostaje wordmark tekstowy.
+const MAIL_LOGO_CID = 'evoke-logo';
+const RASTER_RE = /\.(png|jpe?g|gif|webp)(\?|$)/i;
+const MAX_LOGO_BYTES = 2 * 1024 * 1024; // załącznik nie liczy się do limitu przycięcia Gmaila,
+                                        // ale cięższe logo niepotrzebnie pogrubia każdy mail.
+
+// Plik logo do załączenia (null = brak/nie raster/za duży → wordmark tekstowy).
+function mailLogoFile(s) {
+  const raw = (s && s.emails && s.emails.logoPath) || (s && s.logoPath);
+  if (!raw || !RASTER_RE.test(String(raw))) return null;
+  const ext = (String(raw).match(/\.([a-z0-9]+)(?:\?|$)/i) || [])[1];
+  const contentType = ext && LOGO_MIME[ext.toLowerCase()];
+  if (!contentType) return null;
   try {
-    const file = path.join(PUBLIC_DIR, String(rawLogo).replace(/\.\./g, '').replace(/^\/+/, ''));
-    const buf = fs.readFileSync(file);
-    if (buf.length > 48 * 1024) return null;
-    return `data:${mime};base64,${buf.toString('base64')}`;
+    const file = path.join(PUBLIC_DIR, String(raw).replace(/\.\./g, '').replace(/^\/+/, ''));
+    const stat = fs.statSync(file);
+    if (!stat.isFile() || stat.size > MAX_LOGO_BYTES) return null;
+    return { filename: path.basename(file), path: file, cid: MAIL_LOGO_CID, contentType, contentDisposition: 'inline' };
   } catch (_) { return null; }
 }
 
@@ -102,14 +115,27 @@ function cleanSubject(s) {
 // w historii TEN temat, który realnie poszedł do klienta (także gdy pochodzi z szablonu
 // w Ustawieniach → E-mail). Działa też bez SMTP (tryb dev), więc historia jest spójna.
 async function send({ to, subject, html, text, replyTo, attachments }) {
+  // Logo doklejamy TUTAJ — dzięki temu żadna z 19 funkcji maili nie musi o nim wiedzieć
+  // (ta sama zasada, co przy motywach: jedna zmiana → wszystkie maile).
+  const all = await withLogoAttachment(html, attachments);
   const t = getTransporter();
   if (!t) {
-    console.log('\n[mail:DEV] (SMTP niewłączony) =>', { to, subject, attachments: attachments ? attachments.map((a) => a.filename) : undefined });
+    console.log('\n[mail:DEV] (SMTP niewłączony) =>', { to, subject, attachments: all ? all.map((a) => a.filename) : undefined });
     console.log('[mail:DEV] treść:\n' + (text || html) + '\n');
     return { dev: true, to, subject };
   }
-  const info = await t.sendMail({ from: config.mail.from, to, subject, html, text, replyTo, attachments });
+  const info = await t.sendMail({ from: config.mail.from, to, subject, html, text, replyTo, attachments: all });
   return Object.assign({}, info, { to, subject });
+}
+
+// Dokłada logo jako załącznik inline, gdy treść realnie się do niego odwołuje (`cid:`).
+async function withLogoAttachment(html, attachments) {
+  if (!html || html.indexOf(`cid:${MAIL_LOGO_CID}`) === -1) return attachments;
+  let s;
+  try { s = await settingsService.get(); } catch (_) { s = settingsService.DEFAULTS; }
+  const logo = mailLogoFile(s);
+  if (!logo) return attachments;
+  return (attachments || []).concat([logo]);
 }
 
 // Miesza kolor marki z bielą (t=0..1) i zwraca hex — do jasnych tintów w motywach.
@@ -132,11 +158,12 @@ async function wrap(content, { heading, preheader } = {}) {
   const appName = esc(s.appName || 'Evoke LINK');
   const primary = (s.colors && s.colors.primary) || '#6e00a5';
   const theme = MAIL_THEMES.includes(s.emails && s.emails.theme) ? s.emails.theme : 'classic';
-  // Logo maila: najpierw próba OSADZENIA inline (data URI z pliku — natychmiastowe, bez fetchu).
-  // Gdy się nie uda (za duże/brak): raster → remote URL (fallback), SVG/brak → wordmark tekstowy.
-  const rawLogo = (s.emails && s.emails.logoPath) || s.logoPath;
-  const logo = logoDataUri(rawLogo)
-    || (rawLogo && /\.(png|jpe?g|gif|webp)(\?|$)/i.test(rawLogo) ? `${config.appUrl}${rawLogo}` : null);
+  // Logo maila: referencja do załącznika inline (doklejanego w `send`). Gdy pliku nie ma,
+  // nie jest rastrem albo jest za duży → `null`, czyli czysty wordmark tekstowy.
+  // Zdalnego URL-a świadomie NIE MA: plik i tak leży w `public/branding/` tej samej aplikacji,
+  // więc gdy nie da się go załączyć, nie da się go też pobrać — a odwołanie do sieci kosztuje
+  // czekanie w kliencie pocztowym i bywa blokowane.
+  const logo = mailLogoFile(s) ? `cid:${MAIL_LOGO_CID}` : null;
   const footer = esc((s.texts && s.texts.footer) || `${appName} · bezpieczna wymiana plików`);
   const wordmark = (align) => (logo
     ? `<img src="${esc(logo)}" alt="${appName}" style="height:30px;max-width:190px;object-fit:contain;display:${align === 'center' ? 'inline-block' : 'block'}" />`

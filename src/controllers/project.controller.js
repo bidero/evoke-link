@@ -8,6 +8,7 @@ const mail = require('../services/mail.service');
 const config = require('../config');
 const fmt = require('../utils/format');
 const backlink = require('../utils/backlink');
+const autosave = require('../utils/autosave');
 
 const parseClientId = (v) => (v ? parseInt(v, 10) : null);
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -238,11 +239,14 @@ async function toggleCharge(req, res, next) {
 // Zmiana daty rozliczenia pozycji (po oznaczeniu jako rozliczone — edycja daty).
 async function setChargePaidDate(req, res, next) {
   try {
+    const url = `/admin/projects/${req.params.id}#rozliczenia`;
     const charge = await chargeService.getById(req.params.chargeId);
-    if (charge && charge.projectId === Number(req.params.id)) {
-      await chargeService.setPaidDate(charge.id, req.body.paidAt);
-    }
-    res.redirect(`/admin/projects/${req.params.id}#rozliczenia`);
+    if (!charge || charge.projectId !== Number(req.params.id)) return autosave.refused(req, res, url, 'Nie znaleziono pozycji', 404);
+    // Puste pole znaczy „wyczyść datę" (świadome cofnięcie rozliczenia), ale BRAK pola
+    // w żądaniu to uszkodzona wysyłka — wtedy zapis skasowałby datę bez wiedzy użytkownika.
+    if (!('paidAt' in req.body)) return autosave.refused(req, res, url, 'Żądanie bez pola daty — nic nie zapisano');
+    await chargeService.setPaidDate(charge.id, req.body.paidAt);
+    return autosave.saved(req, res, url);
   } catch (err) {
     next(err);
   }

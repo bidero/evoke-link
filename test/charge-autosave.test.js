@@ -85,6 +85,85 @@ test('wysyłka NIEPEŁNA kasuje dane — dlatego panel edycji renderuje wszystki
   }
 });
 
+// ────────────────────────────────────────────────────────────────────────────
+// REGRESJA v1.3.4: skrypt wysyłał `new FormData(form)`, czyli multipart/form-data,
+// a aplikacja parsuje tylko urlencoded/json → `req.body` było PUSTE. Kontroler nie miał
+// czego zapisać, odpowiadał przekierowaniem, a skrypt meldował „Zapisano". Testy poniżej
+// pilnują OBU stron kontraktu: formatu wysyłki i tego, że odmowa zapisu jest widoczna.
+// ────────────────────────────────────────────────────────────────────────────
+
+test('skrypt wysyła urlencoded (NIE multipart) — inaczej req.body jest puste', async () => {
+  const fs = require('fs');
+  const js = fs.readFileSync(path.join(__dirname, '..', 'public', 'js', 'autosave.js'), 'utf8');
+  assert.match(js, /new URLSearchParams\(new FormData\(form\)\)/, 'body konwertowane na urlencoded');
+  assert.doesNotMatch(js, /body:\s*new FormData\(form\)/, 'FormData NIE trafia wprost do fetch (to multipart)');
+  assert.match(js, /Accept:\s*'application\/json'/, 'prosi o JSON, żeby odróżnić sukces od odmowy');
+});
+
+// Tak wysyła przeglądarka PO poprawce: urlencoded + Accept: application/json.
+const postAuto = (url, fields) => fetch(url, {
+  method: 'POST', redirect: 'manual',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json', Cookie: cookie },
+  body: new URLSearchParams(fields),
+});
+
+test('auto-zapis: 204 i wartość FAKTYCZNIE zmieniona w bazie', async (t) => {
+  if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
+  const f = await fixture();
+  try {
+    const res = await postAuto(`${base}/admin/clients/${f.client.id}/charges/${f.charge.id}`, {
+      label: 'Kaseton', projectId: String(f.project.id), amount: '750,00', vatRate: '23',
+      date: '2026-06-09', dueDate: '2026-07-13', paidAt: '',
+    });
+    assert.equal(res.status, 204, 'auto-zapis dostaje 204 (a nie przekierowanie z HTML-em)');
+    const after = await prisma.charge.findUnique({ where: { id: f.charge.id } });
+    assert.equal(after.amount, 75000, 'kwota realnie zapisana');
+    assert.equal(after.label, 'Kaseton', 'reszta pól nietknięta');
+  } finally {
+    await cleanup(f);
+  }
+});
+
+test('żądanie bez pola kwoty = 422, a nie ciche „Zapisano"', async (t) => {
+  if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
+  const f = await fixture();
+  try {
+    // Dokładnie to, co robiła zepsuta wysyłka multipart: serwer widzi puste body.
+    const res = await fetch(`${base}/admin/clients/${f.client.id}/charges/${f.charge.id}`, {
+      method: 'POST', redirect: 'manual', headers: { Accept: 'application/json', Cookie: cookie }, body: new FormData(),
+    });
+    assert.equal(res.status, 422, 'odmowa zapisu jest widoczna dla skryptu');
+    const after = await prisma.charge.findUnique({ where: { id: f.charge.id } });
+    assert.equal(after.amount, 50000, 'pozycja nietknięta');
+  } finally {
+    await cleanup(f);
+  }
+});
+
+test('data rozliczenia w projekcie: puste pole czyści, BRAK pola nie kasuje daty', async (t) => {
+  if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
+  const f = await fixture();
+  try {
+    const url = `${base}/admin/projects/${f.project.id}/charges/${f.charge.id}/paid-date`;
+    assert.equal((await postAuto(url, { paidAt: '2026-06-15' })).status, 204);
+    let after = await prisma.charge.findUnique({ where: { id: f.charge.id } });
+    assert.equal(after.paidAt.toISOString().slice(0, 10), '2026-06-15', 'data ustawiona');
+
+    // Uszkodzone żądanie (brak pola) — wcześniej CICHO kasowało datę rozliczenia.
+    const broken = await fetch(url, { method: 'POST', redirect: 'manual', headers: { Accept: 'application/json', Cookie: cookie }, body: new FormData() });
+    assert.equal(broken.status, 422, 'brak pola = odmowa');
+    after = await prisma.charge.findUnique({ where: { id: f.charge.id } });
+    assert.ok(after.paidAt, 'data rozliczenia NIE została skasowana');
+
+    // Świadome wyczyszczenie (puste pole) musi dalej działać.
+    assert.equal((await postAuto(url, { paidAt: '' })).status, 204);
+    after = await prisma.charge.findUnique({ where: { id: f.charge.id } });
+    assert.equal(after.paidAt, null, 'puste pole nadal cofa rozliczenie');
+  } finally {
+    await cleanup(f);
+  }
+});
+
 test('widok: wiersz jest zwarty (bez pól), panel edycji ma etykiety i auto-zapis', async (t) => {
   if (!cookie) return t.skip('brak ADMIN_PASSWORD w .env');
   const f = await fixture();
