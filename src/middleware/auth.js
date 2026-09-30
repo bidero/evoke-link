@@ -1,10 +1,30 @@
+const authService = require('../services/auth.service');
+
 // Strażnik tras panelu. Jeśli użytkownik nie jest zalogowany,
 // przekierowuje na stronę logowania.
-function requireAuth(req, res, next) {
-  if (req.session && req.session.user) {
+//
+// Sesję weryfikujemy z BAZĄ przy każdym żądaniu (jedno zapytanie po kluczu głównym): konto
+// wyłączone albo usunięte zostaje wylogowane od razu, a zmiana roli/nazwy działa od następnego
+// kliknięcia — bez tego podpisane ciasteczko dawało dostęp jeszcze przez 7 dni.
+async function requireAuth(req, res, next) {
+  const u = req.session && req.session.user;
+  if (!u) return res.redirect('/admin/login');
+  try {
+    const fresh = await authService.refreshSessionUser(u);
+    if (!fresh) {
+      req.session = null;
+      return res.redirect('/admin/login');
+    }
+    // Zapis do sesji tylko przy realnej zmianie (cookie-session przepisuje ciasteczko przy każdej).
+    if (fresh.role !== u.role || fresh.name !== u.name || fresh.email !== u.email) {
+      req.session.user = Object.assign({}, u, fresh);
+    }
+    res.locals.currentUser = req.session.user;
+    res.locals.isAdmin = req.session.user.role !== 'staff';
     return next();
+  } catch (e) {
+    return next(e);
   }
-  return res.redirect('/admin/login');
 }
 
 // Udostępnia dane zalogowanego użytkownika wszystkim szablonom (jako res.locals.currentUser),

@@ -12,6 +12,8 @@ storage/tmp/*
 storage/*.db
 # Klucze VAPID (Web Push) — PRYWATNY klucz, nigdy do repo.
 storage/vapid.json
+# Wygenerowany sekret sesji (gdy SESSION_SECRET w .env jest pusty/domyślny) — nigdy do repo.
+storage/session-secret
 storage/*.db-journal
 storage/*.db-wal
 storage/*.db-shm

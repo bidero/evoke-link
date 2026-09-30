@@ -222,7 +222,6 @@
     </div>
   </div>
 
-  <script src="/js/chunked-upload.js"></script>
   <script>
     // Dopisanie plików do istniejącego transferu. Kawałki lecą na /admin/transfers/chunk
     // (endpoint wspólny z kreatorem), potem zwykłe urlencoded z `uploadId` — `receiveUpload`
@@ -244,7 +243,7 @@
             const body = new URLSearchParams();
             body.append('uploadId', uploadId);
             const res = await fetch('/admin/transfers/' + transferId + '/files', { method: 'POST', body });
-            if (res.ok) return window.location.reload();
+            if (res.ok) return window.evokeRefresh();
             throw new Error('Serwer odrzucił żądanie (' + res.status + ').');
           } catch (err) {
             this.busy = false; this.finalizing = false;

@@ -44,13 +44,44 @@ async function authenticate(email, password) {
   }
 
   // Bootstrap: konto z .env, dopóki nie ma hasła w bazie.
-  if (e === adminEmail()) {
+  // Konto wyłączone w panelu nie wchodzi także tą ścieżką. Puste ADMIN_PASSWORD (bez hasha)
+  // NIE oznacza „puste hasło pasuje" — wcześniej `'' === ''` wpuszczało bez hasła.
+  if (e === adminEmail() && !(user && user.active === false)) {
     const ok = config.admin.passwordHash
       ? bcrypt.compareSync(password || '', config.admin.passwordHash)
-      : (password || '') === config.admin.password;
+      : (!!config.admin.password && safeEqual(password || '', config.admin.password));
     if (ok) return { id: user ? user.id : null, email: e, name: (user && user.name) || 'Administrator', role: 'admin' };
   }
   return null;
+}
+
+// Porównanie jawnego hasła z .env w stałym czasie (bez wycieku długości wspólnego prefiksu).
+function safeEqual(a, b) {
+  const crypto = require('crypto');
+  const ha = crypto.createHash('sha256').update(String(a)).digest();
+  const hb = crypto.createHash('sha256').update(String(b)).digest();
+  return crypto.timingSafeEqual(ha, hb);
+}
+
+// Odświeża obiekt sesji z bazy przy KAŻDYM żądaniu panelu. Sesja to podpisane ciasteczko
+// (cookie-session, 7 dni) — bez tego wyłączenie/usunięcie konta albo odebranie roli admina
+// nie działało na już zalogowaną osobę aż do wygaśnięcia ciasteczka.
+// Zwraca aktualny obiekt sesji albo null (= wyloguj).
+async function refreshSessionUser(u) {
+  if (!u || !u.email) return null;
+  if (u.id) {
+    const user = await prisma.user.findUnique({ where: { id: u.id } });
+    if (!user || user.active === false) return null;
+    return {
+      id: user.id, email: user.email, name: user.name || 'Administrator',
+      role: ROLES.includes(user.role) ? user.role : 'admin',
+    };
+  }
+  // Sesja z bootstrapu (.env, konto bez wiersza w bazie w chwili logowania).
+  if (norm(u.email) !== adminEmail()) return null;
+  const row = await findByEmail(u.email);
+  if (row && row.active === false) return null;
+  return u;
 }
 
 // Zgodność wstecz (używane m.in. przy zmianie hasła — potwierdzenie obecnego).
@@ -185,6 +216,7 @@ function recoveryCodesLeft(user) {
 }
 
 module.exports = {
+  refreshSessionUser,
   ROLES, authenticate, verifyCredentials, setAdminPassword, getAdminUser, hasDbPassword,
   listUsers, createUser, updateUser, deleteUser, touchLogin, findByEmail,
   has2fa, begin2fa, confirm2fa, disable2fa, regenerateRecoveryCodes, verifySecondFactor, recoveryCodesLeft,

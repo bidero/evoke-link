@@ -20,11 +20,16 @@
     else fn();
   }
 
-  ready(function () {
+  // Wołane przy starcie I po każdej nawigacji Turbo (panel podmienia <body> bez przeładowania,
+  // więc DOMContentLoaded już się nie powtórzy). Znacznik na formularzu chroni przed
+  // podwójnym podpięciem, gdyby oba zdarzenia trafiły w ten sam dokument.
+  function init() {
     var forms = document.querySelectorAll('form[data-autosave]');
     if (!forms.length) return;
 
     Array.prototype.forEach.call(forms, function (form) {
+      if (form.hasAttribute('data-autosave-ready')) return;
+      form.setAttribute('data-autosave-ready', '');
       // Zapasowy przycisk „Zapisz" jest potrzebny tylko bez JS — tutaj go chowamy.
       var nojs = form.querySelector('[data-nojs-save]');
       if (nojs) nojs.remove();
@@ -76,5 +81,8 @@
         save();
       });
     });
-  });
+  }
+
+  ready(init);
+  document.addEventListener('turbo:load', init);
 })();

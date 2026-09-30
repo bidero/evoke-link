@@ -72,7 +72,7 @@
       <tbody class="divide-y divide-slate-100">
         <% const _statusMap = { lead: ['Lead', 'bg-amber-50 text-amber-700'], active: ['Aktywny', 'bg-green-50 text-green-700'], inactive: ['Nieaktywny', 'bg-slate-100 text-slate-500'] }; %>
         <% clients.forEach(function(c){ const _s = _statusMap[c.status] || _statusMap.active; %>
-          <tr class="hover:bg-slate-50 cursor-pointer" onclick="window.location='/admin/clients/<%= c.id %>'">
+          <tr class="hover:bg-slate-50 cursor-pointer" onclick="window.evokeVisit('/admin/clients/<%= c.id %>')">
             <td class="px-4 py-3 font-medium text-slate-800">
               <span class="flex items-center gap-2.5">
                 <%- avatar(c, { size: 'sm' }) %>

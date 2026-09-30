@@ -24,7 +24,7 @@
   });
   // @click przycisku sekcji: przełącza `sec` + hash; extra (np. zamknięcie pasa na mobile) doklejane.
   function secClick(s, extra) {
-    return '@click="sec=\'' + s.key + '\'; history.replaceState(null,\'\',\'#' + s.key + '\')' + (extra || '') + '"';
+    return '@click="sec=\'' + s.key + '\'; history.replaceState(history.state,\'\',\'#' + s.key + '\')' + (extra || '') + '"';
   }
 %>
 <% if (part === 'side' && side) { %>

@@ -121,7 +121,7 @@
         <% if (canUse2fa && passkeysSupported) { %>
           <button type="button" x-show="window.evokePasskey && window.evokePasskey.supported()" x-cloak
                   :disabled="busy"
-                  @click="err=''; busy=true; window.evokePasskey.register(label).then(()=>location.reload()).catch(e=>{ err = e.message || 'Nie udało się dodać klucza.'; busy=false; })"
+                  @click="err=''; busy=true; window.evokePasskey.register(label).then(()=>window.evokeRefresh()).catch(e=>{ err = e.message || 'Nie udało się dodać klucza.'; busy=false; })"
                   class="btn btn-primary">
             <span x-show="!busy">Dodaj passkey</span><span x-show="busy" x-cloak>Czekam na urządzenie…</span>
           </button>
@@ -221,7 +221,7 @@
           </div>
         </div>
         <% if (canUse2fa && !twoFaOn && !setupSecret) { %>
-          <form method="POST" action="/admin/account/2fa/start">
+          <form method="POST" action="/admin/account/2fa/start" data-turbo="false">
             <button type="submit" class="btn btn-primary">Włącz 2FA</button>
           </form>
         <% } %>
@@ -240,7 +240,7 @@
             <div class="min-w-0 flex-1">
               <div class="text-[11px] font-medium text-slate-500 mb-1">Sekret (gdy nie możesz zeskanować)</div>
               <code class="block text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 break-all"><%= setupSecret %></code>
-              <form method="POST" action="/admin/account/2fa/confirm" class="mt-3 flex items-end gap-2 flex-wrap">
+              <form method="POST" action="/admin/account/2fa/confirm" data-turbo="false" class="mt-3 flex items-end gap-2 flex-wrap">
                 <label class="block">
                   <span class="block text-[11px] font-medium text-slate-500 mb-1">Kod z aplikacji</span>
                   <input name="token" required autofocus inputmode="numeric" autocomplete="one-time-code" placeholder="123456"
@@ -266,7 +266,7 @@
 
       <% if (twoFaOn) { %>
         <div class="mt-4 flex items-center gap-3 flex-wrap">
-          <form method="POST" action="/admin/account/2fa/recovery" onsubmit="return confirm('Wygenerować nowe kody zapasowe? Poprzednie przestaną działać.');">
+          <form method="POST" action="/admin/account/2fa/recovery" data-turbo="false" onsubmit="return confirm('Wygenerować nowe kody zapasowe? Poprzednie przestaną działać.');">
             <button type="submit" class="btn btn-secondary">Nowe kody zapasowe</button>
           </form>
           <form method="POST" action="/admin/account/2fa/disable" class="flex items-end gap-2" onsubmit="return confirm('Wyłączyć uwierzytelnianie dwuetapowe?');">
@@ -289,7 +289,7 @@
         <div class="text-sm font-medium text-slate-700">Wyloguj z panelu</div>
         <div class="text-xs text-slate-400">Zakończ bieżącą sesję w tej przeglądarce.</div>
       </div>
-      <form method="POST" action="/admin/logout">
+      <form method="POST" action="/admin/logout" data-turbo="false">
         <button type="submit" class="btn btn-secondary"><%- icon('arrowRight', { size: 15, cls: '' }) %> Wyloguj</button>
       </form>
     </div>

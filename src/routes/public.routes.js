@@ -9,6 +9,7 @@ const onboarding = require('../controllers/onboarding.controller');
 const pwaCtrl = require('../controllers/pwa.controller');
 const signedDownload = require('../controllers/signedDownload.controller');
 const { chunkParser, receiveChunk, receiveUpload } = require('../middleware/chunkUpload');
+const { incomingChunkGate, portalChunkGate } = require('../middleware/publicUploadGate');
 const messageUpload = require('../middleware/messageUpload');
 const { passwordLimiter, messageLimiter } = require('../middleware/rateLimit');
 
@@ -48,7 +49,7 @@ router.get('/upload/:token/wiadomosci/poll', receive.pollMessages);   // live: n
 router.get('/upload/:token/wiadomosci/:msgId/attachment', receive.downloadMessageAttachment);
 router.post('/upload/:token/message', messageLimiter, messageUpload, receive.submitMessage);
 router.post('/upload/:token/password', passwordLimiter, receive.submitPassword);
-router.post('/upload/:token/chunk', chunkParser, receiveChunk);
+router.post('/upload/:token/chunk', incomingChunkGate, chunkParser, receiveChunk);
 router.post('/upload/:token', receiveUpload('files'), receive.submitUpload);
 
 // Panel klienta na poziomie projektu (/p/:token).
@@ -60,7 +61,7 @@ router.post('/p/:token/password', passwordLimiter, portal.submitPassword);
 router.get('/p/:token/zip', portal.downloadAllZip);
 router.get('/p/:token/preview/:fileId', portal.previewFile);
 router.get('/p/:token/file/:fileId', portal.downloadFile);
-router.post('/p/:token/chunk', chunkParser, receiveChunk);
+router.post('/p/:token/chunk', portalChunkGate, chunkParser, receiveChunk);
 router.post('/p/:token/upload', receiveUpload('files'), portal.submitUpload);
 router.post('/p/:token/decision/:transferId', messageLimiter, portal.submitDecision);
 router.post('/p/:token/message', messageLimiter, messageUpload, portal.submitMessage);

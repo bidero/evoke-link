@@ -26,12 +26,37 @@
   </script>
   <% const appName = (typeof settings !== 'undefined' && settings) ? settings.appName : 'Evoke LINK'; %>
   <title><%= typeof title !== 'undefined' ? title + ' — ' + appName : appName %></title>
-  <link rel="stylesheet" href="/css/app.css?v=<%= assetVer %>" />
+  <%# Turbo Drive — nawigacja i formularze panelu bez pełnego przeładowania (fetch + podmiana <body>).
+      Konfiguracja (każda linia ma powód):
+      - turbo-root=/admin: Turbo prowadzi TYLKO trasy panelu; linki do stron klienta (/c /p /t /o)
+        i wylogowanie na ekran logowania idą zwykłą nawigacją (inny layout, inne skrypty).
+      - turbo-cache-control=no-cache: panel to żywe dane — podgląd z pamięci po „wstecz" pokazywałby
+        nieaktualne liczby, a klon DOM z wyrenderowanym Alpine (x-for) dublowałby pozycje.
+      - turbo-prefetch=false: GET-y panelu mają skutki (otwarcie rozmowy = przeczytana, powiadomienie
+        /open = przeczytane) — pobranie „na zapas" przy najechaniu myszą oznaczałoby je bez kliknięcia.
+      - turbo-refresh-scroll=preserve: formularz odsyłający na TĘ SAMĄ stronę (dodanie pozycji,
+        odhaczenie) i window.evokeRefresh() nie przewijają na górę.
+      - data-turbo-track=reload: nowy CSS/Turbo po deployu albo przejście na ekran logowania
+        (layout bez tych znaczników) = pełne przeładowanie zamiast sklejania dwóch layoutów. %>
+  <meta name="turbo-root" content="/admin" />
+  <meta name="turbo-cache-control" content="no-cache" />
+  <meta name="turbo-prefetch" content="false" />
+  <meta name="turbo-refresh-scroll" content="preserve" />
+  <link rel="stylesheet" href="/css/app.css?v=<%= assetVer %>" data-turbo-track="reload" />
   <% if (typeof settings !== 'undefined' && settings && settings.faviconPath) { %><link rel="icon" href="<%= settings.faviconPath %>" /><% } %>
   <%- typeof pwaHead !== 'undefined' ? pwaHead : '' %>
   <%- typeof adminStyleTag !== 'undefined' ? adminStyleTag : '' %>
   <%- typeof darkStyleTag !== 'undefined' ? darkStyleTag : '' %>
   <%- typeof customStyleTag !== 'undefined' ? customStyleTag : '' %>
+  <script defer src="/js/turbo.js?v=<%= assetVer %>" data-turbo-track="reload"></script>
+  <%# Odświeżenie bieżącej strony po akcji w tle (przeciągnięcie w kanbanie/kalendarzu, zapis
+      układu pulpitu) — przez Turbo z zachowanym przewinięciem zamiast `location.reload()`.
+      evokeVisit(url) = przejście z JS (paleta, klikalne wiersze) też przez Turbo. %>
+  <script>window.evokeRefresh=function(){if(window.Turbo&&Turbo.session&&Turbo.session.drive){Turbo.visit(location.href,{action:'replace'})}else{location.reload()}};window.evokeVisit=function(u){if(window.Turbo&&Turbo.session&&Turbo.session.drive){Turbo.visit(u)}else{window.location=u}};</script>
+  <%# Sortable w <head>, NIE w widokach: skrypt z `src` wstawiony przez Turbo do nowego <body>
+      ładuje się asynchronicznie, a skrypt inline zaraz pod nim wykonuje się od razu — widok
+      trafiał na `window.Sortable === undefined` i przeciąganie po cichu nie działało. %>
+  <script src="/js/sortable.min.js"></script>
   <script src="/js/chunked-upload.js"></script>
   <script src="/js/passkey.js"></script>
   <script defer src="/js/push.js"></script>
@@ -51,6 +76,10 @@
       wczytaniu strony) — po zamknięciu zostaje ostatnia znana wartość. %>
   <% if (typeof settings !== 'undefined' && settings && settings.pwa && settings.pwa.enabled && settings.pwa.badge) { %>
     <% const _badgeN = (typeof unreadCount !== 'undefined' ? unreadCount : 0) + (typeof unreadMessages !== 'undefined' ? unreadMessages : 0); %>
+    <%# Liczba jedzie w <meta> (Turbo podmienia ją przy każdej nawigacji), a skrypt jest
+        STAŁY: gdyby liczba siedziała w treści skryptu, Turbo uznałby go za nowy i przy
+        każdym przejściu doklejał kolejną kopię do <head>. %>
+    <meta name="evoke-app-badge" content="<%= _badgeN %>" />
     <script>
       // Wystawione globalnie, żeby odświeżanie w tle (badges.js) mogło aktualizować licznik
       // bez przeładowania. Gdy licznik jest wyłączony w Ustawieniach, funkcji nie ma
@@ -61,7 +90,14 @@
           else if (navigator.clearAppBadge) navigator.clearAppBadge();
         } catch (e) { /* brak uprawnień/API — trudno */ }
       };
-      window.evokeAppBadge(<%= _badgeN %>);
+      (function () {
+        function fromMeta() {
+          var m = document.querySelector('meta[name="evoke-app-badge"]');
+          if (m) window.evokeAppBadge(Number(m.getAttribute('content')) || 0);
+        }
+        fromMeta();
+        document.addEventListener('turbo:load', fromMeta);
+      })();
     </script>
   <% } %>
 </head>
@@ -69,7 +105,7 @@
     przewijania tła dotyczy tylko telefonu — na desktopie offcanvas nie istnieje. %>
 <body class="bg-[var(--admin-bg)] antialiased" style="color: var(--admin-text)"
       x-data="{ nav: false }"
-      x-init="$watch('nav', function (v) { document.documentElement.classList.toggle('nav-open', v); window.evokeSyncThemeColor && window.evokeSyncThemeColor(); }); window.evokeSyncThemeColor && window.evokeSyncThemeColor()"
+      x-init="document.documentElement.classList.remove('nav-open'); $watch('nav', function (v) { document.documentElement.classList.toggle('nav-open', v); window.evokeSyncThemeColor && window.evokeSyncThemeColor(); }); window.evokeSyncThemeColor && window.evokeSyncThemeColor()"
       :class="nav && 'overflow-hidden md:overflow-visible'">
 <%- typeof pwaSplash !== 'undefined' ? pwaSplash : '' %>
   <%# Desktop = „app shell" przez STICKY (NIE overflow): strona przewija się normalnie (body), a
@@ -159,7 +195,7 @@
             <a href="/admin/users" class="flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition"><%- icon('users', { size: 16, cls: 'opacity-60' }) %> Konta</a>
             <a href="/admin/settings" class="flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 transition"><%- icon('cog', { size: 16, cls: 'opacity-60' }) %> Ustawienia</a>
           <% } %>
-          <form method="POST" action="/admin/logout">
+          <form method="POST" action="/admin/logout" data-turbo="false">
             <button type="submit" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg opacity-70 hover:opacity-100 hover:bg-black/5 text-left transition"><%- icon('arrowRight', { size: 16, cls: 'opacity-60' }) %> Wyloguj</button>
           </form>
         </div>
@@ -241,7 +277,7 @@
                 <a href="/admin/settings" class="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 transition"><%- icon('cog', { size: 16, cls: 'opacity-70' }) %> Ustawienia</a>
               <% } %>
               <div class="border-t border-slate-100 my-1"></div>
-              <form method="POST" action="/admin/logout">
+              <form method="POST" action="/admin/logout" data-turbo="false">
                 <button type="submit" class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 text-left transition"><%- icon('arrowRight', { size: 16, cls: 'opacity-70' }) %> Wyloguj</button>
               </form>
             </div>

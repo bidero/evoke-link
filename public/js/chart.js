@@ -117,6 +117,9 @@
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initAll);
   else initAll();
+  // Nawigacja Turbo w panelu podmienia <body> — nowe wykresy trzeba narysować (initAll
+  // pomija już narysowane dzięki data-chart-ready).
+  document.addEventListener('turbo:load', initAll);
 
   // Wołane przez $watch('type', …) w Alpine przy przełączniku linia/słupki.
   // `root` = element widżetu/karty; przerysowuje wszystkie wykresy w środku.

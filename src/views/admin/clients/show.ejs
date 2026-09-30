@@ -181,7 +181,9 @@
 </div>
 
 <!-- Zakładki -->
-<div x-data="{ tab: '<%= activeTab %>' }" x-init="$watch('tab', function(v){ history.replaceState(null, '', '?tab=' + v); })" x-cloak>
+<%# GOTCHA Turbo: replaceState MUSI przekazać `history.state` — Turbo trzyma tam dane powrotu.
+    Z `null` przycisk „wstecz" na ten wpis zmieniał sam adres, bez podmiany treści strony. %>
+<div x-data="{ tab: '<%= activeTab %>' }" x-init="$watch('tab', function(v){ history.replaceState(history.state, '', '?tab=' + v); })" x-cloak>
   <div class="border-b border-slate-200 flex flex-wrap">
     <% [['przeglad','Przegląd'],['projekty','Projekty'],['rozliczenia','Rozliczenia'],['oferty','Oferty'],['dokumenty','Dokumenty'],['transfery','Transfery'],['historia','Oś czasu']].forEach(function(t){ %>
       <button type="button" @click="tab='<%= t[0] %>'" class="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition" :class="tab==='<%= t[0] %>' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-700'"><%= t[1] %></button>

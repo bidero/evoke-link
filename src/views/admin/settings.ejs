@@ -65,7 +65,7 @@
     <p class="text-xs text-slate-400 mb-3">Jeden klik ustawia kolor, tło, układ i typografię. Logo, treści i dane PDF zostają bez zmian.</p>
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
       <% Object.entries(themes).forEach(function(entry){ const key = entry[0], t = entry[1]; %>
-        <form method="POST" action="/admin/settings/apply-theme">
+        <form method="POST" action="/admin/settings/apply-theme" data-turbo="false">
           <input type="hidden" name="theme" value="<%= key %>" />
           <button type="submit" class="btn btn-secondary w-full">
             <span class="w-4 h-4 rounded-full shrink-0 border border-slate-300" style="background: <%= (t.colors && t.colors.primary) || '#6e00a5' %>"></span>
@@ -77,7 +77,7 @@
   </div>
   <% } %>
 
-  <form method="POST" action="/admin/settings" enctype="multipart/form-data" class="space-y-6">
+  <form method="POST" action="/admin/settings" data-turbo="false" enctype="multipart/form-data" class="space-y-6">
     <%# Bieżąca zakładka → po zapisie kontroler wraca na nią (?tab=), nie na pierwszą. %>
     <input type="hidden" name="tab" :value="tab" />
 
@@ -1374,7 +1374,7 @@
     <h2 class="text-sm font-semibold text-slate-700 mb-1">Kopia zapasowa</h2>
     <p class="text-xs text-slate-400">Pobierz kopię na swój komputer (ZIP) lub steruj automatycznym backupem (cron). Kopia = baza + pliki transferów.</p>
 
-    <form method="POST" action="/admin/settings/backup" class="flex flex-col sm:flex-row sm:items-end gap-3">
+    <form method="POST" action="/admin/settings/backup" data-turbo="false" class="flex flex-col sm:flex-row sm:items-end gap-3">
       <div>
         <label class="block text-xs font-medium text-slate-600 mb-1">Zakres</label>
         <div class="flex gap-2 text-sm">
@@ -1555,6 +1555,9 @@ function updater() {
       }, 2000);
     },
     stop(ok) { clearInterval(this.timer); this.running = false; this.done = ok; },
+    // Alpine woła destroy() przy usunięciu komponentu — przy nawigacji Turbo (panel bez
+    // przeładowania) polling statusu inaczej żyłby dalej na innych stronach.
+    destroy() { clearInterval(this.timer); },
     stepLabel() {
       return { start: 'Startuję…', backup: 'Kopia zapasowa…', git: 'Pobieranie zmian…', npm: 'Instalacja zależności…', prisma: 'Migracje bazy…', done: 'Kończenie…' }[this.step] || 'Pracuję…';
     },
@@ -1633,7 +1636,6 @@ function settingsForm(init) {
 </script>
 
 <!-- Edytor menu bocznego: drag&drop kolejności (SortableJS, jak kanban/kalendarz) -->
-<script src="/js/sortable.min.js"></script>
 <script>
   (function () {
     var editor = document.getElementById('menuEditor');

@@ -438,7 +438,6 @@
     };
   }
 </script>
-<script src="/js/sortable.min.js"></script>
 <script>
   // Drag & drop: przeciągnięcie przypomnienia do innego dnia = zmiana terminu (godzina zostaje).
   (function () {
@@ -456,7 +455,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ day: day }),
-          }).then(function () { location.reload(); }).catch(function () { location.reload(); });
+          }).then(window.evokeRefresh, window.evokeRefresh);
         },
       });
     });
@@ -481,7 +480,7 @@
         el.style.opacity = '0.85'; el.style.zIndex = '40';
       });
     });
-    document.addEventListener('mousemove', function (e) {
+    function onMove(e) {
       if (!drag) return;
       drag.moved = true;
       var col = drag.col;
@@ -492,8 +491,8 @@
       top = Math.max(0, Math.min(top, 24 * HOUR_PX - drag.height));
       drag.el.style.top = top + 'px';
       drag.top = top;
-    });
-    document.addEventListener('mouseup', function () {
+    }
+    function onUp() {
       if (!drag) return;
       var d = drag; drag = null;
       d.el.style.opacity = ''; d.el.style.zIndex = '';
@@ -507,7 +506,16 @@
       fetch('/admin/calendar/reminders/' + d.id + '/reschedule', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dueAt: dueAt }),
-      }).then(function () { location.reload(); }).catch(function () { location.reload(); });
+      }).then(window.evokeRefresh, window.evokeRefresh);
+    }
+    // Nasłuch na CAŁYM dokumencie (drag wychodzi poza blok), więc przy nawigacji Turbo trzeba go
+    // zdjąć — dokument zostaje ten sam, a każde wejście w kalendarz dokładałoby kolejną parę.
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    document.addEventListener('turbo:before-render', function cleanup() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.removeEventListener('turbo:before-render', cleanup);
     });
   })();
 </script>

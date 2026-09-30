@@ -42,7 +42,7 @@
               </div>
             </div>
             <% if (u.id !== meId) { %>
-              <button type="button" form="del-<%= u.id %>" class="text-slate-300 hover:text-red-600 p-1 shrink-0" title="Usuń konto"><%- icon('trash', { size: 15, cls: '' }) %></button>
+              <button type="submit" form="del-<%= u.id %>" class="text-slate-300 hover:text-red-600 p-1 shrink-0" title="Usuń konto"><%- icon('trash', { size: 15, cls: '' }) %></button>
             <% } %>
           </div>
 
@@ -73,7 +73,7 @@
           </div>
         </form>
         <% if (u.id !== meId) { %>
-          <form id="del-<%= u.id %>" method="POST" action="/admin/users/<%= u.id %>/delete" onsubmit="return confirm('Usunąć konto <%= u.email %>?');" class="hidden"></form>
+          <form id="del-<%= u.id %>" method="POST" action="/admin/users/<%= u.id %>/delete" onsubmit="return confirm(<%= JSON.stringify('Usunąć konto ' + u.email + '?') %>);" class="hidden"></form>
         <% } %>
       <% }); %>
     </div>

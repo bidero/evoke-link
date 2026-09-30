@@ -172,7 +172,7 @@ function uploader() {
         if (form['notifyOnDownload'] && form['notifyOnDownload'].checked) body.append('notifyOnDownload', 'on');
         if (form['proofing'] && form['proofing'].checked) body.append('proofing', 'on');
         const res = await fetch('/admin/transfers', { method: 'POST', body });
-        if (res.ok) { window.location = res.url || '/admin/transfers'; }
+        if (res.ok) { window.evokeVisit(res.url || '/admin/transfers'); }
         else { this.uploading = false; this.finalizing = false; alert('Błąd tworzenia transferu (' + res.status + ').'); }
       } catch (err) {
         this.uploading = false; this.finalizing = false;

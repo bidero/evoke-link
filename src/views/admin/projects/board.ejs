@@ -55,7 +55,6 @@
   <% }); %>
 </div>
 
-<script src="/js/sortable.min.js"></script>
 <script>
   (function () {
     if (!window.Sortable) return;
@@ -73,7 +72,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ stage: stage }),
-          }).then(function () { location.reload(); }).catch(function () { location.reload(); });
+          }).then(window.evokeRefresh, window.evokeRefresh);
         },
       });
     });

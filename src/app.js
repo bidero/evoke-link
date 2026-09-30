@@ -68,6 +68,15 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// Wgrany branding (logo, tła, awatary) to TREŚĆ UŻYTKOWNIKA serwowana z domeny panelu.
+// Druga linia obrony obok filtra rozszerzeń i sanityzacji SVG: własna, zamknięta CSP bez
+// skryptów (sandbox) — nawet SVG ze sprytnie przemyconym skryptem, otwarte wprost pod
+// /branding/…, nie wykona kodu. W <img> obraz działa normalnie (CSP obrazka nie dotyczy).
+app.use('/branding', (req, res, next) => {
+  res.setHeader('Content-Security-Policy', "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox");
+  next();
+});
+
 // Pliki statyczne (zbudowany CSS, logo, favicon).
 app.use(express.static(path.join(__dirname, '..', 'public')));
 

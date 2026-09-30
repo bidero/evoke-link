@@ -83,8 +83,8 @@
       },
       go() {
         const it = this.flat[this.cur];
-        if (it) window.location = it.href;
-        else if (this.q.trim().length >= 2) window.location = '/admin/search?q=' + encodeURIComponent(this.q);
+        if (it) { this.close(); window.evokeVisit(it.href); }
+        else if (this.q.trim().length >= 2) { this.close(); window.evokeVisit('/admin/search?q=' + encodeURIComponent(this.q)); }
       },
       async run() {
         const term = this.q.trim();

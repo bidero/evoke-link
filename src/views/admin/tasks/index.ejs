@@ -50,7 +50,6 @@
   <p class="text-[11px] text-slate-400 mt-3">Przeciągnij kartę między kolumnami, aby zmienić termin. „Zrobione" oznacza wykonanie. Pełną edycję (godzina, długość, cykl, kolor) zrobisz w kalendarzu.</p>
 </div>
 
-<script src="/js/sortable.min.js"></script>
 <script>
   (function () {
     if (!window.Sortable) return;
@@ -65,7 +64,7 @@
           var id = evt.item.getAttribute('data-id');
           var bucket = evt.to.getAttribute('data-bucket');
           fetch('/admin/tasks/' + id + '/move', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bucket: bucket }) })
-            .then(function () { location.reload(); }).catch(function () { location.reload(); });
+            .then(window.evokeRefresh, window.evokeRefresh);
         },
       });
     });

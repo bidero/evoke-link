@@ -4,8 +4,9 @@
 // Konfiguracja crona w DirectAdmin (przykład — raz dziennie o 4:00):
 //   0 4 * * *  cd /home/UZYTKOWNIK/domena && /sciezka/do/node src/jobs/cleanup.job.js
 //
-// W Etapie 1 dojdzie tu realne usuwanie plików z dysku. Na razie tylko
-// oznacza wygasłe transfery jako 'expired'.
+// Oznacza wygasłe transfery jako 'expired'. Plików z dysku ŚWIADOMIE nie kasuje: wygasły
+// transfer można przywrócić przyciskiem „Przedłuż ważność" (reaktywacja), więc pliki muszą
+// zostać. Usuwanie z dysku następuje dopiero przy skasowaniu transferu w panelu.
 const prisma = require('../db/client');
 
 async function run() {

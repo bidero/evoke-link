@@ -20,7 +20,9 @@ ensureDir(TMP_DIR);
 
 // Bezpieczna, losowa nazwa pliku na dysku (oryginalna nazwa żyje w bazie).
 function makeStoredName(originalName) {
-  const ext = path.extname(originalName || '').slice(0, 20); // ucinamy dziwne długie "rozszerzenia"
+  // Tylko litery/cyfry — separatory (np. backslash na Windows) w „rozszerzeniu" z nazwy klienta
+  // nie mogą trafić do ścieżki na dysku. Ucinamy też dziwnie długie „rozszerzenia".
+  const ext = path.extname(originalName || '').replace(/[^.A-Za-z0-9_-]/g, '').slice(0, 20);
   return crypto.randomBytes(16).toString('hex') + ext;
 }
 
@@ -103,7 +105,13 @@ function removeStored(storedPath) {
 }
 
 // Suma rozmiarów wszystkich plików w storage (dla widżetu "wykorzystane miejsce").
+// Liczone SYNCHRONICZNIE przejściem po całym katalogu, a woła je każdy render pulpitu —
+// przy tysiącach plików to realne blokowanie pętli zdarzeń. Wynik trzymamy minutę:
+// „zajęte miejsce" nie musi być co do bajta aktualne w każdej sekundzie.
+let usedCache = { at: 0, bytes: 0 };
+const USED_TTL = 60 * 1000;
 function totalUsedBytes() {
+  if (Date.now() - usedCache.at < USED_TTL) return usedCache.bytes;
   let total = 0;
   const walk = (dir) => {
     let entries = [];
@@ -125,6 +133,7 @@ function totalUsedBytes() {
     }
   };
   walk(STORAGE_DIR);
+  usedCache = { at: Date.now(), bytes: total };
   return total;
 }
 

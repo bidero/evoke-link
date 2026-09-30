@@ -36,6 +36,10 @@
       fetch + podmiana <body>, zachowany back/scroll). Lokalnie (jak Alpine) — CSP 'self' pokrywa.
       Alpine radzi sobie z podmianą <body> przez swój obserwator mutacji; skrypty zależne od DOM
       (tło/szkło, sticky) re-inicjujemy na `turbo:load`. %>
+  <%# Bez pobierania „na zapas" przy najechaniu myszą (domyślne w Turbo 8): GET-y portali mają
+      skutki — wejście w wątek oznacza wiadomości agencji jako przeczytane (✓✓ w panelu) i gasi
+      kropkę. Samo przesunięcie kursora nad „Wiadomości" robiło to bez kliknięcia. %>
+  <meta name="turbo-prefetch" content="false" />
   <script defer src="/js/turbo.js"></script>
   <script src="/js/chunked-upload.js"></script>
   <script src="/js/uploader.js"></script>

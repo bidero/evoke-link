@@ -21,8 +21,25 @@
     else fn();
   }
 
-  ready(function () {
+  // ── Cykl życia przy nawigacji Turbo ─────────────────────────────────────────
+  // Panel i portale podmieniają <body> bez przeładowania, więc DOMContentLoaded nie powtarza się,
+  // a interwał z poprzedniej strony żyłby dalej (odpytując wątek, którego już nie ma). Dlatego:
+  // `boot()` przy starcie ORAZ na `turbo:load`; każdy blok trzyma swój stan w `cur*`, a nowy
+  // start najpierw sprząta stary. Ten sam element = nic nie robimy (oba zdarzenia w 1 dokumencie).
+  var curThread = null;   // { box, timer, poll }
+  var curDot = null;      // { hook, timer, poll }
+
+  // Jeden nasłuch na całe życie strony — woła polling AKTUALNEGO bloku.
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible') return;
+    if (curThread) curThread.poll();
+    if (curDot) curDot.poll();
+  });
+
+  function bootThread() {
     var box = document.querySelector('[data-live-thread]');
+    if (curThread && curThread.box === box) return;
+    if (curThread) { clearInterval(curThread.timer); curThread = null; }
     if (!box) return;
     var form = document.querySelector('[data-live-form]');
     var busy = false;
@@ -100,10 +117,7 @@
         .then(function () { busy = false; });
     }
 
-    setInterval(poll, EVERY);
-    document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'visible') poll();
-    });
+    curThread = { box: box, timer: setInterval(poll, EVERY), poll: poll };
     toBottom();
 
     // Wysyłka bez przeładowania: ten sam formularz, tylko przez fetch. Bez JS działa zwykły submit.
@@ -139,7 +153,7 @@
           .then(function () { if (btn) btn.disabled = false; });
       });
     }
-  });
+  }
 
   // --- Kropka „nowa wiadomość" na stronach portalu (bez wątku) ---
   //
@@ -149,11 +163,13 @@
   // elementów — i nie trzeba pilnować klas w buildzie Tailwinda.
   //
   // Kropki NIE gasimy — gaśnie naturalnie po wejściu w wątek (serwerowy `msgSeen`).
-  ready(function () {
+  function bootDot() {
     var hook = document.querySelector('[data-live-dot]');
-    if (!hook) return;
     // Na podstronie wątku wiadomości i tak dopisują się na żywo — nie dublujemy zapytań.
-    if (document.querySelector('[data-live-thread]')) return;
+    if (document.querySelector('[data-live-thread]')) hook = null;
+    if (curDot && curDot.hook === hook) return;
+    if (curDot) { clearInterval(curDot.timer); curDot = null; }
+    if (!hook) return;
     var url = hook.getAttribute('data-poll-url');
     if (!url) return;
 
@@ -181,9 +197,10 @@
         .then(function () { busy = false; });
     }
 
-    setInterval(poll, DOT_EVERY);
-    document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'visible') poll();
-    });
-  });
+    curDot = { hook: hook, timer: setInterval(poll, DOT_EVERY), poll: poll };
+  }
+
+  function boot() { bootThread(); bootDot(); }
+  ready(boot);
+  document.addEventListener('turbo:load', boot);
 })();

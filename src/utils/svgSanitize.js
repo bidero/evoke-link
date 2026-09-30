@@ -20,10 +20,13 @@ function sanitizeSvg(input) {
   s = s.replace(/<foreignObject[\s\S]*?<\/foreignObject\s*>/gi, '');
   s = s.replace(/<(iframe|object|embed|audio|video)[\s\S]*?<\/\1\s*>/gi, '');
 
-  // Atrybuty zdarzeń: onload, onclick, onmouseover, ...
-  s = s.replace(/\son[a-z]+\s*=\s*"[^"]*"/gi, '');
-  s = s.replace(/\son[a-z]+\s*=\s*'[^']*'/gi, '');
-  s = s.replace(/\son[a-z]+\s*=\s*[^\s>]+/gi, '');
+  // Atrybuty zdarzeń: onload, onclick, onmouseover, ... Separatorem przed atrybutem może być
+  // też `/` (`<svg/onload=…>` to poprawny HTML/SVG) — samo `\s` go przepuszczało.
+  s = s.replace(/[\s/]on[a-z]+\s*=\s*"[^"]*"/gi, ' ');
+  s = s.replace(/[\s/]on[a-z]+\s*=\s*'[^']*'/gi, ' ');
+  s = s.replace(/[\s/]on[a-z]+\s*=\s*[^\s>]+/gi, ' ');
+  // Animacje SMIL potrafią USTAWIĆ atrybut zdarzenia albo href na javascript: w locie.
+  s = s.replace(/<(set|animate|animateTransform|animateMotion)\b[^>]*>/gi, '');
 
   // javascript:/vbscript: w dowolnym atrybucie.
   s = s.replace(/(href|xlink:href|src)\s*=\s*"\s*(javascript|vbscript)\s*:[^"]*"/gi, '$1=""');

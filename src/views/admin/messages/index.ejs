@@ -35,7 +35,7 @@
     </div>
     <%# „+ Nowa rozmowa": wybór DOWOLNEGO klienta (także bez wiadomości) → otwiera pustą rozmowę z polem pisania. %>
     <div class="px-3 py-2 border-b border-slate-100">
-      <select onchange="if(this.value)window.location='/admin/messages?client='+this.value" class="field w-full text-slate-600">
+      <select onchange="if(this.value)window.evokeVisit('/admin/messages?client='+encodeURIComponent(this.value))" class="field w-full text-slate-600">
         <option value="">+ Nowa rozmowa — wybierz klienta…</option>
         <% (allClients || []).forEach(function (cl) { %><option value="<%= cl.id %>"><%= cl.name %></option><% }); %>
       </select>

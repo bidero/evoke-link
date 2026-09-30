@@ -92,7 +92,7 @@
       </thead>
       <tbody class="divide-y divide-slate-100">
         <% transfers.forEach(function(t){ %>
-          <tr class="hover:bg-slate-50 cursor-pointer" onclick="window.location='/admin/transfers/<%= t.id %>'">
+          <tr class="hover:bg-slate-50 cursor-pointer" onclick="window.evokeVisit('/admin/transfers/<%= t.id %>')">
             <td class="px-4 py-3" @click.stop><input type="checkbox" name="ids" value="<%= t.id %>" class="rounded border-slate-300" /></td>
             <td class="px-4 py-3 font-medium text-slate-800">
               <span class="inline-flex items-center gap-1.5">

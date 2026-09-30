@@ -110,13 +110,16 @@
   <!-- Kolumny transferów -->
   <div class="lg:col-span-2 space-y-6">
     <%
+      // Tytuł transferu to tekst użytkownika — w składanym tu HTML-u MUSI być escapowany
+      // (od kont z rolami tytuł może wpisać pracownik, a stronę ogląda administrator).
+      const _esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
       const renderList = (items, emptyText) => {
         if (!items.length) return `<div class="px-5 py-6 text-center text-sm text-slate-400">${emptyText}</div>`;
         return items.map((t) => {
           const statusCls = t.status === 'active' ? 'bg-green-50 text-green-700' : (t.status === 'expired' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500');
           return `<a href="/admin/transfers/${t.id}?from=project:${project.id}" class="flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition">
             <span class="min-w-0 mr-3">
-              <span class="block text-sm font-medium text-slate-800 truncate">${t.title || ('Transfer ' + t.token)}</span>
+              <span class="block text-sm font-medium text-slate-800 truncate">${_esc(t.title || ('Transfer ' + t.token))}</span>
               <span class="block text-xs text-slate-400">${t.files.length} plik(ów) · ${fmt.date(t.createdAt)}</span>
             </span>
             <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusCls} shrink-0">${fmt.status(t.status)}</span>
