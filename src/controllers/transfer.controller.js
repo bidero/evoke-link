@@ -1,6 +1,7 @@
 // Panel: zarządzanie transferami wychodzącymi.
 const transferService = require('../services/transfer.service');
 const projectService = require('../services/project.service');
+const clientService = require('../services/client.service');
 const storage = require('../services/storage.service');
 const thumbService = require('../services/thumb.service');
 const zipService = require('../services/zip.service');
@@ -14,9 +15,32 @@ const fmt = require('../utils/format');
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-// Parsuje projectId z formularza ('' → null, inaczej liczba).
+// Parsuje projectId/clientId z formularza ('' → null, inaczej liczba).
 function parseProjectId(value) {
-  return value ? parseInt(value, 10) : null;
+  const n = parseInt(value, 10);
+  return n > 0 ? n : null;
+}
+
+// Listy do selectów „Klient" / „Projekt" w formularzach transferu. Projekt niesie id klienta,
+// żeby formularz mógł dobrać klienta po wyborze projektu (serwer i tak to wyrównuje).
+async function assignOptions() {
+  const [projects, clients] = await Promise.all([projectService.list({ status: 'active' }), clientService.options()]);
+  return { projects, clients };
+}
+
+// Ostatnia wysyłka linku e-mailem per transfer (z historii `email_sent`) — JEDNO zapytanie.
+// Zwraca mapę transferId → { at, to }.
+async function lastEmails(ids) {
+  if (!ids.length) return {};
+  const rows = await events.lastEmailsForTransfers(ids);
+  const map = {};
+  rows.forEach((e) => {
+    if (map[e.transferId]) return; // rosnąco po dacie malejąco — pierwszy = najnowszy
+    let to = null;
+    try { to = e.meta ? JSON.parse(e.meta).to : null; } catch (_) { /* stary wpis bez meta */ }
+    map[e.transferId] = { at: e.createdAt, to };
+  });
+  return map;
 }
 
 // Filtry listy transferów — wspólne dla widoku i eksportu CSV.
@@ -25,6 +49,7 @@ function transferFilters(req) {
   return {
     status: ['active', 'expired', 'deleted'].includes(status) ? status : '',
     direction: ['outgoing', 'incoming'].includes(direction) ? direction : '',
+    client: parseProjectId(req.query.client) || '',
     q: q || '',
     sort: transferService.SORTS.includes(req.query.sort) ? req.query.sort : 'created_desc',
   };
@@ -33,12 +58,14 @@ function transferFilters(req) {
 async function listTransfers(req, res, next) {
   try {
     const filter = transferFilters(req);
-    const transfers = await transferService.list(filter);
+    const [transfers, clients] = await Promise.all([transferService.list({ ...filter, clientId: filter.client }), clientService.options()]);
     res.render('admin/transfers/index', {
       title: 'Transfery',
       active: 'transfers',
       transfers,
       filter,
+      clients,
+      sentMail: await lastEmails(transfers.map((t) => t.id)),
     });
   } catch (err) {
     next(err);
@@ -48,12 +75,16 @@ async function listTransfers(req, res, next) {
 // Eksport listy transferów do CSV — respektuje TE SAME filtry/sortowanie co widok.
 async function listTransfersCsv(req, res, next) {
   try {
-    const transfers = await transferService.list(transferFilters(req));
+    const filter = transferFilters(req);
+    const transfers = await transferService.list({ ...filter, clientId: filter.client });
     const date = (d) => (d ? fmt.dateOnly(d) : '');
-    const rows = [['Kierunek', 'Tytuł', 'Token', 'Projekt', 'Pliki', 'Rozmiar (B)', 'Pobrania', 'Limit', 'Hasło', 'Wygasa', 'Status', 'Utworzono']];
+    const sent = await lastEmails(transfers.map((t) => t.id));
+    const rows = [['Kierunek', 'Tytuł', 'Token', 'Klient', 'Projekt', 'Wysłano e-mailem', 'Adresat', 'Pliki', 'Rozmiar (B)', 'Pobrania', 'Limit', 'Hasło', 'Wygasa', 'Status', 'Utworzono']];
     transfers.forEach((t) => rows.push([
       t.direction === 'incoming' ? 'Od klienta' : 'Do klienta',
-      t.title || '', t.token, (t.project && t.project.name) || '',
+      t.title || '', t.token,
+      (transferService.clientOf(t) || {}).name || '', (t.project && t.project.name) || '',
+      sent[t.id] ? fmt.date(sent[t.id].at) : '', (sent[t.id] && sent[t.id].to) || '',
       t.files.length, String(transferService.totalSize(t)),
       t.direction === 'incoming' ? '' : t.downloadCount,
       t.maxDownloads != null ? t.maxDownloads : '',
@@ -69,12 +100,13 @@ async function listTransfersCsv(req, res, next) {
 // Formularz nowego transferu.
 async function showCreateForm(req, res, next) {
   try {
-    const projects = await projectService.list({ status: 'active' });
     res.render('admin/transfers/new', {
       title: 'Nowy transfer',
       active: 'transfers',
-      projects,
-      selectedProjectId: req.query.project ? parseInt(req.query.project, 10) : null,
+      ...(await assignOptions()),
+      selectedProjectId: parseProjectId(req.query.project),
+      selectedClientId: parseProjectId(req.query.client),
+      back: backlink.resolve(req.query.from),
       error: null,
     });
   } catch (err) {
@@ -87,17 +119,18 @@ async function createTransfer(req, res, next) {
   try {
     const files = req.files || [];
     if (files.length === 0) {
-      const projects = await projectService.list({ status: 'active' });
       return res.status(400).render('admin/transfers/new', {
         title: 'Nowy transfer',
         active: 'transfers',
-        projects,
-        selectedProjectId: req.body.projectId ? parseInt(req.body.projectId, 10) : null,
+        ...(await assignOptions()),
+        selectedProjectId: parseProjectId(req.body.projectId),
+        selectedClientId: parseProjectId(req.body.clientId),
+        back: null,
         error: 'Dodaj przynajmniej jeden plik.',
       });
     }
 
-    const { title, message, password, expiresAt, maxDownloads, projectId } = req.body;
+    const { title, message, password, expiresAt, maxDownloads, projectId, clientId } = req.body;
 
     const transfer = await transferService.createOutgoingTransfer({
       title: title && title.trim() ? title.trim() : null,
@@ -106,6 +139,7 @@ async function createTransfer(req, res, next) {
       expiresAt: expiresAt ? new Date(expiresAt) : null,
       maxDownloads: maxDownloads ? parseInt(maxDownloads, 10) : null,
       projectId: parseProjectId(projectId),
+      clientId: parseProjectId(clientId),
       clientVisible: req.body.clientVisible === 'on',
       notifyOnDownload: req.body.notifyOnDownload === 'on',
       proofing: req.body.proofing === 'on',
@@ -147,6 +181,8 @@ async function showTransfer(req, res, next) {
       publicUrl: publicUrlFor(transfer),
       mail: req.query.mail || null, // sent | invalid | error (flash po wysyłce linku)
       mailReady: mail.isConfigured(),
+      transferClient: transferService.clientOf(transfer), // klient wprost albo przez projekt
+      emailLog: await events.lastEmailsForTransfers([transfer.id]),
       back: backlink.resolve(req.query.from), // kontekstowy powrót (np. z karty klienta/projektu)
     });
   } catch (err) {
@@ -179,12 +215,13 @@ async function sendLinkEmail(req, res, next) {
 // Formularz nowego linku uploadu (transfer przychodzący).
 async function showCreateUploadForm(req, res, next) {
   try {
-    const projects = await projectService.list({ status: 'active' });
     res.render('admin/transfers/new-upload', {
       title: 'Nowy link uploadu',
       active: 'transfers',
-      projects,
-      selectedProjectId: req.query.project ? parseInt(req.query.project, 10) : null,
+      ...(await assignOptions()),
+      selectedProjectId: parseProjectId(req.query.project),
+      selectedClientId: parseProjectId(req.query.client),
+      back: backlink.resolve(req.query.from),
       error: null,
     });
   } catch (err) {
@@ -195,13 +232,14 @@ async function showCreateUploadForm(req, res, next) {
 // Utworzenie linku uploadu.
 async function createUpload(req, res, next) {
   try {
-    const { title, message, password, expiresAt, projectId } = req.body;
+    const { title, message, password, expiresAt, projectId, clientId } = req.body;
     const transfer = await transferService.createUploadRequest({
       title: title && title.trim() ? title.trim() : null,
       message: message && message.trim() ? message.trim() : null,
       password: password && password.trim() ? password.trim() : null,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
       projectId: parseProjectId(projectId),
+      clientId: parseProjectId(clientId),
     });
     await events.log({ type: 'created', message: `Utworzono link uploadu: ${transfer.title || transfer.token}`, transferId: transfer.id, projectId: transfer.projectId, ip: req.ip });
     res.redirect(`/admin/transfers/${transfer.id}`);
@@ -223,12 +261,11 @@ async function showEditForm(req, res, next) {
   try {
     const transfer = await transferService.getById(req.params.id);
     if (!transfer) return res.status(404).render('errors/404', { title: 'Nie znaleziono', layout: 'layouts/auth' });
-    const projects = await projectService.list({ status: 'active' });
     res.render('admin/transfers/edit', {
       title: 'Edytuj transfer',
       active: 'transfers',
       transfer,
-      projects,
+      ...(await assignOptions()),
       expiresLocal: toLocalInput(transfer.expiresAt),
       error: null,
     });
@@ -240,7 +277,7 @@ async function showEditForm(req, res, next) {
 // Zapis edycji transferu.
 async function updateTransfer(req, res, next) {
   try {
-    const { title, message, expiresAt, maxDownloads, password, removePassword, projectId } = req.body;
+    const { title, message, expiresAt, maxDownloads, password, removePassword, projectId, clientId } = req.body;
     const updated = await transferService.update(req.params.id, {
       title,
       message,
@@ -249,6 +286,7 @@ async function updateTransfer(req, res, next) {
       newPassword: password && password.trim() ? password.trim() : null,
       removePassword: removePassword === 'on',
       projectId: parseProjectId(projectId),
+      clientId: parseProjectId(clientId),
       clientVisible: req.body.clientVisible === 'on',
       notifyOnDownload: req.body.notifyOnDownload === 'on',
       proofing: req.body.proofing === 'on',

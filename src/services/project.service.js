@@ -92,7 +92,13 @@ async function update(id, { name, clientName, description, status, clientId, new
   if (status) data.status = status;
   if (removeClientPassword) data.clientPasswordHash = null;
   else if (newClientPassword) data.clientPasswordHash = bcrypt.hashSync(newClientPassword, 10);
-  return prisma.project.update({ where: { id: Number(id) }, data });
+  const updated = await prisma.project.update({ where: { id: Number(id) }, data });
+  // Transfery projektu należą do klienta projektu (Transfer.clientId) — zmiana klienta projektu
+  // przenosi je razem z nim. Odpięcie klienta (null) zostawia dotychczasowe przypisanie.
+  if (data.clientId) {
+    await prisma.transfer.updateMany({ where: { projectId: updated.id }, data: { clientId: data.clientId } });
+  }
+  return updated;
 }
 
 // Panel klienta po publicznym tokenie (z transferami i plikami).

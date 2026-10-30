@@ -6,9 +6,16 @@ async function log({ type, message, projectId, transferId, clientId, meta, ip })
   try {
     // Powiązanie z klientem (oś czasu): jawne clientId lub doczytane z projektu.
     let cid = clientId || null;
+    // Transfer przypisany wprost do klienta (bez projektu) — klient z transferu.
+    if (!cid && transferId) {
+      try {
+        const t = await prisma.transfer.findUnique({ where: { id: Number(transferId) }, select: { clientId: true } });
+        cid = t ? t.clientId : null;
+      } catch (_) { /* brak transferu — trudno */ }
+    }
     if (!cid && projectId) {
       try {
-        const p = await prisma.project.findUnique({ where: { id: projectId }, select: { clientId: true } });
+        const p = await prisma.project.findUnique({ where: { id: Number(projectId) }, select: { clientId: true } });
         cid = p ? p.clientId : null;
       } catch (_) { /* brak projektu — trudno */ }
     }
@@ -76,6 +83,58 @@ function listNotifications(limit = 100) {
   });
 }
 
+// Filtry zakładki „Cała aktywność" (strona Powiadomienia). Klucz → lista typów zdarzeń.
+// Pełna historia: także akcje agencji i wysłane e-maile, których lista powiadomień nie pokazuje.
+const ACTIVITY_FILTERS = {
+  all: { label: 'Wszystko', types: null },
+  email: { label: 'Wysłane e-maile', types: ['email_sent'] },
+  client: { label: 'Akcje klientów', types: ['uploaded', 'downloaded', 'viewed', 'approved', 'changes', 'onboarded', 'paid_declared', 'offer_accepted', 'offer_rejected'] },
+  agency: { label: 'Akcje agencji', types: ['created', 'updated', 'note', 'expired'] },
+  error: { label: 'Błędy', types: ['error'] },
+};
+const ACTIVITY_PAGE = 50;
+
+// Pełna historia zdarzeń z filtrem, wyszukiwaniem (w treści — czyli też po adresie e-mail
+// i temacie wysłanej wiadomości) i stronicowaniem. Zwraca { items, total, page, pages }.
+async function activity({ filter = 'all', q = '', page = 1 } = {}) {
+  const f = ACTIVITY_FILTERS[filter] || ACTIVITY_FILTERS.all;
+  const where = {};
+  if (f.types) where.type = { in: f.types };
+  const s = String(q || '').trim().slice(0, 200);
+  if (s) {
+    where.OR = [
+      { message: { contains: s } },
+      { project: { name: { contains: s } } },
+      { client: { name: { contains: s } } },
+      { transfer: { title: { contains: s } } },
+    ];
+  }
+  const total = await prisma.event.count({ where });
+  const pages = Math.max(1, Math.ceil(total / ACTIVITY_PAGE));
+  const p = Math.min(pages, Math.max(1, parseInt(page, 10) || 1));
+  const items = await prisma.event.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    skip: (p - 1) * ACTIVITY_PAGE,
+    take: ACTIVITY_PAGE,
+    include: {
+      transfer: { select: { id: true, title: true, token: true, direction: true } },
+      project: { select: { id: true, name: true } },
+      client: { select: { id: true, name: true } },
+    },
+  });
+  return { items, total, page: p, pages };
+}
+
+// Wysyłki e-mail powiązane z transferami (najnowsze pierwsze) — do kolumny „wysłano" na liście.
+function lastEmailsForTransfers(ids) {
+  return prisma.event.findMany({
+    where: { type: 'email_sent', transferId: { in: ids.map(Number) } },
+    orderBy: { createdAt: 'desc' },
+    select: { transferId: true, createdAt: true, meta: true },
+  });
+}
+
 // Liczba nieprzeczytanych powiadomień (do dzwonka w nagłówku).
 function unreadCount() {
   return prisma.event.count({ where: { type: { in: NOTIFY_TYPES }, isRead: false, dismissed: false } });
@@ -116,5 +175,5 @@ function markProjectRead(projectId) {
   });
 }
 
-module.exports = { log, emailSent, recent, listNotifications, unreadCount, findById, markRead, markAllRead, markProjectRead, dismiss, dismissAll, NOTIFY_TYPES };
+module.exports = { ACTIVITY_FILTERS, activity, lastEmailsForTransfers, log, emailSent, recent, listNotifications, unreadCount, findById, markRead, markAllRead, markProjectRead, dismiss, dismissAll, NOTIFY_TYPES };
 

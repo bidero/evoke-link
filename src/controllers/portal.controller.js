@@ -171,7 +171,12 @@ async function pollMessages(req, res, next) {
 async function submitMessage(req, res, next) {
   try {
     const project = await loadProject(req, res);
-    if (!project) return;
+    if (!project) return storage.removeTmp(req.file && req.file.path);
+    // Bramka hasła jak w wątku — panel z hasłem nie przyjmuje wiadomości od nieodblokowanych.
+    if (projectService.requiresClientPassword(project) && !isUnlocked(req, project.clientToken)) {
+      storage.removeTmp(req.file && req.file.path);
+      return res.redirect(`/p/${project.clientToken}`);
+    }
     const { body, senderName, senderEmail } = req.body;
     const msg = await messageService.create({ body, senderName, senderEmail, projectId: project.id, clientId: project.clientId, ip: req.ip, file: req.file });
     if (msg) mail.sendNewMessageNotification({ message: msg, client: project.client, project }).catch((e) => console.error('[mail] wiadomość:', e.message));

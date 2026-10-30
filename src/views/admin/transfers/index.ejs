@@ -30,8 +30,12 @@
     <div class="relative w-full sm:max-w-sm">
       <input type="hidden" name="status" value="<%= filter.status %>" />
       <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><%- icon('search', { size: 16 }) %></span>
-      <input type="search" name="q" value="<%= filter.q %>" placeholder="Szukaj po nazwie pliku, tytule lub tokenie…" class="field w-full pl-9 pr-3" />
+      <input type="search" name="q" value="<%= filter.q %>" placeholder="Szukaj: tytuł, plik, klient, projekt…" class="field w-full pl-9 pr-3" />
     </div>
+    <select name="client" onchange="this.form.submit()" class="field text-slate-700 sm:max-w-[14rem]">
+      <option value="">Wszyscy klienci</option>
+      <% clients.forEach(function(c){ %><option value="<%= c.id %>" <%= String(filter.client) === String(c.id) ? 'selected' : '' %>><%= c.name %></option><% }); %>
+    </select>
     <select name="direction" onchange="this.form.submit()" class="field text-slate-700">
       <option value="">Oba kierunki</option>
       <option value="outgoing" <%= filter.direction === 'outgoing' ? 'selected' : '' %>>Do klienta</option>
@@ -66,6 +70,19 @@
       <span class="text-sm text-slate-600"><span x-text="n"></span> zaznaczonych</span>
       <button type="submit" class="rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 transition">Usuń zaznaczone</button>
     </div>
+  <%# Linia pod tytułem: komu (klient / projekt) i czy link poszedł mailem (kiedy, na jaki adres —
+      z historii `email_sent`). Wspólna dla tabeli i kart mobilnych. %>
+  <% function metaLine(t){
+       const _c = t.client || (t.project && t.project.client) || null;
+       const _m = sentMail[t.id]; %>
+    <span class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs font-normal text-slate-500">
+      <% if (_c) { %><span class="inline-flex items-center gap-1 min-w-0"><%- icon('users', { size: 12, cls: 'text-slate-400 shrink-0' }) %><span class="truncate"><%= _c.name %></span></span><% } %>
+      <% if (t.project) { %><span class="inline-flex items-center gap-1 min-w-0"><%- icon('folder', { size: 12, cls: 'text-slate-400 shrink-0' }) %><span class="truncate"><%= t.project.name %></span></span><% } %>
+      <% if (!_c && !t.project) { %><span class="text-slate-400">bez klienta</span><% } %>
+      <% if (_m) { %><span class="inline-flex items-center gap-1 min-w-0" title="Ostatnia wysyłka linku e-mailem"><%- icon('mail', { size: 12, cls: 'text-green-600 shrink-0' }) %><span class="truncate">wysłano <%= fmt.date(_m.at) %><%= _m.to ? ' → ' + _m.to : '' %></span></span>
+      <% } else { %><span class="inline-flex items-center gap-1 text-slate-400"><%- icon('mail', { size: 12, cls: 'shrink-0' }) %>nie wysłano mailem</span><% } %>
+    </span>
+  <% } %>
   <%# Desktop: tabela. Mobile: karty (poniżej) — koniec poziomego scrolla. %>
   <div class="hidden md:block bg-white rounded-2xl border border-slate-200 overflow-hidden">
     <div class="overflow-x-auto">
@@ -100,6 +117,7 @@
                 <span><%= t.title || ('Transfer ' + t.token) %></span>
                 <% if (t.passwordHash) { %><%- icon('lock', { size: 13, cls: 'text-slate-400' }) %><% } %>
               </span>
+              <% metaLine(t); %>
               <% if (filter.q) { const _ql = filter.q.toLowerCase(); const _hits = t.files.filter(function(f){ return f.originalName.toLowerCase().includes(_ql); }); %>
                 <% if (_hits.length) { %>
                   <span class="mt-1 flex flex-wrap gap-1">
@@ -136,6 +154,7 @@
           <span class="font-medium text-slate-800 truncate"><%= t.title || ('Transfer ' + t.token) %></span>
           <% if (t.passwordHash) { %><span class="shrink-0"><%- icon('lock', { size: 13, cls: 'text-slate-400' }) %></span><% } %>
         </div>
+        <% metaLine(t); %>
         <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
           <span><%= t.files.length %> plik(ów) · <%= fmt.bytes(_sz) %></span>
           <% if (t.direction !== 'incoming') { %><span>Pobrania: <%= t.downloadCount + (t.maxDownloads ? ' / ' + t.maxDownloads : '') %></span><% } %>

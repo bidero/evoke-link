@@ -1,0 +1,30 @@
+<%# Przypisanie transferu: KLIENT + PROJEKT (oba opcjonalne). Wspólne dla „Nowy transfer",
+    „Link uploadu" i edycji. Wybór projektu z klientem ustawia jego klienta (serwer i tak to
+    wyrównuje — transfer w projekcie należy do klienta projektu); wybór klienta wyłącza projekty
+    INNYCH klientów. Locals: clients, projects, selClient, selProject.
+    Uwaga: NIE nazywać tu niczego `client` (GOTCHA EJS: przełącza szablon w tryb client-side). %>
+<% const _sc = selClient ? String(selClient) : ''; const _sp = selProject ? String(selProject) : ''; %>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4"
+     x-data="{ cid: <%= JSON.stringify(_sc) %>, pid: <%= JSON.stringify(_sp) %>,
+               pickProject(e){ const o = e.target.selectedOptions[0]; if (o && o.dataset.client) this.cid = o.dataset.client; },
+               pickClient(){ const o = this.$refs.proj.selectedOptions[0]; if (o && o.dataset.client && o.dataset.client !== this.cid) this.pid = ''; } }">
+  <label class="block">
+    <span class="label">Klient (opcjonalnie)</span>
+    <select name="clientId" x-model="cid" @change="pickClient()" class="field w-full">
+      <option value="">— bez klienta —</option>
+      <% clients.forEach(function(c){ %>
+        <option value="<%= c.id %>" <%= _sc === String(c.id) ? 'selected' : '' %>><%= c.name %><%= c.company && c.company !== c.name ? ' · ' + c.company : '' %></option>
+      <% }); %>
+    </select>
+  </label>
+  <label class="block">
+    <span class="label">Projekt (opcjonalnie)</span>
+    <select name="projectId" x-model="pid" x-ref="proj" @change="pickProject($event)" class="field w-full">
+      <option value="">— bez projektu —</option>
+      <% projects.forEach(function(p){ const _pc = p.clientId ? String(p.clientId) : ''; %>
+        <option value="<%= p.id %>" data-client="<%= _pc %>" <%= _sp === String(p.id) ? 'selected' : '' %>
+                <% if (_pc) { %>:disabled="cid && cid !== '<%= _pc %>'"<% } %>><%= p.name %><%= p.client ? ' (' + p.client.name + ')' : (p.clientName ? ' (' + p.clientName + ')' : '') %></option>
+      <% }); %>
+    </select>
+  </label>
+</div>

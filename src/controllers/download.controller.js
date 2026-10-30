@@ -39,8 +39,11 @@ function firstViewThisSession(req, token) {
 
 // Wspólne wczytanie + walidacja dostępności. Zwraca transfer albo renderuje
 // stronę "niedostępny" i zwraca null.
+// Tylko transfery WYCHODZĄCE: token linku uploadu (/upload/:token) wklejony pod /t/ pokazywałby
+// listę plików wgranych przez klientów i pozwalał je pobrać — link uploadu ma być „tylko do zapisu".
 async function loadAvailable(req, res) {
-  const transfer = await transferService.getByToken(req.params.token);
+  let transfer = await transferService.getByToken(req.params.token);
+  if (transfer && transfer.direction !== 'outgoing') transfer = null;
   const { ok, reason } = transferService.checkAvailability(transfer);
   if (!ok) {
     res.status(reason === 'not_found' ? 404 : 410).render('public/unavailable', {
@@ -114,7 +117,7 @@ async function showMessages(req, res, next) {
     res.render('public/messages', {
       title: 'Wiadomości', layout: PUBLIC_LAYOUT, msgBack: back,
       portalNav: contentMsgNav(res, { backHref: back.href, backLabel: back.label, msgHref: `/t/${transfer.token}/wiadomosci` }),
-      msgKnownSender: !!(transfer.project && transfer.project.clientId), // anonimowy transfer → zostaw imię/e-mail
+      msgKnownSender: !!(transfer.clientId || (transfer.project && transfer.project.clientId)), // anonimowy transfer → zostaw imię/e-mail
     });
   } catch (err) {
     next(err);
@@ -126,7 +129,7 @@ async function pollMessages(req, res, next) {
   try {
     const transfer = await transferService.getByToken(req.params.token);
     const { ok } = transferService.checkAvailability(transfer);
-    if (!ok) return res.status(404).json({ error: 'not_found' });
+    if (!ok || transfer.direction !== 'outgoing') return res.status(404).json({ error: 'not_found' });
     if (transferService.requiresPassword(transfer) && !isUnlocked(req, transfer.token)) return res.status(403).json({ error: 'locked' });
     await messagePoll.respond(res, {
       scope: { transferId: transfer.id },
@@ -143,9 +146,15 @@ async function pollMessages(req, res, next) {
 async function submitMessage(req, res, next) {
   try {
     const transfer = await loadAvailable(req, res);
-    if (!transfer) return;
+    if (!transfer) return storage.removeTmp(req.file && req.file.path);
+    // Ta sama bramka hasła co wątek — bez niej link z hasłem przyjmował wiadomości (i załączniki
+    // na dysk) od każdego, kto zna sam adres.
+    if (transferService.requiresPassword(transfer) && !isUnlocked(req, transfer.token)) {
+      storage.removeTmp(req.file && req.file.path);
+      return res.redirect(`/t/${transfer.token}`);
+    }
     const { body, senderName, senderEmail } = req.body;
-    const msg = await messageService.create({ body, senderName, senderEmail, transferId: transfer.id, projectId: transfer.projectId, clientId: transfer.project ? transfer.project.clientId : null, ip: req.ip, file: req.file });
+    const msg = await messageService.create({ body, senderName, senderEmail, transferId: transfer.id, projectId: transfer.projectId, clientId: transfer.clientId || (transfer.project ? transfer.project.clientId : null), ip: req.ip, file: req.file });
     if (msg) mail.sendNewMessageNotification({ message: msg, project: transfer.project, transfer }).catch((e) => console.error('[mail] wiadomość:', e.message));
     // Wysyłka bez przeładowania (live): oddaj gotowy bąbelek zamiast redirectu.
     // Fallback bez JS (zwykły submit) → dotychczasowy redirect z ?msg=1 i toastem.

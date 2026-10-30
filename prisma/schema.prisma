@@ -79,6 +79,7 @@ model Client {
   retainers Retainer[]                    // cykliczne pozycje rozliczeniowe (abonamenty)
   offers    Offer[]                       // oferty/wyceny do akceptacji przez klienta
   documents Document[]                    // dokumenty klienta (umowy, NDA, briefy)
+  transfers Transfer[]                    // transfery przypisane wprost (także bez projektu)
 }
 
 // Dokument klienta (umowa, NDA, brief…) — plik trzymany w storage/transfers/_documents/.
@@ -209,6 +210,10 @@ model Transfer {
   id            Int       @id @default(autoincrement())
   project       Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
   projectId     Int?
+  // Klient wprost (transfer bez projektu). Przy transferze w projekcie z klientem = klient projektu
+  // (serwer wyrównuje przy zapisie), więc „klient transferu" = clientId ?? project.clientId.
+  client        Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientId      Int?
   direction     String    @default("outgoing") // outgoing | incoming
   token         String    @unique               // publiczny identyfikator w URL
   title         String?
@@ -233,6 +238,8 @@ model Transfer {
   events        Event[]
   messages      Message[]
   fileRequests  FileRequest[]
+
+  @@index([clientId])
 }
 
 // Lista braków — punkt checklisty materiałów, o które prosimy klienta (portal /p).

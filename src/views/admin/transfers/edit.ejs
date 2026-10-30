@@ -6,15 +6,7 @@
   <% } %>
 
   <form method="POST" action="/admin/transfers/<%= transfer.id %>" class="mt-4 space-y-5 bg-white rounded-2xl border border-slate-200 p-6">
-    <div>
-      <label class="block text-sm font-medium text-slate-700 mb-1">Projekt</label>
-      <select name="projectId" class="field w-full">
-        <option value="">— bez projektu —</option>
-        <% projects.forEach(function(p){ %>
-          <option value="<%= p.id %>" <%= transfer.projectId === p.id ? 'selected' : '' %>><%= p.name %><%= p.clientName ? ' (' + p.clientName + ')' : '' %></option>
-        <% }); %>
-      </select>
-    </div>
+    <%- include('_assign', { clients: clients, projects: projects, selClient: transfer.clientId || (transfer.project && transfer.project.clientId), selProject: transfer.projectId }) %>
     <div>
       <label class="block text-sm font-medium text-slate-700 mb-1">Tytuł</label>
       <input name="title" type="text" value="<%= transfer.title || '' %>"

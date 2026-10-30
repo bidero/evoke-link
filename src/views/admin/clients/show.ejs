@@ -100,6 +100,7 @@
       <%# „Edytuj" jako przycisk-ikona — trzy pełne etykiety nie mieściły się w jednym
           rzędzie na telefonie i łamały się na dwie linie. %>
       <a href="/admin/projects/new?client=<%= client.id %>" class="btn btn-primary flex-1 sm:flex-none">+ Nowy projekt</a>
+      <a href="/admin/transfers/new?client=<%= client.id %>&from=client:<%= client.id %>" class="btn btn-secondary flex-1 sm:flex-none" title="Nowy transfer dla klienta (z projektem albo bez)"><%- icon('send', { size: 15, cls: '' }) %> Transfer</a>
       <a href="/admin/messages?client=<%= client.id %>" class="btn btn-secondary flex-1 sm:flex-none"><%- icon('mail', { size: 15, cls: '' }) %> Napisz</a>
       <a href="/admin/clients/<%= client.id %>/edit" class="btn-icon border border-slate-300 shrink-0" title="Edytuj klienta" aria-label="Edytuj klienta"><%- icon('pencil', { size: 16, cls: '' }) %></a>
     </div>
@@ -262,7 +263,7 @@
                     <span class="shrink-0"><% if (t.direction === 'incoming') { %><%- icon('download', { size: 15, cls: 'text-sky-600' }) %><% } else { %><%- icon('upload', { size: 15 }) %><% } %></span>
                     <span class="min-w-0 flex-1">
                       <span class="block text-sm text-slate-700 truncate"><%= t.title || ('Transfer ' + t.token) %></span>
-                      <span class="block text-xs text-slate-400 mt-0.5"><%= t.files.length %> plików<%= t.project ? ' · ' + t.project.name : '' %> · <%= fmt.date(t.createdAt) %></span>
+                      <span class="block text-xs text-slate-400 mt-0.5"><%= t.files.length %> plików · <%= t.project ? t.project.name : 'bez projektu' %> · <%= fmt.date(t.createdAt) %></span>
                     </span>
                   </a>
                 </li>
@@ -764,8 +765,12 @@
     <!-- ===== Transfery ===== -->
     <div x-show="tab==='transfery'">
       <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-        <div class="px-5 py-3 border-b border-slate-100">
+        <div class="px-5 py-3 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2">
           <h2 class="text-sm font-medium text-slate-700">Transfery</h2>
+          <div class="flex flex-wrap gap-2">
+            <a href="/admin/transfers/new-upload?client=<%= client.id %>&from=client:<%= client.id %>" class="btn btn-secondary">+ Link uploadu</a>
+            <a href="/admin/transfers/new?client=<%= client.id %>&from=client:<%= client.id %>" class="btn btn-primary">+ Nowy transfer</a>
+          </div>
         </div>
         <% if (!transfers.length) { %>
           <div class="px-5 py-8 text-center text-sm text-slate-400">Brak transferów.</div>
@@ -777,7 +782,7 @@
                   <span class="shrink-0"><% if (t.direction === 'incoming') { %><%- icon('download', { size: 15, cls: 'text-sky-600' }) %><% } else { %><%- icon('upload', { size: 15 }) %><% } %></span>
                   <span class="min-w-0 flex-1">
                     <span class="block text-sm text-slate-700 truncate"><%= t.title || ('Transfer ' + t.token) %></span>
-                    <span class="block text-xs text-slate-400 mt-0.5"><%= t.files.length %> plików<%= t.project ? ' · ' + t.project.name : '' %> · <%= fmt.date(t.createdAt) %></span>
+                    <span class="block text-xs text-slate-400 mt-0.5"><%= t.files.length %> plików · <%= t.project ? t.project.name : 'bez projektu' %> · <%= fmt.date(t.createdAt) %></span>
                   </span>
                 </a>
               </li>

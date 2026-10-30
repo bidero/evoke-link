@@ -18,10 +18,22 @@ async function badgeCounts(req, res, next) {
   }
 }
 
+// Dwie zakładki: „Powiadomienia" (akcje klientów do odhaczenia — jak dotąd) i „Cała aktywność"
+// (pełna historia: wysłane e-maile, akcje agencji, filtry, wyszukiwanie, stronicowanie).
 async function index(req, res, next) {
   try {
+    const tab = req.query.tab === 'activity' ? 'activity' : 'notifications';
+    if (tab === 'activity') {
+      const filter = events.ACTIVITY_FILTERS[req.query.filter] ? req.query.filter : 'all';
+      const q = String(req.query.q || '').trim().slice(0, 200);
+      const result = await events.activity({ filter, q, page: req.query.page });
+      return res.render('admin/notifications', {
+        title: 'Powiadomienia', active: 'notifications', tab, notifications: [],
+        activity: result, filter, q, filters: events.ACTIVITY_FILTERS,
+      });
+    }
     const notifications = await events.listNotifications();
-    res.render('admin/notifications', { title: 'Powiadomienia', active: 'notifications', notifications });
+    res.render('admin/notifications', { title: 'Powiadomienia', active: 'notifications', tab, notifications });
   } catch (err) {
     next(err);
   }

@@ -86,7 +86,7 @@ async function showMessages(req, res, next) {
     res.render('public/messages', {
       title: 'Wiadomości', layout: PUBLIC_LAYOUT, msgBack: back,
       portalNav: contentMsgNav(res, { backHref: back.href, backLabel: back.label, msgHref: `/upload/${transfer.token}/wiadomosci` }),
-      msgKnownSender: !!(transfer.project && transfer.project.clientId), // anonimowy transfer → zostaw imię/e-mail
+      msgKnownSender: !!(transfer.clientId || (transfer.project && transfer.project.clientId)), // anonimowy transfer → zostaw imię/e-mail
     });
   } catch (err) {
     next(err);
@@ -116,9 +116,14 @@ async function pollMessages(req, res, next) {
 async function submitMessage(req, res, next) {
   try {
     const transfer = await loadIncoming(req, res);
-    if (!transfer) return;
+    if (!transfer) return storage.removeTmp(req.file && req.file.path);
+    // Bramka hasła jak w wątku (link z hasłem nie przyjmuje wiadomości od nieodblokowanych).
+    if (transferService.requiresPassword(transfer) && !isUnlocked(req, transfer.token)) {
+      storage.removeTmp(req.file && req.file.path);
+      return res.redirect(`/upload/${transfer.token}`);
+    }
     const { body, senderName, senderEmail } = req.body;
-    const msg = await messageService.create({ body, senderName, senderEmail, transferId: transfer.id, projectId: transfer.projectId, clientId: transfer.project ? transfer.project.clientId : null, ip: req.ip, file: req.file });
+    const msg = await messageService.create({ body, senderName, senderEmail, transferId: transfer.id, projectId: transfer.projectId, clientId: transfer.clientId || (transfer.project ? transfer.project.clientId : null), ip: req.ip, file: req.file });
     if (msg) mail.sendNewMessageNotification({ message: msg, project: transfer.project, transfer }).catch((e) => console.error('[mail] wiadomość:', e.message));
     // Wysyłka bez przeładowania (live): oddaj gotowy bąbelek zamiast redirectu.
     // Fallback bez JS (zwykły submit) → dotychczasowy redirect z ?msg=1 i toastem.

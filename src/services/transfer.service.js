@@ -24,10 +24,31 @@ function buildFilesData(token, uploadedFiles) {
   });
 }
 
+// Klient transferu przy zapisie. Transfer w projekcie z klientem należy do KLIENTA PROJEKTU
+// (nie da się go „przepisać" na kogoś innego niż projekt), bez projektu — do wybranego klienta.
+// Dzięki temu `clientId` jest zawsze spójny i wystarcza do filtrów/list bez dołączania projektu.
+async function resolveClientId(projectId, clientId) {
+  if (projectId) {
+    const p = await prisma.project.findUnique({ where: { id: Number(projectId) }, select: { clientId: true } });
+    if (p && p.clientId) return p.clientId;
+  }
+  const cid = parseInt(clientId, 10);
+  if (!cid) return null;
+  const c = await prisma.client.findUnique({ where: { id: cid }, select: { id: true } });
+  return c ? c.id : null;
+}
+
+// Klient transferu do wyświetlenia: wprost albo przez projekt (dla rekordów sprzed migracji).
+function clientOf(t) {
+  if (!t) return null;
+  return t.client || (t.project && t.project.client) || null;
+}
+
 // Tworzy transfer wraz z plikami. `uploadedFiles` to tablica z multera
 // (każdy ma: originalname, path (w tmp), size, mimetype).
-async function createOutgoingTransfer({ title, message, password, expiresAt, maxDownloads, projectId, uploadedFiles, createdById, clientVisible = true, notifyOnDownload = false, proofing = false }) {
+async function createOutgoingTransfer({ title, message, password, expiresAt, maxDownloads, projectId, clientId, uploadedFiles, createdById, clientVisible = true, notifyOnDownload = false, proofing = false }) {
   const token = makeToken();
+  const cid = await resolveClientId(projectId, clientId);
   const filesData = buildFilesData(token, uploadedFiles);
 
   const transfer = await prisma.transfer.create({
@@ -40,6 +61,7 @@ async function createOutgoingTransfer({ title, message, password, expiresAt, max
       expiresAt: expiresAt || null,
       maxDownloads: maxDownloads || null,
       projectId: projectId || null,
+      clientId: cid,
       createdById: createdById || null,
       clientVisible: !!clientVisible,
       notifyOnDownload: !!notifyOnDownload,
@@ -56,7 +78,7 @@ async function createOutgoingTransfer({ title, message, password, expiresAt, max
 function getByToken(token) {
   return prisma.transfer.findUnique({
     where: { token },
-    include: { files: true, project: true },
+    include: { files: true, project: true, client: { select: { id: true, name: true, email: true } } },
   });
 }
 
@@ -65,7 +87,11 @@ function getByToken(token) {
 function getById(id) {
   return prisma.transfer.findUnique({
     where: { id: Number(id) },
-    include: { files: true, project: { include: { client: { select: { id: true, name: true, email: true } } } } },
+    include: {
+      files: true,
+      project: { include: { client: { select: { id: true, name: true, email: true } } } },
+      client: { select: { id: true, name: true, email: true } },
+    },
   });
 }
 
@@ -88,9 +114,10 @@ function totalSize(t) {
 }
 
 // Lista transferów do panelu (opcjonalne filtry + sortowanie).
-async function list({ direction, status, q, sort } = {}) {
+async function list({ direction, status, q, sort, clientId } = {}) {
   const where = {};
   if (direction) where.direction = direction;
+  if (clientId) where.clientId = Number(clientId);
   if (status) where.status = status;
   if (q && q.trim()) {
     const s = q.trim();
@@ -98,12 +125,18 @@ async function list({ direction, status, q, sort } = {}) {
       { title: { contains: s } },
       { token: { contains: s } },
       { files: { some: { originalName: { contains: s } } } }, // wyszukiwanie po nazwie pliku
+      { client: { name: { contains: s } } },                    // po kliencie
+      { project: { name: { contains: s } } },                   // po projekcie
     ];
   }
   const key = SORTS.includes(sort) ? sort : 'created_desc';
   const transfers = await prisma.transfer.findMany({
     where,
-    include: { files: true, project: true },
+    include: {
+      files: true,
+      project: { include: { client: { select: { id: true, name: true } } } },
+      client: { select: { id: true, name: true } },
+    },
     orderBy: ORDER_BY[key],
   });
   if (key === 'expires_asc') {
@@ -156,7 +189,7 @@ function recomputeStatus(transfer) {
 // Edycja transferu w panelu. Hasło: newPassword ustawia nowe, removePassword czyści,
 // brak obu = bez zmian. Po edycji status jest przeliczany (np. wydłużenie ważności
 // reaktywuje wygasły transfer).
-async function update(id, { title, message, expiresAt, maxDownloads, newPassword, removePassword, projectId, clientVisible, notifyOnDownload, proofing }) {
+async function update(id, { title, message, expiresAt, maxDownloads, newPassword, removePassword, projectId, clientId, clientVisible, notifyOnDownload, proofing }) {
   const current = await prisma.transfer.findUnique({ where: { id: Number(id) } });
   if (!current) return null;
 
@@ -166,6 +199,7 @@ async function update(id, { title, message, expiresAt, maxDownloads, newPassword
     expiresAt: expiresAt || null,
     maxDownloads: maxDownloads != null ? maxDownloads : null,
     projectId: projectId != null ? projectId : null,
+    clientId: await resolveClientId(projectId, clientId),
     clientVisible: clientVisible != null ? !!clientVisible : current.clientVisible,
     notifyOnDownload: notifyOnDownload != null ? !!notifyOnDownload : current.notifyOnDownload,
     proofing: proofing != null ? !!proofing : current.proofing,
@@ -179,8 +213,9 @@ async function update(id, { title, message, expiresAt, maxDownloads, newPassword
 }
 
 // Tworzy "link uploadu" (transfer przychodzący, klient → agencja) — bez plików na start.
-async function createUploadRequest({ title, message, password, expiresAt, projectId, clientVisible = false }) {
+async function createUploadRequest({ title, message, password, expiresAt, projectId, clientId, clientVisible = false }) {
   const token = makeToken();
+  const cid = await resolveClientId(projectId, clientId);
   return prisma.transfer.create({
     data: {
       token,
@@ -190,6 +225,7 @@ async function createUploadRequest({ title, message, password, expiresAt, projec
       passwordHash: password ? bcrypt.hashSync(password, 10) : null,
       expiresAt: expiresAt || null,
       projectId: projectId || null,
+      clientId: cid,
       clientVisible: !!clientVisible,
     },
     include: { files: true },
@@ -260,6 +296,8 @@ function extend(id, days) {
 
 module.exports = {
   SORTS,
+  resolveClientId,
+  clientOf,
   totalSize,
   extend,
   setDecision,

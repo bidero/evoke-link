@@ -1,3 +1,62 @@
+<%# Dwie zakładki: „Powiadomienia" (akcje klientów do odhaczenia) i „Cała aktywność" (pełna
+    historia z filtrami — wysłane e-maile, akcje agencji, wyszukiwanie po adresie/temacie). %>
+<div class="seg text-sm mb-4">
+  <a href="/admin/notifications" class="btn <%= tab === 'notifications' ? 'btn-primary' : 'btn-secondary' %>"><%- icon('bell', { size: 15, cls: '' }) %> Powiadomienia</a>
+  <a href="/admin/notifications?tab=activity" class="btn <%= tab === 'activity' ? 'btn-primary' : 'btn-secondary' %>"><%- icon('activity', { size: 15, cls: '' }) %> Cała aktywność</a>
+</div>
+
+<% if (tab === 'activity') { %>
+  <% const _url = function(over){ const p = new URLSearchParams({ tab: 'activity' }); const o = Object.assign({ filter: filter, q: q }, over); if (o.filter && o.filter !== 'all') p.set('filter', o.filter); if (o.q) p.set('q', o.q); if (o.page && o.page > 1) p.set('page', o.page); return '/admin/notifications?' + p.toString(); }; %>
+  <div class="flex flex-col gap-3 mb-4">
+    <div class="flex flex-wrap gap-2">
+      <% Object.keys(filters).forEach(function(k){ %>
+        <a href="<%= _url({ filter: k, page: 1 }) %>" class="chip <%= filter === k ? 'border-brand-300 bg-brand-50 text-brand-700' : 'chip-action' %>"><%= filters[k].label %></a>
+      <% }); %>
+    </div>
+    <form method="GET" action="/admin/notifications" class="flex flex-col gap-2 sm:flex-row sm:items-center">
+      <input type="hidden" name="tab" value="activity" />
+      <% if (filter !== 'all') { %><input type="hidden" name="filter" value="<%= filter %>" /><% } %>
+      <div class="relative w-full sm:max-w-md">
+        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><%- icon('search', { size: 16 }) %></span>
+        <input type="search" name="q" value="<%= q %>" placeholder="Szukaj: adres e-mail, temat, klient, projekt, transfer…" class="field w-full pl-9 pr-3" />
+      </div>
+      <button type="submit" class="btn btn-secondary">Szukaj</button>
+      <span class="text-xs text-slate-400 sm:ml-auto"><%= activity.total %> <%= activity.total === 1 ? 'wpis' : 'wpisów' %></span>
+    </form>
+  </div>
+
+  <% if (!activity.items.length) { %>
+    <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-500">
+      <%= q ? 'Brak wyników dla „' + q + '".' : 'Brak aktywności w tej kategorii.' %>
+    </div>
+  <% } else { %>
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+      <ul class="divide-y divide-slate-100">
+        <% activity.items.forEach(function(e){ %>
+          <li class="flex gap-3 items-start px-5 py-3">
+            <span class="mt-0.5"><%- eventIcon(e.type) %></span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-sm text-slate-700 break-words"><%= e.message || e.type %></span>
+              <span class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                <span><%= fmt.date(e.createdAt) %></span>
+                <% if (e.client) { %><a href="/admin/clients/<%= e.client.id %>" class="inline-flex items-center gap-1 hover:text-brand-700"><%- icon('users', { size: 12, cls: '' }) %><%= e.client.name %></a><% } %>
+                <% if (e.project) { %><a href="/admin/projects/<%= e.project.id %>" class="inline-flex items-center gap-1 hover:text-brand-700"><%- icon('folder', { size: 12, cls: '' }) %><%= e.project.name %></a><% } %>
+                <% if (e.transfer) { %><a href="/admin/transfers/<%= e.transfer.id %>" class="inline-flex items-center gap-1 hover:text-brand-700"><%- icon(e.transfer.direction === 'incoming' ? 'download' : 'upload', { size: 12, cls: '' }) %><%= e.transfer.title || ('Transfer ' + e.transfer.token) %></a><% } %>
+              </span>
+            </span>
+          </li>
+        <% }); %>
+      </ul>
+    </div>
+    <% if (activity.pages > 1) { %>
+      <div class="mt-4 flex items-center justify-between gap-2 text-sm">
+        <% if (activity.page > 1) { %><a href="<%= _url({ page: activity.page - 1 }) %>" class="btn btn-secondary">← Nowsze</a><% } else { %><span></span><% } %>
+        <span class="text-slate-500">Strona <%= activity.page %> z <%= activity.pages %></span>
+        <% if (activity.page < activity.pages) { %><a href="<%= _url({ page: activity.page + 1 }) %>" class="btn btn-secondary">Starsze →</a><% } else { %><span></span><% } %>
+      </div>
+    <% } %>
+  <% } %>
+<% } else { %>
 <%# Na telefonie opis i akcje w STOSIE (wzorzec z projects/index.ejs) — w jednym rzędzie
     przyciski nie mieściły się w 390 px i wychodziły poza szerokość strony. Od `sm:` rząd
     jak dotąd. Formularze są dziećmi flexa, więc to ONE dostają `flex-1`, nie przyciski. %>
@@ -45,4 +104,5 @@
       <% }); %>
     </ul>
   </div>
+<% } %>
 <% } %>

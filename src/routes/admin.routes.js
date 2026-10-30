@@ -183,17 +183,19 @@ router.post('/notifications/clear', notifications.clearAll); // przed :id
 router.get('/notifications/:id/open', notifications.open);
 router.post('/notifications/:id/dismiss', notifications.dismiss);
 
+// ── Sekcje TYLKO dla admina (rola staff dostaje 403) ─────────────────────────
+// Ustawienia, aktualizacje, kopie zapasowe i konta użytkowników. Bramka prefiksowa,
+// żeby żadna pod-trasa nie umknęła (także te dodane w przyszłości).
+// GOTCHA: bramka działa tylko na trasy zarejestrowane PO niej (Express idzie po kolei) —
+// trasy /update stały wcześniej wyżej i pracownik mógł uruchomić aktualizację (git pull + npm).
+router.use(['/settings', '/update', '/users'], requireAdmin);
+
 // Aktualizacja aplikacji z GitHuba (Ustawienia → Zaawansowane).
 const updates = require('../controllers/update.controller');
 router.post('/update/check', updates.check);
 router.post('/update/run', updates.run);
 router.get('/update/status', updates.status);
 router.post('/update/notify', updates.toggleNotify);
-
-// ── Sekcje TYLKO dla admina (rola staff dostaje 403) ─────────────────────────
-// Ustawienia, aktualizacje, kopie zapasowe i konta użytkowników. Bramka prefiksowa,
-// żeby żadna pod-trasa nie umknęła (także te dodane w przyszłości).
-router.use(['/settings', '/update', '/users'], requireAdmin);
 
 // Konta użytkowników (admin + pracownik).
 const users = require('../controllers/users.controller');

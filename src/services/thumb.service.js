@@ -203,9 +203,23 @@ function schedule(storedPath, mime, name) {
 
 // Wysłanie podglądu — JEDNO miejsce dla panelu, /t i /p (trzy trasy miały ten sam ogon).
 // `thumb` = lista plików (mały JPEG), bez tego = Quick Look/pełny podgląd (oryginał).
+// Typ treści podglądu NIE może pochodzić od klienta: `mimeType` z uploadu (multipart/kawałki)
+// ustawia przeglądarka wysyłającego — plik „zdjecie.png" z typem `text/html` otwarty inline
+// wykonałby skrypt w domenie panelu (stored XSS). Bierzemy więc typ obrazu z rozszerzenia
+// albo zweryfikowany obrazowy mime, inaczej neutralny octet-stream.
+const IMAGE_TYPES = { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp', avif: 'image/avif' };
+function safeImageType(file) {
+  const m = String(file.mimeType || '').toLowerCase();
+  if (/^image\/(jpeg|png|gif|webp|bmp|avif)$/.test(m)) return m;
+  const ext = String(file.originalName || '').toLowerCase().split('.').pop();
+  return IMAGE_TYPES[ext] || 'application/octet-stream';
+}
+
 function send(res, file, thumb) {
   res.setHeader('Content-Disposition', 'inline');
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  // Druga linia obrony: nawet gdyby coś przeszło jako dokument — zero skryptów (jak /branding).
+  res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; sandbox");
   if (thumb) {
     const hit = cached(file.storedPath);
     if (hit) {
@@ -218,9 +232,9 @@ function send(res, file, thumb) {
     // Format, którego nie dekodujemy (GIF/WebP/AVIF), po prostu nigdy nie trafi do cache'u.
     schedule(file.storedPath, file.mimeType, file.originalName);
   }
-  res.setHeader('Content-Type', file.mimeType || 'image/jpeg');
+  res.setHeader('Content-Type', safeImageType(file));
   res.setHeader('Cache-Control', 'private, max-age=300');
   return storage.pipeDownload(res, file.storedPath);
 }
 
-module.exports = { cached, generate, schedule, send, cachePath, MAX_SIDE };
+module.exports = { cached, generate, schedule, send, safeImageType, cachePath, MAX_SIDE };
