@@ -8,7 +8,7 @@
   const MSG = { created: 'Konto dodane.', saved: 'Zmiany zapisane.', deleted: 'Konto usunięte.' };
   const meId = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.id : null;
 %>
-<div class="max-w-4xl space-y-6">
+<div class="max-w-4xl space-y-3">
   <% if (msg && MSG[msg]) { %>
     <div class="alert alert-ok"><%- icon('check', { size: 16, cls: 'text-green-600' }) %> <%= MSG[msg] %></div>
   <% } %>

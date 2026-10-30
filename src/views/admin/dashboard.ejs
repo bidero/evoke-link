@@ -11,7 +11,7 @@
   };
   // Siatka: na telefonie 2 kolumny, od lg 12 kolumn.
   // DESKTOP (klasy `lg:*`): szerokość z w.span (3=¼, 4=⅓, 6=½, 8=⅔, 12=1/1), WYSOKOŚĆ z w.rows
-  // w jednostkach `lg:auto-rows-[96px]` + gap 20 px (2=212, 3=328, 4=444, 6=676 px). Dzięki temu
+  // w jednostkach `lg:auto-rows-[96px]` + gap 12 px (2=204, 3=312, 4=420, 6=636 px). Dzięki temu
   // da się złożyć układ „dwa niskie kafelki obok jednego wysokiego" — CSS Grid sam pakuje elementy
   // w kolumnach (auto-placement wg kolejności DOM; BEZ `dense`, żeby kolejność przeciągania
   // pozostała przewidywalna). Kolejność desktopowa = kolejność DOM.
@@ -29,7 +29,7 @@
 <div x-data="dashEdit(<%= JSON.stringify(hiddenMap) %>, <%= JSON.stringify(spansMap) %>, <%= JSON.stringify(rowsMap) %>, <%= JSON.stringify(mspansMap) %>, <%= JSON.stringify(minRowsMap) %>)" @dash-edit.window="start()">
   <!-- auto-rows tylko od lg: wysokość widżetu = jego rows × 96 px (+ gapy). Na telefonie
        szerokość/kolejność z --ms/--mo (reguła w input.css), wysokość rośnie z treścią. -->
-  <div id="dashGrid" class="grid grid-cols-2 lg:grid-cols-12 lg:auto-rows-[96px] gap-5" :class="mobileMode && 'mobile-preview'">
+  <div id="dashGrid" class="grid grid-cols-2 lg:grid-cols-12 lg:auto-rows-[96px] gap-3" :class="mobileMode && 'mobile-preview'">
     <% widgets.forEach(function(w){ %>
       <div class="relative <%= spanCls(w) %>" data-key="<%= w.key %>" style="--ms: <%= w.mspan %>; --mo: <%= w.morder %>;"
            <% if (w.hidden) { %>x-show="edit" x-cloak<% } %>
@@ -99,10 +99,10 @@
   function dashEdit(hiddenMap, spansMap, rowsMap, mspansMap, minRowsMap) {
     var SPAN_ORDER = [3, 4, 6, 8, 12];
     var SPAN_CLS = { 3: 'lg:col-span-3', 4: 'lg:col-span-4', 6: 'lg:col-span-6', 8: 'lg:col-span-8', 12: 'lg:col-span-12' };
-    // Wysokość: jednostki siatki (auto-rows 96 px + gap 20).
+    // Wysokość: jednostki siatki (auto-rows 96 px + gap 12).
     var ROW_ORDER = [2, 3, 4, 6];
     var ROW_CLS = { 2: 'lg:row-span-2', 3: 'lg:row-span-3', 4: 'lg:row-span-4', 6: 'lg:row-span-6' };
-    var GAP = 20, ROW_UNIT = 96;
+    var GAP = 12, ROW_UNIT = 96;
 
     var el = (key) => document.querySelector('#dashGrid [data-key="' + key + '"]');
     // Najbliższa DOZWOLONA wartość z listy (snap przy przeciąganiu — zestawy zostają te same,

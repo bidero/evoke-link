@@ -2,7 +2,7 @@
   const pName = (profile && profile.name) ? profile.name : '';
   const pInitial = ((pName || email || '?').trim().charAt(0) || '?').toUpperCase();
 %>
-<div class="max-w-3xl space-y-6">
+<div class="max-w-3xl space-y-3">
   <% if (savedProfile) { %>
     <div class="alert alert-ok">
       <%- icon('check', { size: 16, cls: 'text-green-600' }) %> Profil zapisany.

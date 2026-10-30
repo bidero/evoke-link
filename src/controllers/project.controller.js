@@ -38,12 +38,28 @@ async function listProjects(req, res, next) {
     }
     const status = statusSel === 'all' ? '' : statusSel; // '' → serwis nie filtruje
 
-    const projects = await projectService.list({ status, q, sort });
+    // Widok kafelki/lista — zapamiętany w sesji jak sortowanie i zakładka statusu.
+    const VIEWS = ['grid', 'list'];
+    let view;
+    if (VIEWS.includes(req.query.view)) {
+      view = req.query.view;
+      if (req.session) req.session.projectView = view;
+    } else {
+      view = (req.session && VIEWS.includes(req.session.projectView)) ? req.session.projectView : 'grid';
+    }
+    // Filtr po kliencie (z adresu, bez zapamiętywania — to doraźne zawężenie).
+    const clientId = parseInt(req.query.client, 10) > 0 ? parseInt(req.query.client, 10) : null;
+
+    const [projects, clients] = await Promise.all([
+      projectService.list({ status, q, sort, clientId }),
+      clientService.options(),
+    ]);
     res.render('admin/projects/index', {
       title: 'Projekty',
       active: 'projects',
       projects,
-      filter: { status: status || '', q: q || '', sort },
+      clients,
+      filter: { status: status || '', q: q || '', sort, client: clientId || '', view },
     });
   } catch (err) {
     next(err);

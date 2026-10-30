@@ -392,26 +392,40 @@ html.dark.theme-modern main table thead { background: var(--dk-surface-2); }
 html.dark.theme-modern main table thead th { color: var(--dk-muted); }
 html.dark.theme-modern [data-stat-icon] { background: rgb(var(--brand-600) / 0.22); color: rgb(var(--brand-400)) !important; }
 
-/* ── Paski przewijania: bardzo wąskie, w kolorze przewodnim, widoczne po najechaniu ─
+/* ── Paski przewijania: cienkie, STALE w kolorze przewodnim, z odstępem od krawędzi ───
    Cała aplikacja (panel i strony klienta — tam paleta brand-* = kolor przewodni stron klienta).
-   Kciuk jest przezroczysty, dopóki kursor nie znajdzie się nad przewijanym obszarem, więc
-   wewnętrzne listy (widżety, komunikator, menu) nie mają stale widocznych pasków. Na ekranach
-   dotykowych system i tak pokazuje własny, nakładany wskaźnik podczas przewijania.
-   WebKit/Blink: pseudo-elementy (pozwalają zejść do 6 px). Firefox: standardowe właściwości —
-   ŚWIADOMIE tylko tam (@supports), bo w Chrome ustawienie `scrollbar-color` wyłącza
-   ::-webkit-scrollbar i pasek wraca do szerokości systemowej. */
-::-webkit-scrollbar { width: 6px; height: 6px; }
+   WebKit/Blink: pasek ma 9 px, ale kciuk dostaje 2 px przezroczystej ramki z `background-clip:
+   padding-box` → widoczne 5 px i oddech od krawędzi. Firefox: standardowe właściwości —
+   ŚWIADOMIE tylko tam (@supports), bo w Chrome `scrollbar-color` wyłącza ::-webkit-scrollbar
+   i pasek wraca do szerokości systemowej. */
+::-webkit-scrollbar { width: 9px; height: 9px; }
 ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
-::-webkit-scrollbar-thumb { background-color: transparent; border-radius: 9999px; }
-*:hover::-webkit-scrollbar-thumb { background-color: rgb(var(--brand-600) / 0.45); }
-*::-webkit-scrollbar-thumb:hover { background-color: rgb(var(--brand-600) / 0.75); }
-html.dark *:hover::-webkit-scrollbar-thumb { background-color: rgb(var(--brand-400) / 0.5); }
-html.dark *::-webkit-scrollbar-thumb:hover { background-color: rgb(var(--brand-400) / 0.8); }
-@supports not selector(::-webkit-scrollbar) {
-  * { scrollbar-width: thin; scrollbar-color: transparent transparent; }
-  *:hover { scrollbar-color: rgb(var(--brand-600) / 0.5) transparent; }
-  html.dark *:hover { scrollbar-color: rgb(var(--brand-400) / 0.55) transparent; }
+::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--brand-600) / 0.7);
+  border: 2px solid transparent; background-clip: padding-box; border-radius: 9999px;
 }
+::-webkit-scrollbar-thumb:hover { background-color: rgb(var(--brand-600)); }
+html.dark ::-webkit-scrollbar-thumb { background-color: rgb(var(--brand-400) / 0.7); }
+html.dark ::-webkit-scrollbar-thumb:hover { background-color: rgb(var(--brand-400)); }
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: rgb(var(--brand-600) / 0.7) transparent; }
+  html.dark * { scrollbar-color: rgb(var(--brand-400) / 0.7) transparent; }
+}
+
+/* Pasek STRONY panelu (desktop + mysz) zaczyna się pod nagłówkiem — `public/js/page-scrollbar.js`
+   ukrywa natywny pasek dokumentu (klasa `has-page-scroll`) i rysuje własny wskaźnik `fixed`
+   od dołu nagłówka do dołu okna. Strona dalej przewija się normalnie (window). */
+html.has-page-scroll { scrollbar-width: none; }
+html.has-page-scroll::-webkit-scrollbar { display: none; width: 0; }
+.page-scroll { position: fixed; right: 2px; width: 9px; z-index: 30; }
+.page-scroll-thumb {
+  position: absolute; left: 2px; right: 2px; top: 0; border-radius: 9999px;
+  background-color: rgb(var(--brand-600) / 0.7); cursor: default; transition: background-color .15s;
+}
+.page-scroll-thumb:hover, .page-scroll-dragging .page-scroll-thumb { background-color: rgb(var(--brand-600)); }
+html.dark .page-scroll-thumb { background-color: rgb(var(--brand-400) / 0.7); }
+html.dark .page-scroll-thumb:hover, html.dark.page-scroll-dragging .page-scroll-thumb { background-color: rgb(var(--brand-400)); }
+.page-scroll-dragging, .page-scroll-dragging * { user-select: none; }
 
 /* ── Ukrycie pasków przewijania (opcja, niezależna od motywu) ────────────────
    Działa też w „classic". Firefox: scrollbar-width; WebKit: ::-webkit-scrollbar. */

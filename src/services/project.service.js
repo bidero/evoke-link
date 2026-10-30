@@ -18,9 +18,10 @@ const SORTS = {
 };
 
 // Lista projektów z licznikami transferów (do widoku listy i dropdownów).
-async function list({ status, q, sort } = {}) {
+async function list({ status, q, sort, clientId } = {}) {
   const where = {};
   if (status) where.status = status;
+  if (clientId) where.clientId = Number(clientId);
   if (q && q.trim()) {
     const s = q.trim();
     where.OR = [

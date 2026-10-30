@@ -31,7 +31,7 @@
 </div>
 
 <!-- Panel klienta -->
-<div class="mt-6 bg-white rounded-2xl border border-slate-200 p-5"
+<div class="mt-3 bg-white rounded-2xl border border-slate-200 p-5"
      x-data="{ copied: false, send() { var to = '<%= clientEmail %>'; if (!to) { to = (prompt('Wyślij link panelu na adres e-mail:') || '').trim(); if (!to) return; } this.$refs.sendEmail.value = to; this.$refs.sendForm.submit(); } }">
   <div class="flex items-center justify-between mb-2">
     <h2 class="text-sm font-medium text-slate-700">Panel klienta</h2>
@@ -67,7 +67,7 @@
 </div>
 
 <!-- Lista braków: materiały, o które prosimy klienta (widoczna w jego panelu) -->
-<div class="mt-6 bg-white rounded-2xl border border-slate-200 p-5" x-data="{ add: false }">
+<div class="mt-3 bg-white rounded-2xl border border-slate-200 p-5" x-data="{ add: false }">
   <div class="flex items-center justify-between mb-2">
     <h2 class="text-sm font-medium text-slate-700">Lista braków <span class="text-slate-400 font-normal">(od klienta)</span></h2>
     <button type="button" @click="add = !add" class="text-sm text-brand-700 hover:underline">+ Dodaj punkt</button>
@@ -106,9 +106,9 @@
   <% } %>
 </div>
 
-<div class="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-3">
   <!-- Kolumny transferów -->
-  <div class="lg:col-span-2 space-y-6">
+  <div class="lg:col-span-2 space-y-3">
     <%
       // Tytuł transferu to tekst użytkownika — w składanym tu HTML-u MUSI być escapowany
       // (od kont z rolami tytuł może wpisać pracownik, a stronę ogląda administrator).

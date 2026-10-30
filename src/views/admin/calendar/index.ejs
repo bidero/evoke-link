@@ -43,7 +43,7 @@
   const evTime = (d) => { const x = new Date(d); return `${pad(x.getHours())}:${pad(x.getMinutes())}`; };
   // Hidden inputy zachowujące widok po zapisie (miesiąc/tydzień/dzień).
 %>
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6" x-data="calendar()" x-init="$watch('sideOpen', v => { try { localStorage.setItem('evoke-cal-side', v ? '1' : '0'); } catch(e){} })">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-3" x-data="calendar()" x-init="$watch('sideOpen', v => { try { localStorage.setItem('evoke-cal-side', v ? '1' : '0'); } catch(e){} })">
 
   <!-- KALENDARZ -->
   <div :class="sideOpen ? 'lg:col-span-2' : 'lg:col-span-3'">
@@ -197,7 +197,7 @@
   </div>
 
   <!-- PANEL: nadchodzące + zrobione (zwijany — szerszy kalendarz) -->
-  <div class="space-y-4" x-show="sideOpen" x-cloak>
+  <div class="space-y-3" x-show="sideOpen" x-cloak>
     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
       <div class="px-4 py-3 border-b border-slate-100 text-sm font-medium text-slate-700">Nadchodzące i zaległe</div>
       <% if (!upcoming.length) { %>

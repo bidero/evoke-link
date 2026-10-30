@@ -2,8 +2,10 @@
   <div class="page-head">
     <div class="seg text-sm">
       <% const tabs = [ { label: 'Aktywne', q: 'active' }, { label: 'Zarchiwizowane', q: 'archived' }, { label: 'Wszystkie', q: '' } ]; %>
+      <%# Adres z bieżącymi filtrami (zakładki/przełącznik widoku nie gubią klienta ani szukajki). %>
+      <% function projUrl(over){ const o = Object.assign({ status: filter.status || 'all', q: filter.q, client: filter.client, sort: filter.sort, view: filter.view }, over); const p = new URLSearchParams(); Object.keys(o).forEach(function(k){ if (o[k]) p.set(k, o[k]); }); return '/admin/projects?' + p.toString(); } %>
       <% tabs.forEach(function(t){ const isActive = (filter.status||'') === t.q; %>
-        <a href="/admin/projects?status=<%= t.q || 'all' %>"
+        <a href="<%= projUrl({ status: t.q || 'all' }) %>"
            class="btn <%= isActive ? 'btn-primary' : 'btn-secondary' %>"><%= t.label %></a>
       <% }); %>
     </div>
@@ -15,10 +17,15 @@
   </div>
   <form method="GET" action="/admin/projects" class="flex flex-col gap-2 sm:flex-row sm:items-center">
     <% if (filter.status) { %><input type="hidden" name="status" value="<%= filter.status %>" /><% } %>
+    <input type="hidden" name="view" value="<%= filter.view %>" />
     <div class="relative w-full sm:max-w-xs">
       <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"><%- icon('search', { size: 16 }) %></span>
       <input type="search" name="q" value="<%= filter.q %>" placeholder="Szukaj projektu lub klienta…" class="field w-full pl-9 pr-3" />
     </div>
+    <select name="client" onchange="this.form.submit()" class="field text-slate-700 sm:max-w-[14rem]" aria-label="Filtruj po kliencie">
+      <option value="">Wszyscy klienci</option>
+      <% clients.forEach(function(c){ %><option value="<%= c.id %>" <%= String(filter.client) === String(c.id) ? 'selected' : '' %>><%= c.name %></option><% }); %>
+    </select>
     <div class="flex items-center gap-2 text-sm sm:ml-auto">
       <label class="text-slate-500 shrink-0">Sortuj:</label>
       <select name="sort" onchange="this.form.submit()" class="field pl-3 pr-9">
@@ -26,21 +33,59 @@
           <option value="<%= o[0] %>" <%= filter.sort === o[0] ? 'selected' : '' %>><%= o[1] %></option>
         <% }); %>
       </select>
+      <%# Przełącznik widoku: kafelki / lista (zapamiętany w sesji). %>
+      <div class="inline-flex rounded-lg border border-slate-300 overflow-hidden shrink-0" role="group" aria-label="Widok">
+        <a href="<%= projUrl({ view: 'grid' }) %>" class="btn-icon rounded-none <%= filter.view === 'grid' ? 'bg-brand-50 text-brand-700' : 'text-slate-500' %>" title="Kafelki" aria-label="Kafelki" aria-pressed="<%= filter.view === 'grid' %>"><%- icon('layoutGrid', { size: 16, cls: '' }) %></a>
+        <a href="<%= projUrl({ view: 'list' }) %>" class="btn-icon rounded-none border-l border-slate-300 <%= filter.view === 'list' ? 'bg-brand-50 text-brand-700' : 'text-slate-500' %>" title="Lista" aria-label="Lista" aria-pressed="<%= filter.view === 'list' %>"><%- icon('list', { size: 16, cls: '' }) %></a>
+      </div>
     </div>
   </form>
 </div>
 
 <% if (!projects.length) { %>
   <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-500">
-    <% if (filter.q) { %>
-      <p>Brak wyników dla „<%= filter.q %>".</p>
+    <% if (filter.q || filter.client) { %>
+      <p>Brak projektów dla wybranych filtrów.</p>
     <% } else { %>
       <p class="mb-3">Brak projektów.</p>
       <a href="/admin/projects/new" class="text-brand-700 font-medium hover:underline">Utwórz pierwszy projekt →</a>
     <% } %>
   </div>
+<% } else if (filter.view === 'list') { %>
+  <%# Widok LISTY: jeden wiersz na projekt (nazwa+klient, etap, transfery, aktywność, archiwizacja).
+      Wiersze to <div> (nie <table>), żeby ręczna kolejność działała tym samym Sortable co kafelki
+      (`#projectGrid` > `[data-id]`). Na telefonie kolumny etapu/transferów chowają się. %>
+  <% const _stage = { lead: ['Lead', 'bg-amber-50 text-amber-700'], active: ['Aktywny', 'bg-green-50 text-green-700'], delivered: ['Dostarczony', 'bg-sky-50 text-sky-700'], paid: ['Zapłacony', 'bg-slate-100 text-slate-600'] }; %>
+  <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <div class="hidden md:grid grid-cols-[minmax(0,1fr)_8rem_6rem_10rem_2.5rem] gap-4 px-4 py-3 bg-slate-50 text-sm font-medium text-slate-500">
+      <span>Projekt</span><span>Etap</span><span>Transfery</span><span>Aktywność</span><span></span>
+    </div>
+    <div id="projectGrid" class="divide-y divide-slate-100">
+      <% projects.forEach(function(p){ const _arch = p.status === 'archived'; const _st = _stage[p.stage] || _stage.active; const _cl = (p.client && p.client.name) ? p.client.name : p.clientName; %>
+        <div data-id="<%= p.id %>" class="group relative grid grid-cols-[minmax(0,1fr)_2.5rem] md:grid-cols-[minmax(0,1fr)_8rem_6rem_10rem_2.5rem] items-center gap-4 px-4 py-3 hover:bg-slate-50 transition">
+          <a href="/admin/projects/<%= p.id %>" class="absolute inset-0" aria-label="Otwórz projekt <%= p.name %>"></a>
+          <span class="min-w-0">
+            <span class="flex items-center gap-2 min-w-0">
+              <span class="truncate text-sm font-medium text-slate-800"><%= p.name %></span>
+              <% if (p.unread > 0) { %><span class="inline-flex items-center gap-1 px-1.5 rounded-full bg-brand-600 text-white text-[11px] font-semibold shrink-0" title="Nowa aktywność"><%- icon('bell', { size: 11, cls: '' }) %><%= p.unread %></span><% } %>
+              <% if (_arch) { %><span class="text-[11px] px-1.5 rounded-full bg-slate-100 text-slate-500 shrink-0">archiwum</span><% } %>
+            </span>
+            <span class="block truncate text-xs text-slate-400"><%= _cl || 'bez klienta' %><span class="md:hidden"> · <%= p._count.transfers %> transf. · <%= fmt.dateOnly(p.updatedAt) %></span></span>
+          </span>
+          <span class="hidden md:block"><span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap <%= _st[1] %>"><%= _st[0] %></span></span>
+          <span class="hidden md:block text-sm text-slate-500 tabular-nums"><%= p._count.transfers %></span>
+          <span class="hidden md:block text-sm text-slate-500 whitespace-nowrap"><%= fmt.date(p.updatedAt) %></span>
+          <form method="POST" action="/admin/projects/<%= p.id %>/archive" class="relative z-10 flex justify-end">
+            <input type="hidden" name="redirect" value="list" />
+            <button type="submit" title="<%= _arch ? 'Przywróć z archiwum' : 'Zarchiwizuj projekt' %>" aria-label="<%= _arch ? 'Przywróć z archiwum' : 'Zarchiwizuj projekt' %>"
+                    class="btn-icon text-slate-300 hover:text-brand-600 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"><%- icon(_arch ? 'arrowLeft' : 'archive', { size: 15, cls: '' }) %></button>
+          </form>
+        </div>
+      <% }); %>
+    </div>
+  </div>
 <% } else { %>
-  <div id="projectGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  <div id="projectGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
     <% projects.forEach(function(p){ const _arch = p.status === 'archived'; %>
       <div data-id="<%= p.id %>" class="group relative bg-white rounded-2xl border border-slate-200 p-5 hover:border-brand-300 hover:shadow-sm transition">
         <a href="/admin/projects/<%= p.id %>" class="absolute inset-0 rounded-2xl" aria-label="Otwórz projekt <%= p.name %>"></a>
@@ -71,8 +116,13 @@
     <% }); %>
   </div>
 
-  <% if (filter.sort === 'manual') { %>
-    <p class="mt-3 text-xs text-slate-400">Przeciągnij karty, aby zmienić kolejność — zapisuje się automatycznie.</p>
+<% } %>
+<%# Ręczna kolejność tylko na PEŁNEJ liście — przy filtrze klienta/szukajce reorder ponumerowałby
+    sam wycinek od zera i pomieszał pozycje pozostałych projektów. %>
+<% if (projects.length && filter.sort === 'manual' && (filter.q || filter.client)) { %>
+  <p class="mt-3 text-xs text-slate-400">Wyczyść filtr klienta i wyszukiwanie, aby zmieniać kolejność przeciąganiem.</p>
+<% } else if (projects.length && filter.sort === 'manual') { %>
+    <p class="mt-3 text-xs text-slate-400">Przeciągnij <%= filter.view === 'list' ? 'wiersze' : 'karty' %>, aby zmienić kolejność — zapisuje się automatycznie.</p>
     <script>
       (function () {
         var grid = document.getElementById('projectGrid');
@@ -92,4 +142,3 @@
       })();
     </script>
   <% } %>
-<% } %>
