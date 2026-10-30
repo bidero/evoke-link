@@ -212,7 +212,7 @@
           wysokości, nie pełnoekranowy) jest na iOS stabilny — inaczej niż `fixed inset-y-0`,
           które ma pułapkę wysokości viewportu (patrz aside wyżej).
           DESKTOP zostaje na `sticky`: `fixed` nie zna kolumny treści i nachodziłby na pasek boczny. %>
-      <header class="h-16 shrink-0 fixed inset-x-0 top-0 z-20 md:sticky md:inset-x-auto bg-[var(--admin-header)] border-b border-black/5 flex items-center justify-between px-4 sm:px-6 lg:px-8" style="color: var(--admin-header-text)">
+      <header class="h-16 shrink-0 fixed inset-x-0 top-0 z-20 md:sticky md:inset-x-auto bg-[var(--admin-header)] border-b border-black/5 flex items-center justify-between px-4" style="color: var(--admin-header-text)">
         <div class="flex items-center gap-3 min-w-0">
           <button type="button" class="opacity-70 hover:opacity-100" @click="window.innerWidth < 768 ? (nav = true) : window.toggleRail()" aria-label="Menu / zwiń panel"><%- icon('menu', { size: 22, cls: '' }) %></button>
           <h1 class="text-lg font-semibold truncate"><%= typeof title !== 'undefined' ? title : '' %></h1>
@@ -286,7 +286,7 @@
       </header>
       <%# Rozpórka pod `fixed` nagłówek — tylko na telefonie, bo tylko tam wypada z potoku. %>
       <div class="h-16 shrink-0 md:hidden" aria-hidden="true"></div>
-      <main class="flex-1 p-4 sm:p-6 lg:p-8">
+      <main class="flex-1 p-4">
         <%- body %>
       </main>
     </div>

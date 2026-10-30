@@ -392,9 +392,30 @@ html.dark.theme-modern main table thead { background: var(--dk-surface-2); }
 html.dark.theme-modern main table thead th { color: var(--dk-muted); }
 html.dark.theme-modern [data-stat-icon] { background: rgb(var(--brand-600) / 0.22); color: rgb(var(--brand-400)) !important; }
 
+/* ── Paski przewijania: bardzo wąskie, w kolorze przewodnim, widoczne po najechaniu ─
+   Cała aplikacja (panel i strony klienta — tam paleta brand-* = kolor przewodni stron klienta).
+   Kciuk jest przezroczysty, dopóki kursor nie znajdzie się nad przewijanym obszarem, więc
+   wewnętrzne listy (widżety, komunikator, menu) nie mają stale widocznych pasków. Na ekranach
+   dotykowych system i tak pokazuje własny, nakładany wskaźnik podczas przewijania.
+   WebKit/Blink: pseudo-elementy (pozwalają zejść do 6 px). Firefox: standardowe właściwości —
+   ŚWIADOMIE tylko tam (@supports), bo w Chrome ustawienie `scrollbar-color` wyłącza
+   ::-webkit-scrollbar i pasek wraca do szerokości systemowej. */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar-thumb { background-color: transparent; border-radius: 9999px; }
+*:hover::-webkit-scrollbar-thumb { background-color: rgb(var(--brand-600) / 0.45); }
+*::-webkit-scrollbar-thumb:hover { background-color: rgb(var(--brand-600) / 0.75); }
+html.dark *:hover::-webkit-scrollbar-thumb { background-color: rgb(var(--brand-400) / 0.5); }
+html.dark *::-webkit-scrollbar-thumb:hover { background-color: rgb(var(--brand-400) / 0.8); }
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: transparent transparent; }
+  *:hover { scrollbar-color: rgb(var(--brand-600) / 0.5) transparent; }
+  html.dark *:hover { scrollbar-color: rgb(var(--brand-400) / 0.55) transparent; }
+}
+
 /* ── Ukrycie pasków przewijania (opcja, niezależna od motywu) ────────────────
    Działa też w „classic". Firefox: scrollbar-width; WebKit: ::-webkit-scrollbar. */
-.hide-scrollbars { scrollbar-width: none; -ms-overflow-style: none; }
+.hide-scrollbars, .hide-scrollbars * { scrollbar-width: none; -ms-overflow-style: none; }
 .hide-scrollbars ::-webkit-scrollbar,
 .hide-scrollbars::-webkit-scrollbar { display: none; width: 0; height: 0; }
 

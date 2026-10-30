@@ -54,58 +54,56 @@
     <% } %>
   </div>
 <% } else { %>
-  <%# Desktop: tabela. Mobile: karty (poniżej). %>
-  <div class="hidden md:block bg-white rounded-2xl border border-slate-200 overflow-hidden">
-    <div class="overflow-x-auto">
-    <table class="w-full text-sm min-w-[640px]">
+  <%# Desktop (od lg): zwarta tabela. Wcześniej 7 kolumn z pełnym adresem portalu i e-mailem
+      zawijanym na 3 linie nie mieściło się nawet na 1280 px (przycisk „Wyślij" poza kartą).
+      Teraz: e-mail pod nazwą w jednej linii, portal/wysyłka jako ikony w ostatniej kolumnie,
+      „Projekty" dopiero od xl. Poniżej lg — karty (kolumna treści obok paska jest za wąska). %>
+  <div class="hidden lg:block bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <table class="w-full text-sm table-fixed">
       <thead class="bg-slate-50 text-slate-500 text-left">
         <tr>
           <th class="px-4 py-3 font-medium">Klient</th>
-          <th class="px-4 py-3 font-medium">Status</th>
-          <th class="px-4 py-3 font-medium">E-mail</th>
-          <th class="px-4 py-3 font-medium">Projekty</th>
-          <th class="px-4 py-3 font-medium">Do rozliczenia</th>
-          <th class="px-4 py-3 font-medium">Portal klienta</th>
-          <th class="px-4 py-3"></th>
+          <th class="px-4 py-3 font-medium w-32">Status</th>
+          <th class="px-4 py-3 font-medium w-24 hidden xl:table-cell">Projekty</th>
+          <th class="px-4 py-3 font-medium w-40 text-right">Do rozliczenia</th>
+          <th class="px-4 py-3 w-28"><span class="sr-only">Akcje</span></th>
         </tr>
       </thead>
       <tbody class="divide-y divide-slate-100">
         <% const _statusMap = { lead: ['Lead', 'bg-amber-50 text-amber-700'], active: ['Aktywny', 'bg-green-50 text-green-700'], inactive: ['Nieaktywny', 'bg-slate-100 text-slate-500'] }; %>
         <% clients.forEach(function(c){ const _s = _statusMap[c.status] || _statusMap.active; %>
           <tr class="hover:bg-slate-50 cursor-pointer" onclick="window.evokeVisit('/admin/clients/<%= c.id %>')">
-            <td class="px-4 py-3 font-medium text-slate-800">
-              <span class="flex items-center gap-2.5">
+            <td class="px-4 py-3">
+              <span class="flex items-center gap-3 min-w-0">
                 <%- avatar(c, { size: 'sm' }) %>
                 <span class="min-w-0">
-                  <span class="block truncate"><%= c.name %></span>
-                  <% if (c.company) { %><span class="block text-xs font-normal text-slate-400 truncate"><%= c.company %></span><% } %>
+                  <span class="block truncate font-medium text-slate-800"><%= c.name %></span>
+                  <span class="block truncate text-xs text-slate-400"><%= [c.company, c.email].filter(Boolean).join(' · ') || '—' %></span>
                 </span>
               </span>
             </td>
-            <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded-full <%= _s[1] %>"><%= _s[0] %></span></td>
-            <td class="px-4 py-3 text-slate-500"><%= c.email || '—' %></td>
-            <td class="px-4 py-3 text-slate-500"><%= c._count.projects %></td>
-            <td class="px-4 py-3 tabular-nums"><% if (c.outstanding > 0) { %><span class="text-amber-600 font-medium"><%= fmt.money(c.outstanding) %></span><% } else { %><span class="text-slate-300">—</span><% } %></td>
-            <td class="px-4 py-3 text-slate-400"><a href="<%= appUrl %>/c/<%= c.token %>" target="_blank" @click.stop class="text-brand-700 hover:underline" onclick="event.stopPropagation()">/c/<%= c.token %></a></td>
-            <td class="px-4 py-3 text-right whitespace-nowrap" onclick="event.stopPropagation()">
-              <% if (c.email) { %>
-                <form method="POST" action="/admin/clients/<%= c.id %>/send-panel">
-                  <input type="hidden" name="redirect" value="list" />
-                  <button type="submit" title="Wyślij link panelu na <%= c.email %>" class="btn btn-secondary text-xs"><%- icon('mail', { size: 14 }) %> Wyślij</button>
-                </form>
-              <% } else { %>
-                <span class="text-xs text-slate-300">brak e-maila</span>
-              <% } %>
+            <td class="px-4 py-3"><span class="text-xs px-2 py-0.5 rounded-full whitespace-nowrap <%= _s[1] %>"><%= _s[0] %></span></td>
+            <td class="px-4 py-3 text-slate-500 hidden xl:table-cell"><%= c._count.projects %></td>
+            <td class="px-4 py-3 tabular-nums text-right whitespace-nowrap"><% if (c.outstanding > 0) { %><span class="text-amber-600 font-medium"><%= fmt.money(c.outstanding) %></span><% } else { %><span class="text-slate-300">—</span><% } %></td>
+            <td class="px-4 py-3" onclick="event.stopPropagation()">
+              <span class="flex items-center justify-end gap-1.5">
+                <a href="<%= appUrl %>/c/<%= c.token %>" target="_blank" class="btn-icon" title="Otwórz portal klienta" aria-label="Otwórz portal klienta"><%- icon('externalLink', { size: 15, cls: '' }) %></a>
+                <% if (c.email) { %>
+                  <form method="POST" action="/admin/clients/<%= c.id %>/send-panel">
+                    <input type="hidden" name="redirect" value="list" />
+                    <button type="submit" class="btn-icon" title="Wyślij link portalu na <%= c.email %>" aria-label="Wyślij link portalu"><%- icon('mail', { size: 15, cls: '' }) %></button>
+                  </form>
+                <% } %>
+              </span>
             </td>
           </tr>
         <% }); %>
       </tbody>
     </table>
-    </div>
   </div>
 
-  <%# Mobile: karty zamiast tabeli. %>
-  <div class="md:hidden space-y-3">
+  <%# Telefon i tablet (poniżej lg): karty zamiast tabeli. %>
+  <div class="lg:hidden space-y-3">
     <% clients.forEach(function(c){ const _s = _statusMap[c.status] || _statusMap.active; %>
       <div class="bg-white rounded-xl border border-slate-200 p-4">
         <div class="flex items-start justify-between gap-3">
@@ -123,8 +121,8 @@
           <span>Projekty: <%= c._count.projects %></span>
           <% if (c.outstanding > 0) { %><span class="text-amber-600 font-medium">Do zapłaty: <%= fmt.money(c.outstanding) %></span><% } %>
         </div>
-        <div class="mt-3 flex items-center justify-between gap-2">
-          <a href="<%= appUrl %>/c/<%= c.token %>" target="_blank" class="text-xs text-brand-700 hover:underline truncate">/c/<%= c.token %></a>
+        <div class="mt-3 flex items-center justify-end gap-2">
+          <a href="<%= appUrl %>/c/<%= c.token %>" target="_blank" class="btn btn-secondary text-xs"><%- icon('externalLink', { size: 14 }) %> Portal</a>
           <% if (c.email) { %>
             <form method="POST" action="/admin/clients/<%= c.id %>/send-panel" class="shrink-0">
               <input type="hidden" name="redirect" value="list" />

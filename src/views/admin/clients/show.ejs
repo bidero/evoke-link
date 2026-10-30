@@ -105,9 +105,25 @@
       <a href="/admin/clients/<%= client.id %>/edit" class="btn-icon border border-slate-300 shrink-0" title="Edytuj klienta" aria-label="Edytuj klienta"><%- icon('pencil', { size: 16, cls: '' }) %></a>
     </div>
   </div>
+  <%# Portal klienta i onboarding w AKORDEONIE (domyślnie zwinięty) — to rzadkie akcje, a pełny
+      adres portalu i rząd onboardingu zajmowały pół nagłówka nad zakładkami. Stan zapamiętany
+      w localStorage; po akcji onboardingu (flash `onb-*`) sekcja otwiera się sama. %>
+  <% const _onbFlash = /^onb-/.test(sent || ''); %>
+  <div class="mt-4 border-t border-slate-100"
+       x-data="{ acc: <%= _onbFlash ? 'true' : 'false' %> }"
+       x-init="if (!acc) { try { acc = localStorage.getItem('evoke-client-acc') === '1' } catch (_) {} } $watch('acc', function(v){ try { localStorage.setItem('evoke-client-acc', v ? '1' : '0') } catch (_) {} })">
+    <button type="button" @click="acc = !acc" :aria-expanded="acc ? 'true' : 'false'" data-client-acc
+            class="w-full flex items-center gap-2 pt-3 text-sm text-slate-600 hover:text-slate-800">
+      <%- icon('externalLink', { size: 15, cls: 'text-slate-400' }) %>
+      <span class="font-medium">Portal klienta i onboarding</span>
+      <% const _onbChip = { none: ['nie wysłany', 'bg-slate-100 text-slate-500'], active: ['onboarding aktywny', 'bg-green-50 text-green-700'], expired: ['onboarding wygasł', 'bg-amber-50 text-amber-700'], completed: ['dane uzupełnione', 'bg-green-50 text-green-700'] }[onboarding] || null; %>
+      <% if (_onbChip && onboarding !== 'none') { %><span class="hidden sm:inline text-xs px-2 py-0.5 rounded-full <%= _onbChip[1] %>"><%= _onbChip[0] %></span><% } %>
+      <span class="ml-auto transition-transform" :class="acc && 'rotate-180'"><%- icon('chevronDown', { size: 16, cls: '' }) %></span>
+    </button>
+    <div x-show="acc" x-cloak x-transition.opacity>
   <%# Adres w polu zamiast gołego linku — długi URL zawijał się na telefonie na trzy linie.
       Pole ucina go w jednej linii, a akcje (kopiuj/otwórz/wyślij) są obok, jak przy projekcie. %>
-  <div class="mt-4 pt-4 border-t border-slate-100" x-data="{ copied: false }">
+  <div class="mt-3" x-data="{ copied: false }">
     <span class="label">Portal klienta</span>
     <div class="flex items-center gap-2">
       <input type="text" readonly value="<%= portalUrl %>" x-ref="url" @focus="$event.target.select()"
@@ -178,6 +194,8 @@
         </div>
       <% } %>
     <% } %>
+  </div>
+    </div>
   </div>
 </div>
 
