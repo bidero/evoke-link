@@ -83,3 +83,21 @@ test('status pozycji ma noWrap (nie zawija się w wąskich szablonach)', () => {
   assert.ok(nodes.length, 'komórka „Rozliczono" istnieje');
   assert.ok(nodes.some((n) => n.noWrap === true), 'status w tabeli ma noWrap');
 });
+
+// Kwoty („123 456,78 zł") nie mogą się łamić — kolumny kwot mają szerokość `auto`, a pdfmake
+// przy braku miejsca ścina je do najdłuższego słowa, więc „zł" spadało do nowej linii.
+test('każda kwota w PDF ma noWrap (waluta nie zawija się do nowej linii)', () => {
+  const charges = makeCharges().map((c, i) => (i === 0 ? { ...c, amount: 12345678 } : c));
+  const seller = { name: 'EVOKE', bank: 'PL61109010140000071219812874' };
+  for (const template of ['standard', 'accent', 'accent-card', 'accent-band', 'accent-min', 'proforma', 'band', 'clean']) {
+    const doc = buildDoc({ client, charges, filters: {}, settings: { ...settings, pdf: { template, seller } } });
+    const bad = [];
+    (function walk(node) {
+      if (node == null || typeof node !== 'object') return;
+      if (Array.isArray(node)) return node.forEach(walk);
+      if (typeof node.text === 'string' && /\d zł$/.test(node.text) && node.noWrap !== true) bad.push(node.text);
+      Object.keys(node).forEach((k) => walk(node[k]));
+    })(doc.content);
+    assert.deepEqual(bad, [], `szablon ${template}: kwoty bez noWrap`);
+  }
+});

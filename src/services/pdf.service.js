@@ -101,12 +101,12 @@ function projectTables(charges, brand, style, hasVat) {
     ];
     if (hasVat) {
       base.push(
-        { text: fmt.money(c.amount), fontSize: 10, alignment: 'right' },
+        { noWrap: true, text: fmt.money(c.amount), fontSize: 10, alignment: 'right' },
         { text: c.vatRate != null ? c.vatRate + '%' : '—', fontSize: 9, color: MUTED, alignment: 'right' },
-        { text: fmt.money(chargeCalc.grossOf(c)), fontSize: 10, alignment: 'right' },
+        { noWrap: true, text: fmt.money(chargeCalc.grossOf(c)), fontSize: 10, alignment: 'right' },
       );
     } else {
-      base.push({ text: fmt.money(c.amount), fontSize: 10, alignment: 'right' });
+      base.push({ noWrap: true, text: fmt.money(c.amount), fontSize: 10, alignment: 'right' });
     }
     rows.push(base);
   });
@@ -178,9 +178,9 @@ function totalsBlock(t, brand, seller, variant, hasVat) {
   if (variant === 'card') {
     const body = small.map(([l, v, c]) => [
       { text: l, color: MUTED, fontSize: 10 },
-      { text: fmt.money(v), alignment: 'right', fontSize: 10, color: c || undefined },
+      { noWrap: true, text: fmt.money(v), alignment: 'right', fontSize: 10, color: c || undefined },
     ]);
-    body.push([{ text: 'Do zapłaty', bold: true, fontSize: 15 }, { text: fmt.money(outstanding), bold: true, fontSize: 15, color: brand, alignment: 'right' }]);
+    body.push([{ text: 'Do zapłaty', bold: true, fontSize: 15 }, { noWrap: true, text: fmt.money(outstanding), bold: true, fontSize: 15, color: brand, alignment: 'right' }]);
     const card = {
       table: { widths: ['*', 'auto'], body },
       layout: {
@@ -197,10 +197,10 @@ function totalsBlock(t, brand, seller, variant, hasVat) {
   if (variant === 'band') {
     const band = {
       table: { widths: ['*', 'auto'], body: [[
-        { stack: small.map(([l, v]) => ({ text: `${l} ${fmt.money(v)}`, color: '#ffffff', fontSize: 9, margin: [0, 1, 0, 0] })), margin: [16, 12, 0, 12] },
+        { stack: small.map(([l, v]) => ({ noWrap: true, text: `${l} ${fmt.money(v)}`, color: '#ffffff', fontSize: 9, margin: [0, 1, 0, 0] })), margin: [16, 12, 0, 12] },
         { stack: [
           { text: 'DO ZAPŁATY', color: '#ffffff', fontSize: 8, alignment: 'right', characterSpacing: 1 },
-          { text: fmt.money(outstanding), color: '#ffffff', bold: true, fontSize: 17, alignment: 'right' },
+          { noWrap: true, text: fmt.money(outstanding), color: '#ffffff', bold: true, fontSize: 17, alignment: 'right' },
         ], margin: [0, 9, 16, 9] },
       ]] },
       layout: { hLineWidth: () => 0, vLineWidth: () => 0, fillColor: () => brand },
@@ -212,9 +212,9 @@ function totalsBlock(t, brand, seller, variant, hasVat) {
   if (variant === 'minimal') {
     const body = small.map(([l, v, c]) => [
       { text: l, color: MUTED, alignment: 'right', fontSize: 10 },
-      { text: fmt.money(v), alignment: 'right', fontSize: 10, color: c || undefined },
+      { noWrap: true, text: fmt.money(v), alignment: 'right', fontSize: 10, color: c || undefined },
     ]);
-    body.push([{ text: 'Do zapłaty', bold: true, fontSize: 13, alignment: 'right', margin: [0, 7, 0, 0] }, { text: fmt.money(outstanding), bold: true, fontSize: 13, color: brand, alignment: 'right', margin: [0, 7, 0, 0] }]);
+    body.push([{ text: 'Do zapłaty', bold: true, fontSize: 13, alignment: 'right', margin: [0, 7, 0, 0] }, { noWrap: true, text: fmt.money(outstanding), bold: true, fontSize: 13, color: brand, alignment: 'right', margin: [0, 7, 0, 0] }]);
     const rows = {
       table: { widths: ['*', 'auto'], body },
       layout: { hLineWidth: (i) => (i === lastLine ? 0.8 : 0), vLineWidth: () => 0, hLineColor: () => '#cbd5e1', paddingTop: () => 3, paddingBottom: () => 3 },
@@ -226,9 +226,9 @@ function totalsBlock(t, brand, seller, variant, hasVat) {
   // 'line' — istniejące: gruba brandowa kreska nad „Do zapłaty".
   const body = small.map(([l, v, c]) => [
     { text: l, color: MUTED, alignment: 'right' },
-    { text: fmt.money(v), alignment: 'right', color: c || undefined },
+    { noWrap: true, text: fmt.money(v), alignment: 'right', color: c || undefined },
   ]);
-  body.push([{ text: 'Do zapłaty', bold: true, fontSize: 16, alignment: 'right', margin: [0, 7, 0, 0] }, { text: fmt.money(outstanding), bold: true, fontSize: 16, color: brand, alignment: 'right', margin: [0, 7, 0, 0] }]);
+  body.push([{ text: 'Do zapłaty', bold: true, fontSize: 16, alignment: 'right', margin: [0, 7, 0, 0] }, { noWrap: true, text: fmt.money(outstanding), bold: true, fontSize: 16, color: brand, alignment: 'right', margin: [0, 7, 0, 0] }]);
   const box = {
     table: { widths: ['*', 'auto'], body },
     layout: { hLineWidth: (i) => (i === lastLine ? 3 : 0), vLineWidth: () => 0, hLineColor: () => brand, paddingLeft: () => 6, paddingRight: () => 6, paddingTop: () => 5, paddingBottom: () => 5 },
@@ -323,7 +323,7 @@ function buildDoc({ client, charges, filters = {}, settings }) {
           stack: [
             { text: title, color: brand, bold: true, fontSize: 13, alignment: 'right' },
             { text: 'Do zapłaty', color: MUTED, fontSize: 9, alignment: 'right', margin: [0, 6, 0, 0] },
-            { text: fmt.money(total - paid), color: brand, bold: true, fontSize: 24, alignment: 'right' },
+            { noWrap: true, text: fmt.money(total - paid), color: brand, bold: true, fontSize: 24, alignment: 'right' },
           ],
         },
       ],
